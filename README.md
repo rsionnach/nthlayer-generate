@@ -45,7 +45,7 @@ service.yaml → validate → apply
                       Policies pass? Ceiling valid?
 ```
 
-NthLayer generates. [nthlayer-observe](https://github.com/rsionnach/nthlayer-observe) enforces at runtime.
+NthLayer generates. The [nthlayer-workers](https://github.com/rsionnach/nthlayer-workers) runtime (Tier 2) enforces, observes, and responds at runtime, with state held in [nthlayer-core](https://github.com/rsionnach/nthlayer-core) (Tier 1) and operator interaction via [nthlayer-bench](https://github.com/rsionnach/nthlayer-bench) (Tier 3).
 
 ---
 
@@ -179,13 +179,15 @@ NthLayer also supports the [OpenSRM format](https://rsionnach.github.io/nthlayer
     nthlayer apply service.yaml --output-dir generated/
 ```
 
-For runtime enforcement (deployment gates, drift detection, error budget checks), use [nthlayer-observe](https://github.com/rsionnach/nthlayer-observe):
+For runtime enforcement (deployment gates, drift detection, error budget checks), use [`nthlayer-workers`](https://github.com/rsionnach/nthlayer-workers) — the runtime tier:
 
 ```yaml
 - name: Gate deployment
   run: |
-    nthlayer-observe check-deploy payment-api
+    nthlayer-workers gate --service payment-api
 ```
+
+The runtime tier reads SLOs and dependency declarations from the same OpenSRM manifests this generator consumes. Verdicts and assessments flow through [`nthlayer-core`](https://github.com/rsionnach/nthlayer-core)'s HTTP API.
 
 Works with: **GitHub Actions**, **GitLab CI**, **ArgoCD**, **Tekton**, **Jenkins**
 
@@ -236,15 +238,17 @@ Works with: **GitHub Actions**, **GitLab CI**, **ArgoCD**, **Tekton**, **Jenkins
 - [ ] MCP server integration
 - [ ] Backstage plugin
 
-### Observe ([nthlayer-observe](https://github.com/rsionnach/nthlayer-observe))
-- [x] Deployment gates (`check-deploy`)
-- [x] Drift detection (`drift`)
-- [x] Error budget collection (`collect`)
-- [x] Portfolio view (`portfolio`)
-- [x] Reliability scorecard (`scorecard`)
-- [x] Blast radius analysis (`blast-radius`)
-- [x] Dependency discovery (`discover`, `dependencies`)
-- [x] Runtime verification (`verify`)
+### Runtime tier ([nthlayer-workers](https://github.com/rsionnach/nthlayer-workers))
+
+What was previously the standalone `nthlayer-observe` repo plus four agentic components is now consolidated into a single Tier-2 worker process with five modules:
+
+- [x] **observe** — SLO collection, drift detection, dependency/topology discovery, deploy gate
+- [x] **measure** — judgment SLO evaluation, governance ratchet, autonomy-level reduction
+- [x] **correlate** — session-window event correlation, topology drift, contract divergence
+- [x] **respond** — incident response coordinator (situation-shaped triggers, capture-at-write-time escalation)
+- [x] **learn** — outcome resolution, calibration signals, retrospective generation
+
+Backed by [nthlayer-core](https://github.com/rsionnach/nthlayer-core) (Tier 1: HTTP API, verdict store, case management, manifest catalogue) and operated via [nthlayer-bench](https://github.com/rsionnach/nthlayer-bench) (Tier 3: Textual TUI for SREs).
 
 ---
 
@@ -252,70 +256,66 @@ Works with: **GitHub Actions**, **GitLab CI**, **ArgoCD**, **Tekton**, **Jenkins
 
 `nthlayer infer` will use a model to analyse a codebase and propose an OpenSRM manifest for it. The model examines the code, identifies services, infers appropriate SLO targets, and generates a draft `service.reliability.yaml` that NthLayer then validates and generates artifacts from.
 
-This follows [Zero Framework Cognition](https://github.com/rsionnach/nthlayer-measure/blob/main/ZFC.md): the model provides judgment (what SLOs does this service need?), and NthLayer provides transport (validate the manifest, generate the monitoring artifacts). Clean boundary between reasoning and deterministic transformation.
+This follows the **Zero Framework Cognition** boundary applied across the OpenSRM ecosystem: the model provides judgment (what SLOs does this service need?), and NthLayer provides transport (validate the manifest, generate the monitoring artifacts). Clean boundary between reasoning and deterministic transformation. Architectural context: [opensrm/docs/superpowers/](https://github.com/rsionnach/opensrm/tree/main/docs/superpowers).
 
 ---
 
 ## OpenSRM Ecosystem
 
-NthLayer is one component in the OpenSRM ecosystem. Each component solves a complete problem independently, and they compose when used together through shared OpenSRM manifests and OTel telemetry conventions.
+NthLayer is one piece of a six-repo ecosystem. The architecture has three runtime tiers; this repo (`nthlayer-generate`) sits outside the runtime tiers as a build-time compiler, feeding manifests forward.
 
 ```
-                        ┌─────────────────────────┐
-                        │     OpenSRM Manifest     │
-                        │  (the shared contract)   │
-                        └────────────┬────────────┘
-                                     │
-                    reads            │           reads
-               ┌─────────────┬──────┴──────┬─────────────┐
-               ▼             ▼             ▼             ▼
-         ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
-         │ MEASURE  │ │>NTHLAYER<│ │CORRELATE │ │ RESPOND  │
-         │          │ │          │ │          │ │          │
-         │ quality  │ │ generate │ │correlate │ │ incident │
-         │+govern   │ │ monitoring│ │ signals  │ │ response │
-         │+cost     │ │          │ │          │ │          │
-         └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘
-              │             │             │             │
-              └─────────────┴──────┬──────┴─────────────┘
-                                   ▼
-                     ┌──────────────────────────┐
-                     │      Verdict Store       │
-                     │  (shared data substrate) │
-                     │ create · resolve · link  │
-                     │ accuracy · gaming-check  │
-                     └────────────┬─────────────┘
-                                  │ OTel side-effects
-                                  ▼
-                     ┌──────────────────────────┐
-                     │    OTel Collector /      │
-                     │   Prometheus / Grafana   │
-                     └──────────────────────────┘
+                  ┌──────────────────────────┐
+                  │      OpenSRM Manifest    │
+                  │  (the shared contract)   │
+                  └────────────┬─────────────┘
+                               │
+              ┌────────────────┴────────────────┐
+              ▼                                 ▼
+    ┌──────────────────┐               ┌─────────────────┐
+    │ nthlayer-generate│               │ nthlayer-core   │
+    │  (build-time)    │               │  (Tier 1)       │
+    │                  │               │ HTTP API ·      │
+    │ specs → Grafana, │               │ verdict store · │
+    │ Prometheus, SLOs,│               │ case mgmt ·     │
+    │ Backstage, docs  │               │ manifests       │
+    └────────┬─────────┘               └────────▲────────┘
+             │                                  │ HTTP only
+             │ deployed                ┌────────┴──────────────┐
+             ▼                         │                       │
+    ┌──────────────────┐      ┌────────┴────────┐    ┌─────────┴────────┐
+    │  Live infra      │      │ nthlayer-workers│    │ nthlayer-bench   │
+    │  (Prometheus,    │ obs  │   (Tier 2)      │    │   (Tier 3)       │
+    │   Grafana, etc.) │ ─────│                 │    │ Textual TUI for  │
+    └──────────────────┘      │ observe·measure │    │ SREs: situation  │
+                              │ correlate·respond│    │ board, case      │
+                              │ ·learn          │    │ bench, approvals │
+                              └─────────────────┘    └──────────────────┘
 
-              Learning loop (post-incident):
-              nthlayer-respond findings → manifest updates
-              → NthLayer regenerates → nthlayer-measure
-              refines → nthlayer-correlate improves → OpenSRM
+    Learning loop:
+    workers.learn retrospectives → manifest updates → nthlayer-generate
+    regenerates → workers refine thresholds → operators ratify in bench
 ```
 
-**How NthLayer fits in:**
+**How nthlayer-generate fits in:**
 
-- NthLayer reads OpenSRM manifests and generates the monitoring infrastructure (Prometheus rules, Grafana dashboards, PagerDuty config) that the rest of the ecosystem relies on
-- Verdict operations emit OTel side-effects (`gen_ai.decision.*`, `gen_ai.override.*`) that flow into Prometheus. NthLayer generates dashboards for these metrics alongside service dashboards — NthLayer reads from Prometheus, not the Verdict Store directly.
-- NthLayer exports service topology that [nthlayer-correlate](https://github.com/rsionnach/nthlayer-correlate) uses for topology-aware signal correlation
-- [nthlayer-respond's](https://github.com/rsionnach/nthlayer-respond) post-incident findings feed back into NthLayer as rule refinements (alerts that should have fired earlier or didn't fire at all)
+- Reads OpenSRM manifests and emits the monitoring infrastructure (Prometheus rules, Grafana dashboards, recording rules, Backstage entities, service docs) that the runtime tier and live observability stack rely on
+- Pure compiler — deterministic, stateless, no LLM, no runtime side effects
+- Verdicts and assessments produced by `nthlayer-workers` modules emit OTel side-effects (`gen_ai.decision.*`, `gen_ai.override.*`) that flow into Prometheus; this generator can be configured to produce dashboards for those metrics alongside service dashboards
+- Exports service topology that `workers.correlate` uses for topology-aware signal correlation
+- Post-incident retrospectives produced by `workers.learn` feed back into manifest updates that regenerate via this compiler — closing the loop
 
-Each component works alone. Someone who just needs reliability-as-code adopts NthLayer without needing the rest of the ecosystem.
+Each component works alone. Someone who just needs reliability-as-code adopts `nthlayer-generate` without needing the rest of the ecosystem.
 
-| Component | What it does | Link |
-|-----------|-------------|------|
-| **OpenSRM** | Specification for declaring service reliability requirements | [OpenSRM](https://github.com/rsionnach/opensrm) |
-| **NthLayer** | Generate monitoring infrastructure from manifests (this repo) | [nthlayer](https://github.com/rsionnach/nthlayer) |
-| **nthlayer-observe** | Runtime enforcement: deployment gates, drift detection, error budgets | [nthlayer-observe](https://github.com/rsionnach/nthlayer-observe) |
-| **nthlayer-learn** | Data primitive for recording AI judgments and measuring correctness | [nthlayer-learn](https://github.com/rsionnach/nthlayer-learn) |
-| **nthlayer-measure** | Quality measurement and governance for AI agents | [nthlayer-measure](https://github.com/rsionnach/nthlayer-measure) |
-| **nthlayer-correlate** | Situational awareness through signal correlation | [nthlayer-correlate](https://github.com/rsionnach/nthlayer-correlate) |
-| **nthlayer-respond** | Multi-agent incident response | [nthlayer-respond](https://github.com/rsionnach/nthlayer-respond) |
+| Repo | Role |
+|---|---|
+| [`opensrm`](https://github.com/rsionnach/opensrm) | The OpenSRM specification — the manifest format and language for declaring reliability |
+| [`nthlayer`](https://github.com/rsionnach/nthlayer) | Project front door — documentation hub, GitHub Action delegating to this repo, docs site |
+| [`nthlayer-common`](https://github.com/rsionnach/nthlayer-common) | Shared library: verdict model, manifest parser, LLM wrapper, error hierarchy, CoreAPIClient |
+| [`nthlayer-generate`](https://github.com/rsionnach/nthlayer-generate) | The deterministic compiler (this repo) — specs to artefacts |
+| [`nthlayer-core`](https://github.com/rsionnach/nthlayer-core) | **Tier 1** — HTTP API server, verdict store, case management, manifest catalogue (`pip install nthlayer`) |
+| [`nthlayer-workers`](https://github.com/rsionnach/nthlayer-workers) | **Tier 2** — five worker modules: observe, measure, correlate, respond, learn |
+| [`nthlayer-bench`](https://github.com/rsionnach/nthlayer-bench) | **Tier 3** — Textual TUI for SREs |
 
 ---
 
@@ -325,8 +325,8 @@ Each component works alone. Someone who just needs reliability-as-code adopts Nt
 # Install uv (https://docs.astral.sh/uv/)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-git clone https://github.com/rsionnach/nthlayer.git
-cd nthlayer
+git clone https://github.com/rsionnach/nthlayer-generate.git
+cd nthlayer-generate
 make setup    # Install deps, start services
 make test     # Run tests
 ```

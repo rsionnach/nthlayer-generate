@@ -6,24 +6,24 @@ Uses parametrization to test all templates with the same test patterns.
 
 import pytest
 
-from nthlayer.dashboards.templates.base_intent import IntentBasedTemplate
-from nthlayer.dashboards.templates.consul_intent import ConsulIntentTemplate
-from nthlayer.dashboards.templates.elasticsearch_intent import ElasticsearchIntentTemplate
-from nthlayer.dashboards.templates.etcd_intent import EtcdIntentTemplate
-from nthlayer.dashboards.templates.haproxy_intent import HaproxyIntentTemplate
-from nthlayer.dashboards.templates.http_intent import HTTPIntentTemplate
-from nthlayer.dashboards.templates.kafka_intent import KafkaIntentTemplate
-from nthlayer.dashboards.templates.mongodb_intent import MongoDBIntentTemplate
-from nthlayer.dashboards.templates.mysql_intent import MySQLIntentTemplate
-from nthlayer.dashboards.templates.nats_intent import NatsIntentTemplate
-from nthlayer.dashboards.templates.nginx_intent import NginxIntentTemplate
-from nthlayer.dashboards.templates.postgresql_intent import PostgreSQLIntentTemplate
-from nthlayer.dashboards.templates.pulsar_intent import PulsarIntentTemplate
-from nthlayer.dashboards.templates.rabbitmq_intent import RabbitmqIntentTemplate
-from nthlayer.dashboards.templates.redis_intent import RedisIntentTemplate
-from nthlayer.dashboards.templates.stream_intent import StreamIntentTemplate
-from nthlayer.dashboards.templates.traefik_intent import TraefikIntentTemplate
-from nthlayer.dashboards.templates.worker_intent import WorkerIntentTemplate
+from nthlayer_generate.dashboards.templates.base_intent import IntentBasedTemplate
+from nthlayer_generate.dashboards.templates.consul_intent import ConsulIntentTemplate
+from nthlayer_generate.dashboards.templates.elasticsearch_intent import ElasticsearchIntentTemplate
+from nthlayer_generate.dashboards.templates.etcd_intent import EtcdIntentTemplate
+from nthlayer_generate.dashboards.templates.haproxy_intent import HaproxyIntentTemplate
+from nthlayer_generate.dashboards.templates.http_intent import HTTPIntentTemplate
+from nthlayer_generate.dashboards.templates.kafka_intent import KafkaIntentTemplate
+from nthlayer_generate.dashboards.templates.mongodb_intent import MongoDBIntentTemplate
+from nthlayer_generate.dashboards.templates.mysql_intent import MySQLIntentTemplate
+from nthlayer_generate.dashboards.templates.nats_intent import NatsIntentTemplate
+from nthlayer_generate.dashboards.templates.nginx_intent import NginxIntentTemplate
+from nthlayer_generate.dashboards.templates.postgresql_intent import PostgreSQLIntentTemplate
+from nthlayer_generate.dashboards.templates.pulsar_intent import PulsarIntentTemplate
+from nthlayer_generate.dashboards.templates.rabbitmq_intent import RabbitmqIntentTemplate
+from nthlayer_generate.dashboards.templates.redis_intent import RedisIntentTemplate
+from nthlayer_generate.dashboards.templates.stream_intent import StreamIntentTemplate
+from nthlayer_generate.dashboards.templates.traefik_intent import TraefikIntentTemplate
+from nthlayer_generate.dashboards.templates.worker_intent import WorkerIntentTemplate
 
 # All intent template classes
 INTENT_TEMPLATES = [

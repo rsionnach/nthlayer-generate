@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer.cli.setup import (
+from nthlayer_generate.cli.setup import (
     _create_first_service,
     _generate_service_yaml,
     _is_valid_service_name,
@@ -27,7 +27,7 @@ from nthlayer.cli.setup import (
     register_setup_parser,
     setup_command,
 )
-from nthlayer.config.integrations import (
+from nthlayer_generate.config.integrations import (
     GrafanaProfile,
     GrafanaType,
     IntegrationConfig,
@@ -96,7 +96,7 @@ def mock_config():
 class TestSetupCommand:
     """Tests for setup_command function."""
 
-    @patch("nthlayer.cli.setup._test_connections")
+    @patch("nthlayer_generate.cli.setup._test_connections")
     def test_test_only_mode(self, mock_test):
         """Test test_only mode calls _test_connections."""
         mock_test.return_value = 0
@@ -106,12 +106,12 @@ class TestSetupCommand:
         assert result == 0
         mock_test.assert_called_once()
 
-    @patch("nthlayer.cli.setup._print_next_steps")
-    @patch("nthlayer.cli.setup._test_connections")
-    @patch("nthlayer.cli.setup._quick_setup")
-    @patch("nthlayer.cli.setup._confirm")
-    @patch("nthlayer.cli.setup.get_config_path")
-    @patch("nthlayer.cli.setup._print_welcome_banner")
+    @patch("nthlayer_generate.cli.setup._print_next_steps")
+    @patch("nthlayer_generate.cli.setup._test_connections")
+    @patch("nthlayer_generate.cli.setup._quick_setup")
+    @patch("nthlayer_generate.cli.setup._confirm")
+    @patch("nthlayer_generate.cli.setup.get_config_path")
+    @patch("nthlayer_generate.cli.setup._print_welcome_banner")
     def test_quick_setup_mode(
         self,
         mock_banner,
@@ -132,12 +132,12 @@ class TestSetupCommand:
         assert result == 0
         mock_quick.assert_called_once()
 
-    @patch("nthlayer.cli.setup._print_next_steps")
-    @patch("nthlayer.cli.setup._test_connections")
-    @patch("nthlayer.config.cli.config_init_command")
-    @patch("nthlayer.cli.setup._confirm")
-    @patch("nthlayer.cli.setup.get_config_path")
-    @patch("nthlayer.cli.setup._print_welcome_banner")
+    @patch("nthlayer_generate.cli.setup._print_next_steps")
+    @patch("nthlayer_generate.cli.setup._test_connections")
+    @patch("nthlayer_generate.config.cli.config_init_command")
+    @patch("nthlayer_generate.cli.setup._confirm")
+    @patch("nthlayer_generate.cli.setup.get_config_path")
+    @patch("nthlayer_generate.cli.setup._print_welcome_banner")
     def test_advanced_setup_mode(
         self,
         mock_banner,
@@ -157,9 +157,9 @@ class TestSetupCommand:
         assert result == 0
         mock_advanced.assert_called_once()
 
-    @patch("nthlayer.cli.setup._confirm")
-    @patch("nthlayer.cli.setup.get_config_path")
-    @patch("nthlayer.cli.setup._print_welcome_banner")
+    @patch("nthlayer_generate.cli.setup._confirm")
+    @patch("nthlayer_generate.cli.setup.get_config_path")
+    @patch("nthlayer_generate.cli.setup._print_welcome_banner")
     def test_existing_config_cancelled(self, mock_banner, mock_config_path, mock_confirm):
         """Test setup cancelled when existing config not overwritten."""
         mock_path = MagicMock()
@@ -171,13 +171,13 @@ class TestSetupCommand:
 
         assert result == 0
 
-    @patch("nthlayer.cli.setup._create_first_service")
-    @patch("nthlayer.cli.setup._print_next_steps")
-    @patch("nthlayer.cli.setup._test_connections")
-    @patch("nthlayer.cli.setup._quick_setup")
-    @patch("nthlayer.cli.setup._confirm")
-    @patch("nthlayer.cli.setup.get_config_path")
-    @patch("nthlayer.cli.setup._print_welcome_banner")
+    @patch("nthlayer_generate.cli.setup._create_first_service")
+    @patch("nthlayer_generate.cli.setup._print_next_steps")
+    @patch("nthlayer_generate.cli.setup._test_connections")
+    @patch("nthlayer_generate.cli.setup._quick_setup")
+    @patch("nthlayer_generate.cli.setup._confirm")
+    @patch("nthlayer_generate.cli.setup.get_config_path")
+    @patch("nthlayer_generate.cli.setup._print_welcome_banner")
     def test_create_first_service_offered(
         self,
         mock_banner,
@@ -198,11 +198,11 @@ class TestSetupCommand:
 
         mock_create_service.assert_called_once()
 
-    @patch("nthlayer.cli.setup._print_next_steps")
-    @patch("nthlayer.cli.setup._test_connections")
-    @patch("nthlayer.cli.setup._quick_setup")
-    @patch("nthlayer.cli.setup.get_config_path")
-    @patch("nthlayer.cli.setup._print_welcome_banner")
+    @patch("nthlayer_generate.cli.setup._print_next_steps")
+    @patch("nthlayer_generate.cli.setup._test_connections")
+    @patch("nthlayer_generate.cli.setup._quick_setup")
+    @patch("nthlayer_generate.cli.setup.get_config_path")
+    @patch("nthlayer_generate.cli.setup._print_welcome_banner")
     def test_quick_setup_failure_returns_error(
         self,
         mock_banner,
@@ -223,11 +223,11 @@ class TestSetupCommand:
 class TestQuickSetup:
     """Tests for _quick_setup function."""
 
-    @patch("nthlayer.cli.setup.save_config")
-    @patch("nthlayer.cli.setup.get_secret_resolver")
-    @patch("nthlayer.cli.setup._confirm")
-    @patch("nthlayer.cli.setup._prompt_secret")
-    @patch("nthlayer.cli.setup._prompt")
+    @patch("nthlayer_generate.cli.setup.save_config")
+    @patch("nthlayer_generate.cli.setup.get_secret_resolver")
+    @patch("nthlayer_generate.cli.setup._confirm")
+    @patch("nthlayer_generate.cli.setup._prompt_secret")
+    @patch("nthlayer_generate.cli.setup._prompt")
     def test_basic_prometheus_only(
         self,
         mock_prompt,
@@ -248,11 +248,11 @@ class TestQuickSetup:
         assert result == 0
         mock_save.assert_called_once()
 
-    @patch("nthlayer.cli.setup.save_config")
-    @patch("nthlayer.cli.setup.get_secret_resolver")
-    @patch("nthlayer.cli.setup._confirm")
-    @patch("nthlayer.cli.setup._prompt_secret")
-    @patch("nthlayer.cli.setup._prompt")
+    @patch("nthlayer_generate.cli.setup.save_config")
+    @patch("nthlayer_generate.cli.setup.get_secret_resolver")
+    @patch("nthlayer_generate.cli.setup._confirm")
+    @patch("nthlayer_generate.cli.setup._prompt_secret")
+    @patch("nthlayer_generate.cli.setup._prompt")
     def test_prometheus_with_auth(
         self,
         mock_prompt,
@@ -277,11 +277,11 @@ class TestQuickSetup:
             "prometheus/password", "secret123"
         )
 
-    @patch("nthlayer.cli.setup.save_config")
-    @patch("nthlayer.cli.setup.get_secret_resolver")
-    @patch("nthlayer.cli.setup._confirm")
-    @patch("nthlayer.cli.setup._prompt_secret")
-    @patch("nthlayer.cli.setup._prompt")
+    @patch("nthlayer_generate.cli.setup.save_config")
+    @patch("nthlayer_generate.cli.setup.get_secret_resolver")
+    @patch("nthlayer_generate.cli.setup._confirm")
+    @patch("nthlayer_generate.cli.setup._prompt_secret")
+    @patch("nthlayer_generate.cli.setup._prompt")
     def test_full_setup_with_all_integrations(
         self,
         mock_prompt,
@@ -320,10 +320,10 @@ class TestQuickSetup:
 class TestTestConnections:
     """Tests for _test_connections function."""
 
-    @patch("nthlayer.cli.setup._test_pagerduty")
-    @patch("nthlayer.cli.setup._test_grafana")
-    @patch("nthlayer.cli.setup._test_prometheus")
-    @patch("nthlayer.cli.setup.load_config")
+    @patch("nthlayer_generate.cli.setup._test_pagerduty")
+    @patch("nthlayer_generate.cli.setup._test_grafana")
+    @patch("nthlayer_generate.cli.setup._test_prometheus")
+    @patch("nthlayer_generate.cli.setup.load_config")
     def test_all_connections_pass(self, mock_load, mock_prom, mock_grafana, mock_pd):
         """Test when all connections pass."""
         config = IntegrationConfig.default()
@@ -350,8 +350,8 @@ class TestTestConnections:
 
         assert result == 0
 
-    @patch("nthlayer.cli.setup._test_prometheus")
-    @patch("nthlayer.cli.setup.load_config")
+    @patch("nthlayer_generate.cli.setup._test_prometheus")
+    @patch("nthlayer_generate.cli.setup.load_config")
     def test_prometheus_failure(self, mock_load, mock_prom):
         """Test when Prometheus connection fails."""
         config = IntegrationConfig.default()
@@ -369,10 +369,10 @@ class TestTestConnections:
 
         assert result == 1
 
-    @patch("nthlayer.cli.setup._test_pagerduty")
-    @patch("nthlayer.cli.setup._test_grafana")
-    @patch("nthlayer.cli.setup._test_prometheus")
-    @patch("nthlayer.cli.setup.load_config")
+    @patch("nthlayer_generate.cli.setup._test_pagerduty")
+    @patch("nthlayer_generate.cli.setup._test_grafana")
+    @patch("nthlayer_generate.cli.setup._test_prometheus")
+    @patch("nthlayer_generate.cli.setup.load_config")
     def test_no_profiles_configured(self, mock_load, mock_prom, mock_grafana, mock_pd):
         """Test when no profiles are configured."""
         config = IntegrationConfig.default()
@@ -566,7 +566,7 @@ class TestTestPagerDuty:
     """Tests for _test_pagerduty function."""
 
     @patch("httpx.Client")
-    @patch("nthlayer.cli.setup.get_secret_resolver")
+    @patch("nthlayer_generate.cli.setup.get_secret_resolver")
     def test_successful_connection(self, mock_resolver, mock_client_class):
         """Test successful PagerDuty connection."""
         mock_resolver_instance = MagicMock()
@@ -595,7 +595,7 @@ class TestTestPagerDuty:
         assert ok is True
         assert "5 escalation policies" in msg
 
-    @patch("nthlayer.cli.setup.get_secret_resolver")
+    @patch("nthlayer_generate.cli.setup.get_secret_resolver")
     def test_no_api_key(self, mock_resolver):
         """Test PagerDuty with no API key configured."""
         mock_resolver_instance = MagicMock()
@@ -612,7 +612,7 @@ class TestTestPagerDuty:
         assert "No API key" in msg
 
     @patch("httpx.Client")
-    @patch("nthlayer.cli.setup.get_secret_resolver")
+    @patch("nthlayer_generate.cli.setup.get_secret_resolver")
     def test_invalid_api_key(self, mock_resolver, mock_client_class):
         """Test PagerDuty with invalid API key."""
         mock_resolver_instance = MagicMock()
@@ -637,7 +637,7 @@ class TestTestPagerDuty:
         assert "Invalid API key" in msg
 
     @patch("httpx.Client")
-    @patch("nthlayer.cli.setup.get_secret_resolver")
+    @patch("nthlayer_generate.cli.setup.get_secret_resolver")
     def test_uses_env_var(self, mock_resolver, mock_client_class):
         """Test PagerDuty uses environment variable as fallback."""
         mock_resolver_instance = MagicMock()
@@ -669,9 +669,9 @@ class TestTestPagerDuty:
 class TestCreateFirstService:
     """Tests for _create_first_service function."""
 
-    @patch("nthlayer.cli.setup._confirm")
-    @patch("nthlayer.cli.setup.select")
-    @patch("nthlayer.cli.setup._prompt")
+    @patch("nthlayer_generate.cli.setup._confirm")
+    @patch("nthlayer_generate.cli.setup.select")
+    @patch("nthlayer_generate.cli.setup._prompt")
     def test_creates_service_file(self, mock_prompt, mock_select, mock_confirm):
         """Test service file creation."""
         import os
@@ -698,14 +698,14 @@ class TestCreateFirstService:
             finally:
                 os.chdir(original_dir)
 
-    @patch("nthlayer.cli.setup._prompt")
+    @patch("nthlayer_generate.cli.setup._prompt")
     def test_skips_empty_name(self, mock_prompt):
         """Test skipping when empty name provided — no crash, returns silently."""
         mock_prompt.return_value = ""
         # Should not raise
         _create_first_service()
 
-    @patch("nthlayer.cli.setup._prompt")
+    @patch("nthlayer_generate.cli.setup._prompt")
     def test_invalid_name_rejected(self, mock_prompt, capsys):
         """Test invalid service name is rejected."""
         mock_prompt.return_value = "Invalid_Name"
@@ -800,7 +800,7 @@ class TestIsValidServiceName:
 class TestConfigExists:
     """Tests for config_exists function."""
 
-    @patch("nthlayer.cli.setup.get_config_path")
+    @patch("nthlayer_generate.cli.setup.get_config_path")
     def test_exists(self, mock_get_path):
         """Test when config exists."""
         mock_path = MagicMock()
@@ -809,7 +809,7 @@ class TestConfigExists:
 
         assert config_exists() is True
 
-    @patch("nthlayer.cli.setup.get_config_path")
+    @patch("nthlayer_generate.cli.setup.get_config_path")
     def test_not_exists(self, mock_get_path):
         """Test when config does not exist."""
         mock_path = MagicMock()
@@ -818,7 +818,7 @@ class TestConfigExists:
 
         assert config_exists() is False
 
-    @patch("nthlayer.cli.setup.get_config_path")
+    @patch("nthlayer_generate.cli.setup.get_config_path")
     def test_no_path_returns_false(self, mock_get_path):
         """Test when get_config_path returns None."""
         mock_get_path.return_value = None
@@ -899,7 +899,7 @@ class TestRegisterSetupParser:
 class TestHandleSetupCommand:
     """Tests for handle_setup_command function."""
 
-    @patch("nthlayer.cli.setup.setup_command")
+    @patch("nthlayer_generate.cli.setup.setup_command")
     def test_passes_quick_mode(self, mock_setup):
         """Test quick mode is passed correctly."""
         mock_setup.return_value = 0
@@ -910,7 +910,7 @@ class TestHandleSetupCommand:
         assert result == 0
         mock_setup.assert_called_once_with(quick=True, test_only=False, skip_service=False)
 
-    @patch("nthlayer.cli.setup.setup_command")
+    @patch("nthlayer_generate.cli.setup.setup_command")
     def test_passes_advanced_mode(self, mock_setup):
         """Test advanced mode is passed correctly."""
         mock_setup.return_value = 0
@@ -921,7 +921,7 @@ class TestHandleSetupCommand:
         assert result == 0
         mock_setup.assert_called_once_with(quick=False, test_only=False, skip_service=False)
 
-    @patch("nthlayer.cli.setup.setup_command")
+    @patch("nthlayer_generate.cli.setup.setup_command")
     def test_passes_test_mode(self, mock_setup):
         """Test test mode is passed correctly."""
         mock_setup.return_value = 0
@@ -932,7 +932,7 @@ class TestHandleSetupCommand:
         assert result == 0
         mock_setup.assert_called_once_with(quick=True, test_only=True, skip_service=False)
 
-    @patch("nthlayer.cli.setup.setup_command")
+    @patch("nthlayer_generate.cli.setup.setup_command")
     def test_passes_skip_service(self, mock_setup):
         """Test skip_service is passed correctly."""
         mock_setup.return_value = 0

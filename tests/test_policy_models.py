@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nthlayer.policies.models import (
+from nthlayer_generate.policies.models import (
     PolicyReport,
     PolicyRule,
     PolicySeverity,

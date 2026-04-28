@@ -9,17 +9,17 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from nthlayer.cli.formatters import (
+from nthlayer_generate.cli.formatters import (
     CheckResult,
     CheckStatus,
     OutputFormat,
     ReliabilityReport,
     format_report,
 )
-from nthlayer.cli.formatters.json_fmt import format_json
-from nthlayer.cli.formatters.junit import format_junit
-from nthlayer.cli.formatters.markdown import format_markdown
-from nthlayer.cli.formatters.sarif import SARIF_RULES, format_sarif
+from nthlayer_generate.cli.formatters.json_fmt import format_json
+from nthlayer_generate.cli.formatters.junit import format_junit
+from nthlayer_generate.cli.formatters.markdown import format_markdown
+from nthlayer_generate.cli.formatters.sarif import SARIF_RULES, format_sarif
 
 
 @pytest.fixture

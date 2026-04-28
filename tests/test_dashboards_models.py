@@ -3,7 +3,7 @@
 Tests for Grafana dashboard data models.
 """
 
-from nthlayer.dashboards.models import (
+from nthlayer_generate.dashboards.models import (
     Dashboard,
     Panel,
     Row,

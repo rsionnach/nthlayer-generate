@@ -15,8 +15,8 @@ class TestDashboardBuilder:
 
     def test_builds_dashboard_from_service_spec(self):
         """Test that dashboard builder creates valid dashboard."""
-        from nthlayer.dashboards.builder_sdk import build_dashboard
-        from nthlayer.specs.models import Resource, ServiceContext
+        from nthlayer_generate.dashboards.builder_sdk import build_dashboard
+        from nthlayer_generate.specs.models import Resource, ServiceContext
 
         context = ServiceContext(name="payment-api", team="payments", tier="critical", type="api")
 
@@ -46,8 +46,8 @@ class TestDashboardBuilder:
 
     def test_dashboard_has_slo_panels(self):
         """Test that SLOs generate appropriate panels."""
-        from nthlayer.dashboards.builder_sdk import build_dashboard
-        from nthlayer.specs.models import Resource, ServiceContext
+        from nthlayer_generate.dashboards.builder_sdk import build_dashboard
+        from nthlayer_generate.specs.models import Resource, ServiceContext
 
         context = ServiceContext(name="test-api", team="platform", tier="standard", type="api")
 
@@ -70,8 +70,8 @@ class TestDashboardBuilder:
 
     def test_dashboard_has_health_panels(self):
         """Test that service health panels are included."""
-        from nthlayer.dashboards.builder_sdk import build_dashboard
-        from nthlayer.specs.models import ServiceContext
+        from nthlayer_generate.dashboards.builder_sdk import build_dashboard
+        from nthlayer_generate.specs.models import ServiceContext
 
         context = ServiceContext(name="test-api", team="platform", tier="standard", type="api")
 
@@ -84,8 +84,8 @@ class TestDashboardBuilder:
 
     def test_dashboard_includes_technology_panels(self):
         """Test that technology-specific panels are added."""
-        from nthlayer.dashboards.builder_sdk import build_dashboard
-        from nthlayer.specs.models import Resource, ServiceContext
+        from nthlayer_generate.dashboards.builder_sdk import build_dashboard
+        from nthlayer_generate.specs.models import Resource, ServiceContext
 
         context = ServiceContext(name="test-api", team="platform", tier="standard", type="api")
 
@@ -107,8 +107,8 @@ class TestDashboardBuilder:
 
     def test_dashboard_json_is_valid(self):
         """Test that generated JSON is valid Grafana format."""
-        from nthlayer.dashboards.builder_sdk import build_dashboard
-        from nthlayer.specs.models import ServiceContext
+        from nthlayer_generate.dashboards.builder_sdk import build_dashboard
+        from nthlayer_generate.specs.models import ServiceContext
 
         context = ServiceContext(name="test-api", team="platform", tier="standard", type="api")
 
@@ -154,7 +154,7 @@ resources:
 
             output_file = tmpdir / "dashboard.json"
 
-            from nthlayer.cli.dashboard import generate_dashboard_command
+            from nthlayer_generate.cli.dashboard import generate_dashboard_command
 
             result = generate_dashboard_command(
                 str(service_file), output=str(output_file), environment=None, dry_run=False
@@ -184,7 +184,7 @@ service:
 
             output_file = tmpdir / "dashboard.json"
 
-            from nthlayer.cli.dashboard import generate_dashboard_command
+            from nthlayer_generate.cli.dashboard import generate_dashboard_command
 
             result = generate_dashboard_command(
                 str(service_file), output=str(output_file), environment=None, dry_run=True
@@ -223,7 +223,7 @@ service:
 
             output_file = tmpdir / "dashboard.json"
 
-            from nthlayer.cli.dashboard import generate_dashboard_command
+            from nthlayer_generate.cli.dashboard import generate_dashboard_command
 
             result = generate_dashboard_command(
                 str(service_file), output=str(output_file), environment="prod", dry_run=False
@@ -273,7 +273,7 @@ resources:
 
             output_file = tmpdir / "dashboard.json"
 
-            from nthlayer.cli.dashboard import generate_dashboard_command
+            from nthlayer_generate.cli.dashboard import generate_dashboard_command
 
             result = generate_dashboard_command(
                 str(service_file), output=str(output_file), environment="staging", dry_run=False

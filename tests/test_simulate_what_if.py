@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from nthlayer.simulate.models import DependencyModel, derive_failure_model
-from nthlayer.simulate.what_if import apply_scenario, parse_what_if
+from nthlayer_generate.simulate.models import DependencyModel, derive_failure_model
+from nthlayer_generate.simulate.what_if import apply_scenario, parse_what_if
 
 
 class TestParseWhatIf:

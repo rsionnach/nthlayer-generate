@@ -10,8 +10,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from nthlayer.alerts.models import AlertRule
-from nthlayer.demo import (
+from nthlayer_generate.alerts.models import AlertRule
+from nthlayer_generate.demo import (
     _default_org_id,
     _format_change,
     _plan_and_apply,
@@ -31,7 +31,7 @@ from nthlayer.demo import (
     print_section,
     run_grafana_demo,
 )
-from nthlayer.providers.grafana import GrafanaProvider, GrafanaProviderError
+from nthlayer_generate.providers.grafana import GrafanaProvider, GrafanaProviderError
 
 
 class TestVersion:
@@ -39,9 +39,9 @@ class TestVersion:
 
     def test_version_uses_package_metadata(self):
         """Verify __version__ is read from package metadata, not hardcoded."""
-        from nthlayer.demo import __version__
+        from nthlayer_generate.demo import __version__
 
-        package_version = get_version("nthlayer")
+        package_version = get_version("nthlayer-generate")
         assert __version__ == package_version, (
             f"demo.__version__ ({__version__}) does not match package metadata "
             f"({package_version}). Version should be read from importlib.metadata."
@@ -49,7 +49,7 @@ class TestVersion:
 
     def test_version_format_is_valid(self):
         """Verify version follows PEP 440 format."""
-        from nthlayer.demo import __version__
+        from nthlayer_generate.demo import __version__
 
         # Basic check that version contains expected components
         assert __version__, "Version should not be empty"
@@ -381,7 +381,7 @@ class TestDemoPrometheusAlerts:
             def load_technology(self, tech):
                 return []
 
-        monkeypatch.setattr("nthlayer.demo.AlertTemplateLoader", StubLoader)
+        monkeypatch.setattr("nthlayer_generate.demo.AlertTemplateLoader", StubLoader)
 
         demo_prometheus_alerts("unknown-tech", limit=5)
 
@@ -399,7 +399,7 @@ class TestDemoPrometheusAlerts:
             def load_technology(self, tech):
                 return samples
 
-        monkeypatch.setattr("nthlayer.demo.AlertTemplateLoader", StubLoader)
+        monkeypatch.setattr("nthlayer_generate.demo.AlertTemplateLoader", StubLoader)
 
         demo_prometheus_alerts("postgres", limit=5)
 
@@ -427,7 +427,7 @@ class TestBuildPrometheusAlertsDemo:
                 self.calls += 1
                 return samples
 
-        monkeypatch.setattr("nthlayer.demo.AlertTemplateLoader", StubLoader)
+        monkeypatch.setattr("nthlayer_generate.demo.AlertTemplateLoader", StubLoader)
 
         result = build_prometheus_alerts_demo("postgres", limit=1)
 
@@ -446,7 +446,7 @@ class TestBuildPrometheusAlertsDemo:
                     "string",
                 ]
 
-        monkeypatch.setattr("nthlayer.demo.AlertTemplateLoader", StubLoader)
+        monkeypatch.setattr("nthlayer_generate.demo.AlertTemplateLoader", StubLoader)
 
         result = build_prometheus_alerts_demo("postgres", limit=0)
 
@@ -468,7 +468,7 @@ class TestDemoGrafana:
                 "datasource": {"changes": [], "applied": True, "error": None},
             }
 
-        monkeypatch.setattr("nthlayer.demo.run_grafana_demo", fake_demo)
+        monkeypatch.setattr("nthlayer_generate.demo.run_grafana_demo", fake_demo)
 
         await demo_grafana("http://grafana:3000", "token123", org_id=1, timeout=10.0)
 
@@ -489,7 +489,7 @@ class TestDemoGrafana:
                 "datasource": {"changes": [], "applied": True, "error": None},
             }
 
-        monkeypatch.setattr("nthlayer.demo.run_grafana_demo", fake_demo)
+        monkeypatch.setattr("nthlayer_generate.demo.run_grafana_demo", fake_demo)
 
         await demo_grafana("http://grafana:3000", None, org_id=None, timeout=10.0)
 
@@ -511,7 +511,7 @@ class TestDemoGrafana:
                 "datasource": {"changes": [], "applied": False, "error": "API error"},
             }
 
-        monkeypatch.setattr("nthlayer.demo.run_grafana_demo", fake_demo)
+        monkeypatch.setattr("nthlayer_generate.demo.run_grafana_demo", fake_demo)
 
         await demo_grafana("http://grafana:3000", "token", org_id=None, timeout=10.0)
 
@@ -758,7 +758,7 @@ teams:
             def load_technology(self, tech):
                 return [AlertRule(name="Test", expr="up == 0")]
 
-        monkeypatch.setattr("nthlayer.demo.AlertTemplateLoader", StubLoader)
+        monkeypatch.setattr("nthlayer_generate.demo.AlertTemplateLoader", StubLoader)
 
         main(["prometheus-alerts", "--technology", "postgres", "--limit", "1"])
 
@@ -814,7 +814,7 @@ teams:
         """init command runs with service name."""
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer.cli.init.init_command", return_value=0) as mock_init:
+        with patch("nthlayer_generate.cli.init.init_command", return_value=0) as mock_init:
             with pytest.raises(SystemExit) as exc_info:
                 main(["init", "my-service"])
 
@@ -823,7 +823,7 @@ teams:
 
     def test_list_templates_command(self, capsys):
         """list-templates command runs."""
-        with patch("nthlayer.cli.templates.list_templates_command", return_value=0) as mock:
+        with patch("nthlayer_generate.cli.templates.list_templates_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["list-templates"])
 
@@ -832,7 +832,7 @@ teams:
 
     def test_config_show_command(self):
         """config show command dispatches correctly."""
-        with patch("nthlayer.config.cli.config_show_command", return_value=0) as mock:
+        with patch("nthlayer_generate.config.cli.config_show_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["config", "show"])
 
@@ -841,7 +841,7 @@ teams:
 
     def test_config_set_command(self):
         """config set command dispatches correctly."""
-        with patch("nthlayer.config.cli.config_set_command", return_value=0) as mock:
+        with patch("nthlayer_generate.config.cli.config_set_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["config", "set", "grafana.url", "http://example.com"])
 
@@ -850,7 +850,7 @@ teams:
 
     def test_config_init_command(self):
         """config init command dispatches correctly."""
-        with patch("nthlayer.config.cli.config_init_command", return_value=0) as mock:
+        with patch("nthlayer_generate.config.cli.config_init_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["config", "init"])
 
@@ -868,7 +868,7 @@ teams:
 
     def test_secrets_list_command(self):
         """secrets list command dispatches correctly."""
-        with patch("nthlayer.config.cli.secrets_list_command", return_value=0) as mock:
+        with patch("nthlayer_generate.config.cli.secrets_list_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["secrets", "list"])
 
@@ -877,7 +877,7 @@ teams:
 
     def test_secrets_verify_command(self):
         """secrets verify command dispatches correctly."""
-        with patch("nthlayer.config.cli.secrets_verify_command", return_value=0) as mock:
+        with patch("nthlayer_generate.config.cli.secrets_verify_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["secrets", "verify", "--secrets", "grafana", "pagerduty"])
 
@@ -886,7 +886,7 @@ teams:
 
     def test_secrets_get_command(self):
         """secrets get command dispatches correctly."""
-        with patch("nthlayer.config.cli.secrets_get_command", return_value=0) as mock:
+        with patch("nthlayer_generate.config.cli.secrets_get_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["secrets", "get", "grafana/api_key", "--reveal"])
 
@@ -895,7 +895,7 @@ teams:
 
     def test_secrets_set_command(self):
         """secrets set command dispatches correctly."""
-        with patch("nthlayer.config.cli.secrets_set_command", return_value=0) as mock:
+        with patch("nthlayer_generate.config.cli.secrets_set_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["secrets", "set", "grafana/api_key", "secret-value"])
 
@@ -904,7 +904,7 @@ teams:
 
     def test_secrets_migrate_command(self):
         """secrets migrate command dispatches correctly."""
-        with patch("nthlayer.config.cli.secrets_migrate_command", return_value=0) as mock:
+        with patch("nthlayer_generate.config.cli.secrets_migrate_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["secrets", "migrate", "env", "vault", "--dry-run"])
 
@@ -932,7 +932,7 @@ teams:
         """slo command dispatches to handler."""
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer.demo.handle_slo_command", return_value=0) as mock:
+        with patch("nthlayer_generate.demo.handle_slo_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["slo", "list"])
 
@@ -941,7 +941,7 @@ teams:
 
     def test_setup_command_dispatch(self):
         """setup command dispatches to handler."""
-        with patch("nthlayer.demo.handle_setup_command", return_value=0) as mock:
+        with patch("nthlayer_generate.demo.handle_setup_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["setup"])
 
@@ -952,7 +952,7 @@ teams:
         """generate-loki-alerts command dispatches to handler."""
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer.demo.handle_loki_command", return_value=0) as mock:
+        with patch("nthlayer_generate.demo.handle_loki_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["generate-loki-alerts", "service.yaml"])
 
@@ -963,7 +963,7 @@ teams:
         """validate-metadata command dispatches to handler."""
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer.demo.handle_validate_metadata_command", return_value=0) as mock:
+        with patch("nthlayer_generate.demo.handle_validate_metadata_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["validate-metadata", "service.yaml"])
 
@@ -974,7 +974,7 @@ teams:
         """validate-spec command dispatches to handler."""
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer.demo.handle_validate_spec_command", return_value=0) as mock:
+        with patch("nthlayer_generate.demo.handle_validate_spec_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["validate-spec", "service.yaml"])
 
@@ -1041,7 +1041,7 @@ alert_templates:
                 "datasource": {"changes": [], "applied": True, "error": None},
             }
 
-        monkeypatch.setattr("nthlayer.demo.run_grafana_demo", fake_demo)
+        monkeypatch.setattr("nthlayer_generate.demo.run_grafana_demo", fake_demo)
 
         main(["grafana", "--base-url", "http://test:3000"])
 
@@ -1052,7 +1052,7 @@ alert_templates:
         """list-environments command dispatches correctly."""
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer.cli.environments.list_environments_command", return_value=0) as mock:
+        with patch("nthlayer_generate.cli.environments.list_environments_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["list-environments"])
 
@@ -1063,7 +1063,7 @@ alert_templates:
         """diff-envs command dispatches correctly."""
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer.cli.environments.diff_envs_command", return_value=0) as mock:
+        with patch("nthlayer_generate.cli.environments.diff_envs_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["diff-envs", "service.yaml", "dev", "prod"])
 
@@ -1074,7 +1074,7 @@ alert_templates:
         """validate-env command dispatches correctly."""
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer.cli.environments.validate_env_command", return_value=0) as mock:
+        with patch("nthlayer_generate.cli.environments.validate_env_command", return_value=0) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["validate-env", "prod"])
 
@@ -1083,7 +1083,7 @@ alert_templates:
 
     def test_generate_dashboard_command(self, tmp_path, monkeypatch):
         """generate-dashboard command raises error for missing file."""
-        from nthlayer.specs.parser import ServiceParseError
+        from nthlayer_generate.specs.parser import ServiceParseError
 
         monkeypatch.chdir(tmp_path)
 

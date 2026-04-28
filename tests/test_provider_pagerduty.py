@@ -1,6 +1,6 @@
 import pytest
 
-from nthlayer.providers.pagerduty import (
+from nthlayer_generate.providers.pagerduty import (
     PagerDutyProvider,
     PagerDutyProviderError,
     PagerDutyTeamMembershipResource,

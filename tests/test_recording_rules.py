@@ -6,9 +6,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from nthlayer.recording_rules.builder import build_recording_rules
-from nthlayer.recording_rules.models import RecordingRule, RecordingRuleGroup, create_rule_groups
-from nthlayer.specs.models import Resource, ServiceContext
+from nthlayer_generate.recording_rules.builder import build_recording_rules
+from nthlayer_generate.recording_rules.models import RecordingRule, RecordingRuleGroup, create_rule_groups
+from nthlayer_generate.specs.models import Resource, ServiceContext
 
 
 class TestRecordingRuleModels:
@@ -285,7 +285,7 @@ resources:
 
             output_file = tmpdir / "rules.yaml"
 
-            from nthlayer.cli.recording_rules import generate_recording_rules_command
+            from nthlayer_generate.cli.recording_rules import generate_recording_rules_command
 
             result = generate_recording_rules_command(
                 str(service_file), output=str(output_file), environment=None, dry_run=False
@@ -321,7 +321,7 @@ resources:
 
             output_file = tmpdir / "rules.yaml"
 
-            from nthlayer.cli.recording_rules import generate_recording_rules_command
+            from nthlayer_generate.cli.recording_rules import generate_recording_rules_command
 
             result = generate_recording_rules_command(
                 str(service_file), output=str(output_file), environment=None, dry_run=True
@@ -363,7 +363,7 @@ resources:
 
             output_file = tmpdir / "rules.yaml"
 
-            from nthlayer.cli.recording_rules import generate_recording_rules_command
+            from nthlayer_generate.cli.recording_rules import generate_recording_rules_command
 
             result = generate_recording_rules_command(
                 str(service_file), output=str(output_file), environment="prod", dry_run=False

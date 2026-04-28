@@ -9,7 +9,7 @@ import pytest
 import respx
 import yaml
 
-from nthlayer.cli.alerts import (
+from nthlayer_generate.cli.alerts import (
     alerts_evaluate_command,
     alerts_show_command,
     alerts_test_command,
@@ -324,7 +324,7 @@ class TestExitCodes:
 
 class TestArgparsing:
     def test_alerts_subcommand_registered(self) -> None:
-        from nthlayer.demo import build_parser
+        from nthlayer_generate.demo import build_parser
 
         parser = build_parser()
         # Should not raise
@@ -334,7 +334,7 @@ class TestArgparsing:
         assert args.service_file == "some-file.yaml"
 
     def test_alerts_test_subcommand(self) -> None:
-        from nthlayer.demo import build_parser
+        from nthlayer_generate.demo import build_parser
 
         parser = build_parser()
         args = parser.parse_args(["alerts", "test", "svc.yaml", "--simulate-burn", "90"])

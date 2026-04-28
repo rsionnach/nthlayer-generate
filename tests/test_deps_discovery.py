@@ -2,7 +2,7 @@
 
 import pytest
 
-from nthlayer.dependencies import (
+from nthlayer_generate.dependencies import (
     BlastRadiusResult,
     DependencyDirection,
     DependencyGraph,
@@ -11,7 +11,7 @@ from nthlayer.dependencies import (
     ResolvedDependency,
     create_demo_discovery,
 )
-from nthlayer.identity import ServiceIdentity
+from nthlayer_generate.identity import ServiceIdentity
 
 
 class TestDependencyType:

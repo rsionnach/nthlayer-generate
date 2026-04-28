@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 from nthlayer_common.gate_models import GateResult
 
-from nthlayer.generators.backstage import (
+from nthlayer_generate.generators.backstage import (
     BackstageGenerationResult,
     ScoreBand,
     band_to_grade,
@@ -19,7 +19,7 @@ from nthlayer.generators.backstage import (
     generate_backstage_entity,
     generate_backstage_from_manifest,
 )
-from nthlayer.specs.manifest import ReliabilityManifest, SLODefinition
+from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
 
 
 @pytest.fixture

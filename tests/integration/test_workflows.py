@@ -2,10 +2,10 @@
 
 import pytest
 
-from nthlayer.cli.generate import generate_slo_command
-from nthlayer.cli.init import init_command
-from nthlayer.cli.validate import validate_command
-from nthlayer.specs.parser import parse_service_file
+from nthlayer_generate.cli.generate import generate_slo_command
+from nthlayer_generate.cli.init import init_command
+from nthlayer_generate.cli.validate import validate_command
+from nthlayer_generate.specs.parser import parse_service_file
 
 
 class TestEndToEndWorkflows:
@@ -190,7 +190,7 @@ resources:
         assert "${team}" in custom.spec["query"]
 
         # Substitute
-        from nthlayer.specs.template import substitute_variables
+        from nthlayer_generate.specs.template import substitute_variables
 
         rendered = substitute_variables(custom.spec["query"], context.to_dict())
         assert rendered == "service=payment-api,team=payments"
@@ -232,7 +232,7 @@ service:
   template: nonexistent
 """)
 
-        from nthlayer.specs.parser import ServiceParseError
+        from nthlayer_generate.specs.parser import ServiceParseError
 
         with pytest.raises(ServiceParseError) as exc:
             parse_service_file(service_yaml)
@@ -258,7 +258,7 @@ resources:
       objective: 99.9
 """)
 
-        from nthlayer.specs.parser import ServiceParseError
+        from nthlayer_generate.specs.parser import ServiceParseError
 
         with pytest.raises(ServiceParseError):
             parse_service_file(service_yaml)

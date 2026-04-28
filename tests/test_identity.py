@@ -2,7 +2,7 @@
 
 import pytest
 
-from nthlayer.identity import (
+from nthlayer_generate.identity import (
     IdentityMatch,
     IdentityResolver,
     NormalizationRule,

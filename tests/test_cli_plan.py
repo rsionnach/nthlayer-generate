@@ -10,8 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from nthlayer.cli.plan import plan_command, print_plan_summary
-from nthlayer.orchestrator import PlanResult
+from nthlayer_generate.cli.plan import plan_command, print_plan_summary
+from nthlayer_generate.orchestrator import PlanResult
 
 
 @pytest.fixture
@@ -290,7 +290,7 @@ class TestPlanIntegration:
 
     def test_plan_then_apply(self, sample_service_yaml, tmp_path, capsys):
         """Test plan followed by apply workflow."""
-        from nthlayer.cli.apply import apply_command
+        from nthlayer_generate.cli.apply import apply_command
 
         # First plan
         plan_result = plan_command(

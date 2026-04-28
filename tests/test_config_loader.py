@@ -9,8 +9,8 @@ from unittest.mock import patch
 import pytest
 import yaml
 
-from nthlayer.config.integrations import IntegrationConfig
-from nthlayer.config.loader import (
+from nthlayer_generate.config.integrations import IntegrationConfig
+from nthlayer_generate.config.loader import (
     ConfigLoader,
     ConfigValidationError,
     PathTraversalError,
@@ -23,7 +23,7 @@ from nthlayer.config.loader import (
     validate_environment_name,
     validate_url,
 )
-from nthlayer.config.secrets import SecretBackend, SecretConfig
+from nthlayer_generate.config.secrets import SecretBackend, SecretConfig
 
 
 class TestConfigValidationError:
@@ -268,7 +268,7 @@ class TestGetConfigPath:
         """Test config found in home directory."""
         monkeypatch.chdir(tmp_path)  # cwd has no config
 
-        with patch("nthlayer.config.loader.Path.home") as mock_home:
+        with patch("nthlayer_generate.config.loader.Path.home") as mock_home:
             mock_home.return_value = tmp_path / "home"
             home_config = tmp_path / "home" / ".nthlayer" / "config.yaml"
             home_config.parent.mkdir(parents=True)
@@ -281,7 +281,7 @@ class TestGetConfigPath:
         """Test no config found anywhere."""
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer.config.loader.Path.home") as mock_home:
+        with patch("nthlayer_generate.config.loader.Path.home") as mock_home:
             mock_home.return_value = tmp_path / "home"
             (tmp_path / "home").mkdir()
 
@@ -510,7 +510,7 @@ class TestConfigLoader:
         # Change to tmp_path to avoid finding project config
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer.config.loader.Path.home") as mock_home:
+        with patch("nthlayer_generate.config.loader.Path.home") as mock_home:
             mock_home.return_value = tmp_path
 
             config = IntegrationConfig.default()
@@ -553,7 +553,7 @@ class TestLoadConfig:
         """Test load_config returns default when no file found."""
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer.config.loader.Path.home") as mock_home:
+        with patch("nthlayer_generate.config.loader.Path.home") as mock_home:
             mock_home.return_value = tmp_path / "home"
             (tmp_path / "home").mkdir()
 
@@ -606,9 +606,9 @@ class TestSaveConfig:
         # Change to tmp_path to avoid finding project config
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer.config.loader.Path.home") as mock_home:
+        with patch("nthlayer_generate.config.loader.Path.home") as mock_home:
             mock_home.return_value = tmp_path
-            with patch("nthlayer.config.loader.get_config_path", return_value=None):
+            with patch("nthlayer_generate.config.loader.get_config_path", return_value=None):
                 config = IntegrationConfig.default()
                 save_config(config)
 

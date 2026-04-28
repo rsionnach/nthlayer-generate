@@ -7,7 +7,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from nthlayer.providers.lock import (
+from nthlayer_generate.providers.lock import (
     ProviderLock,
     load_lock,
     save_lock,

@@ -4,7 +4,7 @@ import json
 
 from nthlayer_common.gate_models import GateResult
 
-from nthlayer.generators.backstage import (
+from nthlayer_generate.generators.backstage import (
     BackstageGenerationResult,
     ScoreBand,
     _build_backstage_entity_from_manifest,
@@ -12,7 +12,7 @@ from nthlayer.generators.backstage import (
     gate_result_to_status,
     generate_backstage_from_manifest,
 )
-from nthlayer.specs.manifest import ReliabilityManifest, SLODefinition
+from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
 
 
 def _make_manifest(**overrides) -> ReliabilityManifest:

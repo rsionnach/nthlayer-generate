@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer.cli.pagerduty import setup_pagerduty_command
+from nthlayer_generate.cli.pagerduty import setup_pagerduty_command
 
 
 @pytest.fixture
@@ -87,7 +87,7 @@ class TestSetupPagerDutyCommand:
             service_file.write_text(service_with_pagerduty)
 
             with patch.dict("os.environ", {"PAGERDUTY_API_KEY": "test-key"}):
-                with patch("nthlayer.cli.pagerduty.PagerDutyClient") as mock_client:
+                with patch("nthlayer_generate.cli.pagerduty.PagerDutyClient") as mock_client:
                     mock_instance = MagicMock()
                     mock_result = MagicMock()
                     mock_result.success = True
@@ -166,7 +166,7 @@ class TestSetupPagerDutyCommand:
 
         assert result == 0
 
-    @patch("nthlayer.cli.pagerduty.PagerDutyClient")
+    @patch("nthlayer_generate.cli.pagerduty.PagerDutyClient")
     def test_successful_setup_new_service(self, mock_client, service_with_pagerduty):
         """Test successful setup creating new service."""
         mock_instance = MagicMock()
@@ -194,7 +194,7 @@ class TestSetupPagerDutyCommand:
         assert result == 0
         mock_instance.setup_service.assert_called_once()
 
-    @patch("nthlayer.cli.pagerduty.PagerDutyClient")
+    @patch("nthlayer_generate.cli.pagerduty.PagerDutyClient")
     def test_successful_setup_existing_service(self, mock_client, service_with_pagerduty):
         """Test successful setup with existing service."""
         mock_instance = MagicMock()
@@ -221,7 +221,7 @@ class TestSetupPagerDutyCommand:
 
         assert result == 0
 
-    @patch("nthlayer.cli.pagerduty.PagerDutyClient")
+    @patch("nthlayer_generate.cli.pagerduty.PagerDutyClient")
     def test_setup_creates_escalation_policy(self, mock_client, service_with_full_pagerduty):
         """Test setup that creates escalation policy."""
         mock_instance = MagicMock()
@@ -250,7 +250,7 @@ class TestSetupPagerDutyCommand:
         call_args = mock_instance.setup_service.call_args
         assert call_args[1]["create_escalation_policy_config"] is not None
 
-    @patch("nthlayer.cli.pagerduty.PagerDutyClient")
+    @patch("nthlayer_generate.cli.pagerduty.PagerDutyClient")
     def test_setup_failure(self, mock_client, service_with_pagerduty):
         """Test setup that fails."""
         mock_instance = MagicMock()
@@ -270,7 +270,7 @@ class TestSetupPagerDutyCommand:
 
         assert result == 1
 
-    @patch("nthlayer.cli.pagerduty.PagerDutyClient")
+    @patch("nthlayer_generate.cli.pagerduty.PagerDutyClient")
     def test_setup_with_warnings(self, mock_client, service_with_pagerduty):
         """Test setup that succeeds with warnings."""
         mock_instance = MagicMock()
@@ -297,7 +297,7 @@ class TestSetupPagerDutyCommand:
 
         assert result == 0
 
-    @patch("nthlayer.cli.pagerduty.PagerDutyClient")
+    @patch("nthlayer_generate.cli.pagerduty.PagerDutyClient")
     def test_unexpected_exception(self, mock_client, service_with_pagerduty):
         """Test handling of unexpected exceptions."""
         mock_client.side_effect = RuntimeError("Connection failed")
@@ -310,7 +310,7 @@ class TestSetupPagerDutyCommand:
 
         assert result == 1
 
-    @patch("nthlayer.cli.pagerduty.PagerDutyClient")
+    @patch("nthlayer_generate.cli.pagerduty.PagerDutyClient")
     def test_setup_with_environment(self, mock_client, service_with_pagerduty):
         """Test setup with environment parameter."""
         mock_instance = MagicMock()
@@ -341,7 +341,7 @@ class TestSetupPagerDutyCommand:
 
         assert result == 0
 
-    @patch("nthlayer.cli.pagerduty.PagerDutyClient")
+    @patch("nthlayer_generate.cli.pagerduty.PagerDutyClient")
     def test_setup_creates_team(self, mock_client, service_with_pagerduty):
         """Test setup that creates a new team."""
         mock_instance = MagicMock()

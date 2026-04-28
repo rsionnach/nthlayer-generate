@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from nthlayer.cli.generate import generate_slo_command
-from nthlayer.specs.parser import parse_service_file
+from nthlayer_generate.cli.generate import generate_slo_command
+from nthlayer_generate.specs.parser import parse_service_file
 
 
 def test_env_flag_loads_environment_overrides():

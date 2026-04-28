@@ -2,7 +2,7 @@
 
 import pytest
 
-from nthlayer.dashboards.templates import (
+from nthlayer_generate.dashboards.templates import (
     HTTPAPITemplate,
     KubernetesTemplate,
     PostgreSQLTemplate,
@@ -214,8 +214,8 @@ class TestTemplateIntegration:
 
     def test_builder_uses_templates(self):
         """Test that builder uses enhanced templates."""
-        from nthlayer.dashboards.builder_sdk import build_dashboard
-        from nthlayer.specs.models import Resource, ServiceContext
+        from nthlayer_generate.dashboards.builder_sdk import build_dashboard
+        from nthlayer_generate.specs.models import Resource, ServiceContext
 
         context = ServiceContext(name="test-api", team="platform", tier="standard", type="api")
 
@@ -245,8 +245,8 @@ class TestTemplateIntegration:
 
     def test_templates_avoid_duplicates(self):
         """Test that same technology doesn't create duplicate panels."""
-        from nthlayer.dashboards.builder_sdk import build_dashboard
-        from nthlayer.specs.models import Resource, ServiceContext
+        from nthlayer_generate.dashboards.builder_sdk import build_dashboard
+        from nthlayer_generate.specs.models import Resource, ServiceContext
 
         context = ServiceContext(name="test-api", team="platform", tier="standard", type="api")
 
@@ -282,8 +282,8 @@ class TestTemplateIntegration:
 
     def test_k8s_panels_auto_added_for_api(self):
         """Test that Kubernetes panels are auto-added for API services."""
-        from nthlayer.dashboards.builder_sdk import build_dashboard
-        from nthlayer.specs.models import ServiceContext
+        from nthlayer_generate.dashboards.builder_sdk import build_dashboard
+        from nthlayer_generate.specs.models import ServiceContext
 
         context = ServiceContext(
             name="test-api",

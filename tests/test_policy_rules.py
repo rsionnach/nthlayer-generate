@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from nthlayer.policies.models import PolicyRule, PolicySeverity, RuleType
-from nthlayer.policies.rules import (
+from nthlayer_generate.policies.models import PolicyRule, PolicySeverity, RuleType
+from nthlayer_generate.policies.rules import (
     RULE_EVALUATORS,
     _resolve_field,
     evaluate_dependency_rule,
     evaluate_required_fields,
     evaluate_tier_constraint,
 )
-from nthlayer.specs.manifest import (
+from nthlayer_generate.specs.manifest import (
     Dependency,
     DependencySLO,
     DeploymentConfig,

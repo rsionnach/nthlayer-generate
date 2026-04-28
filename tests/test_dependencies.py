@@ -4,7 +4,7 @@ Tests for dependency correlation.
 
 from datetime import datetime, timedelta
 
-from nthlayer.slos.dependencies import (
+from nthlayer_generate.slos.dependencies import (
     Dependency,
     DependencyCorrelator,
     detect_circular_dependencies,

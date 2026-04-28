@@ -7,7 +7,7 @@ from datetime import datetime
 
 import pytest
 
-from nthlayer.slos.alerts import (
+from nthlayer_generate.slos.alerts import (
     AlertEvaluator,
     AlertEvent,
     AlertRule,
@@ -16,7 +16,7 @@ from nthlayer.slos.alerts import (
     AlertType,
     get_alert_storage,
 )
-from nthlayer.slos.models import ErrorBudget, SLOStatus
+from nthlayer_generate.slos.models import ErrorBudget, SLOStatus
 
 
 @pytest.fixture

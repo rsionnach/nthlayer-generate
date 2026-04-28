@@ -8,9 +8,9 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from nthlayer.slos.calculator import ErrorBudgetCalculator
-from nthlayer.slos.models import SLO, ErrorBudget, SLOStatus, TimeWindow, TimeWindowType
-from nthlayer.slos.parser import OpenSLOParserError, parse_slo_dict, parse_slo_file
+from nthlayer_generate.slos.calculator import ErrorBudgetCalculator
+from nthlayer_generate.slos.models import SLO, ErrorBudget, SLOStatus, TimeWindow, TimeWindowType
+from nthlayer_generate.slos.parser import OpenSLOParserError, parse_slo_dict, parse_slo_file
 
 
 class TestOpenSLOParser:
@@ -252,7 +252,7 @@ class TestValidateSLO:
 
     def test_validate_valid_slo(self):
         """Test validation of a valid SLO."""
-        from nthlayer.slos.parser import validate_slo
+        from nthlayer_generate.slos.parser import validate_slo
 
         slo = SLO(
             id="test",
@@ -269,7 +269,7 @@ class TestValidateSLO:
 
     def test_validate_invalid_target_zero(self):
         """Test validation fails for zero target."""
-        from nthlayer.slos.parser import validate_slo
+        from nthlayer_generate.slos.parser import validate_slo
 
         slo = SLO(
             id="test",
@@ -286,7 +286,7 @@ class TestValidateSLO:
 
     def test_validate_invalid_target_over_one(self):
         """Test validation fails for target > 1.0."""
-        from nthlayer.slos.parser import validate_slo
+        from nthlayer_generate.slos.parser import validate_slo
 
         slo = SLO(
             id="test",
@@ -303,7 +303,7 @@ class TestValidateSLO:
 
     def test_validate_invalid_time_window(self):
         """Test validation fails for invalid time window duration."""
-        from nthlayer.slos.parser import validate_slo
+        from nthlayer_generate.slos.parser import validate_slo
 
         slo = SLO(
             id="test",
@@ -320,7 +320,7 @@ class TestValidateSLO:
 
     def test_validate_empty_query(self):
         """Test validation fails for empty query."""
-        from nthlayer.slos.parser import validate_slo
+        from nthlayer_generate.slos.parser import validate_slo
 
         slo = SLO(
             id="test",
@@ -337,7 +337,7 @@ class TestValidateSLO:
 
     def test_validate_empty_service(self):
         """Test validation fails for empty service name."""
-        from nthlayer.slos.parser import validate_slo
+        from nthlayer_generate.slos.parser import validate_slo
 
         slo = SLO(
             id="test",

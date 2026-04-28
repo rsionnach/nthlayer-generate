@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from nthlayer.specs.manifest import BudgetPolicy, BudgetThresholds, ErrorBudgetGate
+from nthlayer_generate.specs.manifest import BudgetPolicy, BudgetThresholds, ErrorBudgetGate
 
 
 class TestBudgetPolicy:
@@ -61,7 +61,7 @@ class TestErrorBudgetGateWithPolicy:
 
 class TestBudgetPolicyParsing:
     def test_parse_opensrm_with_budget_policy(self) -> None:
-        from nthlayer.specs.opensrm_parser import parse_opensrm
+        from nthlayer_generate.specs.opensrm_parser import parse_opensrm
 
         data = {
             "apiVersion": "srm/v1",
@@ -98,7 +98,7 @@ class TestBudgetPolicyParsing:
         assert policy.on_exhausted == ["freeze_deploys", "notify"]
 
     def test_parse_opensrm_without_budget_policy(self) -> None:
-        from nthlayer.specs.opensrm_parser import parse_opensrm
+        from nthlayer_generate.specs.opensrm_parser import parse_opensrm
 
         data = {
             "apiVersion": "srm/v1",
@@ -120,7 +120,7 @@ class TestBudgetPolicyParsing:
         assert manifest.deployment.gates.error_budget.policy is None
 
     def test_parse_budget_policy_partial_thresholds(self) -> None:
-        from nthlayer.specs.opensrm_parser import parse_opensrm
+        from nthlayer_generate.specs.opensrm_parser import parse_opensrm
 
         data = {
             "apiVersion": "srm/v1",

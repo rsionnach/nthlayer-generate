@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from nthlayer.slos.alerts import AlertEvent, AlertSeverity, AlertType
-from nthlayer.slos.pipeline import (
+from nthlayer_generate.slos.alerts import AlertEvent, AlertSeverity, AlertType
+from nthlayer_generate.slos.pipeline import (
     AlertPipeline,
     PipelineResult,
     _build_slo_from_manifest,
     _convert_spec_rule_to_alert_rule,
 )
-from nthlayer.specs.alerting import AlertChannels, AlertingConfig, SpecAlertRule
-from nthlayer.specs.manifest import ReliabilityManifest, SLODefinition
+from nthlayer_generate.specs.alerting import AlertChannels, AlertingConfig, SpecAlertRule
+from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
 
 
 def _make_manifest(
@@ -308,9 +308,9 @@ class TestForDurationPipeline:
         """for_duration from alerting config flows through the pipeline to generated alerts."""
         from unittest.mock import MagicMock, patch
 
-        from nthlayer.alerts.models import AlertRule
-        from nthlayer.generators.alerts import _load_and_customize_alerts
-        from nthlayer.specs.alerting import AlertingConfig, ForDuration
+        from nthlayer_generate.alerts.models import AlertRule
+        from nthlayer_generate.generators.alerts import _load_and_customize_alerts
+        from nthlayer_generate.specs.alerting import AlertingConfig, ForDuration
 
         # Create mock alerts that would come from templates
         mock_alerts = [
@@ -325,7 +325,7 @@ class TestForDurationPipeline:
             for_duration=ForDuration(page="1m", ticket="20m"),
         )
 
-        with patch("nthlayer.generators.alerts.AlertTemplateLoader", return_value=mock_loader):
+        with patch("nthlayer_generate.generators.alerts.AlertTemplateLoader", return_value=mock_loader):
             result = _load_and_customize_alerts(
                 service_name="test-svc",
                 team="eng",
@@ -345,8 +345,8 @@ class TestForDurationPipeline:
         """Without alerting config, original template durations are preserved."""
         from unittest.mock import MagicMock, patch
 
-        from nthlayer.alerts.models import AlertRule
-        from nthlayer.generators.alerts import _load_and_customize_alerts
+        from nthlayer_generate.alerts.models import AlertRule
+        from nthlayer_generate.generators.alerts import _load_and_customize_alerts
 
         mock_alerts = [
             AlertRule(name="TestAlert", expr="up == 0", duration="5m", severity="critical", technology="test"),
@@ -355,7 +355,7 @@ class TestForDurationPipeline:
         mock_loader = MagicMock()
         mock_loader.load_technology.return_value = mock_alerts
 
-        with patch("nthlayer.generators.alerts.AlertTemplateLoader", return_value=mock_loader):
+        with patch("nthlayer_generate.generators.alerts.AlertTemplateLoader", return_value=mock_loader):
             result = _load_and_customize_alerts(
                 service_name="test-svc",
                 team="eng",

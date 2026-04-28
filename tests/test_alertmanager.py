@@ -1,6 +1,6 @@
 """Tests for Alertmanager configuration generation."""
 
-from nthlayer.alertmanager import (
+from nthlayer_generate.alertmanager import (
     AlertmanagerConfig,
     InhibitRule,
     PagerDutyReceiver,

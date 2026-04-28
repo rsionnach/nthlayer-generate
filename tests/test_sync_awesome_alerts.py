@@ -403,7 +403,7 @@ groups:
 
     def test_synced_templates_loadable_by_nthlayer(self):
         """Test that synced templates can be loaded by NthLayer's AlertTemplateLoader."""
-        from nthlayer.alerts import AlertTemplateLoader
+        from nthlayer_generate.alerts import AlertTemplateLoader
 
         sample_rules = """
 groups:

@@ -4,9 +4,9 @@ import warnings
 
 import pytest
 
-from nthlayer.specs import ManifestLoadError, ReliabilityManifest, SLODefinition, load_manifest
-from nthlayer.specs.loader import LegacyFormatWarning
-from nthlayer.specs.manifest import (
+from nthlayer_generate.specs import ManifestLoadError, ReliabilityManifest, SLODefinition, load_manifest
+from nthlayer_generate.specs.loader import LegacyFormatWarning
+from nthlayer_generate.specs.manifest import (
     SERVICE_TYPE_ALIASES,
     VALID_SERVICE_TYPES,
     VALID_TIERS,
@@ -18,7 +18,7 @@ from nthlayer.specs.manifest import (
     RotationConfig,
     SourceFormat,
 )
-from nthlayer.specs.opensrm_parser import (
+from nthlayer_generate.specs.opensrm_parser import (
     OpenSRMParseError,
     is_opensrm_format,
     parse_opensrm,
@@ -526,7 +526,7 @@ class TestContractValidation:
 
     def test_contract_validation_passes(self):
         """Test contract validation passes when SLOs are tighter."""
-        from nthlayer.specs.manifest import Contract
+        from nthlayer_generate.specs.manifest import Contract
 
         manifest = ReliabilityManifest(
             name="payment-api",
@@ -544,7 +544,7 @@ class TestContractValidation:
 
     def test_contract_validation_fails_loose_slo(self):
         """Test contract validation fails when SLO is looser than contract."""
-        from nthlayer.specs.manifest import Contract
+        from nthlayer_generate.specs.manifest import Contract
 
         manifest = ReliabilityManifest(
             name="payment-api",
@@ -575,7 +575,7 @@ class TestContractValidation:
 
     def test_contract_judgment_validation(self):
         """Test judgment contract validation for ai-gate."""
-        from nthlayer.specs.manifest import Contract
+        from nthlayer_generate.specs.manifest import Contract
 
         manifest = ReliabilityManifest(
             name="fraud-detector",
@@ -647,7 +647,7 @@ service:
 
     def test_is_manifest_file_not_yaml(self, tmp_path):
         """Test is_manifest_file with non-YAML file."""
-        from nthlayer.specs.loader import is_manifest_file
+        from nthlayer_generate.specs.loader import is_manifest_file
 
         txt_file = tmp_path / "readme.txt"
         txt_file.write_text("not yaml")
@@ -655,7 +655,7 @@ service:
 
     def test_is_manifest_file_reliability_extension(self, tmp_path):
         """Test is_manifest_file with .reliability.yaml extension."""
-        from nthlayer.specs.loader import is_manifest_file
+        from nthlayer_generate.specs.loader import is_manifest_file
 
         manifest_file = tmp_path / "api.reliability.yaml"
         manifest_file.write_text("""
@@ -672,7 +672,7 @@ spec:
 
     def test_is_manifest_file_service_yaml(self, tmp_path):
         """Test is_manifest_file with service.yaml name."""
-        from nthlayer.specs.loader import is_manifest_file
+        from nthlayer_generate.specs.loader import is_manifest_file
 
         manifest_file = tmp_path / "service.yaml"
         manifest_file.write_text("""
@@ -860,7 +860,7 @@ class TestManifestRecordingRuleBuilder:
 
     def test_build_standard_slo_rules(self):
         """Test building recording rules for standard SLOs."""
-        from nthlayer.recording_rules.manifest_builder import build_recording_rules_from_manifest
+        from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
 
         manifest = ReliabilityManifest(
             name="payment-api",
@@ -882,7 +882,7 @@ class TestManifestRecordingRuleBuilder:
 
     def test_build_judgment_slo_rules(self):
         """Test building recording rules for AI gate judgment SLOs."""
-        from nthlayer.recording_rules.manifest_builder import build_recording_rules_from_manifest
+        from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
 
         manifest = ReliabilityManifest(
             name="fraud-detector",
@@ -909,7 +909,7 @@ class TestManifestRecordingRuleBuilder:
 
     def test_build_health_rules(self):
         """Test building health metrics rules."""
-        from nthlayer.recording_rules.manifest_builder import build_recording_rules_from_manifest
+        from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
 
         manifest = ReliabilityManifest(
             name="api",
@@ -1911,7 +1911,7 @@ class TestManifestMethods:
 
     def test_to_dict_with_ownership(self):
         """Test to_dict includes ownership."""
-        from nthlayer.specs.manifest import Ownership
+        from nthlayer_generate.specs.manifest import Ownership
 
         manifest = ReliabilityManifest(
             name="api",
@@ -1934,7 +1934,7 @@ class TestManifestMethods:
 
     def test_to_dict_with_contract(self):
         """Test to_dict includes contract."""
-        from nthlayer.specs.manifest import Contract
+        from nthlayer_generate.specs.manifest import Contract
 
         manifest = ReliabilityManifest(
             name="api",
@@ -1953,7 +1953,7 @@ class TestManifestMethods:
 
     def test_to_dict_with_ai_gate_instrumentation(self):
         """Test to_dict includes instrumentation for ai-gate."""
-        from nthlayer.specs.manifest import Instrumentation, TelemetryEvent
+        from nthlayer_generate.specs.manifest import Instrumentation, TelemetryEvent
 
         manifest = ReliabilityManifest(
             name="detector",
@@ -1977,7 +1977,7 @@ class TestManifestMethods:
 
     def test_to_dict_with_contract_judgment(self):
         """Test to_dict includes judgment contract for ai-gate."""
-        from nthlayer.specs.manifest import Contract
+        from nthlayer_generate.specs.manifest import Contract
 
         manifest = ReliabilityManifest(
             name="detector",
@@ -2374,7 +2374,7 @@ class TestIsManifestFile:
 
     def test_non_yaml_extension(self, tmp_path):
         """Test that non-YAML files return False."""
-        from nthlayer.specs.loader import is_manifest_file
+        from nthlayer_generate.specs.loader import is_manifest_file
 
         json_file = tmp_path / "test.json"
         json_file.write_text("{}")
@@ -2382,7 +2382,7 @@ class TestIsManifestFile:
 
     def test_service_yaml_name(self, tmp_path):
         """Test that service.yaml returns True."""
-        from nthlayer.specs.loader import is_manifest_file
+        from nthlayer_generate.specs.loader import is_manifest_file
 
         service_file = tmp_path / "service.yaml"
         service_file.write_text("")
@@ -2390,7 +2390,7 @@ class TestIsManifestFile:
 
     def test_invalid_yaml_returns_false(self, tmp_path):
         """Test that invalid YAML returns False."""
-        from nthlayer.specs.loader import is_manifest_file
+        from nthlayer_generate.specs.loader import is_manifest_file
 
         bad_file = tmp_path / "bad.yaml"
         bad_file.write_text("invalid: yaml: content: [")
@@ -2398,7 +2398,7 @@ class TestIsManifestFile:
 
     def test_non_dict_yaml_returns_false(self, tmp_path):
         """Test that non-dict YAML returns False."""
-        from nthlayer.specs.loader import is_manifest_file
+        from nthlayer_generate.specs.loader import is_manifest_file
 
         list_file = tmp_path / "list.yaml"
         list_file.write_text("- item1\n- item2")
@@ -2406,7 +2406,7 @@ class TestIsManifestFile:
 
     def test_legacy_yaml_without_required_fields(self, tmp_path):
         """Test legacy YAML without all required fields returns False."""
-        from nthlayer.specs.loader import is_manifest_file
+        from nthlayer_generate.specs.loader import is_manifest_file
 
         partial_file = tmp_path / "partial.yaml"
         partial_file.write_text("""
@@ -2422,7 +2422,7 @@ class TestManifestBuilderExtended:
 
     def test_build_rules_with_all_slo_types(self):
         """Test building rules with all SLO types."""
-        from nthlayer.recording_rules.manifest_builder import build_recording_rules_from_manifest
+        from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
 
         manifest = ReliabilityManifest(
             name="full-api",
@@ -2442,7 +2442,7 @@ class TestManifestBuilderExtended:
 
     def test_build_rules_for_worker(self):
         """Test building rules for worker service type."""
-        from nthlayer.recording_rules.manifest_builder import build_recording_rules_from_manifest
+        from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
 
         manifest = ReliabilityManifest(
             name="processor",
@@ -2460,7 +2460,7 @@ class TestManifestBuilderExtended:
 
     def test_build_rules_for_stream(self):
         """Test building rules for stream service type."""
-        from nthlayer.recording_rules.manifest_builder import build_recording_rules_from_manifest
+        from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
 
         manifest = ReliabilityManifest(
             name="event-processor",
@@ -2477,7 +2477,7 @@ class TestManifestBuilderExtended:
 
     def test_build_all_judgment_slo_rules(self):
         """Test building all judgment SLO rule types."""
-        from nthlayer.recording_rules.manifest_builder import build_recording_rules_from_manifest
+        from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
 
         manifest = ReliabilityManifest(
             name="ml-classifier",

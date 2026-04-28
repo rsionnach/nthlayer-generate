@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from nthlayer.dashboards.resolver import (
+from nthlayer_generate.dashboards.resolver import (
     EXPORTER_RECOMMENDATIONS,
     MetricResolver,
     ResolutionResult,
@@ -214,7 +214,7 @@ class TestResolve:
         assert result.metric_name == "custom_pg_conns"
         assert "custom override" in result.message.lower()
 
-    @patch("nthlayer.dashboards.resolver.get_intent")
+    @patch("nthlayer_generate.dashboards.resolver.get_intent")
     def test_resolves_unknown_intent(self, mock_get_intent):
         """Test resolution of unknown intent."""
         mock_get_intent.return_value = None
@@ -226,7 +226,7 @@ class TestResolve:
         assert result.status == ResolutionStatus.UNRESOLVED
         assert "Unknown intent" in result.message
 
-    @patch("nthlayer.dashboards.resolver.get_intent")
+    @patch("nthlayer_generate.dashboards.resolver.get_intent")
     def test_resolves_primary_candidate(self, mock_get_intent):
         """Test resolution using primary candidate."""
         mock_intent = MagicMock()
@@ -243,7 +243,7 @@ class TestResolve:
         assert result.status == ResolutionStatus.RESOLVED
         assert result.metric_name == "pg_stat_database_numbackends"
 
-    @patch("nthlayer.dashboards.resolver.get_intent")
+    @patch("nthlayer_generate.dashboards.resolver.get_intent")
     def test_resolves_fallback(self, mock_get_intent):
         """Test resolution using fallback."""
         # Primary intent with no matching candidates
@@ -275,7 +275,7 @@ class TestResolve:
         assert result.status == ResolutionStatus.FALLBACK
         assert result.metric_name == "fallback_metric"
 
-    @patch("nthlayer.dashboards.resolver.get_intent")
+    @patch("nthlayer_generate.dashboards.resolver.get_intent")
     def test_unresolved_with_exporter_recommendation(self, mock_get_intent):
         """Test unresolved intent returns exporter recommendation."""
         mock_intent = MagicMock()
@@ -291,7 +291,7 @@ class TestResolve:
         assert result.status == ResolutionStatus.UNRESOLVED
         assert "postgres_exporter" in result.message
 
-    @patch("nthlayer.dashboards.resolver.get_intent")
+    @patch("nthlayer_generate.dashboards.resolver.get_intent")
     def test_unresolved_without_exporter_recommendation(self, mock_get_intent):
         """Test unresolved intent without matching exporter."""
         mock_intent = MagicMock()
@@ -317,7 +317,7 @@ class TestResolve:
         assert result1 is result2
         assert "test.intent" in resolver._resolution_cache
 
-    @patch("nthlayer.dashboards.resolver.get_intent")
+    @patch("nthlayer_generate.dashboards.resolver.get_intent")
     def test_resolves_via_synthesis(self, mock_get_intent):
         """Test resolution via synthesis when candidates and fallback fail."""
         mock_intent = MagicMock()
@@ -539,7 +539,7 @@ class TestCreateResolver:
 
         assert resolver.discovery is None
 
-    @patch("nthlayer.dashboards.resolver.MetricDiscoveryClient")
+    @patch("nthlayer_generate.dashboards.resolver.MetricDiscoveryClient")
     def test_with_prometheus_url(self, mock_client_class):
         """Test creating resolver with Prometheus URL."""
         resolver = create_resolver(prometheus_url="http://prometheus:9090")
@@ -554,7 +554,7 @@ class TestCreateResolver:
 
         assert resolver.custom_overrides == overrides
 
-    @patch("nthlayer.dashboards.resolver.MetricDiscoveryClient")
+    @patch("nthlayer_generate.dashboards.resolver.MetricDiscoveryClient")
     def test_with_discovery_kwargs(self, mock_client_class):
         """Test passing additional kwargs to discovery client."""
         create_resolver(

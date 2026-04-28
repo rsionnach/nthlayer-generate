@@ -11,13 +11,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer.cli.apply import (
+from nthlayer_generate.cli.apply import (
     _get_warning_types,
     apply_command,
     print_apply_json,
     print_apply_summary,
 )
-from nthlayer.orchestrator import ApplyResult
+from nthlayer_generate.orchestrator import ApplyResult
 
 
 @pytest.fixture
@@ -139,7 +139,7 @@ class TestApplyCommand:
 
     def test_apply_dry_run_delegates_to_plan(self, sample_service_yaml):
         """Test that dry_run=True delegates to plan command."""
-        with patch("nthlayer.cli.apply.plan_command") as mock_plan:
+        with patch("nthlayer_generate.cli.apply.plan_command") as mock_plan:
             mock_plan.return_value = 0
 
             result = apply_command(
@@ -492,7 +492,7 @@ class TestLintGeneratedAlerts:
 
     def test_no_alerts_file(self, tmp_path, capsys):
         """Test lint when no alerts.yaml exists."""
-        from nthlayer.cli.apply import _lint_generated_alerts
+        from nthlayer_generate.cli.apply import _lint_generated_alerts
 
         result = _lint_generated_alerts(tmp_path, verbose=True)
 
@@ -502,7 +502,7 @@ class TestLintGeneratedAlerts:
 
     def test_no_alerts_file_non_verbose(self, tmp_path, capsys):
         """Test lint when no alerts.yaml exists, non-verbose."""
-        from nthlayer.cli.apply import _lint_generated_alerts
+        from nthlayer_generate.cli.apply import _lint_generated_alerts
 
         result = _lint_generated_alerts(tmp_path, verbose=False)
 
@@ -510,10 +510,10 @@ class TestLintGeneratedAlerts:
         captured = capsys.readouterr()
         assert "No alerts.yaml" not in captured.out
 
-    @patch("nthlayer.validation.is_pint_available")
+    @patch("nthlayer_generate.validation.is_pint_available")
     def test_pint_not_available(self, mock_pint_available, tmp_path, capsys):
         """Test lint when pint is not installed."""
-        from nthlayer.cli.apply import _lint_generated_alerts
+        from nthlayer_generate.cli.apply import _lint_generated_alerts
 
         mock_pint_available.return_value = False
         alerts_file = tmp_path / "alerts.yaml"
@@ -525,11 +525,11 @@ class TestLintGeneratedAlerts:
         captured = capsys.readouterr()
         assert "pint not installed" in captured.out
 
-    @patch("nthlayer.validation.is_pint_available")
-    @patch("nthlayer.validation.PintLinter")
+    @patch("nthlayer_generate.validation.is_pint_available")
+    @patch("nthlayer_generate.validation.PintLinter")
     def test_lint_passes(self, mock_linter_class, mock_pint_available, tmp_path, capsys):
         """Test lint when validation passes."""
-        from nthlayer.cli.apply import _lint_generated_alerts
+        from nthlayer_generate.cli.apply import _lint_generated_alerts
 
         mock_pint_available.return_value = True
 
@@ -551,11 +551,11 @@ class TestLintGeneratedAlerts:
         captured = capsys.readouterr()
         assert "All checks passed" in captured.out
 
-    @patch("nthlayer.validation.is_pint_available")
-    @patch("nthlayer.validation.PintLinter")
+    @patch("nthlayer_generate.validation.is_pint_available")
+    @patch("nthlayer_generate.validation.PintLinter")
     def test_lint_fails(self, mock_linter_class, mock_pint_available, tmp_path, capsys):
         """Test lint when validation fails."""
-        from nthlayer.cli.apply import _lint_generated_alerts
+        from nthlayer_generate.cli.apply import _lint_generated_alerts
 
         mock_pint_available.return_value = True
 
@@ -584,13 +584,13 @@ class TestLintGeneratedAlerts:
         captured = capsys.readouterr()
         assert "validation failed" in captured.out
 
-    @patch("nthlayer.validation.is_pint_available")
-    @patch("nthlayer.validation.PintLinter")
+    @patch("nthlayer_generate.validation.is_pint_available")
+    @patch("nthlayer_generate.validation.PintLinter")
     def test_lint_with_warning_issue(
         self, mock_linter_class, mock_pint_available, tmp_path, capsys
     ):
         """Test lint with warning level issues."""
-        from nthlayer.cli.apply import _lint_generated_alerts
+        from nthlayer_generate.cli.apply import _lint_generated_alerts
 
         mock_pint_available.return_value = True
 
@@ -619,11 +619,11 @@ class TestLintGeneratedAlerts:
         captured = capsys.readouterr()
         assert "could be optimized" in captured.out
 
-    @patch("nthlayer.validation.is_pint_available")
-    @patch("nthlayer.validation.PintLinter")
+    @patch("nthlayer_generate.validation.is_pint_available")
+    @patch("nthlayer_generate.validation.PintLinter")
     def test_lint_with_info_issue(self, mock_linter_class, mock_pint_available, tmp_path, capsys):
         """Test lint with info level issues."""
-        from nthlayer.cli.apply import _lint_generated_alerts
+        from nthlayer_generate.cli.apply import _lint_generated_alerts
 
         mock_pint_available.return_value = True
 
@@ -656,7 +656,7 @@ class TestPushToMimirRuler:
 
     def test_no_alerts_file(self, tmp_path, capsys):
         """Test push when no alerts.yaml exists."""
-        from nthlayer.cli.apply import _push_to_mimir_ruler
+        from nthlayer_generate.cli.apply import _push_to_mimir_ruler
 
         result = _push_to_mimir_ruler(tmp_path, "test-service", verbose=True)
 
@@ -666,7 +666,7 @@ class TestPushToMimirRuler:
 
     def test_no_alerts_file_non_verbose(self, tmp_path, capsys):
         """Test push when no alerts.yaml exists, non-verbose."""
-        from nthlayer.cli.apply import _push_to_mimir_ruler
+        from nthlayer_generate.cli.apply import _push_to_mimir_ruler
 
         result = _push_to_mimir_ruler(tmp_path, "test-service", verbose=False)
 
@@ -676,7 +676,7 @@ class TestPushToMimirRuler:
 
     def test_no_ruler_url(self, tmp_path, monkeypatch, capsys):
         """Test push when MIMIR_RULER_URL is not set."""
-        from nthlayer.cli.apply import _push_to_mimir_ruler
+        from nthlayer_generate.cli.apply import _push_to_mimir_ruler
 
         # Ensure env var is not set
         monkeypatch.delenv("MIMIR_RULER_URL", raising=False)
@@ -690,10 +690,10 @@ class TestPushToMimirRuler:
         captured = capsys.readouterr()
         assert "MIMIR_RULER_URL not set" in captured.out
 
-    @patch("nthlayer.providers.mimir.MimirRulerProvider")
+    @patch("nthlayer_generate.providers.mimir.MimirRulerProvider")
     def test_push_success(self, mock_provider_class, tmp_path, monkeypatch, capsys):
         """Test successful push to Mimir."""
-        from nthlayer.cli.apply import _push_to_mimir_ruler
+        from nthlayer_generate.cli.apply import _push_to_mimir_ruler
 
         monkeypatch.setenv("MIMIR_RULER_URL", "http://mimir:8080")
         monkeypatch.setenv("MIMIR_TENANT_ID", "test-tenant")
@@ -718,10 +718,10 @@ class TestPushToMimirRuler:
         captured = capsys.readouterr()
         assert "Pushed 2 rule group(s)" in captured.out
 
-    @patch("nthlayer.providers.mimir.MimirRulerProvider")
+    @patch("nthlayer_generate.providers.mimir.MimirRulerProvider")
     def test_push_failure(self, mock_provider_class, tmp_path, monkeypatch, capsys):
         """Test failed push to Mimir."""
-        from nthlayer.cli.apply import _push_to_mimir_ruler
+        from nthlayer_generate.cli.apply import _push_to_mimir_ruler
 
         monkeypatch.setenv("MIMIR_RULER_URL", "http://mimir:8080")
 
@@ -743,11 +743,11 @@ class TestPushToMimirRuler:
         captured = capsys.readouterr()
         assert "Authentication failed" in captured.out
 
-    @patch("nthlayer.providers.mimir.MimirRulerProvider")
+    @patch("nthlayer_generate.providers.mimir.MimirRulerProvider")
     def test_push_ruler_error(self, mock_provider_class, tmp_path, monkeypatch, capsys):
         """Test MimirRulerError handling."""
-        from nthlayer.cli.apply import _push_to_mimir_ruler
-        from nthlayer.providers.mimir import MimirRulerError
+        from nthlayer_generate.cli.apply import _push_to_mimir_ruler
+        from nthlayer_generate.providers.mimir import MimirRulerError
 
         monkeypatch.setenv("MIMIR_RULER_URL", "http://mimir:8080")
 
@@ -763,10 +763,10 @@ class TestPushToMimirRuler:
         captured = capsys.readouterr()
         assert "Connection refused" in captured.out
 
-    @patch("nthlayer.providers.mimir.MimirRulerProvider")
+    @patch("nthlayer_generate.providers.mimir.MimirRulerProvider")
     def test_push_with_all_auth_options(self, mock_provider_class, tmp_path, monkeypatch, capsys):
         """Test push with all authentication options set."""
-        from nthlayer.cli.apply import _push_to_mimir_ruler
+        from nthlayer_generate.cli.apply import _push_to_mimir_ruler
 
         monkeypatch.setenv("MIMIR_RULER_URL", "http://mimir:8080")
         monkeypatch.setenv("MIMIR_TENANT_ID", "test-tenant")
@@ -797,7 +797,7 @@ class TestPushToMimirRuler:
 class TestApplyWithLintAndPush:
     """Tests for apply command with lint and push options."""
 
-    @patch("nthlayer.cli.apply._lint_generated_alerts")
+    @patch("nthlayer_generate.cli.apply._lint_generated_alerts")
     def test_apply_with_lint_success(self, mock_lint, sample_service_yaml, tmp_path):
         """Test apply with lint=True when linting passes."""
         mock_lint.return_value = 0
@@ -812,7 +812,7 @@ class TestApplyWithLintAndPush:
         assert result == 0
         mock_lint.assert_called_once()
 
-    @patch("nthlayer.cli.apply._lint_generated_alerts")
+    @patch("nthlayer_generate.cli.apply._lint_generated_alerts")
     def test_apply_with_lint_failure(self, mock_lint, sample_service_yaml, tmp_path):
         """Test apply with lint=True when linting fails."""
         mock_lint.return_value = 1
@@ -826,7 +826,7 @@ class TestApplyWithLintAndPush:
 
         assert result == 1
 
-    @patch("nthlayer.cli.apply._push_to_mimir_ruler")
+    @patch("nthlayer_generate.cli.apply._push_to_mimir_ruler")
     def test_apply_with_push_ruler_success(self, mock_push, sample_service_yaml, tmp_path):
         """Test apply with push_ruler=True when push succeeds."""
         mock_push.return_value = 0
@@ -841,7 +841,7 @@ class TestApplyWithLintAndPush:
         assert result == 0
         mock_push.assert_called_once()
 
-    @patch("nthlayer.cli.apply._push_to_mimir_ruler")
+    @patch("nthlayer_generate.cli.apply._push_to_mimir_ruler")
     def test_apply_with_push_ruler_failure(self, mock_push, sample_service_yaml, tmp_path):
         """Test apply with push_ruler=True when push fails."""
         mock_push.return_value = 1
@@ -855,8 +855,8 @@ class TestApplyWithLintAndPush:
 
         assert result == 1
 
-    @patch("nthlayer.cli.apply._lint_generated_alerts")
-    @patch("nthlayer.cli.apply._push_to_mimir_ruler")
+    @patch("nthlayer_generate.cli.apply._lint_generated_alerts")
+    @patch("nthlayer_generate.cli.apply._push_to_mimir_ruler")
     def test_lint_not_called_on_failure(self, mock_push, mock_lint, tmp_path):
         """Test lint is not called when apply fails."""
         result = apply_command(
@@ -867,8 +867,8 @@ class TestApplyWithLintAndPush:
         assert result == 1
         mock_lint.assert_not_called()
 
-    @patch("nthlayer.cli.apply._lint_generated_alerts")
-    @patch("nthlayer.cli.apply._push_to_mimir_ruler")
+    @patch("nthlayer_generate.cli.apply._lint_generated_alerts")
+    @patch("nthlayer_generate.cli.apply._push_to_mimir_ruler")
     def test_push_not_called_on_failure(self, mock_push, mock_lint, tmp_path):
         """Test push is not called when apply fails."""
         result = apply_command(

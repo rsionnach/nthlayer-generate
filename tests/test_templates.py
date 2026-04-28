@@ -2,10 +2,10 @@
 
 import pytest
 
-from nthlayer.specs.parser import parse_service_file
-from nthlayer.specs.template import substitute_variables
-from nthlayer.specs.template_loader import TemplateLoader
-from nthlayer.specs.templates import ServiceTemplate, TemplateRegistry
+from nthlayer_generate.specs.parser import parse_service_file
+from nthlayer_generate.specs.template import substitute_variables
+from nthlayer_generate.specs.template_loader import TemplateLoader
+from nthlayer_generate.specs.templates import ServiceTemplate, TemplateRegistry
 
 
 class TestTemplateLoader:
@@ -243,7 +243,7 @@ service:
   template: nonexistent-template
 """)
 
-        from nthlayer.specs.parser import ServiceParseError
+        from nthlayer_generate.specs.parser import ServiceParseError
 
         with pytest.raises(ServiceParseError) as exc:
             parse_service_file(service_yaml)

@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from nthlayer.identity.ownership import (
+from nthlayer_generate.identity.ownership import (
     DEFAULT_CONFIDENCE,
     OwnershipAttribution,
     OwnershipResolver,
@@ -12,8 +12,8 @@ from nthlayer.identity.ownership import (
     OwnershipSource,
     create_demo_attribution,
 )
-from nthlayer.identity.ownership_providers.codeowners import CODEOWNERSProvider
-from nthlayer.identity.ownership_providers.declared import DeclaredOwnershipProvider
+from nthlayer_generate.identity.ownership_providers.codeowners import CODEOWNERSProvider
+from nthlayer_generate.identity.ownership_providers.declared import DeclaredOwnershipProvider
 
 
 class TestOwnershipSource:
@@ -416,7 +416,7 @@ class TestOwnershipCLI:
 
     def test_demo_mode(self, capsys, tmp_path):
         """Test demo mode output."""
-        from nthlayer.cli.ownership import ownership_command
+        from nthlayer_generate.cli.ownership import ownership_command
 
         # Create a temporary service file (not used in demo mode)
         service_file = tmp_path / "service.yaml"
@@ -438,7 +438,7 @@ class TestOwnershipCLI:
 
     def test_demo_mode_json(self, capsys, tmp_path):
         """Test demo mode with JSON output."""
-        from nthlayer.cli.ownership import ownership_command
+        from nthlayer_generate.cli.ownership import ownership_command
 
         service_file = tmp_path / "service.yaml"
         service_file.write_text("name: test-service\ntier: standard\n")
@@ -460,7 +460,7 @@ class TestOwnershipCLI:
 
     def test_with_codeowners(self, capsys, tmp_path):
         """Test with CODEOWNERS file."""
-        from nthlayer.cli.ownership import ownership_command
+        from nthlayer_generate.cli.ownership import ownership_command
 
         # Create service file
         service_file = tmp_path / "service.yaml"
@@ -496,7 +496,7 @@ service:
 
     def test_invalid_service_file(self, tmp_path):
         """Test error exit code with invalid service file."""
-        from nthlayer.cli.ownership import ownership_command
+        from nthlayer_generate.cli.ownership import ownership_command
 
         service_file = tmp_path / "nonexistent.yaml"
 

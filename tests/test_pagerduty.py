@@ -4,13 +4,13 @@ Tests for PagerDuty integration.
 
 from unittest.mock import Mock, patch
 
-from nthlayer.integrations.pagerduty import PagerDutyClient
+from nthlayer_generate.integrations.pagerduty import PagerDutyClient
 
 
 class TestPagerDutyClient:
     """Test PagerDuty client."""
     
-    @patch('nthlayer.integrations.pagerduty.httpx.Client')
+    @patch('nthlayer_generate.integrations.pagerduty.httpx.Client')
     def test_find_existing_service(self, mock_client_class):
         """Test finding existing service."""
         # Setup mock
@@ -39,7 +39,7 @@ class TestPagerDutyClient:
         assert not result.created_service
         assert result.warnings
     
-    @patch('nthlayer.integrations.pagerduty.httpx.Client')
+    @patch('nthlayer_generate.integrations.pagerduty.httpx.Client')
     def test_create_new_service(self, mock_client_class):
         """Test creating new service."""
         # Setup mock
@@ -85,7 +85,7 @@ class TestPagerDutyClient:
         assert result.created_service
         assert result.created_escalation_policy
     
-    @patch('nthlayer.integrations.pagerduty.httpx.Client')
+    @patch('nthlayer_generate.integrations.pagerduty.httpx.Client')
     def test_create_service_with_team(self, mock_client_class):
         """Test creating service with team mapping."""
         # Setup mock
@@ -147,7 +147,7 @@ class TestPagerDutyClient:
         assert result.team_id == "TXXXXXX"
         assert not result.created_team
     
-    @patch('nthlayer.integrations.pagerduty.httpx.Client')
+    @patch('nthlayer_generate.integrations.pagerduty.httpx.Client')
     def test_use_existing_escalation_policy(self, mock_client_class):
         """Test using existing escalation policy."""
         # Setup mock

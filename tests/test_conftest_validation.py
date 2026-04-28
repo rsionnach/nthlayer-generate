@@ -2,7 +2,7 @@
 
 import yaml
 
-from nthlayer.validation.conftest import ConftestValidator, validate_spec
+from nthlayer_generate.validation.conftest import ConftestValidator, validate_spec
 
 
 class TestConftestValidator:

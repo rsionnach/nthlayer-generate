@@ -2,9 +2,9 @@ import pytest
 import respx
 from httpx import Response
 
-from nthlayer.clients.base import PermanentHTTPError
-from nthlayer.clients.cortex import CortexClient
-from nthlayer.clients.pagerduty import PagerDutyClient
+from nthlayer_generate.clients.base import PermanentHTTPError
+from nthlayer_generate.clients.cortex import CortexClient
+from nthlayer_generate.clients.pagerduty import PagerDutyClient
 
 
 @pytest.mark.asyncio

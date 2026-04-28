@@ -6,7 +6,7 @@ output formatting, and error handling.
 
 from unittest.mock import MagicMock, patch
 
-from nthlayer.cli.templates import _resource_summary, list_templates_command
+from nthlayer_generate.cli.templates import _resource_summary, list_templates_command
 
 
 class TestListTemplatesCommand:
@@ -34,7 +34,7 @@ class TestListTemplatesCommand:
         captured = capsys.readouterr()
         assert "nthlayer init" in captured.out or "Usage" in captured.out
 
-    @patch("nthlayer.cli.templates.CustomTemplateLoader")
+    @patch("nthlayer_generate.cli.templates.CustomTemplateLoader")
     def test_handles_loading_error(self, mock_loader):
         """Test handles template loading errors gracefully."""
         mock_loader.load_all_templates.side_effect = Exception("Load failed")
@@ -43,7 +43,7 @@ class TestListTemplatesCommand:
 
         assert result == 1
 
-    @patch("nthlayer.cli.templates.CustomTemplateLoader")
+    @patch("nthlayer_generate.cli.templates.CustomTemplateLoader")
     def test_handles_empty_templates(self, mock_loader):
         """Test handles case when no templates available."""
         mock_registry = MagicMock()
@@ -54,7 +54,7 @@ class TestListTemplatesCommand:
 
         assert result == 0
 
-    @patch("nthlayer.cli.templates.CustomTemplateLoader")
+    @patch("nthlayer_generate.cli.templates.CustomTemplateLoader")
     def test_shows_custom_vs_builtin_label(self, mock_loader, capsys):
         """Test shows correct source label for templates."""
         # Create mock template
@@ -77,7 +77,7 @@ class TestListTemplatesCommand:
         captured = capsys.readouterr()
         assert "test-template" in captured.out
 
-    @patch("nthlayer.cli.templates.CustomTemplateLoader")
+    @patch("nthlayer_generate.cli.templates.CustomTemplateLoader")
     def test_displays_multiple_templates(self, mock_loader, capsys):
         """Test correctly displays multiple templates."""
         templates = []

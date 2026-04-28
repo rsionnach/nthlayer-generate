@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from nthlayer.simulate.models import (
+from nthlayer_generate.simulate.models import (
     DependencyModel,
     FailureEvent,
     ServiceFailureModel,

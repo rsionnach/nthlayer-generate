@@ -6,6 +6,8 @@ Reliability at build time, not incident time. Validate production readiness in C
 
 - **Language:** Python
 - **License:** MIT (note: other OpenSRM ecosystem components — nthlayer-measure, nthlayer-correlate, nthlayer-respond — are Apache 2.0)
+- **Package name:** `nthlayer-generate` (PyPI dist name); Python import package is `nthlayer_generate` (underscore). All imports use `from nthlayer_generate.*` — not `from nthlayer.*`. Entry points: `nthlayer` and `nthlayer-generate` both map to `nthlayer_generate.demo:main`.
+- **Version:** `0.1.0a20` (source of truth: `pyproject.toml`; read at runtime via `importlib.metadata.version("nthlayer-generate")`)
 - **Build:** `uv sync --extra dev` (local dev) | `uv sync --no-sources --extra dev` (CI — resolves nthlayer-common from PyPI)
 - **Test:** `make test` | `make smoke` (CLI smoke, ~40s offline) | `make smoke-full` (includes Synology)
 - **Lint:** `make lint` and `./scripts/lint/run-all.sh` (custom golden-principle linters)
@@ -28,6 +30,8 @@ Reliability at build time, not incident time. Validate production readiness in C
 | Ecosystem capability audit (generate migration plan) | `docs/generate-capability-audit.md` |
 | Mimir move + ExplanationEngine design (nthlayer-2xe, nthlayer-hmj) | `docs/superpowers/specs/2026-04-10-mimir-move-and-explanation-engine-design.md` |
 | Mimir move + ExplanationEngine implementation plan (nthlayer-2xe, nthlayer-hmj) | `docs/superpowers/plans/2026-04-10-mimir-move-and-explanation-engine.md` |
+| Runtime → nthlayer-observe migration guide | `MIGRATION.md` |
+| Demo improvement — accountability & portfolio story (opensrm-42y) | `plans/active/2026-04-16-demo-improvement-accountability-portfolio.md` |
 
 Read the specific doc relevant to your task. Do NOT try to load all docs at once.
 
@@ -580,7 +584,7 @@ P0–P5 copied runtime code to nthlayer-observe. The Purify Generate epic delete
 
 ### Deployment Detection (moved to nthlayer-observe — B1 ✓ done 2026-04-08)
 - All deployment webhook provider code deleted from generate; now lives in nthlayer-observe
-- `deployments/` directory shell remains with empty `providers/` subdir pending full cleanup in B4
+- `deployments/` directory fully removed (B4 ✓ done 2026-04-09)
 
 ### Policy Audit API (moved to nthlayer-observe — B2 ✓ done 2026-04-08)
 - All runtime policy audit code deleted from generate: `policies/audit.py`, `recorder.py`, `repository.py`, `evaluator.py`, `conditions.py`, `api/routes/policies.py`
@@ -594,7 +598,7 @@ P0–P5 copied runtime code to nthlayer-observe. The Purify Generate epic delete
 - `[zookeeper]`: kazoo — required for Zookeeper discovery provider
 - `[etcd]`: etcd3 — required for etcd discovery provider
 - `[service-discovery]`: kazoo + etcd3 bundled — for all service discovery providers at once
-- Core `structlog`, `httpx`, `pagerduty`, `grafana-foundation-sdk` are always installed
+- Core deps always installed: `structlog`, `httpx`, `pagerduty`, `grafana-foundation-sdk`, `cachetools` (dependency discovery caching), `opentelemetry-semantic-conventions` (OTel signal naming in dependency discovery)
 - Lazy import pattern: the original example (`queue/__init__.py` deferring SQS `JobEnqueuer`) was deleted in B7 with the whole queue package; the pattern itself — use `__getattr__` in `__init__.py` to delay importing optional-extra classes until they are accessed — still applies anywhere generate needs to gate on an extra
 - Runtime import deferral: the original motivating example lived in `api/deps.py` (deleted in B4); the pattern itself — import optional-extra classes inside the function body so the module still loads when the extra is missing — still applies anywhere generate consumes optional extras at call time
 - TYPE_CHECKING guard prevents circular imports while allowing type hints for optional classes

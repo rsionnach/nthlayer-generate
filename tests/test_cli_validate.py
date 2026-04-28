@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from nthlayer.cli.validate import validate_command
+from nthlayer_generate.cli.validate import validate_command
 
 
 @pytest.fixture

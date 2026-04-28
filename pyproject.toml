@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "nthlayer"
+name = "nthlayer-generate"
 version = "0.1.0a20"
 description = "NthLayer - The Missing Layer of Reliability"
 readme = "README.md"
@@ -26,7 +26,8 @@ dependencies = [
 ]
 
 [project.scripts]
-nthlayer = "nthlayer.demo:main"
+nthlayer-generate = "nthlayer_generate.demo:main"
+nthlayer = "nthlayer_generate.demo:main"
 
 [project.optional-dependencies]
 dev = [

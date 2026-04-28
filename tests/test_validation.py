@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from nthlayer.validation import (
+from nthlayer_generate.validation import (
     LintIssue,
     LintResult,
     PintLinter,

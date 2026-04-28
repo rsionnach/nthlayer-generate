@@ -1,12 +1,12 @@
 """Tests for nthlayer.generators.docs — service documentation generation."""
 
-from nthlayer.generators.docs import (
+from nthlayer_generate.generators.docs import (
     DocsGenerationResult,
     _generate_api_docs,
     _generate_readme,
     generate_docs_from_manifest,
 )
-from nthlayer.specs.manifest import (
+from nthlayer_generate.specs.manifest import (
     Dependency,
     Ownership,
     ReliabilityManifest,

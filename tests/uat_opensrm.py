@@ -25,14 +25,14 @@ import yaml
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
-from nthlayer.dashboards.manifest_builder import build_dashboard_from_manifest
-from nthlayer.generators.alerts import generate_alerts_from_manifest
-from nthlayer.generators.sloth import generate_sloth_from_manifest
-from nthlayer.loki.generator import generate_loki_alerts_from_manifest
-from nthlayer.metrics.recommender import recommend_metrics_from_manifest
-from nthlayer.recording_rules.manifest_builder import build_recording_rules_from_manifest
-from nthlayer.recording_rules.models import create_rule_groups
-from nthlayer.specs.loader import load_manifest
+from nthlayer_generate.dashboards.manifest_builder import build_dashboard_from_manifest
+from nthlayer_generate.generators.alerts import generate_alerts_from_manifest
+from nthlayer_generate.generators.sloth import generate_sloth_from_manifest
+from nthlayer_generate.loki.generator import generate_loki_alerts_from_manifest
+from nthlayer_generate.metrics.recommender import recommend_metrics_from_manifest
+from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
+from nthlayer_generate.recording_rules.models import create_rule_groups
+from nthlayer_generate.specs.loader import load_manifest
 
 # ---------------------------------------------------------------------------
 # Paths

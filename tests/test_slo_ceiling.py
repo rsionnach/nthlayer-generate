@@ -1,6 +1,6 @@
 """Tests for SLO ceiling validation based on dependency SLAs."""
 
-from nthlayer.slos.ceiling import (
+from nthlayer_generate.slos.ceiling import (
     CeilingValidationResult,
     DependencySLA,
     calculate_slo_ceiling,
@@ -346,7 +346,7 @@ class TestValidatorIntegration:
 
     def test_native_validator_skips_when_not_opted_in(self, tmp_path):
         """Native validator skips ceiling validation when no SLA fields."""
-        from nthlayer.validation.conftest import ConftestValidator
+        from nthlayer_generate.validation.conftest import ConftestValidator
 
         service_file = tmp_path / "test-service.yaml"
         service_file.write_text("""
@@ -379,7 +379,7 @@ resources:
 
     def test_native_validator_warns_on_ceiling_exceeded(self, tmp_path):
         """Native validator warns when SLO exceeds ceiling."""
-        from nthlayer.validation.conftest import ConftestValidator
+        from nthlayer_generate.validation.conftest import ConftestValidator
 
         service_file = tmp_path / "test-service.yaml"
         service_file.write_text("""
@@ -415,7 +415,7 @@ resources:
 
     def test_native_validator_passes_achievable_slo(self, tmp_path):
         """Native validator passes when SLO is achievable."""
-        from nthlayer.validation.conftest import ConftestValidator
+        from nthlayer_generate.validation.conftest import ConftestValidator
 
         service_file = tmp_path / "test-service.yaml"
         service_file.write_text("""

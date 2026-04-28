@@ -11,13 +11,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer.cli.validate_spec import (
+from nthlayer_generate.cli.validate_spec import (
     _print_result,
     handle_validate_spec_command,
     register_validate_spec_parser,
     validate_spec_command,
 )
-from nthlayer.validation.metadata import Severity, ValidationIssue, ValidationResult
+from nthlayer_generate.validation.metadata import Severity, ValidationIssue, ValidationResult
 
 
 @pytest.fixture
@@ -165,7 +165,7 @@ def error_result(tmp_path):
 class TestValidateSpecCommand:
     """Tests for validate_spec_command function."""
 
-    @patch("nthlayer.cli.validate_spec.ConftestValidator")
+    @patch("nthlayer_generate.cli.validate_spec.ConftestValidator")
     def test_valid_file_returns_success(self, mock_validator_class, valid_service_yaml, tmp_path):
         """Test that valid file returns exit code 0."""
         mock_validator = MagicMock()
@@ -181,7 +181,7 @@ class TestValidateSpecCommand:
         assert result == 0
         mock_validator.validate_file.assert_called_once()
 
-    @patch("nthlayer.cli.validate_spec.ConftestValidator")
+    @patch("nthlayer_generate.cli.validate_spec.ConftestValidator")
     def test_warnings_return_exit_code_1(self, mock_validator_class, valid_service_yaml):
         """Test that warnings return exit code 1."""
         mock_validator = MagicMock()
@@ -203,7 +203,7 @@ class TestValidateSpecCommand:
 
         assert result == 1
 
-    @patch("nthlayer.cli.validate_spec.ConftestValidator")
+    @patch("nthlayer_generate.cli.validate_spec.ConftestValidator")
     def test_errors_return_exit_code_2(self, mock_validator_class, valid_service_yaml):
         """Test that errors return exit code 2."""
         mock_validator = MagicMock()
@@ -231,7 +231,7 @@ class TestValidateSpecCommand:
 
         assert result == 2
 
-    @patch("nthlayer.cli.validate_spec.ConftestValidator")
+    @patch("nthlayer_generate.cli.validate_spec.ConftestValidator")
     def test_empty_directory_returns_success(self, mock_validator_class, empty_dir):
         """Test that empty directory returns exit code 0."""
         result = validate_spec_command(file_path=empty_dir)
@@ -240,7 +240,7 @@ class TestValidateSpecCommand:
         # Validator should not be called for empty dir
         mock_validator_class.return_value.validate_file.assert_not_called()
 
-    @patch("nthlayer.cli.validate_spec.ConftestValidator")
+    @patch("nthlayer_generate.cli.validate_spec.ConftestValidator")
     def test_directory_validates_service_files(self, mock_validator_class, service_dir_with_files):
         """Test that directory validates service files and skips non-service files."""
         mock_validator = MagicMock()
@@ -257,7 +257,7 @@ class TestValidateSpecCommand:
         # Should be called twice (valid.yaml and another.yml, not config.yaml)
         assert mock_validator.validate_file.call_count == 2
 
-    @patch("nthlayer.cli.validate_spec.ConftestValidator")
+    @patch("nthlayer_generate.cli.validate_spec.ConftestValidator")
     def test_custom_policy_dir(self, mock_validator_class, valid_service_yaml, tmp_path):
         """Test that custom policy_dir is passed to validator."""
         mock_validator = MagicMock()
@@ -278,7 +278,7 @@ class TestValidateSpecCommand:
         assert result == 0
         mock_validator_class.assert_called_once_with(policy_dir=policy_dir)
 
-    @patch("nthlayer.cli.validate_spec.ConftestValidator")
+    @patch("nthlayer_generate.cli.validate_spec.ConftestValidator")
     def test_verbose_mode(self, mock_validator_class, valid_service_yaml, capsys):
         """Test that verbose mode shows additional output."""
         mock_validator = MagicMock()
@@ -306,7 +306,7 @@ class TestValidateSpecCommand:
         captured = capsys.readouterr()
         assert "Fix it this way" in captured.out
 
-    @patch("nthlayer.cli.validate_spec.ConftestValidator")
+    @patch("nthlayer_generate.cli.validate_spec.ConftestValidator")
     def test_shows_conftest_mode_when_available(
         self, mock_validator_class, valid_service_yaml, capsys
     ):
@@ -319,13 +319,13 @@ class TestValidateSpecCommand:
         )
         mock_validator_class.return_value = mock_validator
 
-        with patch("nthlayer.cli.validate_spec.is_conftest_available", return_value=True):
+        with patch("nthlayer_generate.cli.validate_spec.is_conftest_available", return_value=True):
             validate_spec_command(file_path=valid_service_yaml)
 
         captured = capsys.readouterr()
         assert "conftest" in captured.out
 
-    @patch("nthlayer.cli.validate_spec.ConftestValidator")
+    @patch("nthlayer_generate.cli.validate_spec.ConftestValidator")
     def test_shows_native_mode_when_conftest_unavailable(
         self, mock_validator_class, valid_service_yaml, capsys
     ):
@@ -338,13 +338,13 @@ class TestValidateSpecCommand:
         )
         mock_validator_class.return_value = mock_validator
 
-        with patch("nthlayer.cli.validate_spec.is_conftest_available", return_value=False):
+        with patch("nthlayer_generate.cli.validate_spec.is_conftest_available", return_value=False):
             validate_spec_command(file_path=valid_service_yaml)
 
         captured = capsys.readouterr()
         assert "native" in captured.out
 
-    @patch("nthlayer.cli.validate_spec.ConftestValidator")
+    @patch("nthlayer_generate.cli.validate_spec.ConftestValidator")
     def test_shows_file_count(self, mock_validator_class, service_dir_with_files, capsys):
         """Test that file count is shown."""
         mock_validator = MagicMock()
@@ -486,7 +486,7 @@ class TestRegisterValidateSpecParser:
 class TestHandleValidateSpecCommand:
     """Tests for handle_validate_spec_command function."""
 
-    @patch("nthlayer.cli.validate_spec.validate_spec_command")
+    @patch("nthlayer_generate.cli.validate_spec.validate_spec_command")
     def test_passes_args_correctly(self, mock_command):
         """Test that args are passed correctly to command."""
         mock_command.return_value = 0
@@ -506,7 +506,7 @@ class TestHandleValidateSpecCommand:
             verbose=True,
         )
 
-    @patch("nthlayer.cli.validate_spec.validate_spec_command")
+    @patch("nthlayer_generate.cli.validate_spec.validate_spec_command")
     def test_handles_missing_optional_args(self, mock_command):
         """Test that missing optional args are handled."""
         mock_command.return_value = 0

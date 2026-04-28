@@ -40,7 +40,7 @@ service:
   tier: low
             """)
             
-            from nthlayer.specs.environments import EnvironmentLoader
+            from nthlayer_generate.specs.environments import EnvironmentLoader
             
             # Should find dev.yaml
             env_file = EnvironmentLoader.find_environment_file(service_file, "dev")
@@ -77,7 +77,7 @@ service:
   tier: standard
             """)
             
-            from nthlayer.specs.environments import EnvironmentLoader
+            from nthlayer_generate.specs.environments import EnvironmentLoader
             
             env_file = EnvironmentLoader.find_environment_file(service_file, "dev")
             assert env_file is not None
@@ -112,7 +112,7 @@ service:
   tier: low
             """)
             
-            from nthlayer.specs.parser import parse_service_file
+            from nthlayer_generate.specs.parser import parse_service_file
             
             context, _ = parse_service_file(service_file, environment="dev")
             
@@ -161,7 +161,7 @@ resources:
       objective: 95.0
             """)
             
-            from nthlayer.specs.parser import parse_service_file
+            from nthlayer_generate.specs.parser import parse_service_file
             
             _, resources = parse_service_file(service_file, environment="dev")
             
@@ -218,7 +218,7 @@ resources:
             
             output_dir = tmpdir / "generated"
             
-            from nthlayer.cli.generate import generate_slo_command
+            from nthlayer_generate.cli.generate import generate_slo_command
             
             # Generate with dev environment
             result = generate_slo_command(
@@ -264,7 +264,7 @@ service:
   tier: low
             """)
             
-            from nthlayer.cli.validate import validate_command
+            from nthlayer_generate.cli.validate import validate_command
             
             # Should validate successfully with environment
             result = validate_command(
@@ -308,7 +308,7 @@ service:
   tier: standard
             """)
             
-            from nthlayer.specs.parser import parse_service_file
+            from nthlayer_generate.specs.parser import parse_service_file
             
             context, resources = parse_service_file(service_file, environment="staging")
             
@@ -340,7 +340,7 @@ service:
 environment: prod
             """)
             
-            from nthlayer.specs.parser import parse_service_file
+            from nthlayer_generate.specs.parser import parse_service_file
             
             context, _ = parse_service_file(service_file, environment="prod")
             
@@ -367,7 +367,7 @@ service:
             
             # No environments directory created
             
-            from nthlayer.specs.parser import parse_service_file
+            from nthlayer_generate.specs.parser import parse_service_file
             
             # Should use base config
             context, _ = parse_service_file(service_file, environment="nonexistent")
@@ -435,7 +435,7 @@ resources:
       objective: 99.99
             """)
             
-            from nthlayer.specs.parser import parse_service_file
+            from nthlayer_generate.specs.parser import parse_service_file
             
             # Dev
             dev_context, dev_resources = parse_service_file(service_file, environment="dev")

@@ -25,7 +25,7 @@ class TestListEnvironmentsCommand:
             (env_dir / "staging.yaml").write_text("environment: staging\n")
             (env_dir / "prod.yaml").write_text("environment: prod\n")
             
-            from nthlayer.cli.environments import list_environments_command
+            from nthlayer_generate.cli.environments import list_environments_command
             
             result = list_environments_command(directory=str(tmpdir))
             
@@ -51,7 +51,7 @@ service:
             (env_dir / "payment-api-dev.yaml").write_text("environment: dev\n")
             (env_dir / "payment-api-prod.yaml").write_text("environment: prod\n")
             
-            from nthlayer.cli.environments import list_environments_command
+            from nthlayer_generate.cli.environments import list_environments_command
             
             result = list_environments_command(service_file=str(service_file))
             
@@ -60,7 +60,7 @@ service:
     def test_handles_missing_environments_directory(self):
         """Test error handling when environments directory doesn't exist."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            from nthlayer.cli.environments import list_environments_command
+            from nthlayer_generate.cli.environments import list_environments_command
             
             result = list_environments_command(directory=tmpdir)
             
@@ -99,7 +99,7 @@ service:
   tier: critical
             """)
             
-            from nthlayer.cli.environments import diff_envs_command
+            from nthlayer_generate.cli.environments import diff_envs_command
             
             result = diff_envs_command(
                 str(service_file),
@@ -151,7 +151,7 @@ resources:
       objective: 99.99
             """)
             
-            from nthlayer.cli.environments import diff_envs_command
+            from nthlayer_generate.cli.environments import diff_envs_command
             
             result = diff_envs_command(
                 str(service_file),
@@ -182,7 +182,7 @@ service:
             (env_dir / "dev.yaml").write_text("environment: dev\n")
             (env_dir / "staging.yaml").write_text("environment: staging\n")
             
-            from nthlayer.cli.environments import diff_envs_command
+            from nthlayer_generate.cli.environments import diff_envs_command
             
             result = diff_envs_command(
                 str(service_file),
@@ -216,7 +216,7 @@ resources:
       objective: 95.0
             """)
             
-            from nthlayer.cli.environments import validate_env_command
+            from nthlayer_generate.cli.environments import validate_env_command
             
             result = validate_env_command("dev", directory=str(tmpdir), strict=False)
             
@@ -235,7 +235,7 @@ service:
   tier: low
             """)
             
-            from nthlayer.cli.environments import validate_env_command
+            from nthlayer_generate.cli.environments import validate_env_command
             
             result = validate_env_command("dev", directory=str(tmpdir), strict=False)
             
@@ -255,7 +255,7 @@ service:
   tier: low
             """)
             
-            from nthlayer.cli.environments import validate_env_command
+            from nthlayer_generate.cli.environments import validate_env_command
             
             # Should pass with warning (name mismatch)
             result = validate_env_command("dev", directory=str(tmpdir), strict=False)
@@ -285,7 +285,7 @@ service:
   tier: low
             """)
             
-            from nthlayer.cli.environments import validate_env_command
+            from nthlayer_generate.cli.environments import validate_env_command
             
             result = validate_env_command(
                 "dev",
@@ -304,7 +304,7 @@ class TestAutoEnvironmentDetection:
         """Test detection from NTHLAYER_ENV variable."""
         monkeypatch.setenv("NTHLAYER_ENV", "staging")
         
-        from nthlayer.specs.environment_detection import detect_environment
+        from nthlayer_generate.specs.environment_detection import detect_environment
         
         env = detect_environment()
         
@@ -314,7 +314,7 @@ class TestAutoEnvironmentDetection:
         """Test detection from K8S_NAMESPACE variable."""
         monkeypatch.setenv("K8S_NAMESPACE", "payments-prod")
         
-        from nthlayer.specs.environment_detection import detect_environment
+        from nthlayer_generate.specs.environment_detection import detect_environment
         
         env = detect_environment()
         
@@ -324,7 +324,7 @@ class TestAutoEnvironmentDetection:
         """Test detection from git branch name."""
         monkeypatch.setenv("GITHUB_REF_NAME", "main")
         
-        from nthlayer.specs.environment_detection import detect_environment
+        from nthlayer_generate.specs.environment_detection import detect_environment
         
         env = detect_environment()
         
@@ -338,7 +338,7 @@ class TestAutoEnvironmentDetection:
         """Test that explicit --env flag overrides auto-detection."""
         monkeypatch.setenv("NTHLAYER_ENV", "staging")
         
-        from nthlayer.specs.environment_detection import get_environment
+        from nthlayer_generate.specs.environment_detection import get_environment
         
         env = get_environment(explicit_env="prod", auto_detect=True)
         
@@ -350,7 +350,7 @@ class TestEnvironmentAwareGates:
     
     def test_dev_has_lenient_thresholds(self):
         """Test that development has relaxed thresholds."""
-        from nthlayer.specs.environment_gates import get_deployment_gate_thresholds
+        from nthlayer_generate.specs.environment_gates import get_deployment_gate_thresholds
         
         thresholds = get_deployment_gate_thresholds("critical", "dev")
         
@@ -359,7 +359,7 @@ class TestEnvironmentAwareGates:
     
     def test_prod_has_strict_thresholds(self):
         """Test that production has strict thresholds."""
-        from nthlayer.specs.environment_gates import get_deployment_gate_thresholds
+        from nthlayer_generate.specs.environment_gates import get_deployment_gate_thresholds
         
         thresholds = get_deployment_gate_thresholds("critical", "prod")
         
@@ -368,7 +368,7 @@ class TestEnvironmentAwareGates:
     
     def test_staging_is_between_dev_and_prod(self):
         """Test that staging thresholds are between dev and prod."""
-        from nthlayer.specs.environment_gates import get_deployment_gate_thresholds
+        from nthlayer_generate.specs.environment_gates import get_deployment_gate_thresholds
         
         dev_thresholds = get_deployment_gate_thresholds("critical", "dev")
         staging_thresholds = get_deployment_gate_thresholds("critical", "staging")
@@ -378,7 +378,7 @@ class TestEnvironmentAwareGates:
     
     def test_should_block_deployment_logic(self):
         """Test deployment blocking logic with environment thresholds."""
-        from nthlayer.specs.environment_gates import should_block_deployment
+        from nthlayer_generate.specs.environment_gates import should_block_deployment
         
         # Dev allows high consumption
         blocked, reason = should_block_deployment(0.30, "critical", "dev")
@@ -394,8 +394,8 @@ class TestEnvironmentAwareAlerts:
     
     def test_dev_gets_only_critical_alerts(self):
         """Test that dev environment filters to critical alerts only."""
-        from nthlayer.alerts.models import AlertRule
-        from nthlayer.specs.environment_alerts import filter_alerts_by_environment
+        from nthlayer_generate.alerts.models import AlertRule
+        from nthlayer_generate.specs.environment_alerts import filter_alerts_by_environment
         
         alerts = [
             AlertRule(name="db_down", expr="pg_up == 0", severity="critical", technology="postgres"),
@@ -410,8 +410,8 @@ class TestEnvironmentAwareAlerts:
     
     def test_staging_gets_critical_and_warning(self):
         """Test that staging gets critical + warning alerts."""
-        from nthlayer.alerts.models import AlertRule
-        from nthlayer.specs.environment_alerts import filter_alerts_by_environment
+        from nthlayer_generate.alerts.models import AlertRule
+        from nthlayer_generate.specs.environment_alerts import filter_alerts_by_environment
         
         alerts = [
             AlertRule(name="db_down", expr="pg_up == 0", severity="critical", technology="postgres"),
@@ -427,8 +427,8 @@ class TestEnvironmentAwareAlerts:
     
     def test_prod_gets_all_alerts(self):
         """Test that production gets all alerts."""
-        from nthlayer.alerts.models import AlertRule
-        from nthlayer.specs.environment_alerts import filter_alerts_by_environment
+        from nthlayer_generate.alerts.models import AlertRule
+        from nthlayer_generate.specs.environment_alerts import filter_alerts_by_environment
         
         alerts = [
             AlertRule(name="db_down", expr="pg_up == 0", severity="critical", technology="postgres"),
@@ -442,8 +442,8 @@ class TestEnvironmentAwareAlerts:
     
     def test_combines_environment_and_tier_filtering(self):
         """Test that environment and tier filters are combined."""
-        from nthlayer.alerts.models import AlertRule
-        from nthlayer.specs.environment_alerts import filter_alerts_by_environment
+        from nthlayer_generate.alerts.models import AlertRule
+        from nthlayer_generate.specs.environment_alerts import filter_alerts_by_environment
         
         alerts = [
             AlertRule(name="db_down", expr="pg_up == 0", severity="critical", technology="postgres"),

@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from nthlayer.cli.init import (
+from nthlayer_generate.cli.init import (
     _build_resources_yaml,
     _format_template_resources,
     _generate_config_yaml,
@@ -216,7 +216,7 @@ class TestGeneratedServiceFile:
         init_command("my-api", "my-team", "critical-api", interactive=False)
 
         # Should be parseable by our parser
-        from nthlayer.specs.parser import parse_service_file
+        from nthlayer_generate.specs.parser import parse_service_file
 
         context, resources = parse_service_file(tmp_path / "my-api.yaml")
 
@@ -241,9 +241,9 @@ class TestGeneratedServiceFile:
 class TestInitCommandInteractive:
     """Tests for interactive mode of init_command."""
 
-    @patch("nthlayer.cli.init.text_input")
-    @patch("nthlayer.cli.init.select")
-    @patch("nthlayer.cli.init.multi_select")
+    @patch("nthlayer_generate.cli.init.text_input")
+    @patch("nthlayer_generate.cli.init.select")
+    @patch("nthlayer_generate.cli.init.multi_select")
     def test_interactive_prompts_for_service_name(
         self, mock_multi_select, mock_select, mock_text_input, tmp_path, monkeypatch
     ):
@@ -262,9 +262,9 @@ class TestInitCommandInteractive:
         assert result == 0
         assert (tmp_path / "my-api.yaml").exists()
 
-    @patch("nthlayer.cli.init.text_input")
-    @patch("nthlayer.cli.init.select")
-    @patch("nthlayer.cli.init.multi_select")
+    @patch("nthlayer_generate.cli.init.text_input")
+    @patch("nthlayer_generate.cli.init.select")
+    @patch("nthlayer_generate.cli.init.multi_select")
     def test_interactive_tier_selection(
         self, mock_multi_select, mock_select, mock_text_input, tmp_path, monkeypatch
     ):
@@ -284,9 +284,9 @@ class TestInitCommandInteractive:
         content = (tmp_path / "my-api.yaml").read_text()
         assert "tier: critical" in content
 
-    @patch("nthlayer.cli.init.text_input")
-    @patch("nthlayer.cli.init.select")
-    @patch("nthlayer.cli.init.multi_select")
+    @patch("nthlayer_generate.cli.init.text_input")
+    @patch("nthlayer_generate.cli.init.select")
+    @patch("nthlayer_generate.cli.init.multi_select")
     def test_interactive_service_type_selection(
         self, mock_multi_select, mock_select, mock_text_input, tmp_path, monkeypatch
     ):
@@ -306,9 +306,9 @@ class TestInitCommandInteractive:
         content = (tmp_path / "my-api.yaml").read_text()
         assert "type: worker" in content
 
-    @patch("nthlayer.cli.init.text_input")
-    @patch("nthlayer.cli.init.select")
-    @patch("nthlayer.cli.init.multi_select")
+    @patch("nthlayer_generate.cli.init.text_input")
+    @patch("nthlayer_generate.cli.init.select")
+    @patch("nthlayer_generate.cli.init.multi_select")
     def test_interactive_dependencies_selection(
         self, mock_multi_select, mock_select, mock_text_input, tmp_path, monkeypatch
     ):
@@ -330,9 +330,9 @@ class TestInitCommandInteractive:
         assert "postgresql" in content
         assert "redis" in content
 
-    @patch("nthlayer.cli.init.text_input")
-    @patch("nthlayer.cli.init.select")
-    @patch("nthlayer.cli.init.multi_select")
+    @patch("nthlayer_generate.cli.init.text_input")
+    @patch("nthlayer_generate.cli.init.select")
+    @patch("nthlayer_generate.cli.init.multi_select")
     def test_interactive_template_selection(
         self, mock_multi_select, mock_select, mock_text_input, tmp_path, monkeypatch
     ):
@@ -356,7 +356,7 @@ class TestInitCommandInteractive:
 class TestInitCommandErrorHandling:
     """Tests for error handling in init_command."""
 
-    @patch("nthlayer.cli.init.CustomTemplateLoader.load_all_templates")
+    @patch("nthlayer_generate.cli.init.CustomTemplateLoader.load_all_templates")
     def test_handles_template_loading_error(self, mock_load, tmp_path, monkeypatch):
         """Test handling of template loading errors."""
         monkeypatch.chdir(tmp_path)

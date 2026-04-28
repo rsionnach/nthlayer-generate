@@ -6,9 +6,9 @@ from pathlib import Path
 
 import yaml
 
-from nthlayer.policies.engine import PolicyEngine, _parse_rules
-from nthlayer.policies.models import PolicyRule, PolicySeverity, RuleType
-from nthlayer.specs.manifest import ReliabilityManifest, SLODefinition
+from nthlayer_generate.policies.engine import PolicyEngine, _parse_rules
+from nthlayer_generate.policies.models import PolicyRule, PolicySeverity, RuleType
+from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
 
 
 def _make_manifest(**overrides) -> ReliabilityManifest:

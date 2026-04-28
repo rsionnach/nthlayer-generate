@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer.cli.generate_loki import (
+from nthlayer_generate.cli.generate_loki import (
     generate_loki_command,
     handle_loki_command,
     register_loki_parser,
@@ -67,9 +67,9 @@ class TestGenerateLokiCommand:
 
         assert result == 1
 
-    @patch("nthlayer.loki.LokiAlertGenerator")
-    @patch("nthlayer.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer.specs.parser.parse_service_file")
+    @patch("nthlayer_generate.loki.LokiAlertGenerator")
+    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
+    @patch("nthlayer_generate.specs.parser.parse_service_file")
     def test_dry_run(
         self, mock_parse, mock_extract, mock_generator_class, service_with_dependencies
     ):
@@ -105,9 +105,9 @@ class TestGenerateLokiCommand:
         mock_generator.to_ruler_yaml.assert_called_once()
         mock_generator.write_ruler_file.assert_not_called()
 
-    @patch("nthlayer.loki.LokiAlertGenerator")
-    @patch("nthlayer.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer.specs.parser.parse_service_file")
+    @patch("nthlayer_generate.loki.LokiAlertGenerator")
+    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
+    @patch("nthlayer_generate.specs.parser.parse_service_file")
     def test_generate_with_output(
         self, mock_parse, mock_extract, mock_generator_class, service_with_dependencies
     ):
@@ -141,9 +141,9 @@ class TestGenerateLokiCommand:
         call_args = mock_generator.write_ruler_file.call_args
         assert call_args[0][1] == output_file
 
-    @patch("nthlayer.loki.LokiAlertGenerator")
-    @patch("nthlayer.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer.specs.parser.parse_service_file")
+    @patch("nthlayer_generate.loki.LokiAlertGenerator")
+    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
+    @patch("nthlayer_generate.specs.parser.parse_service_file")
     def test_generate_default_output_path(
         self, mock_parse, mock_extract, mock_generator_class, service_with_dependencies
     ):
@@ -172,9 +172,9 @@ class TestGenerateLokiCommand:
         # Default path should be generated/{service}/loki-alerts.yaml
         assert "payment-api" in str(call_args[0][1])
 
-    @patch("nthlayer.loki.LokiAlertGenerator")
-    @patch("nthlayer.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer.specs.parser.parse_service_file")
+    @patch("nthlayer_generate.loki.LokiAlertGenerator")
+    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
+    @patch("nthlayer_generate.specs.parser.parse_service_file")
     def test_no_dependencies(self, mock_parse, mock_extract, mock_generator_class, simple_service):
         """Test generating alerts for service without dependencies."""
         mock_context = MagicMock()
@@ -198,9 +198,9 @@ class TestGenerateLokiCommand:
 
         assert result == 0
 
-    @patch("nthlayer.loki.LokiAlertGenerator")
-    @patch("nthlayer.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer.specs.parser.parse_service_file")
+    @patch("nthlayer_generate.loki.LokiAlertGenerator")
+    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
+    @patch("nthlayer_generate.specs.parser.parse_service_file")
     def test_dry_run_large_output(
         self, mock_parse, mock_extract, mock_generator_class, service_with_dependencies
     ):
@@ -228,9 +228,9 @@ class TestGenerateLokiCommand:
 
         assert result == 0
 
-    @patch("nthlayer.loki.LokiAlertGenerator")
-    @patch("nthlayer.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer.specs.parser.parse_service_file")
+    @patch("nthlayer_generate.loki.LokiAlertGenerator")
+    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
+    @patch("nthlayer_generate.specs.parser.parse_service_file")
     def test_exception_handling(
         self, mock_parse, mock_extract, mock_generator_class, service_with_dependencies
     ):
@@ -245,9 +245,9 @@ class TestGenerateLokiCommand:
 
         assert result == 1
 
-    @patch("nthlayer.loki.LokiAlertGenerator")
-    @patch("nthlayer.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer.specs.parser.parse_service_file")
+    @patch("nthlayer_generate.loki.LokiAlertGenerator")
+    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
+    @patch("nthlayer_generate.specs.parser.parse_service_file")
     def test_alert_breakdown(
         self, mock_parse, mock_extract, mock_generator_class, service_with_dependencies
     ):
@@ -285,9 +285,9 @@ class TestGenerateLokiCommand:
 
         assert result == 0
 
-    @patch("nthlayer.loki.LokiAlertGenerator")
-    @patch("nthlayer.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer.specs.parser.parse_service_file")
+    @patch("nthlayer_generate.loki.LokiAlertGenerator")
+    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
+    @patch("nthlayer_generate.specs.parser.parse_service_file")
     def test_no_team(
         self, mock_parse, mock_extract, mock_generator_class, service_with_dependencies
     ):
@@ -376,7 +376,7 @@ class TestRegisterLokiParser:
 class TestHandleLokiCommand:
     """Tests for handle_loki_command function."""
 
-    @patch("nthlayer.cli.generate_loki.generate_loki_command")
+    @patch("nthlayer_generate.cli.generate_loki.generate_loki_command")
     def test_handle_command(self, mock_generate):
         """Test handle_loki_command."""
         mock_generate.return_value = 0
@@ -395,7 +395,7 @@ class TestHandleLokiCommand:
             dry_run=True,
         )
 
-    @patch("nthlayer.cli.generate_loki.generate_loki_command")
+    @patch("nthlayer_generate.cli.generate_loki.generate_loki_command")
     def test_handle_command_missing_attrs(self, mock_generate):
         """Test handle_loki_command with missing optional attrs."""
         mock_generate.return_value = 0

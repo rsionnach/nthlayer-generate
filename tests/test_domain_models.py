@@ -1,6 +1,6 @@
 """Tests for nthlayer.domain.models — pure data models."""
 
-from nthlayer.domain.models import (
+from nthlayer_generate.domain.models import (
     Finding,
     Run,
     RunStatus,

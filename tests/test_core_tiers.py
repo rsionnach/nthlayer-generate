@@ -4,7 +4,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from nthlayer.core.tiers import (
+from nthlayer_generate.core.tiers import (
     TIER_CONFIGS,
     TIER_NAMES,
     VALID_TIERS,

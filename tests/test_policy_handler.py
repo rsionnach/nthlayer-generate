@@ -7,8 +7,8 @@ from unittest.mock import MagicMock
 
 import yaml
 
-from nthlayer.orchestration.handlers import PolicyHandler
-from nthlayer.orchestration.registry import OrchestratorContext
+from nthlayer_generate.orchestration.handlers import PolicyHandler
+from nthlayer_generate.orchestration.registry import OrchestratorContext
 
 
 def _make_context(

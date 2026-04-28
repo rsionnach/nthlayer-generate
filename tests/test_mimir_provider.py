@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from nthlayer_common.clients.base import BaseHTTPClient, PermanentHTTPError, RetryableHTTPError
 
-from nthlayer.providers.mimir import (
+from nthlayer_generate.providers.mimir import (
     MimirRulerError,
     MimirRulerProvider,
     RulerPushResult,
@@ -172,7 +172,7 @@ class TestHealthCheck:
 
 class TestBackwardCompat:
     def test_import_from_providers(self) -> None:
-        from nthlayer.providers.mimir import MimirRulerProvider as P
+        from nthlayer_generate.providers.mimir import MimirRulerProvider as P
         assert P is MimirRulerProvider
 
     def test_import_from_common_providers(self) -> None:

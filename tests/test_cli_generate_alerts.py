@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer.cli.generate_alerts import generate_alerts_command
+from nthlayer_generate.cli.generate_alerts import generate_alerts_command
 
 
 @pytest.fixture
@@ -66,7 +66,7 @@ class TestGenerateAlertsCommand:
         # Should fail because no dependencies to generate alerts for
         assert result == 1
 
-    @patch("nthlayer.cli.generate_alerts.generate_alerts_for_service")
+    @patch("nthlayer_generate.cli.generate_alerts.generate_alerts_for_service")
     def test_dry_run_with_dependencies(self, mock_generate, service_with_dependencies):
         """Test dry run with service with dependencies."""
         # Mock alert generation
@@ -91,7 +91,7 @@ class TestGenerateAlertsCommand:
         call_args = mock_generate.call_args
         assert call_args[0][1] is None  # output_path should be None
 
-    @patch("nthlayer.cli.generate_alerts.generate_alerts_for_service")
+    @patch("nthlayer_generate.cli.generate_alerts.generate_alerts_for_service")
     def test_generate_with_output(self, mock_generate, service_with_dependencies):
         """Test generating alerts with specific output."""
         mock_alert = MagicMock()
@@ -116,7 +116,7 @@ class TestGenerateAlertsCommand:
         call_args = mock_generate.call_args
         assert call_args[0][1] == output_file  # output_path
 
-    @patch("nthlayer.cli.generate_alerts.generate_alerts_for_service")
+    @patch("nthlayer_generate.cli.generate_alerts.generate_alerts_for_service")
     def test_generate_default_output_path(self, mock_generate, service_with_dependencies):
         """Test generating alerts with default output path."""
         mock_alert = MagicMock()
@@ -136,7 +136,7 @@ class TestGenerateAlertsCommand:
         # Default output should be based on service name
         assert "payment-api" in str(call_args[0][1])
 
-    @patch("nthlayer.cli.generate_alerts.generate_alerts_for_service")
+    @patch("nthlayer_generate.cli.generate_alerts.generate_alerts_for_service")
     def test_with_environment(self, mock_generate, service_with_dependencies):
         """Test generating alerts with environment specified."""
         mock_alert = MagicMock()
@@ -159,7 +159,7 @@ class TestGenerateAlertsCommand:
         call_args = mock_generate.call_args
         assert call_args[1]["environment"] == "production"
 
-    @patch("nthlayer.cli.generate_alerts.generate_alerts_for_service")
+    @patch("nthlayer_generate.cli.generate_alerts.generate_alerts_for_service")
     def test_with_runbook_url(self, mock_generate, service_with_dependencies):
         """Test generating alerts with runbook URL."""
         mock_alert = MagicMock()
@@ -182,7 +182,7 @@ class TestGenerateAlertsCommand:
         call_args = mock_generate.call_args
         assert call_args[1]["runbook_url"] == "https://runbooks.example.com"
 
-    @patch("nthlayer.cli.generate_alerts.generate_alerts_for_service")
+    @patch("nthlayer_generate.cli.generate_alerts.generate_alerts_for_service")
     def test_with_notification_channel(self, mock_generate, service_with_dependencies):
         """Test generating alerts with notification channel."""
         mock_alert = MagicMock()
@@ -205,7 +205,7 @@ class TestGenerateAlertsCommand:
         call_args = mock_generate.call_args
         assert call_args[1]["notification_channel"] == "pagerduty"
 
-    @patch("nthlayer.cli.generate_alerts.generate_alerts_for_service")
+    @patch("nthlayer_generate.cli.generate_alerts.generate_alerts_for_service")
     def test_generate_exception_handling(self, mock_generate, service_with_dependencies):
         """Test handling exceptions during generation."""
         mock_generate.side_effect = ValueError("Invalid configuration")
@@ -218,7 +218,7 @@ class TestGenerateAlertsCommand:
 
         assert result == 1
 
-    @patch("nthlayer.cli.generate_alerts.generate_alerts_for_service")
+    @patch("nthlayer_generate.cli.generate_alerts.generate_alerts_for_service")
     def test_dry_run_multiple_alerts(self, mock_generate, service_with_dependencies):
         """Test dry run output with multiple alerts (more than 5)."""
         # Create 8 mock alerts
@@ -240,7 +240,7 @@ class TestGenerateAlertsCommand:
 
         assert result == 0
 
-    @patch("nthlayer.cli.generate_alerts.generate_alerts_for_service")
+    @patch("nthlayer_generate.cli.generate_alerts.generate_alerts_for_service")
     def test_empty_alerts_returned(self, mock_generate, service_with_dependencies):
         """Test when no alerts are generated."""
         mock_generate.return_value = []

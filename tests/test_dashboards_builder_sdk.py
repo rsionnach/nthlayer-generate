@@ -13,8 +13,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer.dashboards.builder_sdk import DashboardBuilderSDK, build_dashboard
-from nthlayer.specs.models import Resource, ServiceContext
+from nthlayer_generate.dashboards.builder_sdk import DashboardBuilderSDK, build_dashboard
+from nthlayer_generate.specs.models import Resource, ServiceContext
 
 
 @pytest.fixture
@@ -146,7 +146,7 @@ class TestDashboardBuilderSDKInit:
 
     def test_init_with_prometheus_url(self, api_context, slo_resource):
         """Initializes with prometheus URL."""
-        with patch("nthlayer.dashboards.builder_sdk.create_resolver") as mock_create:
+        with patch("nthlayer_generate.dashboards.builder_sdk.create_resolver") as mock_create:
             mock_resolver = MagicMock()
             mock_create.return_value = mock_resolver
 
@@ -175,7 +175,7 @@ class TestDashboardBuilderSDKInit:
         """Initializes with validation when discovery client provided."""
         mock_client = MagicMock()
 
-        with patch("nthlayer.dashboards.validator.DashboardValidator") as mock_validator_class:
+        with patch("nthlayer_generate.dashboards.validator.DashboardValidator") as mock_validator_class:
             builder = DashboardBuilderSDK(
                 service_context=api_context,
                 resources=[slo_resource],
@@ -256,7 +256,7 @@ class TestBuildDashboard:
             "unresolved": 0,
         }
 
-        with patch("nthlayer.dashboards.builder_sdk.create_resolver", return_value=mock_resolver):
+        with patch("nthlayer_generate.dashboards.builder_sdk.create_resolver", return_value=mock_resolver):
             builder = DashboardBuilderSDK(
                 service_context=api_context,
                 resources=[slo_resource],
@@ -280,7 +280,7 @@ class TestBuildDashboard:
             "unresolved": 1,
         }
 
-        with patch("nthlayer.dashboards.builder_sdk.create_resolver", return_value=mock_resolver):
+        with patch("nthlayer_generate.dashboards.builder_sdk.create_resolver", return_value=mock_resolver):
             builder = DashboardBuilderSDK(
                 service_context=api_context,
                 resources=[slo_resource],
@@ -302,7 +302,7 @@ class TestBuildDashboard:
             "unresolved": 2,
         }
 
-        with patch("nthlayer.dashboards.builder_sdk.create_resolver", return_value=mock_resolver):
+        with patch("nthlayer_generate.dashboards.builder_sdk.create_resolver", return_value=mock_resolver):
             builder = DashboardBuilderSDK(
                 service_context=api_context,
                 resources=[slo_resource],
@@ -318,7 +318,7 @@ class TestBuildDashboard:
         mock_client = MagicMock()
         mock_validator = MagicMock()
 
-        with patch("nthlayer.dashboards.validator.DashboardValidator", return_value=mock_validator):
+        with patch("nthlayer_generate.dashboards.validator.DashboardValidator", return_value=mock_validator):
             builder = DashboardBuilderSDK(
                 service_context=api_context,
                 resources=[slo_resource],
@@ -977,7 +977,7 @@ class TestValidatePanels:
         mock_client = MagicMock()
         mock_validator = MagicMock()
 
-        with patch("nthlayer.dashboards.validator.DashboardValidator", return_value=mock_validator):
+        with patch("nthlayer_generate.dashboards.validator.DashboardValidator", return_value=mock_validator):
             builder = DashboardBuilderSDK(
                 service_context=api_context,
                 resources=[],

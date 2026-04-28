@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer.cli.environments import (
+from nthlayer_generate.cli.environments import (
     _diff_dicts,
     diff_envs_command,
     list_environments_command,
@@ -205,7 +205,7 @@ class TestListEnvironmentsCommand:
 class TestDiffEnvsCommand:
     """Tests for diff_envs_command function."""
 
-    @patch("nthlayer.cli.environments.parse_service_file")
+    @patch("nthlayer_generate.cli.environments.parse_service_file")
     def test_shows_differences(self, mock_parse, capsys):
         """Test showing differences between environments."""
         ctx1 = MagicMock()
@@ -238,7 +238,7 @@ class TestDiffEnvsCommand:
         captured = capsys.readouterr()
         assert "tier" in captured.out or "Comparing" in captured.out
 
-    @patch("nthlayer.cli.environments.parse_service_file")
+    @patch("nthlayer_generate.cli.environments.parse_service_file")
     def test_shows_identical_when_same(self, mock_parse, capsys):
         """Test showing identical message when configs match."""
         ctx = MagicMock()
@@ -260,7 +260,7 @@ class TestDiffEnvsCommand:
         captured = capsys.readouterr()
         assert "identical" in captured.out.lower() or "same" in captured.out.lower()
 
-    @patch("nthlayer.cli.environments.parse_service_file")
+    @patch("nthlayer_generate.cli.environments.parse_service_file")
     def test_shows_resources_only_in_one_env(self, mock_parse, capsys):
         """Test showing resources that exist only in one environment."""
         ctx = MagicMock()
@@ -287,7 +287,7 @@ class TestDiffEnvsCommand:
         captured = capsys.readouterr()
         assert "only in" in captured.out or "latency" in captured.out
 
-    @patch("nthlayer.cli.environments.parse_service_file")
+    @patch("nthlayer_generate.cli.environments.parse_service_file")
     def test_handles_parse_error(self, mock_parse):
         """Test handling of parse errors."""
         mock_parse.side_effect = FileNotFoundError("Service not found")
@@ -295,7 +295,7 @@ class TestDiffEnvsCommand:
         result = diff_envs_command("missing.yaml", "dev", "prod")
         assert result == 1
 
-    @patch("nthlayer.cli.environments.parse_service_file")
+    @patch("nthlayer_generate.cli.environments.parse_service_file")
     def test_show_all_flag(self, mock_parse, capsys):
         """Test --show-all flag shows identical fields."""
         ctx = MagicMock()

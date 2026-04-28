@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer.cli.lint import _print_result, lint_command
+from nthlayer_generate.cli.lint import _print_result, lint_command
 
 
 @pytest.fixture
@@ -67,7 +67,7 @@ def mock_lint_result_failed():
 class TestLintCommand:
     """Tests for lint_command function."""
 
-    @patch("nthlayer.cli.lint.is_pint_available")
+    @patch("nthlayer_generate.cli.lint.is_pint_available")
     def test_pint_not_available(self, mock_available):
         """Test when pint is not installed."""
         mock_available.return_value = False
@@ -76,8 +76,8 @@ class TestLintCommand:
 
         assert result == 1
 
-    @patch("nthlayer.cli.lint.is_pint_available")
-    @patch("nthlayer.cli.lint.PintLinter")
+    @patch("nthlayer_generate.cli.lint.is_pint_available")
+    @patch("nthlayer_generate.cli.lint.PintLinter")
     def test_lint_single_file_passed(
         self, mock_linter_class, mock_available, sample_alerts_yaml, mock_lint_result_passed
     ):
@@ -96,8 +96,8 @@ class TestLintCommand:
         assert result == 0
         mock_linter.lint_file.assert_called_once()
 
-    @patch("nthlayer.cli.lint.is_pint_available")
-    @patch("nthlayer.cli.lint.PintLinter")
+    @patch("nthlayer_generate.cli.lint.is_pint_available")
+    @patch("nthlayer_generate.cli.lint.PintLinter")
     def test_lint_single_file_failed(
         self, mock_linter_class, mock_available, sample_alerts_yaml, mock_lint_result_failed
     ):
@@ -115,8 +115,8 @@ class TestLintCommand:
 
         assert result == 1
 
-    @patch("nthlayer.cli.lint.is_pint_available")
-    @patch("nthlayer.cli.lint.PintLinter")
+    @patch("nthlayer_generate.cli.lint.is_pint_available")
+    @patch("nthlayer_generate.cli.lint.PintLinter")
     def test_lint_directory(self, mock_linter_class, mock_available, mock_lint_result_passed):
         """Test linting a directory of files."""
         mock_available.return_value = True
@@ -130,8 +130,8 @@ class TestLintCommand:
         assert result == 0
         mock_linter.lint_directory.assert_called_once()
 
-    @patch("nthlayer.cli.lint.is_pint_available")
-    @patch("nthlayer.cli.lint.PintLinter")
+    @patch("nthlayer_generate.cli.lint.is_pint_available")
+    @patch("nthlayer_generate.cli.lint.PintLinter")
     def test_lint_directory_some_failed(
         self, mock_linter_class, mock_available, mock_lint_result_passed, mock_lint_result_failed
     ):
@@ -146,8 +146,8 @@ class TestLintCommand:
 
         assert result == 1
 
-    @patch("nthlayer.cli.lint.is_pint_available")
-    @patch("nthlayer.cli.lint.PintLinter")
+    @patch("nthlayer_generate.cli.lint.is_pint_available")
+    @patch("nthlayer_generate.cli.lint.PintLinter")
     def test_lint_with_config(self, mock_linter_class, mock_available, mock_lint_result_passed):
         """Test linting with custom config file."""
         mock_available.return_value = True
@@ -167,8 +167,8 @@ class TestLintCommand:
         assert result == 0
         mock_linter_class.assert_called_once_with(config_path=config_file)
 
-    @patch("nthlayer.cli.lint.is_pint_available")
-    @patch("nthlayer.cli.lint.PintLinter")
+    @patch("nthlayer_generate.cli.lint.is_pint_available")
+    @patch("nthlayer_generate.cli.lint.PintLinter")
     def test_lint_verbose(self, mock_linter_class, mock_available, mock_lint_result_passed):
         """Test linting with verbose output."""
         mock_available.return_value = True

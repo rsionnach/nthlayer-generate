@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from nthlayer.core.errors import (
+from nthlayer_generate.core.errors import (
     BlockedError,
     ConfigurationError,
     ExitCode,

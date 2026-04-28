@@ -2,7 +2,7 @@
 Tests for the PagerDuty integration module.
 """
 
-from nthlayer.pagerduty.defaults import (
+from nthlayer_generate.pagerduty.defaults import (
     SUPPORT_MODEL_DEFAULTS,
     TIER_ESCALATION_DEFAULTS,
     SupportModel,
@@ -10,7 +10,7 @@ from nthlayer.pagerduty.defaults import (
     get_escalation_config,
     get_schedules_for_tier,
 )
-from nthlayer.pagerduty.naming import (
+from nthlayer_generate.pagerduty.naming import (
     get_escalation_policy_name,
     get_schedule_name,
     get_service_name,
@@ -19,7 +19,7 @@ from nthlayer.pagerduty.naming import (
     parse_resource_name,
     sanitize_name,
 )
-from nthlayer.pagerduty.resources import ResourceResult
+from nthlayer_generate.pagerduty.resources import ResourceResult
 
 
 class TestDefaults:
@@ -164,7 +164,7 @@ class TestSpecsModels:
 
     def test_service_context_has_support_model(self):
         """ServiceContext should have support_model field."""
-        from nthlayer.specs.models import ServiceContext
+        from nthlayer_generate.specs.models import ServiceContext
 
         context = ServiceContext(
             name="payment-api",
@@ -178,7 +178,7 @@ class TestSpecsModels:
 
     def test_service_context_default_support_model(self):
         """Default support_model should be 'self'."""
-        from nthlayer.specs.models import ServiceContext
+        from nthlayer_generate.specs.models import ServiceContext
 
         context = ServiceContext(
             name="payment-api",
@@ -191,7 +191,7 @@ class TestSpecsModels:
 
     def test_service_context_to_dict_includes_support_model(self):
         """to_dict should include support_model."""
-        from nthlayer.specs.models import ServiceContext
+        from nthlayer_generate.specs.models import ServiceContext
 
         context = ServiceContext(
             name="payment-api",
@@ -206,7 +206,7 @@ class TestSpecsModels:
 
     def test_pagerduty_config(self):
         """PagerDutyConfig should work correctly."""
-        from nthlayer.specs.models import PagerDutyConfig
+        from nthlayer_generate.specs.models import PagerDutyConfig
 
         config = PagerDutyConfig(
             sre_escalation_policy="sre-escalation",

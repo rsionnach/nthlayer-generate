@@ -4,12 +4,12 @@ import pytest
 import respx
 from httpx import Response
 
-from nthlayer.dependencies.models import DependencyType
-from nthlayer.dependencies.providers.backstage import (
+from nthlayer_generate.dependencies.models import DependencyType
+from nthlayer_generate.dependencies.providers.backstage import (
     BackstageDepProvider,
     BackstageDepProviderError,
 )
-from nthlayer.dependencies.providers.base import deduplicate_dependencies
+from nthlayer_generate.dependencies.providers.base import deduplicate_dependencies
 
 # Sample catalog entities for testing
 SAMPLE_ENTITIES = [
@@ -425,7 +425,7 @@ class TestBackstageDepProviderDeduplicate:
 
     def test_deduplicate_keeps_highest_confidence(self):
         """Test deduplication keeps highest confidence."""
-        from nthlayer.dependencies.models import DiscoveredDependency
+        from nthlayer_generate.dependencies.models import DiscoveredDependency
 
         BackstageDepProvider(url="https://backstage.example.com")
 

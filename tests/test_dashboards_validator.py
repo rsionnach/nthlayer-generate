@@ -6,8 +6,8 @@ DashboardValidator, and extraction functions.
 
 from unittest.mock import MagicMock, patch
 
-from nthlayer.dashboards.resolver import ResolutionStatus
-from nthlayer.dashboards.validator import (
+from nthlayer_generate.dashboards.resolver import ResolutionStatus
+from nthlayer_generate.dashboards.validator import (
     DashboardValidator,
     IntentResult,
     ValidationResult,
@@ -147,8 +147,8 @@ class TestDashboardValidator:
 
         assert validator.prometheus_url is None
 
-    @patch("nthlayer.dashboards.validator.create_resolver")
-    @patch("nthlayer.dashboards.validator.get_intents_for_technology")
+    @patch("nthlayer_generate.dashboards.validator.create_resolver")
+    @patch("nthlayer_generate.dashboards.validator.get_intents_for_technology")
     def test_validate_without_prometheus(self, mock_get_intents, mock_create_resolver):
         """Test validation without prometheus URL."""
         mock_resolver = MagicMock()
@@ -170,8 +170,8 @@ class TestDashboardValidator:
         assert result.discovery_count == 0
         mock_resolver.discover_for_service.assert_not_called()
 
-    @patch("nthlayer.dashboards.validator.create_resolver")
-    @patch("nthlayer.dashboards.validator.get_intents_for_technology")
+    @patch("nthlayer_generate.dashboards.validator.create_resolver")
+    @patch("nthlayer_generate.dashboards.validator.get_intents_for_technology")
     def test_validate_with_prometheus_discovery(self, mock_get_intents, mock_create_resolver):
         """Test validation with prometheus discovery."""
         mock_resolver = MagicMock()
@@ -194,8 +194,8 @@ class TestDashboardValidator:
         assert result.discovery_count == 50
         mock_resolver.discover_for_service.assert_called_once_with("test-service")
 
-    @patch("nthlayer.dashboards.validator.create_resolver")
-    @patch("nthlayer.dashboards.validator.get_intents_for_technology")
+    @patch("nthlayer_generate.dashboards.validator.create_resolver")
+    @patch("nthlayer_generate.dashboards.validator.get_intents_for_technology")
     def test_validate_discovery_error(self, mock_get_intents, mock_create_resolver):
         """Test validation handles discovery errors."""
         mock_resolver = MagicMock()
@@ -212,9 +212,9 @@ class TestDashboardValidator:
 
         assert result.discovery_error == "Connection refused"
 
-    @patch("nthlayer.dashboards.validator.create_resolver")
+    @patch("nthlayer_generate.dashboards.validator.create_resolver")
     @patch(
-        "nthlayer.dashboards.validator.ALL_INTENTS",
+        "nthlayer_generate.dashboards.validator.ALL_INTENTS",
         {"intent.one": MagicMock(), "intent.two": MagicMock()},
     )
     def test_validate_all_intents(self, mock_create_resolver):
@@ -236,8 +236,8 @@ class TestDashboardValidator:
 
         assert result.total == 2
 
-    @patch("nthlayer.dashboards.validator.create_resolver")
-    @patch("nthlayer.dashboards.validator.get_intents_for_technology")
+    @patch("nthlayer_generate.dashboards.validator.create_resolver")
+    @patch("nthlayer_generate.dashboards.validator.get_intents_for_technology")
     def test_validate_categorizes_results(self, mock_get_intents, mock_create_resolver):
         """Test that validation categorizes results correctly."""
         mock_resolver = MagicMock()
@@ -282,8 +282,8 @@ class TestDashboardValidator:
         assert len(result.synthesized) == 1
         assert len(result.unresolved) == 1
 
-    @patch("nthlayer.dashboards.validator.create_resolver")
-    @patch("nthlayer.dashboards.validator.get_intents_for_technology")
+    @patch("nthlayer_generate.dashboards.validator.create_resolver")
+    @patch("nthlayer_generate.dashboards.validator.get_intents_for_technology")
     def test_validate_with_custom_overrides(self, mock_get_intents, mock_create_resolver):
         """Test validation passes custom overrides to resolver."""
         mock_resolver = MagicMock()

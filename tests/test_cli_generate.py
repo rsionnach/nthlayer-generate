@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from nthlayer.cli.generate import generate_slo_command
+from nthlayer_generate.cli.generate import generate_slo_command
 
 
 @pytest.fixture

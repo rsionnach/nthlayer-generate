@@ -1,7 +1,7 @@
 """Tests for custom template system."""
 
-from nthlayer.specs.custom_templates import CustomTemplateLoader
-from nthlayer.specs.parser import parse_service_file
+from nthlayer_generate.specs.custom_templates import CustomTemplateLoader
+from nthlayer_generate.specs.parser import parse_service_file
 
 
 class TestCustomTemplateLoader:

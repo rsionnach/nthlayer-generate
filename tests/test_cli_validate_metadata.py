@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer.cli.validate_metadata import (
+from nthlayer_generate.cli.validate_metadata import (
     _print_validation_result,
     validate_metadata_command,
 )
@@ -148,8 +148,8 @@ class TestValidateMetadataCommand:
 
         assert result == 0
 
-    @patch("nthlayer.cli.validate_metadata.is_promruval_available")
-    @patch("nthlayer.cli.validate_metadata.validate_with_promruval")
+    @patch("nthlayer_generate.cli.validate_metadata.is_promruval_available")
+    @patch("nthlayer_generate.cli.validate_metadata.validate_with_promruval")
     def test_with_promruval(self, mock_validate, mock_available, valid_alerts_yaml):
         """Test using promruval for additional validation."""
         mock_available.return_value = True
@@ -170,7 +170,7 @@ class TestValidateMetadataCommand:
         assert result == 0
         mock_validate.assert_called()
 
-    @patch("nthlayer.cli.validate_metadata.is_promruval_available")
+    @patch("nthlayer_generate.cli.validate_metadata.is_promruval_available")
     def test_promruval_not_available(self, mock_available, valid_alerts_yaml):
         """Test when promruval is not available."""
         mock_available.return_value = False

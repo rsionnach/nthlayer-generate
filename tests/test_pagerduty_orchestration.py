@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pagerduty
 
-from nthlayer.pagerduty.orchestration import (
+from nthlayer_generate.pagerduty.orchestration import (
     EventOrchestrationManager,
     OrchestrationResult,
     RoutingRule,
@@ -94,7 +94,7 @@ class TestEventOrchestrationManager:
         assert manager.default_from == "nthlayer@example.com"
         assert manager.timeout == 30.0
 
-    @patch("nthlayer.pagerduty.orchestration.RestApiV2Client")
+    @patch("nthlayer_generate.pagerduty.orchestration.RestApiV2Client")
     def test_client_lazy_initialization(self, mock_client_class):
         """Test that client is lazily initialized."""
         mock_client = MagicMock()
@@ -115,7 +115,7 @@ class TestEventOrchestrationManager:
         )
         assert client == mock_client
 
-    @patch("nthlayer.pagerduty.orchestration.RestApiV2Client")
+    @patch("nthlayer_generate.pagerduty.orchestration.RestApiV2Client")
     def test_close(self, mock_client_class):
         """Test closing the client."""
         mock_client = MagicMock()
@@ -134,7 +134,7 @@ class TestEventOrchestrationManager:
         manager = EventOrchestrationManager(api_key="test-key")
         manager.close()  # Should not raise
 
-    @patch("nthlayer.pagerduty.orchestration.RestApiV2Client")
+    @patch("nthlayer_generate.pagerduty.orchestration.RestApiV2Client")
     def test_context_manager(self, mock_client_class):
         """Test context manager usage."""
         mock_client = MagicMock()
@@ -157,7 +157,7 @@ class TestEventOrchestrationManager:
         assert result.success is True
         assert "No routing rules" in result.warnings[0]
 
-    @patch("nthlayer.pagerduty.orchestration.RestApiV2Client")
+    @patch("nthlayer_generate.pagerduty.orchestration.RestApiV2Client")
     def test_setup_orchestration_success(self, mock_client_class):
         """Test successful orchestration setup."""
         mock_client = MagicMock()
@@ -195,7 +195,7 @@ class TestEventOrchestrationManager:
         assert result.orchestration_id == "orch-123"
         assert result.rules_created == 1
 
-    @patch("nthlayer.pagerduty.orchestration.RestApiV2Client")
+    @patch("nthlayer_generate.pagerduty.orchestration.RestApiV2Client")
     def test_setup_orchestration_get_orchestration_fails(self, mock_client_class):
         """Test when getting orchestration fails."""
         mock_client = MagicMock()
@@ -226,7 +226,7 @@ class TestEventOrchestrationManager:
         assert result.success is False
         assert "Failed to get or create" in result.error
 
-    @patch("nthlayer.pagerduty.orchestration.RestApiV2Client")
+    @patch("nthlayer_generate.pagerduty.orchestration.RestApiV2Client")
     def test_setup_orchestration_http_error(self, mock_client_class):
         """Test handling of HTTP error during update."""
         mock_client = MagicMock()
@@ -266,7 +266,7 @@ class TestEventOrchestrationManager:
         assert result.success is False
         assert "Failed to update orchestration" in result.error
 
-    @patch("nthlayer.pagerduty.orchestration.RestApiV2Client")
+    @patch("nthlayer_generate.pagerduty.orchestration.RestApiV2Client")
     def test_setup_orchestration_unexpected_error(self, mock_client_class):
         """Test handling of unexpected error."""
         mock_client = MagicMock()
@@ -292,7 +292,7 @@ class TestEventOrchestrationManager:
         assert result.success is False
         assert "Unexpected error" in result.error
 
-    @patch("nthlayer.pagerduty.orchestration.RestApiV2Client")
+    @patch("nthlayer_generate.pagerduty.orchestration.RestApiV2Client")
     def test_get_or_create_orchestration_existing(self, mock_client_class):
         """Test getting existing orchestration."""
         mock_client = MagicMock()
@@ -308,7 +308,7 @@ class TestEventOrchestrationManager:
 
         assert result == {"id": "existing-orch"}
 
-    @patch("nthlayer.pagerduty.orchestration.RestApiV2Client")
+    @patch("nthlayer_generate.pagerduty.orchestration.RestApiV2Client")
     def test_get_or_create_orchestration_create_new(self, mock_client_class):
         """Test creating new orchestration when none exists."""
         mock_client = MagicMock()
@@ -333,7 +333,7 @@ class TestEventOrchestrationManager:
 
         assert result == {"id": "new-orch"}
 
-    @patch("nthlayer.pagerduty.orchestration.RestApiV2Client")
+    @patch("nthlayer_generate.pagerduty.orchestration.RestApiV2Client")
     def test_get_or_create_orchestration_fails(self, mock_client_class):
         """Test when both get attempts fail."""
         mock_client = MagicMock()
@@ -351,7 +351,7 @@ class TestEventOrchestrationManager:
 
         assert result is None
 
-    @patch("nthlayer.pagerduty.orchestration.RestApiV2Client")
+    @patch("nthlayer_generate.pagerduty.orchestration.RestApiV2Client")
     def test_update_orchestration_rules_success(self, mock_client_class):
         """Test successful rule update."""
         mock_client = MagicMock()
@@ -387,7 +387,7 @@ class TestEventOrchestrationManager:
         call_args = mock_client.put.call_args
         assert "/event_orchestrations/services/svc-456" in call_args[0][0]
 
-    @patch("nthlayer.pagerduty.orchestration.RestApiV2Client")
+    @patch("nthlayer_generate.pagerduty.orchestration.RestApiV2Client")
     def test_update_orchestration_rules_failure(self, mock_client_class):
         """Test failed rule update."""
         mock_client = MagicMock()

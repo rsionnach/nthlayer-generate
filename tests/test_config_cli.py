@@ -5,7 +5,7 @@ Tests for configuration and secrets management CLI commands.
 
 from unittest.mock import MagicMock, patch
 
-from nthlayer.config.cli import (
+from nthlayer_generate.config.cli import (
     REQUIRED_SECRETS,
     _set_alerting_config,
     _set_grafana_config,
@@ -19,14 +19,14 @@ from nthlayer.config.cli import (
     secrets_set_command,
     secrets_verify_command,
 )
-from nthlayer.config.integrations import (
+from nthlayer_generate.config.integrations import (
     GrafanaProfile,
     GrafanaType,
     IntegrationConfig,
     PrometheusProfile,
     PrometheusType,
 )
-from nthlayer.config.secrets import SecretBackend
+from nthlayer_generate.config.secrets import SecretBackend
 
 
 class TestConfigShowCommand:
@@ -36,8 +36,8 @@ class TestConfigShowCommand:
         """Shows configuration with defaults."""
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer.config.cli.get_config_path", return_value=None):
-            with patch("nthlayer.config.cli.load_config") as mock_load:
+        with patch("nthlayer_generate.config.cli.get_config_path", return_value=None):
+            with patch("nthlayer_generate.config.cli.load_config") as mock_load:
                 mock_load.return_value = IntegrationConfig.default()
                 result = config_show_command()
 
@@ -54,8 +54,8 @@ class TestConfigShowCommand:
         monkeypatch.chdir(tmp_path)
         config_path = tmp_path / ".nthlayer" / "config.yaml"
 
-        with patch("nthlayer.config.cli.get_config_path", return_value=config_path):
-            with patch("nthlayer.config.cli.load_config") as mock_load:
+        with patch("nthlayer_generate.config.cli.get_config_path", return_value=config_path):
+            with patch("nthlayer_generate.config.cli.load_config") as mock_load:
                 mock_load.return_value = IntegrationConfig.default()
                 result = config_show_command()
 
@@ -76,8 +76,8 @@ class TestConfigShowCommand:
             password_secret="prometheus/password",
         )
 
-        with patch("nthlayer.config.cli.get_config_path", return_value=None):
-            with patch("nthlayer.config.cli.load_config", return_value=config):
+        with patch("nthlayer_generate.config.cli.get_config_path", return_value=None):
+            with patch("nthlayer_generate.config.cli.load_config", return_value=config):
                 result = config_show_command(reveal_secrets=False)
 
         captured = capsys.readouterr()
@@ -99,8 +99,8 @@ class TestConfigShowCommand:
             password_secret="prometheus/password",
         )
 
-        with patch("nthlayer.config.cli.get_config_path", return_value=None):
-            with patch("nthlayer.config.cli.load_config", return_value=config):
+        with patch("nthlayer_generate.config.cli.get_config_path", return_value=None):
+            with patch("nthlayer_generate.config.cli.load_config", return_value=config):
                 with patch.object(
                     PrometheusProfile, "get_password", return_value="secretpassword123"
                 ):
@@ -124,8 +124,8 @@ class TestConfigShowCommand:
             api_key_secret="grafana/api_key",
         )
 
-        with patch("nthlayer.config.cli.get_config_path", return_value=None):
-            with patch("nthlayer.config.cli.load_config", return_value=config):
+        with patch("nthlayer_generate.config.cli.get_config_path", return_value=None):
+            with patch("nthlayer_generate.config.cli.load_config", return_value=config):
                 result = config_show_command()
 
         captured = capsys.readouterr()
@@ -144,8 +144,8 @@ class TestConfigShowCommand:
             api_key_secret="grafana/api_key",
         )
 
-        with patch("nthlayer.config.cli.get_config_path", return_value=None):
-            with patch("nthlayer.config.cli.load_config", return_value=config):
+        with patch("nthlayer_generate.config.cli.get_config_path", return_value=None):
+            with patch("nthlayer_generate.config.cli.load_config", return_value=config):
                 with patch.object(
                     GrafanaProfile, "get_api_key", return_value="glsa_secretkey123456"
                 ):
@@ -164,8 +164,8 @@ class TestConfigShowCommand:
         config.alerting.slack.enabled = True
         config.alerting.slack.default_channel = "#alerts"
 
-        with patch("nthlayer.config.cli.get_config_path", return_value=None):
-            with patch("nthlayer.config.cli.load_config", return_value=config):
+        with patch("nthlayer_generate.config.cli.get_config_path", return_value=None):
+            with patch("nthlayer_generate.config.cli.load_config", return_value=config):
                 result = config_show_command()
 
         captured = capsys.readouterr()
@@ -189,7 +189,7 @@ class TestConfigSetCommand:
 
     def test_unknown_section(self, capsys):
         """Returns error for unknown section."""
-        with patch("nthlayer.config.cli.load_config") as mock_load:
+        with patch("nthlayer_generate.config.cli.load_config") as mock_load:
             mock_load.return_value = IntegrationConfig.default()
             result = config_set_command("unknown.key", "value")
 
@@ -202,8 +202,8 @@ class TestConfigSetCommand:
         monkeypatch.chdir(tmp_path)
         config = IntegrationConfig.default()
 
-        with patch("nthlayer.config.cli.load_config", return_value=config):
-            with patch("nthlayer.config.cli.save_config") as mock_save:
+        with patch("nthlayer_generate.config.cli.load_config", return_value=config):
+            with patch("nthlayer_generate.config.cli.save_config") as mock_save:
                 result = config_set_command("prometheus.default", "production")
 
         assert result == 0
@@ -215,8 +215,8 @@ class TestConfigSetCommand:
         monkeypatch.chdir(tmp_path)
         config = IntegrationConfig.default()
 
-        with patch("nthlayer.config.cli.load_config", return_value=config):
-            with patch("nthlayer.config.cli.save_config") as mock_save:
+        with patch("nthlayer_generate.config.cli.load_config", return_value=config):
+            with patch("nthlayer_generate.config.cli.save_config") as mock_save:
                 result = config_set_command("grafana.profiles.cloud.url", "https://grafana.cloud")
 
         assert result == 0
@@ -228,8 +228,8 @@ class TestConfigSetCommand:
         monkeypatch.chdir(tmp_path)
         config = IntegrationConfig.default()
 
-        with patch("nthlayer.config.cli.load_config", return_value=config):
-            with patch("nthlayer.config.cli.save_config"):
+        with patch("nthlayer_generate.config.cli.load_config", return_value=config):
+            with patch("nthlayer_generate.config.cli.save_config"):
                 result = config_set_command("alerting.pagerduty.enabled", "true")
 
         assert result == 0
@@ -240,9 +240,9 @@ class TestConfigSetCommand:
         monkeypatch.chdir(tmp_path)
         config = IntegrationConfig.default()
 
-        with patch("nthlayer.config.cli.load_config", return_value=config):
-            with patch("nthlayer.config.cli.save_config"):
-                with patch("nthlayer.config.cli.getpass.getpass", return_value="secret-value"):
+        with patch("nthlayer_generate.config.cli.load_config", return_value=config):
+            with patch("nthlayer_generate.config.cli.save_config"):
+                with patch("nthlayer_generate.config.cli.getpass.getpass", return_value="secret-value"):
                     result = config_set_command(
                         "grafana.profiles.default.api_key", None, secret=True
                     )
@@ -381,7 +381,7 @@ class TestConfigInitCommand:
         )
 
         with patch("builtins.input", lambda prompt: next(inputs)):
-            with patch("nthlayer.config.cli.save_config") as mock_save:
+            with patch("nthlayer_generate.config.cli.save_config") as mock_save:
                 result = config_init_command()
 
         assert result == 0
@@ -410,7 +410,7 @@ class TestConfigInitCommand:
         )
 
         with patch("builtins.input", lambda prompt: next(inputs)):
-            with patch("nthlayer.config.cli.save_config"):
+            with patch("nthlayer_generate.config.cli.save_config"):
                 result = config_init_command()
 
         assert result == 0
@@ -436,7 +436,7 @@ class TestConfigInitCommand:
         )
 
         with patch("builtins.input", lambda prompt: next(inputs)):
-            with patch("nthlayer.config.cli.save_config"):
+            with patch("nthlayer_generate.config.cli.save_config"):
                 result = config_init_command()
 
         assert result == 0
@@ -461,11 +461,11 @@ class TestConfigInitCommand:
         )
 
         with patch("builtins.input", lambda prompt: next(inputs)):
-            with patch("nthlayer.config.cli.getpass.getpass", return_value="glsa_apikey"):
-                with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+            with patch("nthlayer_generate.config.cli.getpass.getpass", return_value="glsa_apikey"):
+                with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
                     mock_instance = MagicMock()
                     mock_resolver.return_value = mock_instance
-                    with patch("nthlayer.config.cli.save_config"):
+                    with patch("nthlayer_generate.config.cli.save_config"):
                         result = config_init_command()
 
         assert result == 0
@@ -491,11 +491,11 @@ class TestConfigInitCommand:
         )
 
         with patch("builtins.input", lambda prompt: next(inputs)):
-            with patch("nthlayer.config.cli.getpass.getpass", return_value="pd_apikey"):
-                with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+            with patch("nthlayer_generate.config.cli.getpass.getpass", return_value="pd_apikey"):
+                with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
                     mock_instance = MagicMock()
                     mock_resolver.return_value = mock_instance
-                    with patch("nthlayer.config.cli.save_config"):
+                    with patch("nthlayer_generate.config.cli.save_config"):
                         result = config_init_command()
 
         assert result == 0
@@ -520,7 +520,7 @@ class TestConfigInitCommand:
         )
 
         with patch("builtins.input", lambda prompt: next(inputs)):
-            with patch("nthlayer.config.cli.save_config"):
+            with patch("nthlayer_generate.config.cli.save_config"):
                 result = config_init_command()
 
         assert result == 0
@@ -546,7 +546,7 @@ class TestConfigInitCommand:
         )
 
         with patch("builtins.input", lambda prompt: next(inputs)):
-            with patch("nthlayer.config.cli.save_config"):
+            with patch("nthlayer_generate.config.cli.save_config"):
                 result = config_init_command()
 
         assert result == 0
@@ -573,7 +573,7 @@ class TestConfigInitCommand:
         )
 
         with patch("builtins.input", lambda prompt: next(inputs)):
-            with patch("nthlayer.config.cli.save_config"):
+            with patch("nthlayer_generate.config.cli.save_config"):
                 result = config_init_command()
 
         assert result == 0
@@ -586,7 +586,7 @@ class TestSecretsListCommand:
 
     def test_no_secrets(self, capsys):
         """Lists no secrets when none exist."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_instance.list_secrets.return_value = {}
             mock_resolver.return_value = mock_instance
@@ -599,7 +599,7 @@ class TestSecretsListCommand:
 
     def test_lists_secrets_by_backend(self, capsys):
         """Lists secrets grouped by backend."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_instance.list_secrets.return_value = {
                 "env": ["grafana/api_key", "prometheus/password"],
@@ -622,7 +622,7 @@ class TestSecretsVerifyCommand:
 
     def test_all_secrets_found(self, capsys):
         """Returns 0 when all secrets found."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_instance.verify_secrets.return_value = {
                 "grafana/api_key": (True, "env"),
@@ -639,7 +639,7 @@ class TestSecretsVerifyCommand:
 
     def test_missing_secrets(self, capsys):
         """Returns 1 when secrets missing."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_instance.verify_secrets.return_value = {
                 "grafana/api_key": (True, "env"),
@@ -656,7 +656,7 @@ class TestSecretsVerifyCommand:
 
     def test_uses_default_required_secrets(self, capsys):
         """Uses REQUIRED_SECRETS when none specified."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_instance.verify_secrets.return_value = {
                 secret: (False, None) for secret in REQUIRED_SECRETS
@@ -673,7 +673,7 @@ class TestSecretsSetCommand:
 
     def test_set_secret_with_value(self, capsys):
         """Sets secret with provided value."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_instance.set_secret.return_value = True
             mock_resolver.return_value = mock_instance
@@ -685,12 +685,12 @@ class TestSecretsSetCommand:
 
     def test_prompts_for_value(self, capsys):
         """Prompts for value when not provided."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_instance.set_secret.return_value = True
             mock_resolver.return_value = mock_instance
 
-            with patch("nthlayer.config.cli.getpass.getpass", return_value="prompted-value"):
+            with patch("nthlayer_generate.config.cli.getpass.getpass", return_value="prompted-value"):
                 result = secrets_set_command("grafana/api_key", None)
 
         assert result == 0
@@ -698,7 +698,7 @@ class TestSecretsSetCommand:
 
     def test_set_with_backend(self, capsys):
         """Sets secret with specific backend."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_instance.set_secret.return_value = True
             mock_resolver.return_value = mock_instance
@@ -720,7 +720,7 @@ class TestSecretsSetCommand:
 
     def test_set_fails(self, capsys):
         """Returns 1 when set fails."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_instance.set_secret.return_value = False
             mock_resolver.return_value = mock_instance
@@ -737,7 +737,7 @@ class TestSecretsGetCommand:
 
     def test_secret_not_found(self, capsys):
         """Returns 1 when secret not found."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_instance.resolve.return_value = None
             mock_resolver.return_value = mock_instance
@@ -750,7 +750,7 @@ class TestSecretsGetCommand:
 
     def test_shows_masked_value(self, capsys):
         """Shows masked value by default."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_instance.resolve.return_value = "secretvalue123456"
             mock_resolver.return_value = mock_instance
@@ -764,7 +764,7 @@ class TestSecretsGetCommand:
 
     def test_reveals_value(self, capsys):
         """Reveals full value when requested."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_instance.resolve.return_value = "secretvalue123456"
             mock_resolver.return_value = mock_instance
@@ -777,7 +777,7 @@ class TestSecretsGetCommand:
 
     def test_short_value_masked(self, capsys):
         """Short values are fully masked."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_instance.resolve.return_value = "short"
             mock_resolver.return_value = mock_instance
@@ -810,7 +810,7 @@ class TestSecretsMigrateCommand:
 
     def test_source_backend_not_available(self, capsys):
         """Returns 1 when source backend not available."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_instance._backends = {}
             mock_resolver.return_value = mock_instance
@@ -823,7 +823,7 @@ class TestSecretsMigrateCommand:
 
     def test_target_backend_not_available(self, capsys):
         """Returns 1 when target backend not available."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_source = MagicMock()
             mock_instance._backends = {SecretBackend.ENV: mock_source}
@@ -837,7 +837,7 @@ class TestSecretsMigrateCommand:
 
     def test_target_does_not_support_write(self, capsys):
         """Returns 1 when target backend doesn't support write."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_source = MagicMock()
             mock_target = MagicMock()
@@ -856,7 +856,7 @@ class TestSecretsMigrateCommand:
 
     def test_no_secrets_to_migrate(self, capsys):
         """Returns 0 when no secrets to migrate."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_source = MagicMock()
             mock_source.list_secrets.return_value = []
@@ -876,7 +876,7 @@ class TestSecretsMigrateCommand:
 
     def test_dry_run(self, capsys):
         """Dry run shows what would be migrated."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_source = MagicMock()
             mock_source.list_secrets.return_value = ["grafana/api_key", "missing/secret"]
@@ -902,7 +902,7 @@ class TestSecretsMigrateCommand:
 
     def test_successful_migration(self, capsys):
         """Successfully migrates secrets."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_source = MagicMock()
             mock_source.list_secrets.return_value = ["grafana/api_key"]
@@ -926,7 +926,7 @@ class TestSecretsMigrateCommand:
 
     def test_migration_with_failures(self, capsys):
         """Returns 1 when some migrations fail."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_source = MagicMock()
             mock_source.list_secrets.return_value = ["secret1", "secret2"]
@@ -949,7 +949,7 @@ class TestSecretsMigrateCommand:
 
     def test_migrate_specific_secrets(self, capsys):
         """Migrates only specified secrets."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_source = MagicMock()
             mock_source.get_secret.return_value = "value"
@@ -970,7 +970,7 @@ class TestSecretsMigrateCommand:
 
     def test_skip_not_found_in_source(self, capsys):
         """Skips secrets not found in source."""
-        with patch("nthlayer.config.cli.get_secret_resolver") as mock_resolver:
+        with patch("nthlayer_generate.config.cli.get_secret_resolver") as mock_resolver:
             mock_instance = MagicMock()
             mock_source = MagicMock()
             mock_source.list_secrets.return_value = ["missing/secret"]

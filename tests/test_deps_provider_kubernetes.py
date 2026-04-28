@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from nthlayer.dependencies.models import DependencyType
-from nthlayer.dependencies.providers.base import deduplicate_dependencies
+from nthlayer_generate.dependencies.models import DependencyType
+from nthlayer_generate.dependencies.providers.base import deduplicate_dependencies
 
 
 class TestKubernetesDepProviderAvailability:
@@ -13,7 +13,7 @@ class TestKubernetesDepProviderAvailability:
 
     def test_check_kubernetes_available(self):
         """Test kubernetes availability check."""
-        from nthlayer.dependencies.providers.kubernetes import _check_kubernetes_available
+        from nthlayer_generate.dependencies.providers.kubernetes import _check_kubernetes_available
 
         # Should return True since kubernetes is installed in dev
         assert _check_kubernetes_available() is True
@@ -24,7 +24,7 @@ class TestKubernetesDepProviderInit:
 
     def test_default_config(self):
         """Test provider with default configuration."""
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         provider = KubernetesDepProvider()
 
@@ -34,7 +34,7 @@ class TestKubernetesDepProviderInit:
 
     def test_custom_namespace(self):
         """Test provider with custom namespace."""
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         provider = KubernetesDepProvider(namespace="production")
 
@@ -46,7 +46,7 @@ class TestKubernetesDepProviderInit:
         monkeypatch.setenv("KUBECONFIG", "/path/to/kubeconfig")
         monkeypatch.setenv("NTHLAYER_K8S_CONTEXT", "test-context")
 
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         provider = KubernetesDepProvider()
 
@@ -81,7 +81,7 @@ class TestKubernetesDepProviderListServices:
     @pytest.mark.asyncio
     async def test_list_services_all_namespaces(self, mock_k8s_services):
         """Test listing services across all namespaces."""
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         provider = KubernetesDepProvider()
 
@@ -104,7 +104,7 @@ class TestKubernetesDepProviderListServices:
     @pytest.mark.asyncio
     async def test_list_services_single_namespace(self, mock_k8s_services):
         """Test listing services in a single namespace."""
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         provider = KubernetesDepProvider(namespace="default")
 
@@ -153,7 +153,7 @@ class TestKubernetesDepProviderDiscoverIngress:
     @pytest.mark.asyncio
     async def test_discover_from_ingress(self, mock_ingress_list):
         """Test discovering dependencies from ingress resources."""
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         provider = KubernetesDepProvider()
 
@@ -206,7 +206,7 @@ class TestKubernetesDepProviderDiscoverNetworkPolicy:
     @pytest.mark.asyncio
     async def test_discover_from_network_policy(self, mock_network_policy_list):
         """Test discovering dependencies from network policies."""
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         provider = KubernetesDepProvider()
 
@@ -263,7 +263,7 @@ class TestKubernetesDepProviderDiscoverEnv:
     @pytest.mark.asyncio
     async def test_discover_from_env(self, mock_pod_list):
         """Test discovering dependencies from pod environment variables."""
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         provider = KubernetesDepProvider()
 
@@ -288,7 +288,7 @@ class TestKubernetesDepProviderHealthCheck:
     @pytest.mark.asyncio
     async def test_health_check_success(self):
         """Test successful health check."""
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         provider = KubernetesDepProvider()
 
@@ -309,7 +309,7 @@ class TestKubernetesDepProviderHealthCheck:
     @pytest.mark.asyncio
     async def test_health_check_failure(self):
         """Test health check when connection fails."""
-        from nthlayer.dependencies.providers.kubernetes import (
+        from nthlayer_generate.dependencies.providers.kubernetes import (
             KubernetesDepProvider,
             KubernetesDepProviderError,
         )
@@ -354,7 +354,7 @@ class TestKubernetesDepProviderGetAttributes:
     @pytest.mark.asyncio
     async def test_get_service_attributes(self, mock_service_with_labels):
         """Test getting service attributes from labels."""
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         provider = KubernetesDepProvider()
 
@@ -378,7 +378,7 @@ class TestKubernetesDepProviderHelpers:
 
     def test_selector_matches_service(self):
         """Test label selector matching."""
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         provider = KubernetesDepProvider()
 
@@ -395,7 +395,7 @@ class TestKubernetesDepProviderHelpers:
 
     def test_extract_service_from_selector(self):
         """Test extracting service name from selector labels."""
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         provider = KubernetesDepProvider()
 
@@ -408,7 +408,7 @@ class TestKubernetesDepProviderHelpers:
 
     def test_extract_service_from_env(self):
         """Test extracting service name from environment variable."""
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         provider = KubernetesDepProvider()
 
@@ -429,7 +429,7 @@ class TestKubernetesDepProviderHelpers:
 
     def test_infer_dep_type_from_env(self):
         """Test inferring dependency type from env var name."""
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         provider = KubernetesDepProvider()
 
@@ -442,8 +442,8 @@ class TestKubernetesDepProviderHelpers:
 
     def test_deduplicate(self):
         """Test deduplication of discovered dependencies."""
-        from nthlayer.dependencies.models import DiscoveredDependency
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.models import DiscoveredDependency
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         KubernetesDepProvider()
 
@@ -482,8 +482,8 @@ class TestKubernetesDepProviderIntegration:
     @pytest.mark.asyncio
     async def test_discover_combines_sources(self):
         """Test that discover combines results from multiple sources."""
-        from nthlayer.dependencies.models import DiscoveredDependency
-        from nthlayer.dependencies.providers.kubernetes import KubernetesDepProvider
+        from nthlayer_generate.dependencies.models import DiscoveredDependency
+        from nthlayer_generate.dependencies.providers.kubernetes import KubernetesDepProvider
 
         provider = KubernetesDepProvider()
 

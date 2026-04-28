@@ -7,8 +7,8 @@ class TestDashboardBuilderSDK:
 
     def test_builds_dashboard_for_api_service(self):
         """Test dashboard generation for API service type."""
-        from nthlayer.dashboards.builder_sdk import DashboardBuilderSDK
-        from nthlayer.specs.models import Resource, ServiceContext
+        from nthlayer_generate.dashboards.builder_sdk import DashboardBuilderSDK
+        from nthlayer_generate.specs.models import Resource, ServiceContext
 
         context = ServiceContext(
             name="test-api",
@@ -34,8 +34,8 @@ class TestDashboardBuilderSDK:
 
     def test_builds_dashboard_for_worker_service(self):
         """Test dashboard generation for worker service type."""
-        from nthlayer.dashboards.builder_sdk import DashboardBuilderSDK
-        from nthlayer.specs.models import Resource, ServiceContext
+        from nthlayer_generate.dashboards.builder_sdk import DashboardBuilderSDK
+        from nthlayer_generate.specs.models import Resource, ServiceContext
 
         context = ServiceContext(
             name="test-worker",
@@ -64,8 +64,8 @@ class TestDashboardBuilderSDK:
 
     def test_builds_dashboard_for_stream_service(self):
         """Test dashboard generation for stream service type."""
-        from nthlayer.dashboards.builder_sdk import DashboardBuilderSDK
-        from nthlayer.specs.models import Resource, ServiceContext
+        from nthlayer_generate.dashboards.builder_sdk import DashboardBuilderSDK
+        from nthlayer_generate.specs.models import Resource, ServiceContext
 
         context = ServiceContext(
             name="test-stream",
@@ -98,7 +98,7 @@ class TestServiceTypeRouting:
 
     def test_api_slo_uses_http_metrics(self):
         """API services should use HTTP request metrics for SLOs."""
-        from nthlayer.dashboards.sdk_adapter import SDKAdapter
+        from nthlayer_generate.dashboards.sdk_adapter import SDKAdapter
 
         query = SDKAdapter.convert_slo_to_query(
             {"name": "availability", "objective": 99.9},
@@ -110,7 +110,7 @@ class TestServiceTypeRouting:
 
     def test_worker_slo_uses_notification_metrics(self):
         """Worker services should use notification metrics for SLOs."""
-        from nthlayer.dashboards.sdk_adapter import SDKAdapter
+        from nthlayer_generate.dashboards.sdk_adapter import SDKAdapter
 
         query = SDKAdapter.convert_slo_to_query(
             {"name": "availability", "objective": 99.9},
@@ -122,7 +122,7 @@ class TestServiceTypeRouting:
 
     def test_stream_slo_uses_events_metrics(self):
         """Stream services should use events metrics for SLOs."""
-        from nthlayer.dashboards.sdk_adapter import SDKAdapter
+        from nthlayer_generate.dashboards.sdk_adapter import SDKAdapter
 
         query = SDKAdapter.convert_slo_to_query(
             {"name": "availability", "objective": 99.9},
@@ -138,7 +138,7 @@ class TestHistogramQuantileSyntax:
 
     def test_latency_slo_has_sum_by_le(self):
         """Latency SLOs should use sum by (le) for histogram_quantile."""
-        from nthlayer.dashboards.sdk_adapter import SDKAdapter
+        from nthlayer_generate.dashboards.sdk_adapter import SDKAdapter
 
         query = SDKAdapter.convert_slo_to_query(
             {"name": "latency-p95", "objective": 99.0},
@@ -154,7 +154,7 @@ class TestIntentResolution:
 
     def test_http_intent_resolves(self):
         """HTTP intents should resolve to correct metrics."""
-        from nthlayer.dashboards.intents import get_intent
+        from nthlayer_generate.dashboards.intents import get_intent
 
         intent = get_intent("http.requests_total")
         assert intent is not None
@@ -162,7 +162,7 @@ class TestIntentResolution:
 
     def test_redis_intent_resolves(self):
         """Redis intents should resolve to correct metrics."""
-        from nthlayer.dashboards.intents import get_intent
+        from nthlayer_generate.dashboards.intents import get_intent
 
         intent = get_intent("redis.memory")
         assert intent is not None
@@ -170,7 +170,7 @@ class TestIntentResolution:
 
     def test_postgresql_intent_resolves(self):
         """PostgreSQL intents should resolve to correct metrics."""
-        from nthlayer.dashboards.intents import get_intent
+        from nthlayer_generate.dashboards.intents import get_intent
 
         intent = get_intent("postgresql.connections")
         assert intent is not None
@@ -178,7 +178,7 @@ class TestIntentResolution:
 
     def test_worker_intent_resolves(self):
         """Worker intents should resolve to correct metrics."""
-        from nthlayer.dashboards.intents import get_intent
+        from nthlayer_generate.dashboards.intents import get_intent
 
         intent = get_intent("worker.jobs_processed")
         assert intent is not None
@@ -186,7 +186,7 @@ class TestIntentResolution:
 
     def test_stream_intent_resolves(self):
         """Stream intents should resolve to correct metrics."""
-        from nthlayer.dashboards.intents import get_intent
+        from nthlayer_generate.dashboards.intents import get_intent
 
         intent = get_intent("stream.events_processed")
         assert intent is not None
@@ -198,7 +198,7 @@ class TestStatusLabelConsistency:
 
     def test_worker_uses_failed_status(self):
         """Worker error queries should use status='failed'."""
-        from nthlayer.dashboards.templates.worker_intent import WorkerIntentTemplate
+        from nthlayer_generate.dashboards.templates.worker_intent import WorkerIntentTemplate
 
         template = WorkerIntentTemplate()
         specs = template.get_panel_specs("$service")
@@ -213,7 +213,7 @@ class TestStatusLabelConsistency:
 
     def test_stream_uses_error_status(self):
         """Stream error queries should use status='error'."""
-        from nthlayer.dashboards.templates.stream_intent import StreamIntentTemplate
+        from nthlayer_generate.dashboards.templates.stream_intent import StreamIntentTemplate
 
         template = StreamIntentTemplate()
         specs = template.get_panel_specs("$service")
@@ -232,7 +232,7 @@ class TestLabelConsistency:
 
     def test_elasticsearch_uses_service_label(self):
         """Elasticsearch queries should use service label, not cluster."""
-        from nthlayer.dashboards.templates.elasticsearch_intent import ElasticsearchIntentTemplate
+        from nthlayer_generate.dashboards.templates.elasticsearch_intent import ElasticsearchIntentTemplate
 
         template = ElasticsearchIntentTemplate()
         specs = template.get_panel_specs("$service")

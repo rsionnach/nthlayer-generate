@@ -4,9 +4,9 @@ import json
 
 import pytest
 
-from nthlayer.dashboards.models import Panel, Target
-from nthlayer.dashboards.sdk_adapter import SDKAdapter, create_service_dashboard
-from nthlayer.specs.models import ServiceContext
+from nthlayer_generate.dashboards.models import Panel, Target
+from nthlayer_generate.dashboards.sdk_adapter import SDKAdapter, create_service_dashboard
+from nthlayer_generate.specs.models import ServiceContext
 
 
 @pytest.fixture
@@ -689,7 +689,7 @@ class TestAddTemplateVariables:
 
     def test_returns_dashboard_unchanged(self, api_service_context):
         """Test that template variables method returns dashboard unchanged."""
-        from nthlayer.dashboards.models import TemplateVariable
+        from nthlayer_generate.dashboards.models import TemplateVariable
 
         dash = SDKAdapter.create_dashboard(api_service_context)
         variables = [

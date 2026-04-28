@@ -11,19 +11,19 @@ from pathlib import Path
 
 import yaml
 
-from nthlayer.specs.contracts import (
+from nthlayer_generate.specs.contracts import (
     ContractRegistry,
     validate_dependency_expectations,
     validate_transitive_feasibility,
 )
-from nthlayer.specs.manifest import (
+from nthlayer_generate.specs.manifest import (
     Contract,
     Dependency,
     DependencySLO,
     ReliabilityManifest,
     SLODefinition,
 )
-from nthlayer.specs.opensrm_parser import (
+from nthlayer_generate.specs.opensrm_parser import (
     _deep_merge_spec,
     resolve_opensrm_template,
 )
@@ -651,7 +651,7 @@ class TestDeepMergeSpec:
 class TestValidateServiceFileContracts:
     def test_contract_warnings_in_result(self) -> None:
         """validate_service_file includes contract warnings for OpenSRM files."""
-        from nthlayer.specs.validator import validate_service_file
+        from nthlayer_generate.specs.validator import validate_service_file
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # SLO target (99.9%) is looser than contract (99.95%)
@@ -684,7 +684,7 @@ class TestValidateServiceFileContracts:
 
     def test_dep_warnings_with_registry(self) -> None:
         """validate_service_file includes dependency warnings when registry is provided."""
-        from nthlayer.specs.validator import validate_service_file
+        from nthlayer_generate.specs.validator import validate_service_file
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Main service expects db at 99.999%
@@ -743,7 +743,7 @@ class TestValidateServiceFileContracts:
 
     def test_no_registry_skips_dep_validation(self) -> None:
         """Without a registry, no dependency warnings are produced."""
-        from nthlayer.specs.validator import validate_service_file
+        from nthlayer_generate.specs.validator import validate_service_file
 
         with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = Path(tmpdir) / "svc.reliability.yaml"

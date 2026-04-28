@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer.dependencies.models import DependencyType
-from nthlayer.dependencies.providers.base import deduplicate_dependencies, infer_dependency_type
+from nthlayer_generate.dependencies.models import DependencyType
+from nthlayer_generate.dependencies.providers.base import deduplicate_dependencies, infer_dependency_type
 
 # Sample Curator-style instance data
 SAMPLE_INSTANCE_DATA = json.dumps(
@@ -70,12 +70,12 @@ def mock_kazoo():
         mock_state = MagicMock()
         mock_state.CONNECTED = "CONNECTED"
 
-        with patch("nthlayer.dependencies.providers.zookeeper.KAZOO_AVAILABLE", True):
-            with patch("nthlayer.dependencies.providers.zookeeper.KazooClient", mock_client_class):
-                with patch("nthlayer.dependencies.providers.zookeeper.KazooState", mock_state):
-                    with patch("nthlayer.dependencies.providers.zookeeper.NoNodeError", Exception):
+        with patch("nthlayer_generate.dependencies.providers.zookeeper.KAZOO_AVAILABLE", True):
+            with patch("nthlayer_generate.dependencies.providers.zookeeper.KazooClient", mock_client_class):
+                with patch("nthlayer_generate.dependencies.providers.zookeeper.KazooState", mock_state):
+                    with patch("nthlayer_generate.dependencies.providers.zookeeper.NoNodeError", Exception):
                         with patch(
-                            "nthlayer.dependencies.providers.zookeeper.ZookeeperError", Exception
+                            "nthlayer_generate.dependencies.providers.zookeeper.ZookeeperError", Exception
                         ):
                             yield mock_client
 
@@ -85,7 +85,7 @@ class TestZookeeperDepProviderInit:
 
     def test_init_defaults(self, mock_kazoo):
         """Test default initialization."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         provider = ZookeeperDepProvider()
         assert provider.hosts == "localhost:2181"
@@ -96,28 +96,28 @@ class TestZookeeperDepProviderInit:
 
     def test_init_with_hosts(self, mock_kazoo):
         """Test initialization with custom hosts."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         provider = ZookeeperDepProvider(hosts="zk1:2181,zk2:2181,zk3:2181")
         assert provider.hosts == "zk1:2181,zk2:2181,zk3:2181"
 
     def test_init_with_root_path(self, mock_kazoo):
         """Test initialization with custom root path."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         provider = ZookeeperDepProvider(root_path="/discovery/services")
         assert provider.root_path == "/discovery/services"
 
     def test_init_with_auth(self, mock_kazoo):
         """Test initialization with authentication."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         provider = ZookeeperDepProvider(auth=("digest", "user:password"))
         assert provider.auth == ("digest", "user:password")
 
     def test_init_full(self, mock_kazoo):
         """Test initialization with all options."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         provider = ZookeeperDepProvider(
             hosts="zk.example.com:2181",
@@ -136,7 +136,7 @@ class TestZookeeperDepProviderParseCurator:
 
     def test_parse_valid_json(self, mock_kazoo):
         """Test parsing valid Curator JSON."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         provider = ZookeeperDepProvider()
         data = provider._parse_curator_instance(SAMPLE_INSTANCE_DATA)
@@ -149,7 +149,7 @@ class TestZookeeperDepProviderParseCurator:
 
     def test_parse_empty_data(self, mock_kazoo):
         """Test parsing empty data."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         provider = ZookeeperDepProvider()
         data = provider._parse_curator_instance(b"")
@@ -158,7 +158,7 @@ class TestZookeeperDepProviderParseCurator:
 
     def test_parse_invalid_json(self, mock_kazoo):
         """Test parsing invalid JSON."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         provider = ZookeeperDepProvider()
         data = provider._parse_curator_instance(b"not json")
@@ -167,7 +167,7 @@ class TestZookeeperDepProviderParseCurator:
 
     def test_parse_none_data(self, mock_kazoo):
         """Test parsing None data."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         provider = ZookeeperDepProvider()
         data = provider._parse_curator_instance(None)
@@ -180,7 +180,7 @@ class TestZookeeperDepProviderParseDependencies:
 
     def test_parse_dependencies_list(self, mock_kazoo):
         """Test parsing dependencies from list."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         provider = ZookeeperDepProvider()
         payload = {"dependencies": ["service-a", "service-b"]}
@@ -193,7 +193,7 @@ class TestZookeeperDepProviderParseDependencies:
 
     def test_parse_dependencies_string(self, mock_kazoo):
         """Test parsing dependencies from comma-separated string."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         provider = ZookeeperDepProvider()
         payload = {"dependencies": "service-a, service-b, service-c"}
@@ -207,7 +207,7 @@ class TestZookeeperDepProviderParseDependencies:
 
     def test_parse_typed_databases(self, mock_kazoo):
         """Test parsing databases field."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         provider = ZookeeperDepProvider()
         payload = {"databases": ["postgresql", "redis"]}
@@ -219,7 +219,7 @@ class TestZookeeperDepProviderParseDependencies:
 
     def test_parse_typed_queues(self, mock_kazoo):
         """Test parsing queues field."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         provider = ZookeeperDepProvider()
         payload = {"queues": ["kafka", "rabbitmq"]}
@@ -231,7 +231,7 @@ class TestZookeeperDepProviderParseDependencies:
 
     def test_parse_typed_external(self, mock_kazoo):
         """Test parsing external field."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         provider = ZookeeperDepProvider()
         payload = {"external": ["stripe-api", "twilio"]}
@@ -243,7 +243,7 @@ class TestZookeeperDepProviderParseDependencies:
 
     def test_parse_combined(self, mock_kazoo):
         """Test parsing combined dependencies."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         provider = ZookeeperDepProvider()
         payload = {
@@ -261,42 +261,42 @@ class TestZookeeperDepProviderInferType:
 
     def test_infer_postgres(self, mock_kazoo):
         """Test inferring PostgreSQL as DATASTORE."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         ZookeeperDepProvider()
         assert infer_dependency_type("postgresql") == DependencyType.DATASTORE
 
     def test_infer_mysql(self, mock_kazoo):
         """Test inferring MySQL as DATASTORE."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         ZookeeperDepProvider()
         assert infer_dependency_type("mysql-primary") == DependencyType.DATASTORE
 
     def test_infer_redis(self, mock_kazoo):
         """Test inferring Redis as DATASTORE."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         ZookeeperDepProvider()
         assert infer_dependency_type("redis-cache") == DependencyType.DATASTORE
 
     def test_infer_kafka(self, mock_kazoo):
         """Test inferring Kafka as QUEUE."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         ZookeeperDepProvider()
         assert infer_dependency_type("kafka-cluster") == DependencyType.QUEUE
 
     def test_infer_rabbitmq(self, mock_kazoo):
         """Test inferring RabbitMQ as QUEUE."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         ZookeeperDepProvider()
         assert infer_dependency_type("rabbitmq") == DependencyType.QUEUE
 
     def test_infer_service(self, mock_kazoo):
         """Test inferring regular service."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         ZookeeperDepProvider()
         assert infer_dependency_type("payment-api") == DependencyType.SERVICE
@@ -308,7 +308,7 @@ class TestZookeeperDepProviderListServices:
 
     async def test_list_services(self, mock_kazoo):
         """Test listing all services."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         mock_kazoo.exists.return_value = True
         mock_kazoo.get_children.return_value = [
@@ -330,7 +330,7 @@ class TestZookeeperDepProviderListServices:
 
     async def test_list_services_filters_special(self, mock_kazoo):
         """Test that special znodes are filtered out."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         mock_kazoo.exists.return_value = True
         mock_kazoo.get_children.return_value = [
@@ -351,7 +351,7 @@ class TestZookeeperDepProviderListServices:
 
     async def test_list_services_root_not_exists(self, mock_kazoo):
         """Test listing when root path doesn't exist."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         mock_kazoo.exists.return_value = False
 
@@ -370,7 +370,7 @@ class TestZookeeperDepProviderDiscover:
 
     async def test_discover_from_instance(self, mock_kazoo):
         """Test discovering dependencies from instance data."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         # Setup mock responses
         mock_kazoo.exists.side_effect = lambda path: True
@@ -395,7 +395,7 @@ class TestZookeeperDepProviderDiscover:
 
     async def test_discover_with_confidence(self, mock_kazoo):
         """Test that instance deps have higher confidence than service deps."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         mock_kazoo.exists.side_effect = lambda path: True
         mock_kazoo.get.side_effect = lambda path: (
@@ -423,7 +423,7 @@ class TestZookeeperDepProviderDiscover:
 
     async def test_discover_service_not_found(self, mock_kazoo):
         """Test discovering for nonexistent service."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         mock_kazoo.exists.return_value = False
 
@@ -437,7 +437,7 @@ class TestZookeeperDepProviderDiscover:
 
     async def test_discover_typed_databases(self, mock_kazoo):
         """Test that typed databases are discovered as DATASTORE."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         mock_kazoo.exists.side_effect = lambda path: True
         mock_kazoo.get.side_effect = lambda path: (SAMPLE_INSTANCE_DATA, MagicMock())
@@ -461,7 +461,7 @@ class TestZookeeperDepProviderHealthCheck:
 
     async def test_health_check_success(self, mock_kazoo):
         """Test successful health check."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         mock_kazoo.state = "CONNECTED"
 
@@ -469,7 +469,7 @@ class TestZookeeperDepProviderHealthCheck:
         provider._client = mock_kazoo
         provider._initialized = True
 
-        with patch("nthlayer.dependencies.providers.zookeeper.KazooState") as mock_state:
+        with patch("nthlayer_generate.dependencies.providers.zookeeper.KazooState") as mock_state:
             mock_state.CONNECTED = "CONNECTED"
             health = await provider.health_check()
 
@@ -478,7 +478,7 @@ class TestZookeeperDepProviderHealthCheck:
 
     async def test_health_check_disconnected(self, mock_kazoo):
         """Test health check when disconnected."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         mock_kazoo.state = "SUSPENDED"
 
@@ -486,7 +486,7 @@ class TestZookeeperDepProviderHealthCheck:
         provider._client = mock_kazoo
         provider._initialized = True
 
-        with patch("nthlayer.dependencies.providers.zookeeper.KazooState") as mock_state:
+        with patch("nthlayer_generate.dependencies.providers.zookeeper.KazooState") as mock_state:
             mock_state.CONNECTED = "CONNECTED"
             health = await provider.health_check()
 
@@ -500,7 +500,7 @@ class TestZookeeperDepProviderGetAttributes:
 
     async def test_get_service_attributes(self, mock_kazoo):
         """Test getting service attributes."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         mock_stat = MagicMock()
         mock_stat.created = 1234567890
@@ -527,7 +527,7 @@ class TestZookeeperDepProviderGetAttributes:
 
     async def test_get_service_attributes_not_found(self, mock_kazoo):
         """Test getting attributes for nonexistent service."""
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         mock_kazoo.exists.return_value = False
 
@@ -545,8 +545,8 @@ class TestZookeeperDepProviderDeduplicate:
 
     def test_deduplicate_keeps_highest_confidence(self, mock_kazoo):
         """Test deduplication keeps highest confidence."""
-        from nthlayer.dependencies.models import DiscoveredDependency
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.models import DiscoveredDependency
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         ZookeeperDepProvider()
 
@@ -577,8 +577,8 @@ class TestZookeeperDepProviderDeduplicate:
 
     def test_deduplicate_different_targets(self, mock_kazoo):
         """Test deduplication keeps different targets."""
-        from nthlayer.dependencies.models import DiscoveredDependency
-        from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        from nthlayer_generate.dependencies.models import DiscoveredDependency
+        from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
         ZookeeperDepProvider()
 
@@ -609,8 +609,8 @@ class TestZookeeperDepProviderNoKazoo:
 
     def test_init_without_kazoo(self):
         """Test initialization fails gracefully without kazoo."""
-        with patch("nthlayer.dependencies.providers.zookeeper.KAZOO_AVAILABLE", False):
-            from nthlayer.dependencies.providers.zookeeper import (
+        with patch("nthlayer_generate.dependencies.providers.zookeeper.KAZOO_AVAILABLE", False):
+            from nthlayer_generate.dependencies.providers.zookeeper import (
                 ZookeeperDepProvider,
                 ZookeeperDepProviderError,
             )
@@ -622,8 +622,8 @@ class TestZookeeperDepProviderNoKazoo:
 
     async def test_health_check_without_kazoo(self):
         """Test health check returns error without kazoo."""
-        with patch("nthlayer.dependencies.providers.zookeeper.KAZOO_AVAILABLE", False):
-            from nthlayer.dependencies.providers.zookeeper import ZookeeperDepProvider
+        with patch("nthlayer_generate.dependencies.providers.zookeeper.KAZOO_AVAILABLE", False):
+            from nthlayer_generate.dependencies.providers.zookeeper import ZookeeperDepProvider
 
             # Bypass __post_init__ validation
             provider = object.__new__(ZookeeperDepProvider)

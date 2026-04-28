@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer.config.secrets import (
+from nthlayer_generate.config.secrets import (
     SECRET_REF_PATTERN,
     EnvSecretBackend,
     FileSecretBackend,
@@ -423,7 +423,7 @@ class TestSecretResolver:
         )
 
         with patch(
-            "nthlayer.config.secrets._load_cloud_backend", return_value=(None, "hvac not installed")
+            "nthlayer_generate.config.secrets._load_cloud_backend", return_value=(None, "hvac not installed")
         ):
             with pytest.raises(SecretBackendUnavailableError):
                 SecretResolver(config)
@@ -437,7 +437,7 @@ class TestSecretResolver:
         )
 
         with patch(
-            "nthlayer.config.secrets._load_cloud_backend", return_value=(None, "hvac not installed")
+            "nthlayer_generate.config.secrets._load_cloud_backend", return_value=(None, "hvac not installed")
         ):
             resolver = SecretResolver(config)
 
@@ -450,11 +450,11 @@ class TestLoadCloudBackend:
 
     def test_loads_vault_backend(self):
         """Loads Vault backend when available."""
-        from nthlayer.config.secrets import _load_cloud_backend
+        from nthlayer_generate.config.secrets import _load_cloud_backend
 
         config = SecretConfig()
 
-        with patch("nthlayer.config.secrets.backends.VaultSecretBackend") as mock_class:
+        with patch("nthlayer_generate.config.secrets.backends.VaultSecretBackend") as mock_class:
             mock_backend = MagicMock()
             mock_class.return_value = mock_backend
 
@@ -465,13 +465,13 @@ class TestLoadCloudBackend:
 
     def test_returns_error_on_import_failure(self):
         """Returns error when import fails."""
-        from nthlayer.config.secrets import _load_cloud_backend
+        from nthlayer_generate.config.secrets import _load_cloud_backend
 
         config = SecretConfig()
 
         with patch.dict("sys.modules", {"hvac": None}):
             with patch(
-                "nthlayer.config.secrets.backends", side_effect=ImportError("hvac not found")
+                "nthlayer_generate.config.secrets.backends", side_effect=ImportError("hvac not found")
             ):
                 backend, error = _load_cloud_backend(SecretBackend.VAULT, config)
 
@@ -481,7 +481,7 @@ class TestLoadCloudBackend:
 
     def test_unknown_backend_type(self):
         """Returns error for unknown backend type."""
-        from nthlayer.config.secrets import _load_cloud_backend
+        from nthlayer_generate.config.secrets import _load_cloud_backend
 
         config = SecretConfig()
 
@@ -497,7 +497,7 @@ class TestGetSecretResolver:
     def test_creates_singleton(self):
         """Creates and returns singleton resolver."""
         # Reset global state
-        import nthlayer.config.secrets as secrets_module
+        import nthlayer_generate.config.secrets as secrets_module
 
         secrets_module._resolver = None
 
@@ -508,7 +508,7 @@ class TestGetSecretResolver:
 
     def test_creates_new_with_config(self):
         """Creates new resolver when config provided."""
-        import nthlayer.config.secrets as secrets_module
+        import nthlayer_generate.config.secrets as secrets_module
 
         secrets_module._resolver = None
 
@@ -530,7 +530,7 @@ class TestResolveSecret:
         monkeypatch.setenv("NTHLAYER_MY_KEY", "my_value")
 
         # Reset global state
-        import nthlayer.config.secrets as secrets_module
+        import nthlayer_generate.config.secrets as secrets_module
 
         secrets_module._resolver = None
 
@@ -581,7 +581,7 @@ class TestSecretResolverCloudBackends:
 
         mock_backend = MagicMock()
         with patch(
-            "nthlayer.config.secrets._load_cloud_backend", return_value=(mock_backend, None)
+            "nthlayer_generate.config.secrets._load_cloud_backend", return_value=(mock_backend, None)
         ):
             resolver = SecretResolver(config)
 
@@ -596,7 +596,7 @@ class TestSecretResolverCloudBackends:
 
         mock_backend = MagicMock()
         with patch(
-            "nthlayer.config.secrets._load_cloud_backend", return_value=(mock_backend, None)
+            "nthlayer_generate.config.secrets._load_cloud_backend", return_value=(mock_backend, None)
         ):
             resolver = SecretResolver(config)
 
@@ -610,7 +610,7 @@ class TestSecretResolverCloudBackends:
 
         mock_backend = MagicMock()
         with patch(
-            "nthlayer.config.secrets._load_cloud_backend", return_value=(mock_backend, None)
+            "nthlayer_generate.config.secrets._load_cloud_backend", return_value=(mock_backend, None)
         ):
             resolver = SecretResolver(config)
 
@@ -624,7 +624,7 @@ class TestSecretResolverCloudBackends:
 
         mock_backend = MagicMock()
         with patch(
-            "nthlayer.config.secrets._load_cloud_backend", return_value=(mock_backend, None)
+            "nthlayer_generate.config.secrets._load_cloud_backend", return_value=(mock_backend, None)
         ):
             resolver = SecretResolver(config)
 
@@ -637,7 +637,7 @@ class TestSecretResolverCloudBackends:
 
         mock_backend = MagicMock()
         with patch(
-            "nthlayer.config.secrets._load_cloud_backend", return_value=(mock_backend, None)
+            "nthlayer_generate.config.secrets._load_cloud_backend", return_value=(mock_backend, None)
         ):
             resolver = SecretResolver(config)
 
@@ -652,7 +652,7 @@ class TestSecretResolverCloudBackends:
 
         mock_backend = MagicMock()
         with patch(
-            "nthlayer.config.secrets._load_cloud_backend", return_value=(mock_backend, None)
+            "nthlayer_generate.config.secrets._load_cloud_backend", return_value=(mock_backend, None)
         ):
             resolver = SecretResolver(config)
 
@@ -722,7 +722,7 @@ class TestSecretResolverEdgeCases:
         )
 
         with patch(
-            "nthlayer.config.secrets._load_cloud_backend",
+            "nthlayer_generate.config.secrets._load_cloud_backend",
             return_value=(None, "boto3 not installed"),
         ):
             resolver = SecretResolver(config)
@@ -740,7 +740,7 @@ class TestSecretResolverEdgeCases:
         )
 
         with patch(
-            "nthlayer.config.secrets._load_cloud_backend",
+            "nthlayer_generate.config.secrets._load_cloud_backend",
             return_value=(None, "azure-identity not installed"),
         ):
             resolver = SecretResolver(config)
@@ -757,7 +757,7 @@ class TestSecretResolverEdgeCases:
         )
 
         with patch(
-            "nthlayer.config.secrets._load_cloud_backend",
+            "nthlayer_generate.config.secrets._load_cloud_backend",
             return_value=(None, "google-cloud not installed"),
         ):
             resolver = SecretResolver(config)
@@ -775,7 +775,7 @@ class TestSecretResolverEdgeCases:
         )
 
         with patch(
-            "nthlayer.config.secrets._load_cloud_backend",
+            "nthlayer_generate.config.secrets._load_cloud_backend",
             return_value=(None, "httpx not installed"),
         ):
             resolver = SecretResolver(config)
@@ -789,11 +789,11 @@ class TestLoadCloudBackendImportErrors:
 
     def test_azure_import_error(self):
         """Returns error when Azure import fails."""
-        from nthlayer.config.secrets import _load_cloud_backend
+        from nthlayer_generate.config.secrets import _load_cloud_backend
 
         config = SecretConfig()
 
-        with patch.dict("sys.modules", {"nthlayer.config.secrets.backends": None}):
+        with patch.dict("sys.modules", {"nthlayer_generate.config.secrets.backends": None}):
             # Simulate import error by patching the import statement
             original_import = (
                 __builtins__.__import__ if hasattr(__builtins__, "__import__") else __import__
@@ -808,7 +808,7 @@ class TestLoadCloudBackendImportErrors:
             # Since backends module exists, we can't easily simulate import error
             # Testing with direct patch on the function's import path
             with patch(
-                "nthlayer.config.secrets.backends.AzureSecretBackend",
+                "nthlayer_generate.config.secrets.backends.AzureSecretBackend",
                 side_effect=ImportError("azure-identity"),
             ):
                 backend, error = _load_cloud_backend(SecretBackend.AZURE, config)
@@ -818,12 +818,12 @@ class TestLoadCloudBackendImportErrors:
 
     def test_gcp_import_error(self):
         """Returns error when GCP import fails."""
-        from nthlayer.config.secrets import _load_cloud_backend
+        from nthlayer_generate.config.secrets import _load_cloud_backend
 
         config = SecretConfig()
 
         with patch(
-            "nthlayer.config.secrets.backends.GCPSecretBackend",
+            "nthlayer_generate.config.secrets.backends.GCPSecretBackend",
             side_effect=ImportError("google-cloud"),
         ):
             backend, error = _load_cloud_backend(SecretBackend.GCP, config)
@@ -833,12 +833,12 @@ class TestLoadCloudBackendImportErrors:
 
     def test_doppler_import_error(self):
         """Returns error when Doppler import fails."""
-        from nthlayer.config.secrets import _load_cloud_backend
+        from nthlayer_generate.config.secrets import _load_cloud_backend
 
         config = SecretConfig()
 
         with patch(
-            "nthlayer.config.secrets.backends.DopplerSecretBackend",
+            "nthlayer_generate.config.secrets.backends.DopplerSecretBackend",
             side_effect=ImportError("httpx"),
         ):
             backend, error = _load_cloud_backend(SecretBackend.DOPPLER, config)
@@ -848,12 +848,12 @@ class TestLoadCloudBackendImportErrors:
 
     def test_aws_import_error(self):
         """Returns error when AWS import fails."""
-        from nthlayer.config.secrets import _load_cloud_backend
+        from nthlayer_generate.config.secrets import _load_cloud_backend
 
         config = SecretConfig()
 
         with patch(
-            "nthlayer.config.secrets.backends.AWSSecretBackend", side_effect=ImportError("boto3")
+            "nthlayer_generate.config.secrets.backends.AWSSecretBackend", side_effect=ImportError("boto3")
         ):
             backend, error = _load_cloud_backend(SecretBackend.AWS, config)
 

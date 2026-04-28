@@ -12,7 +12,7 @@ import os
 
 import pytest
 
-from nthlayer.metrics.discovery import (
+from nthlayer_generate.metrics.discovery import (
     discover_all_metrics,
     discover_metrics_with_details,
     discover_service_metrics,

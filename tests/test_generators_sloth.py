@@ -2,7 +2,7 @@
 
 import yaml
 
-from nthlayer.generators.sloth import (
+from nthlayer_generate.generators.sloth import (
     SlothGenerationResult,
     _extract_error_query,
     _extract_total_query,
@@ -11,8 +11,8 @@ from nthlayer.generators.sloth import (
     generate_alerting_config,
     generate_sloth_from_manifest,
 )
-from nthlayer.specs.manifest import ReliabilityManifest, SLODefinition
-from nthlayer.specs.models import ServiceContext
+from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
+from nthlayer_generate.specs.models import ServiceContext
 
 
 class TestSlothGenerationResult:

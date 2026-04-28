@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from nthlayer.generators.docs import (
+from nthlayer_generate.generators.docs import (
     DocsGenerationResult,
     _generate_adr_scaffold,
     _generate_api_docs,
@@ -17,7 +17,7 @@ from nthlayer.generators.docs import (
     generate_docs_from_manifest,
     generate_service_docs,
 )
-from nthlayer.specs.manifest import (
+from nthlayer_generate.specs.manifest import (
     Dependency,
     DependencySLO,
     DeploymentConfig,

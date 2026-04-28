@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer.dependencies.models import DependencyType
-from nthlayer.dependencies.providers.base import deduplicate_dependencies, infer_dependency_type
+from nthlayer_generate.dependencies.models import DependencyType
+from nthlayer_generate.dependencies.providers.base import deduplicate_dependencies, infer_dependency_type
 
 # Sample service data for testing
 SAMPLE_SERVICE_DATA = json.dumps(
@@ -43,8 +43,8 @@ def mock_etcd3():
         mock_etcd_module = MagicMock()
         mock_etcd_module.client.return_value = mock_client
 
-        with patch("nthlayer.dependencies.providers.etcd.ETCD3_AVAILABLE", True):
-            with patch("nthlayer.dependencies.providers.etcd.etcd3", mock_etcd_module):
+        with patch("nthlayer_generate.dependencies.providers.etcd.ETCD3_AVAILABLE", True):
+            with patch("nthlayer_generate.dependencies.providers.etcd.etcd3", mock_etcd_module):
                 yield mock_client
 
 
@@ -53,7 +53,7 @@ class TestEtcdDepProviderInit:
 
     def test_init_defaults(self, mock_etcd3):
         """Test default initialization."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         assert provider.host == "localhost"
@@ -65,28 +65,28 @@ class TestEtcdDepProviderInit:
 
     def test_init_with_host(self, mock_etcd3):
         """Test initialization with custom host."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider(host="etcd.example.com")
         assert provider.host == "etcd.example.com"
 
     def test_init_with_port(self, mock_etcd3):
         """Test initialization with custom port."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider(port=2380)
         assert provider.port == 2380
 
     def test_init_with_prefix(self, mock_etcd3):
         """Test initialization with custom prefix."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider(prefix="/prod/services")
         assert provider.prefix == "/prod/services"
 
     def test_init_with_auth(self, mock_etcd3):
         """Test initialization with authentication."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider(username="admin", password="secret")
         assert provider.username == "admin"
@@ -94,7 +94,7 @@ class TestEtcdDepProviderInit:
 
     def test_init_full(self, mock_etcd3):
         """Test initialization with all options."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider(
             host="etcd.example.com",
@@ -117,7 +117,7 @@ class TestEtcdDepProviderParseData:
 
     def test_parse_valid_json(self, mock_etcd3):
         """Test parsing valid JSON data."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = provider._parse_service_data(SAMPLE_SERVICE_DATA)
@@ -128,7 +128,7 @@ class TestEtcdDepProviderParseData:
 
     def test_parse_string_data(self, mock_etcd3):
         """Test parsing string (not bytes) data."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = provider._parse_service_data('{"name": "test"}')
@@ -137,7 +137,7 @@ class TestEtcdDepProviderParseData:
 
     def test_parse_empty_data(self, mock_etcd3):
         """Test parsing empty data."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = provider._parse_service_data(b"")
@@ -146,7 +146,7 @@ class TestEtcdDepProviderParseData:
 
     def test_parse_invalid_json(self, mock_etcd3):
         """Test parsing invalid JSON."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = provider._parse_service_data(b"not json")
@@ -155,7 +155,7 @@ class TestEtcdDepProviderParseData:
 
     def test_parse_none_data(self, mock_etcd3):
         """Test parsing None data."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = provider._parse_service_data(None)
@@ -168,7 +168,7 @@ class TestEtcdDepProviderParseDependencies:
 
     def test_parse_dependencies_list(self, mock_etcd3):
         """Test parsing dependencies from list."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = {"dependencies": ["service-a", "service-b"]}
@@ -181,7 +181,7 @@ class TestEtcdDepProviderParseDependencies:
 
     def test_parse_dependencies_string(self, mock_etcd3):
         """Test parsing dependencies from comma-separated string."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = {"dependencies": "service-a, service-b, service-c"}
@@ -191,7 +191,7 @@ class TestEtcdDepProviderParseDependencies:
 
     def test_parse_databases(self, mock_etcd3):
         """Test parsing databases field."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = {"databases": ["postgresql", "redis"]}
@@ -203,7 +203,7 @@ class TestEtcdDepProviderParseDependencies:
 
     def test_parse_datastores(self, mock_etcd3):
         """Test parsing datastores field (alternative name)."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = {"datastores": ["mongodb"]}
@@ -214,7 +214,7 @@ class TestEtcdDepProviderParseDependencies:
 
     def test_parse_queues(self, mock_etcd3):
         """Test parsing queues field."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = {"queues": ["kafka", "rabbitmq"]}
@@ -226,7 +226,7 @@ class TestEtcdDepProviderParseDependencies:
 
     def test_parse_messaging(self, mock_etcd3):
         """Test parsing messaging field (alternative name)."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = {"messaging": ["nats"]}
@@ -237,7 +237,7 @@ class TestEtcdDepProviderParseDependencies:
 
     def test_parse_external(self, mock_etcd3):
         """Test parsing external field."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = {"external": ["stripe-api", "twilio"]}
@@ -249,7 +249,7 @@ class TestEtcdDepProviderParseDependencies:
 
     def test_parse_external_apis(self, mock_etcd3):
         """Test parsing external_apis field (alternative name)."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = {"external_apis": ["sendgrid"]}
@@ -260,7 +260,7 @@ class TestEtcdDepProviderParseDependencies:
 
     def test_parse_services(self, mock_etcd3):
         """Test parsing services field."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = {"services": ["auth-service"]}
@@ -271,7 +271,7 @@ class TestEtcdDepProviderParseDependencies:
 
     def test_parse_upstream(self, mock_etcd3):
         """Test parsing upstream field."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = {"upstream": ["gateway"]}
@@ -282,7 +282,7 @@ class TestEtcdDepProviderParseDependencies:
 
     def test_parse_combined(self, mock_etcd3):
         """Test parsing combined dependencies."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         provider = EtcdDepProvider()
         data = {
@@ -301,42 +301,42 @@ class TestEtcdDepProviderInferType:
 
     def test_infer_postgres(self, mock_etcd3):
         """Test inferring PostgreSQL as DATASTORE."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         EtcdDepProvider()
         assert infer_dependency_type("postgresql") == DependencyType.DATASTORE
 
     def test_infer_mysql(self, mock_etcd3):
         """Test inferring MySQL as DATASTORE."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         EtcdDepProvider()
         assert infer_dependency_type("mysql-primary") == DependencyType.DATASTORE
 
     def test_infer_redis(self, mock_etcd3):
         """Test inferring Redis as DATASTORE."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         EtcdDepProvider()
         assert infer_dependency_type("redis-cache") == DependencyType.DATASTORE
 
     def test_infer_kafka(self, mock_etcd3):
         """Test inferring Kafka as QUEUE."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         EtcdDepProvider()
         assert infer_dependency_type("kafka-cluster") == DependencyType.QUEUE
 
     def test_infer_rabbitmq(self, mock_etcd3):
         """Test inferring RabbitMQ as QUEUE."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         EtcdDepProvider()
         assert infer_dependency_type("rabbitmq") == DependencyType.QUEUE
 
     def test_infer_service(self, mock_etcd3):
         """Test inferring regular service."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         EtcdDepProvider()
         assert infer_dependency_type("payment-api") == DependencyType.SERVICE
@@ -348,7 +348,7 @@ class TestEtcdDepProviderListServices:
 
     async def test_list_services(self, mock_etcd3):
         """Test listing all services."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         # Setup mock responses
         mock_metadata1 = MagicMock()
@@ -377,7 +377,7 @@ class TestEtcdDepProviderListServices:
 
     async def test_list_services_with_subkeys(self, mock_etcd3):
         """Test that subkeys are handled correctly."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         mock_metadata1 = MagicMock()
         mock_metadata1.key = b"/services/payment-api"
@@ -401,7 +401,7 @@ class TestEtcdDepProviderListServices:
 
     async def test_list_services_filters_internal(self, mock_etcd3):
         """Test that internal keys are filtered out."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         mock_metadata1 = MagicMock()
         mock_metadata1.key = b"/services/payment-api"
@@ -429,7 +429,7 @@ class TestEtcdDepProviderDiscover:
 
     async def test_discover_dependencies(self, mock_etcd3):
         """Test discovering dependencies from service data."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         mock_metadata = MagicMock()
         mock_etcd3.get.return_value = (SAMPLE_SERVICE_DATA, mock_metadata)
@@ -448,7 +448,7 @@ class TestEtcdDepProviderDiscover:
 
     async def test_discover_typed_dependencies(self, mock_etcd3):
         """Test that typed dependencies get correct types."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         mock_metadata = MagicMock()
         mock_etcd3.get.return_value = (SAMPLE_SERVICE_DATA, mock_metadata)
@@ -471,7 +471,7 @@ class TestEtcdDepProviderDiscover:
 
     async def test_discover_not_found(self, mock_etcd3):
         """Test discovering for nonexistent service."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         mock_etcd3.get.return_value = (None, None)
 
@@ -485,7 +485,7 @@ class TestEtcdDepProviderDiscover:
 
     async def test_discover_empty_data(self, mock_etcd3):
         """Test discovering when service has no dependencies."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         mock_metadata = MagicMock()
         mock_etcd3.get.return_value = (b'{"name": "empty-service"}', mock_metadata)
@@ -505,7 +505,7 @@ class TestEtcdDepProviderHealthCheck:
 
     async def test_health_check_success(self, mock_etcd3):
         """Test successful health check."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         mock_status = MagicMock()
         mock_status.leader = 12345
@@ -524,7 +524,7 @@ class TestEtcdDepProviderHealthCheck:
 
     async def test_health_check_no_status(self, mock_etcd3):
         """Test health check when status unavailable."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         mock_etcd3.status.return_value = None
 
@@ -539,7 +539,7 @@ class TestEtcdDepProviderHealthCheck:
 
     async def test_health_check_connection_error(self, mock_etcd3):
         """Test health check with connection error."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         mock_etcd3.status.side_effect = Exception("Connection refused")
 
@@ -559,7 +559,7 @@ class TestEtcdDepProviderGetAttributes:
 
     async def test_get_service_attributes(self, mock_etcd3):
         """Test getting service attributes."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         mock_metadata = MagicMock()
         mock_metadata.version = 5
@@ -580,7 +580,7 @@ class TestEtcdDepProviderGetAttributes:
 
     async def test_get_service_attributes_not_found(self, mock_etcd3):
         """Test getting attributes for nonexistent service."""
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         mock_etcd3.get.return_value = (None, None)
 
@@ -598,8 +598,8 @@ class TestEtcdDepProviderDeduplicate:
 
     def test_deduplicate_keeps_highest_confidence(self, mock_etcd3):
         """Test deduplication keeps highest confidence."""
-        from nthlayer.dependencies.models import DiscoveredDependency
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.models import DiscoveredDependency
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         EtcdDepProvider()
 
@@ -627,8 +627,8 @@ class TestEtcdDepProviderDeduplicate:
 
     def test_deduplicate_different_targets(self, mock_etcd3):
         """Test deduplication keeps different targets."""
-        from nthlayer.dependencies.models import DiscoveredDependency
-        from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        from nthlayer_generate.dependencies.models import DiscoveredDependency
+        from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
         EtcdDepProvider()
 
@@ -659,8 +659,8 @@ class TestEtcdDepProviderNoEtcd3:
 
     def test_init_without_etcd3(self):
         """Test initialization fails gracefully without etcd3."""
-        with patch("nthlayer.dependencies.providers.etcd.ETCD3_AVAILABLE", False):
-            from nthlayer.dependencies.providers.etcd import (
+        with patch("nthlayer_generate.dependencies.providers.etcd.ETCD3_AVAILABLE", False):
+            from nthlayer_generate.dependencies.providers.etcd import (
                 EtcdDepProvider,
                 EtcdDepProviderError,
             )
@@ -672,8 +672,8 @@ class TestEtcdDepProviderNoEtcd3:
 
     async def test_health_check_without_etcd3(self):
         """Test health check returns error without etcd3."""
-        with patch("nthlayer.dependencies.providers.etcd.ETCD3_AVAILABLE", False):
-            from nthlayer.dependencies.providers.etcd import EtcdDepProvider
+        with patch("nthlayer_generate.dependencies.providers.etcd.ETCD3_AVAILABLE", False):
+            from nthlayer_generate.dependencies.providers.etcd import EtcdDepProvider
 
             # Bypass __post_init__ validation
             provider = object.__new__(EtcdDepProvider)

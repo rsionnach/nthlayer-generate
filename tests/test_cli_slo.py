@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from nthlayer.cli.slo import (
+from nthlayer_generate.cli.slo import (
     _parse_window_minutes,
     _print_slo_result,
     handle_slo_command,
@@ -238,8 +238,8 @@ class TestSloListCommand:
 class TestSloCollectCommand:
     """Tests for slo_collect_command function."""
 
-    @patch("nthlayer.cli.slo._collect_slo_metrics")
-    @patch("nthlayer.cli.slo.parse_service_file")
+    @patch("nthlayer_generate.cli.slo._collect_slo_metrics")
+    @patch("nthlayer_generate.cli.slo.parse_service_file")
     def test_collects_metrics(self, mock_parse, mock_collect, service_with_slos, capsys):
         """Test collecting metrics from Prometheus."""
         ctx = MagicMock()
@@ -275,7 +275,7 @@ class TestSloCollectCommand:
         captured = capsys.readouterr()
         assert "HEALTHY" in captured.out or "availability" in captured.out
 
-    @patch("nthlayer.cli.slo.parse_service_file")
+    @patch("nthlayer_generate.cli.slo.parse_service_file")
     def test_service_file_not_found(self, mock_parse, capsys):
         """Test error when service file not found."""
         mock_parse.side_effect = FileNotFoundError("File not found")
@@ -289,7 +289,7 @@ class TestSloCollectCommand:
         captured = capsys.readouterr()
         assert "Error" in captured.out
 
-    @patch("nthlayer.cli.slo.parse_service_file")
+    @patch("nthlayer_generate.cli.slo.parse_service_file")
     def test_no_slos_defined(self, mock_parse, capsys):
         """Test error when no SLOs defined."""
         ctx = MagicMock()
@@ -306,8 +306,8 @@ class TestSloCollectCommand:
         assert "No SLOs" in captured.out
 
     @patch.dict("os.environ", {"NTHLAYER_PROMETHEUS_URL": "http://env-prom:9090"})
-    @patch("nthlayer.cli.slo._collect_slo_metrics")
-    @patch("nthlayer.cli.slo.parse_service_file")
+    @patch("nthlayer_generate.cli.slo._collect_slo_metrics")
+    @patch("nthlayer_generate.cli.slo.parse_service_file")
     def test_uses_env_prometheus_url(self, mock_parse, mock_collect, capsys):
         """Test using Prometheus URL from environment."""
         ctx = MagicMock()
@@ -328,8 +328,8 @@ class TestSloCollectCommand:
         captured = capsys.readouterr()
         assert "env-prom" in captured.out
 
-    @patch("nthlayer.cli.slo._collect_slo_metrics")
-    @patch("nthlayer.cli.slo.parse_service_file")
+    @patch("nthlayer_generate.cli.slo._collect_slo_metrics")
+    @patch("nthlayer_generate.cli.slo.parse_service_file")
     def test_shows_healthy_count(self, mock_parse, mock_collect, capsys):
         """Test showing healthy SLO count."""
         ctx = MagicMock()
@@ -486,7 +486,7 @@ class TestRegisterSloParser:
 class TestHandleSloCommand:
     """Tests for handle_slo_command function."""
 
-    @patch("nthlayer.cli.slo.slo_show_command")
+    @patch("nthlayer_generate.cli.slo.slo_show_command")
     def test_handles_show_command(self, mock_show):
         """Test handling show command."""
         mock_show.return_value = 0
@@ -502,7 +502,7 @@ class TestHandleSloCommand:
         assert result == 0
         mock_show.assert_called_once()
 
-    @patch("nthlayer.cli.slo.slo_list_command")
+    @patch("nthlayer_generate.cli.slo.slo_list_command")
     def test_handles_list_command(self, mock_list):
         """Test handling list command."""
         mock_list.return_value = 0
@@ -514,7 +514,7 @@ class TestHandleSloCommand:
         assert result == 0
         mock_list.assert_called_once()
 
-    @patch("nthlayer.cli.slo.slo_collect_command")
+    @patch("nthlayer_generate.cli.slo.slo_collect_command")
     def test_handles_collect_command(self, mock_collect):
         """Test handling collect command."""
         mock_collect.return_value = 0
@@ -546,10 +546,10 @@ class TestCollectSloMetrics:
     """Tests for _collect_slo_metrics async function."""
 
     @pytest.mark.asyncio
-    @patch("nthlayer.providers.prometheus.PrometheusProvider")
+    @patch("nthlayer_generate.providers.prometheus.PrometheusProvider")
     async def test_healthy_slo(self, mock_provider_class):
         """Test collecting healthy SLO metrics."""
-        from nthlayer.cli.slo import _collect_slo_metrics
+        from nthlayer_generate.cli.slo import _collect_slo_metrics
 
         mock_provider = MagicMock()
         mock_provider.get_sli_value = AsyncMock(return_value=0.9995)
@@ -575,10 +575,10 @@ class TestCollectSloMetrics:
         assert results[0]["current_sli"] is not None
 
     @pytest.mark.asyncio
-    @patch("nthlayer.providers.prometheus.PrometheusProvider")
+    @patch("nthlayer_generate.providers.prometheus.PrometheusProvider")
     async def test_warning_status(self, mock_provider_class):
         """Test collecting SLO with warning status."""
-        from nthlayer.cli.slo import _collect_slo_metrics
+        from nthlayer_generate.cli.slo import _collect_slo_metrics
 
         # For 99.9% objective, error budget = 0.1%
         # For 60% consumed: SLI = 1 - (0.001 * 0.6) = 0.9994
@@ -604,10 +604,10 @@ class TestCollectSloMetrics:
         assert results[0]["status"] == "WARNING"
 
     @pytest.mark.asyncio
-    @patch("nthlayer.providers.prometheus.PrometheusProvider")
+    @patch("nthlayer_generate.providers.prometheus.PrometheusProvider")
     async def test_critical_status(self, mock_provider_class):
         """Test collecting SLO with critical status."""
-        from nthlayer.cli.slo import _collect_slo_metrics
+        from nthlayer_generate.cli.slo import _collect_slo_metrics
 
         mock_provider = MagicMock()
         mock_provider.get_sli_value = AsyncMock(return_value=0.9992)  # ~80% budget consumed
@@ -631,10 +631,10 @@ class TestCollectSloMetrics:
         assert results[0]["status"] in ["CRITICAL", "WARNING"]
 
     @pytest.mark.asyncio
-    @patch("nthlayer.providers.prometheus.PrometheusProvider")
+    @patch("nthlayer_generate.providers.prometheus.PrometheusProvider")
     async def test_exhausted_status(self, mock_provider_class):
         """Test collecting SLO with exhausted budget."""
-        from nthlayer.cli.slo import _collect_slo_metrics
+        from nthlayer_generate.cli.slo import _collect_slo_metrics
 
         mock_provider = MagicMock()
         mock_provider.get_sli_value = AsyncMock(return_value=0.98)  # 2% error = exhausted
@@ -658,10 +658,10 @@ class TestCollectSloMetrics:
         assert results[0]["status"] == "EXHAUSTED"
 
     @pytest.mark.asyncio
-    @patch("nthlayer.providers.prometheus.PrometheusProvider")
+    @patch("nthlayer_generate.providers.prometheus.PrometheusProvider")
     async def test_no_data(self, mock_provider_class):
         """Test collecting SLO when no data returned."""
-        from nthlayer.cli.slo import _collect_slo_metrics
+        from nthlayer_generate.cli.slo import _collect_slo_metrics
 
         mock_provider = MagicMock()
         mock_provider.get_sli_value = AsyncMock(return_value=0.0)
@@ -685,10 +685,10 @@ class TestCollectSloMetrics:
         assert results[0]["status"] == "NO_DATA"
 
     @pytest.mark.asyncio
-    @patch("nthlayer.providers.prometheus.PrometheusProvider")
+    @patch("nthlayer_generate.providers.prometheus.PrometheusProvider")
     async def test_no_query(self, mock_provider_class):
         """Test collecting SLO with no query defined."""
-        from nthlayer.cli.slo import _collect_slo_metrics
+        from nthlayer_generate.cli.slo import _collect_slo_metrics
 
         mock_provider = MagicMock()
         mock_provider_class.return_value = mock_provider
@@ -708,11 +708,11 @@ class TestCollectSloMetrics:
         assert results[0]["error"] == "No query defined in SLO indicator"
 
     @pytest.mark.asyncio
-    @patch("nthlayer.providers.prometheus.PrometheusProvider")
+    @patch("nthlayer_generate.providers.prometheus.PrometheusProvider")
     async def test_prometheus_error(self, mock_provider_class):
         """Test collecting SLO with Prometheus error."""
-        from nthlayer.cli.slo import _collect_slo_metrics
-        from nthlayer.providers.prometheus import PrometheusProviderError
+        from nthlayer_generate.cli.slo import _collect_slo_metrics
+        from nthlayer_generate.providers.prometheus import PrometheusProviderError
 
         mock_provider = MagicMock()
         mock_provider.get_sli_value = AsyncMock(side_effect=PrometheusProviderError("Query failed"))
@@ -737,10 +737,10 @@ class TestCollectSloMetrics:
         assert "Query failed" in results[0]["error"]
 
     @pytest.mark.asyncio
-    @patch("nthlayer.providers.prometheus.PrometheusProvider")
+    @patch("nthlayer_generate.providers.prometheus.PrometheusProvider")
     async def test_service_substitution(self, mock_provider_class):
         """Test that service name is substituted in query."""
-        from nthlayer.cli.slo import _collect_slo_metrics
+        from nthlayer_generate.cli.slo import _collect_slo_metrics
 
         mock_provider = MagicMock()
         mock_provider.get_sli_value = AsyncMock(return_value=0.999)
@@ -772,10 +772,10 @@ class TestCollectSloMetrics:
             "NTHLAYER_METRICS_PASSWORD": "secret",
         },
     )
-    @patch("nthlayer.providers.prometheus.PrometheusProvider")
+    @patch("nthlayer_generate.providers.prometheus.PrometheusProvider")
     async def test_auth_credentials(self, mock_provider_class):
         """Test collecting SLO with authentication credentials."""
-        from nthlayer.cli.slo import _collect_slo_metrics
+        from nthlayer_generate.cli.slo import _collect_slo_metrics
 
         mock_provider = MagicMock()
         mock_provider.get_sli_value = AsyncMock(return_value=0.999)
@@ -875,8 +875,8 @@ resources:
 class TestSloCollectCommandAutoDiscovery:
     """Tests for service file auto-discovery in slo_collect_command."""
 
-    @patch("nthlayer.cli.slo._collect_slo_metrics")
-    @patch("nthlayer.cli.slo.asyncio.run")
+    @patch("nthlayer_generate.cli.slo._collect_slo_metrics")
+    @patch("nthlayer_generate.cli.slo.asyncio.run")
     def test_finds_service_in_services_dir(self, mock_run, mock_collect, capsys, monkeypatch):
         """Test finding service file in services/ directory."""
         mock_run.return_value = []
@@ -929,8 +929,8 @@ resources:
 class TestSloCollectPrometheusError:
     """Tests for Prometheus error handling in slo_collect_command."""
 
-    @patch("nthlayer.cli.slo.asyncio.run")
-    @patch("nthlayer.cli.slo.parse_service_file")
+    @patch("nthlayer_generate.cli.slo.asyncio.run")
+    @patch("nthlayer_generate.cli.slo.parse_service_file")
     def test_connection_error(self, mock_parse, mock_run, capsys):
         """Test handling Prometheus connection error."""
         ctx = MagicMock()

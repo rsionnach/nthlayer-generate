@@ -6,21 +6,21 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from nthlayer.dependencies.models import (
+from nthlayer_generate.dependencies.models import (
     DependencyGraph,
     DependencyType,
     ResolvedDependency,
 )
-from nthlayer.identity import ServiceIdentity
-from nthlayer.specs.manifest import Dependency, DependencySLO, ReliabilityManifest
-from nthlayer.topology.enrichment import build_topology
-from nthlayer.topology.models import (
+from nthlayer_generate.identity import ServiceIdentity
+from nthlayer_generate.specs.manifest import Dependency, DependencySLO, ReliabilityManifest
+from nthlayer_generate.topology.enrichment import build_topology
+from nthlayer_generate.topology.models import (
     SLOContract,
     TopologyEdge,
     TopologyGraph,
     TopologyNode,
 )
-from nthlayer.topology.serializers import (
+from nthlayer_generate.topology.serializers import (
     serialize_dot,
     serialize_json,
     serialize_mermaid,
@@ -375,25 +375,25 @@ class TestBuildTopology:
 
 class TestTopologyCLI:
     def test_demo_json(self):
-        from nthlayer.cli.topology import topology_export_command
+        from nthlayer_generate.cli.topology import topology_export_command
 
         exit_code = topology_export_command(demo=True, output_format="json")
         assert exit_code == 0
 
     def test_demo_mermaid(self):
-        from nthlayer.cli.topology import topology_export_command
+        from nthlayer_generate.cli.topology import topology_export_command
 
         exit_code = topology_export_command(demo=True, output_format="mermaid")
         assert exit_code == 0
 
     def test_demo_dot(self):
-        from nthlayer.cli.topology import topology_export_command
+        from nthlayer_generate.cli.topology import topology_export_command
 
         exit_code = topology_export_command(demo=True, output_format="dot")
         assert exit_code == 0
 
     def test_demo_file_output(self, tmp_path):
-        from nthlayer.cli.topology import topology_export_command
+        from nthlayer_generate.cli.topology import topology_export_command
 
         output_file = str(tmp_path / "topology.dot")
         exit_code = topology_export_command(
@@ -406,7 +406,7 @@ class TestTopologyCLI:
         assert "digraph topology" in content
 
     def test_no_manifest_no_demo_errors(self):
-        from nthlayer.cli.topology import topology_export_command
+        from nthlayer_generate.cli.topology import topology_export_command
 
         exit_code = topology_export_command(manifest_file=None, demo=False)
         assert exit_code == 2
@@ -414,13 +414,13 @@ class TestTopologyCLI:
     def test_handle_topology_command_no_subcommand(self):
         import argparse
 
-        from nthlayer.cli.topology import handle_topology_command
+        from nthlayer_generate.cli.topology import handle_topology_command
 
         args = argparse.Namespace(topology_command=None)
         assert handle_topology_command(args) == 2
 
     def test_demo_depth_filtering(self):
-        from nthlayer.cli.topology import topology_export_command
+        from nthlayer_generate.cli.topology import topology_export_command
 
         exit_code = topology_export_command(
             demo=True,

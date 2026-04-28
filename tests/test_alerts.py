@@ -4,7 +4,7 @@ Tests for alert generation module.
 
 import pytest
 
-from nthlayer.alerts import AlertRule, AlertTemplateLoader
+from nthlayer_generate.alerts import AlertRule, AlertTemplateLoader
 
 
 def test_alert_rule_from_dict():
@@ -148,8 +148,8 @@ def test_alert_template_loader_postgres():
 
 def test_extract_dependencies():
     """Test dependency extraction from service resources"""
-    from nthlayer.generators.alerts import extract_dependencies
-    from nthlayer.specs.models import Resource
+    from nthlayer_generate.generators.alerts import extract_dependencies
+    from nthlayer_generate.specs.models import Resource
 
     resources = [
         Resource(
@@ -172,8 +172,8 @@ def test_extract_dependencies():
 
 def test_extract_dependencies_no_type():
     """Test dependency extraction when type is inferred from name"""
-    from nthlayer.generators.alerts import extract_dependencies
-    from nthlayer.specs.models import Resource
+    from nthlayer_generate.generators.alerts import extract_dependencies
+    from nthlayer_generate.specs.models import Resource
 
     resources = [
         Resource(
@@ -195,8 +195,8 @@ def test_extract_dependencies_no_type():
 
 def test_filter_by_tier():
     """Test tier-based alert filtering"""
-    from nthlayer.alerts import AlertRule
-    from nthlayer.generators.alerts import filter_by_tier
+    from nthlayer_generate.alerts import AlertRule
+    from nthlayer_generate.generators.alerts import filter_by_tier
 
     alerts = [
         AlertRule(name="Critical", expr="up==0", severity="critical", technology="postgres"),
@@ -221,7 +221,7 @@ def test_filter_by_tier():
 
 def test_generate_alerts_integration(tmp_path):
     """Test full alert generation workflow"""
-    from nthlayer.generators.alerts import generate_alerts_for_service
+    from nthlayer_generate.generators.alerts import generate_alerts_for_service
 
     # Create temp service file
     service_file = tmp_path / "test-service.yaml"
@@ -257,7 +257,7 @@ resources:
 
 def test_generate_alerts_with_output(tmp_path):
     """Test alert generation with file output"""
-    from nthlayer.generators.alerts import generate_alerts_for_service
+    from nthlayer_generate.generators.alerts import generate_alerts_for_service
 
     # Create temp service file
     service_file = tmp_path / "test-service.yaml"
@@ -302,7 +302,7 @@ def test_generate_alerts_quiet_mode(tmp_path, capsys):
     This ensures JSON output from plan/apply commands isn't polluted
     by alert generator progress messages.
     """
-    from nthlayer.generators.alerts import generate_alerts_for_service
+    from nthlayer_generate.generators.alerts import generate_alerts_for_service
 
     # Create temp service file with dependencies
     service_file = tmp_path / "test-service.yaml"
@@ -335,7 +335,7 @@ resources:
 
 def test_generate_alerts_no_deps_quiet_mode(tmp_path, capsys):
     """Test that quiet mode suppresses output even when no dependencies."""
-    from nthlayer.generators.alerts import generate_alerts_for_service
+    from nthlayer_generate.generators.alerts import generate_alerts_for_service
 
     # Create temp service file without dependencies
     service_file = tmp_path / "test-service.yaml"
@@ -413,7 +413,7 @@ class TestPromQLLabelExtraction:
 
     def test_by_clause_extracts_labels(self):
         """Test that by() clause labels are extracted."""
-        from nthlayer.alerts.validator import extract_promql_output_labels
+        from nthlayer_generate.alerts.validator import extract_promql_output_labels
 
         expr = "sum by (namespace, datname) (pg_stat_database_xact_rollback)"
         labels = extract_promql_output_labels(expr)
@@ -422,7 +422,7 @@ class TestPromQLLabelExtraction:
 
     def test_without_clause_marks_removed(self):
         """Test that without() clause marks labels as removed."""
-        from nthlayer.alerts.validator import extract_promql_output_labels
+        from nthlayer_generate.alerts.validator import extract_promql_output_labels
 
         expr = "count without (instance, job) (redis_connected_slaves)"
         labels = extract_promql_output_labels(expr)
@@ -432,7 +432,7 @@ class TestPromQLLabelExtraction:
 
     def test_bare_aggregation_returns_empty(self):
         """Test that bare aggregation (no by/without) returns empty set."""
-        from nthlayer.alerts.validator import extract_promql_output_labels
+        from nthlayer_generate.alerts.validator import extract_promql_output_labels
 
         expr = "count(redis_instance_info{role='master'})"
         labels = extract_promql_output_labels(expr)
@@ -441,7 +441,7 @@ class TestPromQLLabelExtraction:
 
     def test_no_aggregation_returns_none(self):
         """Test that no aggregation returns None (all labels preserved)."""
-        from nthlayer.alerts.validator import extract_promql_output_labels
+        from nthlayer_generate.alerts.validator import extract_promql_output_labels
 
         expr = "pg_up == 0"
         labels = extract_promql_output_labels(expr)
@@ -450,7 +450,7 @@ class TestPromQLLabelExtraction:
 
     def test_multiple_by_clauses(self):
         """Test expressions with multiple by() clauses."""
-        from nthlayer.alerts.validator import extract_promql_output_labels
+        from nthlayer_generate.alerts.validator import extract_promql_output_labels
 
         expr = "sum by (a) (x) / sum by (b, c) (y)"
         labels = extract_promql_output_labels(expr)
@@ -463,7 +463,7 @@ class TestAnnotationLabelExtraction:
 
     def test_extracts_label_references(self):
         """Test extraction of {{ $labels.xxx }} patterns."""
-        from nthlayer.alerts.validator import extract_annotation_label_refs
+        from nthlayer_generate.alerts.validator import extract_annotation_label_refs
 
         annotations = {
             "summary": "Alert on {{ $labels.instance }}",
@@ -475,7 +475,7 @@ class TestAnnotationLabelExtraction:
 
     def test_no_labels_returns_empty(self):
         """Test annotations with no label references."""
-        from nthlayer.alerts.validator import extract_annotation_label_refs
+        from nthlayer_generate.alerts.validator import extract_annotation_label_refs
 
         annotations = {
             "summary": "Static alert message",
@@ -596,7 +596,7 @@ class TestAlertValidationIntegration:
 
     def test_generated_alerts_are_validated(self, tmp_path):
         """Test that generated alerts go through validation."""
-        from nthlayer.generators.alerts import generate_alerts_for_service
+        from nthlayer_generate.generators.alerts import generate_alerts_for_service
 
         service_file = tmp_path / "test-service.yaml"
         service_file.write_text("""
@@ -667,7 +667,7 @@ class TestAlertRuleFromDictMalformed:
 class TestForDurationOverride:
     def test_customize_applies_for_duration(self) -> None:
         """for_duration override replaces AlertRule.duration during customization."""
-        from nthlayer.alerts.models import AlertRule
+        from nthlayer_generate.alerts.models import AlertRule
 
         alert = AlertRule(
             name="PostgresqlDown",
@@ -685,7 +685,7 @@ class TestForDurationOverride:
 
     def test_customize_no_override_keeps_original(self) -> None:
         """Without for_duration_override, original duration is preserved."""
-        from nthlayer.alerts.models import AlertRule
+        from nthlayer_generate.alerts.models import AlertRule
 
         alert = AlertRule(
             name="PostgresqlDown",
@@ -702,7 +702,7 @@ class TestForDurationOverride:
 
     def test_customize_none_override_keeps_original(self) -> None:
         """Explicitly passing None keeps original duration."""
-        from nthlayer.alerts.models import AlertRule
+        from nthlayer_generate.alerts.models import AlertRule
 
         alert = AlertRule(
             name="PostgresqlDown",

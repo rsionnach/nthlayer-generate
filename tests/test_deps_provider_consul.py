@@ -4,9 +4,9 @@ import pytest
 import respx
 from httpx import Response
 
-from nthlayer.dependencies.models import DependencyType
-from nthlayer.dependencies.providers.base import deduplicate_dependencies, infer_dependency_type
-from nthlayer.dependencies.providers.consul import (
+from nthlayer_generate.dependencies.models import DependencyType
+from nthlayer_generate.dependencies.providers.base import deduplicate_dependencies, infer_dependency_type
+from nthlayer_generate.dependencies.providers.consul import (
     ConsulDepProvider,
     ConsulDepProviderError,
 )
@@ -600,7 +600,7 @@ class TestConsulDepProviderDeduplicate:
 
     def test_deduplicate_keeps_highest_confidence(self):
         """Test deduplication keeps highest confidence."""
-        from nthlayer.dependencies.models import DiscoveredDependency
+        from nthlayer_generate.dependencies.models import DiscoveredDependency
 
         ConsulDepProvider()
 
@@ -631,7 +631,7 @@ class TestConsulDepProviderDeduplicate:
 
     def test_deduplicate_different_targets(self):
         """Test deduplication keeps different targets."""
-        from nthlayer.dependencies.models import DiscoveredDependency
+        from nthlayer_generate.dependencies.models import DiscoveredDependency
 
         ConsulDepProvider()
 

@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from nthlayer.specs.alerting import (
+from nthlayer_generate.specs.alerting import (
     TIER_DEFAULT_RULES,
     AlertChannels,
     AlertingConfig,
@@ -305,7 +305,7 @@ class TestForDuration:
 
 class TestOpenSRMParsing:
     def test_parse_opensrm_with_alerting(self) -> None:
-        from nthlayer.specs.opensrm_parser import parse_opensrm
+        from nthlayer_generate.specs.opensrm_parser import parse_opensrm
 
         data = {
             "apiVersion": "srm/v1",
@@ -336,7 +336,7 @@ class TestOpenSRMParsing:
         assert manifest.alerting.auto_rules is False
 
     def test_parse_opensrm_with_for_duration(self) -> None:
-        from nthlayer.specs.opensrm_parser import parse_opensrm
+        from nthlayer_generate.specs.opensrm_parser import parse_opensrm
 
         data = {
             "apiVersion": "srm/v1",
@@ -356,7 +356,7 @@ class TestOpenSRMParsing:
         assert manifest.alerting.for_duration.ticket == "10m"
 
     def test_parse_opensrm_without_alerting(self) -> None:
-        from nthlayer.specs.opensrm_parser import parse_opensrm
+        from nthlayer_generate.specs.opensrm_parser import parse_opensrm
 
         data = {
             "apiVersion": "srm/v1",
@@ -375,7 +375,7 @@ class TestOpenSRMParsing:
 
 class TestLegacyParsing:
     def test_extract_alerting_from_legacy_resources(self) -> None:
-        from nthlayer.specs.loader import _extract_alerting_from_resources
+        from nthlayer_generate.specs.loader import _extract_alerting_from_resources
 
         resources = [
             {"kind": "SLO", "name": "avail", "spec": {}},
@@ -402,7 +402,7 @@ class TestLegacyParsing:
         assert alerting.channels.slack_webhook == "https://hooks.slack.com/x"
 
     def test_no_alerts_resource_returns_none(self) -> None:
-        from nthlayer.specs.loader import _extract_alerting_from_resources
+        from nthlayer_generate.specs.loader import _extract_alerting_from_resources
 
         resources = [{"kind": "SLO", "name": "avail", "spec": {}}]
         assert _extract_alerting_from_resources(resources) is None

@@ -3,7 +3,7 @@
 import pytest
 import yaml
 
-from nthlayer.validation import (
+from nthlayer_generate.validation import (
     AlertForDuration,
     HasRequiredAnnotations,
     HasRequiredLabels,

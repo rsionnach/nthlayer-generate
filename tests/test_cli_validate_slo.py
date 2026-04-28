@@ -2,7 +2,7 @@
 
 import json
 
-from nthlayer.cli.validate_slo import (
+from nthlayer_generate.cli.validate_slo import (
     PROMQL_FUNCTIONS,
     SLOValidationResult,
     create_demo_slo_results,

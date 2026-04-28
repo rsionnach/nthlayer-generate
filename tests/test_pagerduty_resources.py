@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 import pagerduty
 import pytest
 
-from nthlayer.pagerduty.resources import (
+from nthlayer_generate.pagerduty.resources import (
     PagerDutyAPIError,
     PagerDutyResourceManager,
     ResourceResult,
@@ -37,7 +37,7 @@ def mock_client():
 @pytest.fixture
 def manager(mock_client):
     """Create PagerDutyResourceManager with mocked client."""
-    with patch("nthlayer.pagerduty.resources.RestApiV2Client", return_value=mock_client):
+    with patch("nthlayer_generate.pagerduty.resources.RestApiV2Client", return_value=mock_client):
         mgr = PagerDutyResourceManager(
             api_key="test-api-key",
             default_from="test@example.com",
@@ -140,7 +140,7 @@ class TestPagerDutyResourceManagerInit:
 
     def test_client_lazy_init(self):
         """Client is lazily initialized."""
-        with patch("nthlayer.pagerduty.resources.RestApiV2Client") as mock_class:
+        with patch("nthlayer_generate.pagerduty.resources.RestApiV2Client") as mock_class:
             mock_client = MagicMock()
             mock_class.return_value = mock_client
 
@@ -169,7 +169,7 @@ class TestPagerDutyResourceManagerInit:
 
     def test_context_manager(self):
         """Works as context manager."""
-        with patch("nthlayer.pagerduty.resources.RestApiV2Client") as mock_class:
+        with patch("nthlayer_generate.pagerduty.resources.RestApiV2Client") as mock_class:
             mock_client = MagicMock()
             mock_class.return_value = mock_client
 

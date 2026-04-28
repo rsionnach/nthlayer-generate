@@ -5,7 +5,7 @@ Tests for cloud secret backends (Vault, AWS, Azure, GCP, Doppler).
 
 from unittest.mock import MagicMock, patch
 
-from nthlayer.config.secrets.backends import (
+from nthlayer_generate.config.secrets.backends import (
     AWSSecretBackend,
     AzureSecretBackend,
     DopplerSecretBackend,

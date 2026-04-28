@@ -2,30 +2,30 @@
 Tests for the Metrics Recommendation Engine.
 """
 
-from nthlayer.metrics.models import (
+from nthlayer_generate.metrics.models import (
     MetricDefinition,
     MetricType,
     RequirementLevel,
 )
-from nthlayer.metrics.recommender import (
+from nthlayer_generate.metrics.recommender import (
     _match_metrics,
     filter_metrics_by_level,
     get_missing_required_metrics,
     get_slo_blocking_metrics,
     recommend_metrics,
 )
-from nthlayer.metrics.runtime import get_runtime_metrics, get_supported_runtimes
-from nthlayer.metrics.standards.aliases import (
+from nthlayer_generate.metrics.runtime import get_runtime_metrics, get_supported_runtimes
+from nthlayer_generate.metrics.standards.aliases import (
     METRIC_ALIASES,
     get_aliases_for_canonical,
     get_canonical_name,
 )
-from nthlayer.metrics.templates.registry import (
+from nthlayer_generate.metrics.templates.registry import (
     get_template,
     get_template_names,
     resolve_template_metrics,
 )
-from nthlayer.specs.models import ServiceContext
+from nthlayer_generate.specs.models import ServiceContext
 
 
 class TestMetricAliases:
@@ -452,7 +452,7 @@ class TestRecommendMetricsEdgeCases:
         """Test coverage is 1.0 when template has no required metrics."""
         from unittest.mock import patch
 
-        from nthlayer.metrics.models import ServiceTypeTemplate
+        from nthlayer_generate.metrics.models import ServiceTypeTemplate
 
         # Create a template with no required metrics
         empty_template = ServiceTypeTemplate(
@@ -469,8 +469,8 @@ class TestRecommendMetricsEdgeCases:
         )
 
         with (
-            patch("nthlayer.metrics.recommender.get_template") as mock_get_template,
-            patch("nthlayer.metrics.recommender.resolve_template_metrics") as mock_resolve,
+            patch("nthlayer_generate.metrics.recommender.get_template") as mock_get_template,
+            patch("nthlayer_generate.metrics.recommender.resolve_template_metrics") as mock_resolve,
         ):
             mock_get_template.return_value = empty_template
             mock_resolve.return_value = []

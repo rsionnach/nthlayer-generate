@@ -6,13 +6,13 @@ import random
 
 import pytest
 
-from nthlayer.simulate.engine import (
+from nthlayer_generate.simulate.engine import (
     _topological_sort,
     generate_failure_timeline,
     run_simulation,
     simulate_run,
 )
-from nthlayer.simulate.models import (
+from nthlayer_generate.simulate.models import (
     DependencyModel,
     derive_failure_model,
 )

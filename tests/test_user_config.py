@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import yaml
 
-from nthlayer.user_config import (
+from nthlayer_generate.user_config import (
     ErrorBudgetConfig,
     NthLayerConfig,
     get_config,

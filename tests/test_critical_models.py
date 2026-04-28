@@ -1,7 +1,7 @@
 """Tests for critical model files: formatters/models, alerts/models."""
 
-from nthlayer.alerts.models import AlertRule
-from nthlayer.cli.formatters.models import CheckResult, CheckStatus, ReliabilityReport
+from nthlayer_generate.alerts.models import AlertRule
+from nthlayer_generate.cli.formatters.models import CheckResult, CheckStatus, ReliabilityReport
 
 
 class TestReliabilityReportStatus:

@@ -51,7 +51,7 @@ resources:
             old_cwd = os.getcwd()
             try:
                 os.chdir(tmpdir)
-                from nthlayer.cli.slo import slo_list_command
+                from nthlayer_generate.cli.slo import slo_list_command
 
                 result = slo_list_command()
                 assert result == 0
@@ -66,7 +66,7 @@ resources:
             old_cwd = os.getcwd()
             try:
                 os.chdir(tmpdir)
-                from nthlayer.cli.slo import slo_list_command
+                from nthlayer_generate.cli.slo import slo_list_command
 
                 result = slo_list_command()
                 assert result == 0  # Returns 0 even when empty
@@ -112,7 +112,7 @@ resources:
             old_cwd = os.getcwd()
             try:
                 os.chdir(tmpdir)
-                from nthlayer.cli.slo import slo_show_command
+                from nthlayer_generate.cli.slo import slo_show_command
 
                 result = slo_show_command("payment-api")
                 assert result == 0
@@ -127,7 +127,7 @@ resources:
             old_cwd = os.getcwd()
             try:
                 os.chdir(tmpdir)
-                from nthlayer.cli.slo import slo_show_command
+                from nthlayer_generate.cli.slo import slo_show_command
 
                 result = slo_show_command("nonexistent-service")
                 assert result == 1
@@ -155,7 +155,7 @@ resources:
       window: 7d
 """)
 
-            from nthlayer.cli.slo import slo_show_command
+            from nthlayer_generate.cli.slo import slo_show_command
 
             result = slo_show_command("my-service", service_file=str(service_file))
             assert result == 0
@@ -186,7 +186,7 @@ resources:
             old_cwd = os.getcwd()
             try:
                 os.chdir(tmpdir)
-                from nthlayer.cli.slo import slo_show_command
+                from nthlayer_generate.cli.slo import slo_show_command
 
                 result = slo_show_command("empty-service")
                 assert result == 1
@@ -206,7 +206,7 @@ class TestSloCollectCommand:
             old_cwd = os.getcwd()
             try:
                 os.chdir(tmpdir)
-                from nthlayer.cli.slo import slo_collect_command
+                from nthlayer_generate.cli.slo import slo_collect_command
 
                 result = slo_collect_command("nonexistent-service")
                 assert result == 1
@@ -242,7 +242,7 @@ resources:
           / sum(rate(http_requests_total[5m]))
 """)
 
-            from nthlayer.cli.slo import slo_collect_command
+            from nthlayer_generate.cli.slo import slo_collect_command
 
             # Will try to query Prometheus and fail, but should return 0
             result = slo_collect_command(
@@ -259,28 +259,28 @@ class TestWindowParsing:
 
     def test_parse_days(self):
         """Test parsing day windows."""
-        from nthlayer.cli.slo import _parse_window_minutes
+        from nthlayer_generate.cli.slo import _parse_window_minutes
 
         assert _parse_window_minutes("30d") == 30 * 24 * 60
         assert _parse_window_minutes("7d") == 7 * 24 * 60
 
     def test_parse_hours(self):
         """Test parsing hour windows."""
-        from nthlayer.cli.slo import _parse_window_minutes
+        from nthlayer_generate.cli.slo import _parse_window_minutes
 
         assert _parse_window_minutes("24h") == 24 * 60
         assert _parse_window_minutes("1h") == 60
 
     def test_parse_weeks(self):
         """Test parsing week windows."""
-        from nthlayer.cli.slo import _parse_window_minutes
+        from nthlayer_generate.cli.slo import _parse_window_minutes
 
         assert _parse_window_minutes("1w") == 7 * 24 * 60
         assert _parse_window_minutes("4w") == 4 * 7 * 24 * 60
 
     def test_unknown_format_defaults(self):
         """Test unknown format returns 30 day default."""
-        from nthlayer.cli.slo import _parse_window_minutes
+        from nthlayer_generate.cli.slo import _parse_window_minutes
 
         assert _parse_window_minutes("unknown") == 30 * 24 * 60
 
@@ -292,7 +292,7 @@ class TestHandleSloCommand:
         """Test that unknown subcommand returns error code."""
         import argparse
 
-        from nthlayer.cli.slo import handle_slo_command
+        from nthlayer_generate.cli.slo import handle_slo_command
 
         args = argparse.Namespace(slo_command=None)
         result = handle_slo_command(args)
@@ -304,7 +304,7 @@ class TestHandleSloCommand:
         import os
         import tempfile
 
-        from nthlayer.cli.slo import handle_slo_command
+        from nthlayer_generate.cli.slo import handle_slo_command
 
         with tempfile.TemporaryDirectory() as tmpdir:
             old_cwd = os.getcwd()

@@ -10,8 +10,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer.core.errors import ProviderError
-from nthlayer.orchestration.handlers import (
+from nthlayer_generate.core.errors import ProviderError
+from nthlayer_generate.orchestration.handlers import (
     AlertHandler,
     DashboardHandler,
     PagerDutyHandler,
@@ -20,8 +20,8 @@ from nthlayer.orchestration.handlers import (
     _push_dashboard_to_grafana,
     _setup_event_orchestration,
 )
-from nthlayer.orchestration.registry import OrchestratorContext, ResourceRegistry
-from nthlayer.orchestrator import (
+from nthlayer_generate.orchestration.registry import OrchestratorContext, ResourceRegistry
+from nthlayer_generate.orchestrator import (
     ApplyResult,
     PlanResult,
     ResourceDetector,
@@ -563,7 +563,7 @@ class TestHandlerPlanMethods:
 
         assert resources == []
 
-    @patch("nthlayer.generators.alerts.generate_alerts_for_service")
+    @patch("nthlayer_generate.generators.alerts.generate_alerts_for_service")
     def test_plan_alerts(self, mock_generate, sample_context):
         """Test AlertHandler.plan()."""
         mock_alert = MagicMock()
@@ -577,7 +577,7 @@ class TestHandlerPlanMethods:
         assert alerts[0]["severity"] == "critical"
         assert alerts[0]["count"] == 3
 
-    @patch("nthlayer.generators.alerts.generate_alerts_for_service")
+    @patch("nthlayer_generate.generators.alerts.generate_alerts_for_service")
     def test_plan_alerts_exception(self, mock_generate, sample_context):
         """Test AlertHandler.plan() handles exceptions."""
         mock_generate.side_effect = Exception("Alert generation failed")
@@ -641,7 +641,7 @@ class TestHandlerGenerateMethods:
         assert count == 1
         assert (sample_context.output_dir / "dashboard.json").exists()
 
-    @patch("nthlayer.orchestration.handlers._push_dashboard_to_grafana")
+    @patch("nthlayer_generate.orchestration.handlers._push_dashboard_to_grafana")
     def test_generate_dashboard_with_push(self, mock_push, sample_context):
         """Test DashboardHandler.generate() with push_to_grafana."""
         sample_context.push_to_grafana = True
@@ -684,7 +684,7 @@ class TestHandlerGenerateMethods:
         config = json.loads((sample_context.output_dir / "pagerduty-config.json").read_text())
         assert "note" in config
 
-    @patch("nthlayer.orchestration.handlers.PagerDutyResourceManager")
+    @patch("nthlayer_generate.orchestration.handlers.PagerDutyResourceManager")
     def test_generate_pagerduty_with_api_key(self, mock_manager_class, sample_context, monkeypatch):
         """Test PagerDutyHandler.generate() with API key."""
         monkeypatch.setenv("PAGERDUTY_API_KEY", "test-api-key")
@@ -711,7 +711,7 @@ class TestHandlerGenerateMethods:
         assert count == 2  # len(created_resources)
         assert (sample_context.output_dir / "pagerduty-result.json").exists()
 
-    @patch("nthlayer.orchestration.handlers.PagerDutyResourceManager")
+    @patch("nthlayer_generate.orchestration.handlers.PagerDutyResourceManager")
     def test_generate_pagerduty_failure(self, mock_manager_class, sample_context, monkeypatch):
         """Test PagerDutyHandler.generate() when PagerDuty fails."""
         monkeypatch.setenv("PAGERDUTY_API_KEY", "test-api-key")
@@ -739,7 +739,7 @@ class TestLogSuccess:
 
     def test_log_success_dashboard(self, capsys):
         """Test log success for dashboard."""
-        from nthlayer.orchestration.engine import _log_success
+        from nthlayer_generate.orchestration.engine import _log_success
 
         _log_success("dashboard", 1, "dashboard", False)
 
@@ -748,7 +748,7 @@ class TestLogSuccess:
 
     def test_log_success_dashboard_pushed(self, capsys):
         """Test log success for dashboard when pushed to Grafana."""
-        from nthlayer.orchestration.engine import _log_success
+        from nthlayer_generate.orchestration.engine import _log_success
 
         _log_success("dashboard", 1, "dashboard", True)
 
@@ -757,7 +757,7 @@ class TestLogSuccess:
 
     def test_log_success_pagerduty(self, capsys):
         """Test log success for PagerDuty."""
-        from nthlayer.orchestration.engine import _log_success
+        from nthlayer_generate.orchestration.engine import _log_success
 
         _log_success("pagerduty", 1, "PagerDuty", False)
 
@@ -766,7 +766,7 @@ class TestLogSuccess:
 
     def test_log_success_generic(self, capsys):
         """Test log success for generic resource type."""
-        from nthlayer.orchestration.engine import _log_success
+        from nthlayer_generate.orchestration.engine import _log_success
 
         _log_success("alerts", 10, "alerts", False)
 
@@ -805,7 +805,7 @@ class TestPushDashboardToGrafana:
         captured = capsys.readouterr()
         assert "empty" in captured.out.lower()
 
-    @patch("nthlayer.providers.grafana.GrafanaProvider")
+    @patch("nthlayer_generate.providers.grafana.GrafanaProvider")
     @patch("asyncio.run")
     def test_push_success(
         self,
@@ -835,7 +835,7 @@ class TestPushDashboardToGrafana:
         captured = capsys.readouterr()
         assert "pushed" in captured.out.lower() or "Pushing" in captured.out
 
-    @patch("nthlayer.providers.grafana.GrafanaProvider")
+    @patch("nthlayer_generate.providers.grafana.GrafanaProvider")
     @patch("asyncio.run")
     def test_push_failure(
         self,
@@ -864,7 +864,7 @@ class TestPushDashboardToGrafana:
 class TestEventOrchestration:
     """Tests for _setup_event_orchestration module function."""
 
-    @patch("nthlayer.orchestration.handlers.EventOrchestrationManager")
+    @patch("nthlayer_generate.orchestration.handlers.EventOrchestrationManager")
     def test_setup_success(self, mock_manager_class, capsys):
         """Test successful event orchestration setup."""
         mock_result = MagicMock()
@@ -888,7 +888,7 @@ class TestEventOrchestration:
         captured = capsys.readouterr()
         assert "Event Orchestration" in captured.out
 
-    @patch("nthlayer.orchestration.handlers.EventOrchestrationManager")
+    @patch("nthlayer_generate.orchestration.handlers.EventOrchestrationManager")
     def test_setup_failure(self, mock_manager_class, capsys):
         """Test event orchestration setup failure."""
         mock_result = MagicMock()
@@ -916,8 +916,8 @@ class TestEventOrchestration:
 class TestGenerateAlertmanagerConfig:
     """Tests for alertmanager config generation via PagerDutyHandler."""
 
-    @patch("nthlayer.orchestration.handlers.generate_alertmanager_config")
-    @patch("nthlayer.orchestration.handlers.PagerDutyResourceManager")
+    @patch("nthlayer_generate.orchestration.handlers.generate_alertmanager_config")
+    @patch("nthlayer_generate.orchestration.handlers.PagerDutyResourceManager")
     def test_generate_config(self, mock_manager_class, mock_generate, sample_context, monkeypatch):
         """Test generating Alertmanager config via PagerDutyHandler."""
         monkeypatch.setenv("PAGERDUTY_API_KEY", "test-api-key")
@@ -947,8 +947,8 @@ class TestGenerateAlertmanagerConfig:
         mock_generate.assert_called_once()
         mock_config.write.assert_called_once()
 
-    @patch("nthlayer.orchestration.handlers.generate_alertmanager_config")
-    @patch("nthlayer.orchestration.handlers.PagerDutyResourceManager")
+    @patch("nthlayer_generate.orchestration.handlers.generate_alertmanager_config")
+    @patch("nthlayer_generate.orchestration.handlers.PagerDutyResourceManager")
     def test_generate_config_with_sre_key(
         self, mock_manager_class, mock_generate, sample_context, tmp_path, monkeypatch
     ):
@@ -1067,7 +1067,7 @@ class TestResourceRegistry:
 
     def test_register_default_handlers(self):
         """Test that register_default_handlers populates all 6 handlers."""
-        from nthlayer.orchestration.handlers import register_default_handlers
+        from nthlayer_generate.orchestration.handlers import register_default_handlers
 
         registry = ResourceRegistry()
         register_default_handlers(registry)

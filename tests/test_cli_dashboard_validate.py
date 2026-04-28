@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer.cli.dashboard_validate import (
+from nthlayer_generate.cli.dashboard_validate import (
     _display_discovery_result,
     _display_final_verdict,
     _display_intent_results,
@@ -21,8 +21,8 @@ from nthlayer.cli.dashboard_validate import (
     list_intents_command,
     validate_dashboard_command,
 )
-from nthlayer.dashboards.resolver import ResolutionStatus
-from nthlayer.dashboards.validator import IntentResult, ValidationResult
+from nthlayer_generate.dashboards.resolver import ResolutionStatus
+from nthlayer_generate.dashboards.validator import IntentResult, ValidationResult
 
 
 @pytest.fixture
@@ -113,8 +113,8 @@ def partial_validation_result():
 class TestValidateDashboardCommand:
     """Tests for validate_dashboard_command function."""
 
-    @patch("nthlayer.cli.dashboard_validate.DashboardValidator")
-    @patch("nthlayer.cli.dashboard_validate.parse_service_file")
+    @patch("nthlayer_generate.cli.dashboard_validate.DashboardValidator")
+    @patch("nthlayer_generate.cli.dashboard_validate.parse_service_file")
     def test_successful_validation(
         self,
         mock_parse,
@@ -136,8 +136,8 @@ class TestValidateDashboardCommand:
 
         assert result == 0
 
-    @patch("nthlayer.cli.dashboard_validate.DashboardValidator")
-    @patch("nthlayer.cli.dashboard_validate.parse_service_file")
+    @patch("nthlayer_generate.cli.dashboard_validate.DashboardValidator")
+    @patch("nthlayer_generate.cli.dashboard_validate.parse_service_file")
     def test_validation_with_unresolved_returns_2(
         self,
         mock_parse,
@@ -159,8 +159,8 @@ class TestValidateDashboardCommand:
 
         assert result == 2
 
-    @patch("nthlayer.cli.dashboard_validate.DashboardValidator")
-    @patch("nthlayer.cli.dashboard_validate.parse_service_file")
+    @patch("nthlayer_generate.cli.dashboard_validate.DashboardValidator")
+    @patch("nthlayer_generate.cli.dashboard_validate.parse_service_file")
     def test_validation_without_prometheus_url(
         self,
         mock_parse,
@@ -182,7 +182,7 @@ class TestValidateDashboardCommand:
 
         assert result == 0
 
-    @patch("nthlayer.cli.dashboard_validate.parse_service_file")
+    @patch("nthlayer_generate.cli.dashboard_validate.parse_service_file")
     def test_missing_file_returns_error(self, mock_parse):
         """Test that missing file returns exit code 1."""
         mock_parse.side_effect = FileNotFoundError("Service file not found")
@@ -193,7 +193,7 @@ class TestValidateDashboardCommand:
 
         assert result == 1
 
-    @patch("nthlayer.cli.dashboard_validate.parse_service_file")
+    @patch("nthlayer_generate.cli.dashboard_validate.parse_service_file")
     def test_invalid_yaml_returns_error(self, mock_parse, sample_service_yaml):
         """Test that invalid YAML returns exit code 1."""
         import yaml
@@ -204,9 +204,9 @@ class TestValidateDashboardCommand:
 
         assert result == 1
 
-    @patch("nthlayer.cli.dashboard_validate.DashboardValidator")
-    @patch("nthlayer.cli.dashboard_validate.parse_service_file")
-    @patch("nthlayer.cli.dashboard_validate.extract_technologies")
+    @patch("nthlayer_generate.cli.dashboard_validate.DashboardValidator")
+    @patch("nthlayer_generate.cli.dashboard_validate.parse_service_file")
+    @patch("nthlayer_generate.cli.dashboard_validate.extract_technologies")
     def test_technology_filter(
         self,
         mock_extract_tech,
@@ -233,8 +233,8 @@ class TestValidateDashboardCommand:
         call_args = mock_validator.validate.call_args
         assert call_args.kwargs["technologies"] == {"postgresql"}
 
-    @patch("nthlayer.cli.dashboard_validate.DashboardValidator")
-    @patch("nthlayer.cli.dashboard_validate.parse_service_file")
+    @patch("nthlayer_generate.cli.dashboard_validate.DashboardValidator")
+    @patch("nthlayer_generate.cli.dashboard_validate.parse_service_file")
     def test_show_all_parameter(
         self,
         mock_parse,
@@ -257,8 +257,8 @@ class TestValidateDashboardCommand:
         call_args = mock_validator.validate.call_args
         assert call_args.kwargs["validate_all"] is True
 
-    @patch("nthlayer.cli.dashboard_validate.DashboardValidator")
-    @patch("nthlayer.cli.dashboard_validate.parse_service_file")
+    @patch("nthlayer_generate.cli.dashboard_validate.DashboardValidator")
+    @patch("nthlayer_generate.cli.dashboard_validate.parse_service_file")
     def test_zero_intents_returns_success(
         self,
         mock_parse,
@@ -442,7 +442,7 @@ class TestListIntentsCommand:
         captured = capsys.readouterr()
         assert "All intents" in captured.out or "Intents" in captured.out
 
-    @patch("nthlayer.cli.dashboard_validate.get_intents_for_technology")
+    @patch("nthlayer_generate.cli.dashboard_validate.get_intents_for_technology")
     def test_list_intents_for_technology(self, mock_get_intents, capsys):
         """Test listing intents for specific technology."""
         mock_intent = MagicMock()
@@ -457,7 +457,7 @@ class TestListIntentsCommand:
         captured = capsys.readouterr()
         assert "postgresql" in captured.out
 
-    @patch("nthlayer.cli.dashboard_validate.ALL_INTENTS", {})
+    @patch("nthlayer_generate.cli.dashboard_validate.ALL_INTENTS", {})
     def test_list_intents_empty(self, capsys):
         """Test listing when no intents available."""
         result = list_intents_command()

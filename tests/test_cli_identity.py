@@ -2,7 +2,7 @@
 
 import json
 
-from nthlayer.cli.identity import (
+from nthlayer_generate.cli.identity import (
     NormalizationStep,
     create_demo_identities,
     create_demo_resolver,
@@ -12,7 +12,7 @@ from nthlayer.cli.identity import (
     identity_resolve_command,
     normalize_with_steps,
 )
-from nthlayer.identity.normalizer import normalize_service_name
+from nthlayer_generate.identity.normalizer import normalize_service_name
 
 
 class TestNormalizeServiceName:

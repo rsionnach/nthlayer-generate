@@ -3,7 +3,7 @@
 import json
 from unittest.mock import MagicMock, patch
 
-from nthlayer.cli.dashboard import generate_dashboard_command
+from nthlayer_generate.cli.dashboard import generate_dashboard_command
 
 MINIMAL_SERVICE_YAML = """
 service:
@@ -155,7 +155,7 @@ service:
         service_file.write_text(MINIMAL_SERVICE_YAML)
 
         with patch(
-            "nthlayer.cli.dashboard.build_dashboard",
+            "nthlayer_generate.cli.dashboard.build_dashboard",
             side_effect=FileNotFoundError("Template file not found"),
         ):
             result = generate_dashboard_command(
@@ -173,7 +173,7 @@ service:
         service_file.write_text(MINIMAL_SERVICE_YAML)
 
         with patch(
-            "nthlayer.cli.dashboard.build_dashboard",
+            "nthlayer_generate.cli.dashboard.build_dashboard",
             side_effect=yaml.YAMLError("Invalid YAML in template"),
         ):
             result = generate_dashboard_command(
@@ -189,7 +189,7 @@ service:
         service_file.write_text(MINIMAL_SERVICE_YAML)
 
         with patch(
-            "nthlayer.cli.dashboard.build_dashboard",
+            "nthlayer_generate.cli.dashboard.build_dashboard",
             side_effect=KeyError("required_field"),
         ):
             result = generate_dashboard_command(
@@ -216,7 +216,7 @@ service:
             "overwrite": True,
         }
 
-        with patch("nthlayer.cli.dashboard.build_dashboard", return_value=mock_dashboard):
+        with patch("nthlayer_generate.cli.dashboard.build_dashboard", return_value=mock_dashboard):
             result = generate_dashboard_command(
                 service_file=str(service_file),
                 output=str(output_file),
@@ -245,7 +245,7 @@ service:
             "overwrite": True,
         }
 
-        with patch("nthlayer.cli.dashboard.build_dashboard", return_value=mock_dashboard):
+        with patch("nthlayer_generate.cli.dashboard.build_dashboard", return_value=mock_dashboard):
             result = generate_dashboard_command(
                 service_file=str(service_file),
                 output=str(output_file),
@@ -273,7 +273,7 @@ service:
         service_file.write_text(MINIMAL_SERVICE_YAML)
 
         with patch(
-            "nthlayer.cli.dashboard.build_dashboard",
+            "nthlayer_generate.cli.dashboard.build_dashboard",
             side_effect=ValueError("Invalid service type"),
         ):
             result = generate_dashboard_command(
@@ -289,7 +289,7 @@ service:
         service_file.write_text(MINIMAL_SERVICE_YAML)
 
         with patch(
-            "nthlayer.cli.dashboard.build_dashboard",
+            "nthlayer_generate.cli.dashboard.build_dashboard",
             side_effect=TypeError("Invalid type"),
         ):
             result = generate_dashboard_command(

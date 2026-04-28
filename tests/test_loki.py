@@ -1,7 +1,7 @@
 """Tests for Loki LogQL alert generation."""
 
-from nthlayer.loki import LogQLAlert, LokiAlertGenerator, get_patterns_for_technology
-from nthlayer.loki.templates import (
+from nthlayer_generate.loki import LogQLAlert, LokiAlertGenerator, get_patterns_for_technology
+from nthlayer_generate.loki.templates import (
     KAFKA_PATTERNS,
     KUBERNETES_PATTERNS,
     POSTGRESQL_PATTERNS,

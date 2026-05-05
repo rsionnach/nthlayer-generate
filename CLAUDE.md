@@ -292,7 +292,7 @@ Full audit at `docs/generate-capability-audit.md` (2026-04-06, routing corrected
 
 ### Purify Generate Epic — Next Phase
 
-Spec: `docs/superpowers/specs/2026-04-08-purify-generate-design.md`
+Spec: [`docs/superpowers/specs/2026-04-08-purify-generate-design.md`](https://github.com/rsionnach/nthlayer/blob/main/docs/superpowers/specs/2026-04-08-purify-generate-design.md) (in `nthlayer/` ecosystem hub)
 
 P0–P5 copied runtime code to nthlayer-observe. The Purify Generate epic deletes those files from generate so it becomes a true pure compiler: zero SQLAlchemy, zero FastAPI, zero alembic, zero runtime policy evaluation, zero live Prometheus gate enforcement, zero webhook handling.
 

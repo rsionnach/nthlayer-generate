@@ -95,10 +95,14 @@ class TestBuildSloFromManifest:
         # 99.9 -> 0.999
         assert abs(slo.target - 0.999) < 0.001
 
-    def test_builds_slo_with_fractional_target(self) -> None:
+    def test_builds_slo_unconditional_percentage_to_ratio_conversion(self) -> None:
+        # Canonical convention is percentage; the OpenSLO bridge divides
+        # by 100 unconditionally (opensrm-5fff.1). A target<1.0 in the
+        # manifest is an author error that target_validation flags as a
+        # warning; the bridge still converts it.
         manifest = _make_manifest(slos=[SLODefinition(name="avail", target=0.999, window="7d")])
         slo = _build_slo_from_manifest(manifest, manifest.slos[0])
-        assert abs(slo.target - 0.999) < 0.001
+        assert abs(slo.target - 0.00999) < 0.0001
 
 
 # -------------------------------------------------------------------------

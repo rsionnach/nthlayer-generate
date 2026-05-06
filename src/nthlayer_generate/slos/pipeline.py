@@ -178,13 +178,18 @@ def _build_slo_from_manifest(
     manifest: ReliabilityManifest,
     slo_def: Any,
 ) -> SLO:
-    """Convert a manifest SLODefinition to the SLO model used by calculator."""
+    """Convert a manifest SLODefinition to the OpenSLO-shaped SLO model.
+
+    Canonical boundary conversion (opensrm-5fff.1): manifest.SLODefinition.target
+    is in 0-100 percentage convention; OpenSLO ``slo_models.SLO.target`` is
+    0.0-1.0 ratio. Always divide by 100 at this boundary.
+    """
     return SLO(
         id=f"{manifest.name}-{slo_def.name}",
         service=manifest.name,
         name=slo_def.name,
         description=slo_def.description or slo_def.name,
-        target=slo_def.target / 100 if slo_def.target > 1 else slo_def.target,
+        target=slo_def.target / 100.0,
         time_window=TimeWindow(duration=slo_def.window),
         query=slo_def.indicator_query or "",
     )

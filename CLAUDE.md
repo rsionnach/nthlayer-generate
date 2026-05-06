@@ -5,7 +5,7 @@ Reliability at build time, not incident time. Validate production readiness in C
 ## Quick Reference
 
 - **Language:** Python
-- **License:** MIT (note: other OpenSRM ecosystem components — nthlayer-measure, nthlayer-correlate, nthlayer-respond — are Apache 2.0)
+- **License:** MIT (note: nthlayer-workers — the consolidated runtime tier containing observe/measure/correlate/respond/learn modules — is Apache 2.0)
 - **Package name:** `nthlayer-generate` (PyPI dist name); Python import package is `nthlayer_generate` (underscore). All imports use `from nthlayer_generate.*` — not `from nthlayer.*`. Entry points: `nthlayer` and `nthlayer-generate` both map to `nthlayer_generate.demo:main`.
 - **Version:** `0.1.0a20` (source of truth: `pyproject.toml`; read at runtime via `importlib.metadata.version("nthlayer-generate")`)
 - **Build:** `uv sync --extra dev` (local dev) | `uv sync --no-sources --extra dev` (CI — resolves nthlayer-common from PyPI)
@@ -238,7 +238,7 @@ When fixing a GitHub Issue: `fix: <description> (<bead-id>, closes #<number>)`
 - Model analyses a codebase and proposes an OpenSRM manifest for it
 - Model provides judgment (what SLOs does this service need?), NthLayer provides transport (validate manifest, generate artifacts)
 - ZFC boundary: model=judgment (infer SLO targets), NthLayer=transport (validate + generate)
-- ZFC canonical doc: https://github.com/rsionnach/nthlayer-measure/blob/main/ZFC.md
+- ZFC canonical doc: `opensrm/docs/superpowers/` (canonical location; nthlayer-measure repo is deprecated 2026-04-26)
 
 ### Planned: MCP Server and Backstage Plugin
 - MCP server integration: planned (roadmap)
@@ -255,15 +255,13 @@ Built on: grafana-foundation-sdk, awesome-prometheus-alerts, pint, OpenSLO. Insp
 - NthLayer is the **Tool** layer: deterministic, invocable, no reasoning — one of three execution models (Data Sources / Tools / Agents)
 - Execution model test: "Does this component need to reason about ambiguous inputs?" Yes → Agent; same output every time → Tool; queryable state → Data Source
 - Data and tool layers (OpenSRM manifests + NthLayer) work with zero agents; agent layer is additive, not foundational
-- Ecosystem links: [OpenSRM](https://github.com/rsionnach/opensrm), [nthlayer-measure](https://github.com/rsionnach/nthlayer-measure), [nthlayer-correlate](https://github.com/rsionnach/nthlayer-correlate), [nthlayer-respond](https://github.com/rsionnach/nthlayer-respond)
+- Ecosystem links: [OpenSRM](https://github.com/rsionnach/opensrm), [nthlayer-workers](https://github.com/rsionnach/nthlayer-workers), [nthlayer-core](https://github.com/rsionnach/nthlayer-core), [nthlayer-bench](https://github.com/rsionnach/nthlayer-bench)
 - Full ecosystem composition in `opensrm/ECOSYSTEM.md`: component taxonomy, integration diagram, data flows, deployment tiers, post-incident learning loop
-- **nthlayer-measure** (architecture phase, Apache 2.0): quality measurement engine — per-agent quality tracking (rolling windows), degradation detection, self-calibration, cost-per-quality, governance via one-way safety ratchet; proven as Guardian in GasTown
-- **nthlayer-correlate** (architecture phase, Apache 2.0): pre-correlation agent — continuously groups signals so correlated view is ready before incident; snapshot schema: id, triggered_by, window, severity, summary, signals, correlations, topology, recommended_actions; states: WATCHING → ALERT → INCIDENT → DEGRADED
-- **nthlayer-respond** (architecture phase, Apache 2.0): multi-agent incident response — deterministic orchestrator sequences Triage → (Investigation + Communication) → Remediation; PagerDuty/Slack/email are **downstream notification channels**, not upstream incident sources
-- Deployment tiers: Tier 1 (OpenSRM + NthLayer only, zero agents), Tier 2 (+nthlayer-correlate), Tier 3+ (+nthlayer-measure +nthlayer-respond)
-- Streaming layer: NATS (small teams), Kafka (enterprise) — sits between event producers and consumers (nthlayer-correlate, nthlayer-measure, nthlayer-respond)
-- Alert flow (ecosystem): Alert Source → nthlayer-correlate Snapshot → nthlayer-respond Orchestrator → Agent Pipeline → Notification Channels
-- Post-incident learning loop: nthlayer-respond findings → manifest updates + NthLayer rule refinements + nthlayer-measure threshold revisions + nthlayer-correlate correlation improvements
+- **nthlayer-workers** (Tier 2, Apache 2.0): consolidated runtime process — five internal modules: observe (live state → assessments), measure (AI decision quality evaluation, one-way safety ratchet, self-calibration), correlate (asyncio session windows, pre-correlation grouping), respond (multi-agent incident response, PagerDuty/Slack/email as downstream channels), learn (retrospective analysis). Standalone repos nthlayer-measure, nthlayer-correlate, nthlayer-respond, nthlayer-learn deprecated 2026-04-26.
+- Deployment tiers: Tier 1 (nthlayer-core — verdict store, case management, HTTP API), Tier 2 (nthlayer-workers — observe/measure/correlate/respond/learn), Tier 3 (nthlayer-bench — Textual TUI operator interface)
+- Streaming layer: NATS (small teams), Kafka (enterprise) — sits between event producers and nthlayer-workers consumers
+- Alert flow (ecosystem): Alert Source → nthlayer-workers correlate session window → nthlayer-workers respond orchestrator → Agent Pipeline → Notification Channels
+- Post-incident learning loop: nthlayer-workers respond findings → manifest updates + NthLayer rule refinements + nthlayer-workers measure threshold revisions + nthlayer-workers correlate correlation improvements
 
 ### Ecosystem Migration — COMPLETE (Phases 0–5)
 Full audit at `docs/generate-capability-audit.md` (2026-04-06, routing corrected per `NTHLAYER-OBSERVE-SPEC.md`), architectural spec at `NTHLAYER-OBSERVE-SPEC.md`. Migration is complete: generate is now a pure compiler; all runtime infrastructure lives in nthlayer-observe.
@@ -458,7 +456,7 @@ P0–P5 copied runtime code to nthlayer-observe. The Purify Generate epic delete
 - `build_topology()` (topology/enrichment.py) accepts optional `max_depth` + `root_service` for BFS-limited subgraph export
 
 ### Zero Framework Cognition (ZFC) in the Ecosystem
-- Canonical doc: `nthlayer-measure/ZFC.md` (applies to entire OpenSRM ecosystem, not just nthlayer-measure)
+- Canonical doc: `opensrm/docs/superpowers/` (applies to entire OpenSRM ecosystem; nthlayer-measure/ZFC.md was the original location — nthlayer-measure repo deprecated 2026-04-26)
 - Core tenet: "Transport is code. Judgment is model." Originated by Steve Yegge for GasTown.
 - Two-question test for any function: (1) "Is there exactly one right answer given the inputs?" → transport, write in code. (2) "Does the right answer depend on context, interpretation, or evaluation?" → judgment, send to model.
 - Transport examples: receiving webhook payloads, validating YAML against JSON schema, generating Prometheus rules from declared SLO targets, routing messages, persisting scores
@@ -468,8 +466,8 @@ P0–P5 copied runtime code to nthlayer-observe. The Purify Generate epic delete
 - Model-agnostic by design: swap Claude for Gemini/GPT/local model, transport unchanged; judgment quality changes and is itself measurable
 - ZFC is NOT "put LLM in every code path" — most ecosystem code is and should remain pure transport
 - **NthLayer's ZFC boundary:** code=transport (validate manifest, generate artifacts, enforce gates); model=judgment (infer SLO targets, assess service criticality)
-- **nthlayer-measure governance one-way safety ratchet:** nthlayer-measure can always reduce agent autonomy (safe direction) but can NEVER increase it without human approval — automated constraint is always permitted, automated expansion never is
-- **nthlayer-measure self-calibration:** every judgment emits `gen_ai.decision.*` OTel event; every human correction emits `gen_ai.override.*`; these feed back into nthlayer-measure's own judgment SLO (false accept rate, precision, recall)
+- **measure module governance one-way safety ratchet (nthlayer-workers):** the measure module can always reduce agent autonomy (safe direction) but can NEVER increase it without human approval — automated constraint is always permitted, automated expansion never is
+- **measure module self-calibration (nthlayer-workers):** every judgment emits `gen_ai.decision.*` OTel event; every human correction emits `gen_ai.override.*`; these feed back into the measure module's own judgment SLO (false accept rate, precision, recall)
 
 ### Alert For Duration Override
 - `ForDuration` dataclass (specs/alerting.py) holds severity-based `for` duration overrides: `page` (default "2m") for critical alerts, `ticket` (default "15m") for warning/info
@@ -513,10 +511,11 @@ P0–P5 copied runtime code to nthlayer-observe. The Purify Generate epic delete
 - `slo_list_command()`: scans `services/` and `examples/services/` relative to cwd for all `kind: SLO` resources; prints table. Returns 0 even when empty (no SLOs found is not an error).
 - `slo_collect_command(service, prometheus_url, service_file)`: queries live Prometheus — resolves URL from `--prometheus-url` arg → `NTHLAYER_PROMETHEUS_URL` env → `http://localhost:9090`. Auth via `NTHLAYER_METRICS_USER`/`NTHLAYER_METRICS_PASSWORD`. Connection errors print warning and return 0 (not 1). Async internals via `_collect_slo_metrics()` + `PrometheusProvider`.
 - `_parse_window_minutes(window)`: `30d` → 43200, `24h` → 1440, `1w` → 10080; unknown format defaults to 30d (43200 minutes).
+- Additional exports: `_print_slo_result()`, `handle_slo_command()`, `register_slo_parser()`.
 - Style inconsistency (known): `slo show` uses Rich `console`/`header` from `nthlayer.cli.ux`; `slo list` and `slo collect` use plain `print()`.
 - Architectural note: `slo collect` queries live Prometheus from a generate CLI — tension with pure-compiler goal; tracked as debt.
 - Dead stub: `slo_blame_command` reads `NTHLAYER_DATABASE_URL` from env but is unreachable (references deleted db/ runtime concepts); removal tracked separately.
-- Test files: `tests/test_cli_slo.py` (comprehensive unit tests with fixtures/mocks/capsys) and `tests/test_slo_cli.py` (simpler integration-style using `os.chdir()`); duplication is known tech debt.
+- Test files: `tests/test_cli_slo.py` (comprehensive unit tests with fixtures/mocks/capsys; imports `_parse_window_minutes`, `_print_slo_result`, `handle_slo_command`, `register_slo_parser`, `slo_collect_command`, `slo_list_command`, `slo_show_command`; fixtures: `service_with_slos`, `service_without_slos`, `services_directory`; `TestSloShowCommand` verifies error budget, indicator type, query truncation, missing file, no-SLOs case) and `tests/test_slo_cli.py` (simpler integration-style using `os.chdir()`); duplication is known tech debt.
 
 ### Validate-SLO CLI Command (cli/validate_slo.py)
 - `validate_slo_command(service_file, prometheus_url, output_format, demo)` — checks that PromQL metric names in SLO recording rules exist in Prometheus
@@ -608,7 +607,7 @@ P0–P5 copied runtime code to nthlayer-observe. The Purify Generate epic delete
 - Integration tests using mock servers live in `tests/integration/` (e.g., `tests/integration/test_mock_server_integration.py`)
 - CLI end-to-end smoke tests live in `tests/smoke/` — invoke the real CLI via subprocess; see "CLI Smoke Test Suite" pattern for details
 - **Unit tests for CLI commands** live in `tests/test_cli_*.py` — use `capsys`/`tmp_path`/`unittest.mock.patch` (no subprocess): `test_cli_alerts.py` (alerts show/evaluate/explain/test, respx mocking), `test_cli_dashboard.py` (generate_dashboard_command, dry-run, default path), `test_cli_dashboard_validate.py` (validate_dashboard_command exit codes 0/1/2, list_intents_command), `test_cli_environments.py` (list/diff/validate env commands), `test_cli_generate.py` (generate_slo_command, sloth-only format support), `test_cli_setup.py` (setup wizard, connection testing, GrafanaProfile/PrometheusProfile fixtures), `test_cli_validate_slo.py` (PromQL extraction, SLOValidationResult, demo mode)
-- **Unit tests for providers/identity**: `tests/test_prometheus_provider.py` (PrometheusProvider init, query, query_range; uses AsyncMock on `_request`), `tests/test_ownership.py` (OwnershipSource/Signal/Attribution, DeclaredOwnershipProvider, CODEOWNERSProvider; pytest.mark.asyncio), `tests/test_mimir_provider.py` (MimirRulerProvider init/headers, push_rules, delete_rules, list_rules, health_check, RulerPushResult; TestBackwardCompat verifies all 3 import paths resolve to same class: `nthlayer.providers.mimir` → `nthlayer_common.providers.mimir` → `nthlayer_common.clients.mimir`; all async tests use pytest.mark.asyncio with patch.object on `_request`)
+- **Unit tests for providers/identity**: `tests/test_prometheus_provider.py` (imports from `nthlayer_generate.providers.prometheus` — the generate-side re-export shim; `TestPrometheusProviderInit`: basic init, trailing slash, auth tuple, custom timeout/user agent; `TestQuery`: instant query + with-time; `TestQueryRange`: custom step; uses AsyncMock on `_request`), `tests/test_ownership.py` (OwnershipSource/Signal/Attribution, DeclaredOwnershipProvider, CODEOWNERSProvider; pytest.mark.asyncio), `tests/test_mimir_provider.py` (MimirRulerProvider init/headers, push_rules, delete_rules, list_rules, health_check, RulerPushResult; TestBackwardCompat verifies all 3 import paths resolve to same class: `nthlayer.providers.mimir` → `nthlayer_common.providers.mimir` → `nthlayer_common.clients.mimir`; all async tests use pytest.mark.asyncio with patch.object on `_request`)
 - Shared pytest config (structlog suppression, fixtures) lives in `tests/conftest.py`
 - Tests for optional-dependency modules use `pytest.importorskip("package")` at module level to skip when extras are not installed: `kubernetes = pytest.importorskip("kubernetes", reason="kubernetes is required for K8s provider tests")`
 - Apply `importorskip` to any test module that imports from `[aws]`, `[kubernetes]`, or other optional extras

@@ -295,10 +295,13 @@ async def _collect_slo_metrics(
             try:
                 sli_value = await provider.get_sli_value(query)
 
-                if sli_value > 0:
+                if sli_value is None:
+                    result["error"] = "No data returned from Prometheus"
+                    result["status"] = "NO_DATA"
+                else:
                     result["current_sli"] = sli_value * 100  # Convert to percentage
 
-                    # Calculate burn
+                    # Calculate burn (sli_value=0.0 is total outage, not no-data)
                     error_rate = 1.0 - sli_value
                     burned_minutes = window_minutes * error_rate
                     result["burned_minutes"] = burned_minutes
@@ -313,9 +316,6 @@ async def _collect_slo_metrics(
                         result["status"] = "WARNING"
                     else:
                         result["status"] = "HEALTHY"
-                else:
-                    result["error"] = "No data returned from Prometheus"
-                    result["status"] = "NO_DATA"
 
             except PrometheusProviderError as e:
                 result["error"] = str(e)

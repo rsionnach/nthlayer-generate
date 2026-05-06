@@ -660,7 +660,34 @@ class TestCollectSloMetrics:
     @pytest.mark.asyncio
     @patch("nthlayer_generate.providers.prometheus.PrometheusProvider")
     async def test_no_data(self, mock_provider_class):
-        """Test collecting SLO when no data returned."""
+        """Provider returning None (empty Prometheus result) yields NO_DATA."""
+        from nthlayer_generate.cli.slo import _collect_slo_metrics
+
+        mock_provider = MagicMock()
+        mock_provider.get_sli_value = AsyncMock(return_value=None)
+        mock_provider_class.return_value = mock_provider
+
+        mock_slo = MagicMock()
+        mock_slo.name = "availability"
+        mock_slo.spec = {
+            "objective": 99.9,
+            "window": "30d",
+            "indicator": {"query": "up"},
+        }
+
+        results = await _collect_slo_metrics(
+            slo_resources=[mock_slo],
+            prometheus_url="http://localhost:9090",
+            service_name="test-service",
+        )
+
+        assert len(results) == 1
+        assert results[0]["status"] == "NO_DATA"
+
+    @pytest.mark.asyncio
+    @patch("nthlayer_generate.providers.prometheus.PrometheusProvider")
+    async def test_zero_sli_is_total_outage(self, mock_provider_class):
+        """SLI=0.0 is a real measurement (total outage), not no-data."""
         from nthlayer_generate.cli.slo import _collect_slo_metrics
 
         mock_provider = MagicMock()
@@ -682,7 +709,8 @@ class TestCollectSloMetrics:
         )
 
         assert len(results) == 1
-        assert results[0]["status"] == "NO_DATA"
+        assert results[0]["status"] == "EXHAUSTED"
+        assert results[0]["current_sli"] == 0.0
 
     @pytest.mark.asyncio
     @patch("nthlayer_generate.providers.prometheus.PrometheusProvider")

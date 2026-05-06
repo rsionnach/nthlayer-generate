@@ -230,7 +230,7 @@ class TestGetSliValue:
 
     @pytest.mark.asyncio
     async def test_get_sli_value_empty_result(self, prometheus_provider):
-        """Test SLI value returns 0 for empty result."""
+        """Empty result set returns None to distinguish no-data from 0.0."""
         with patch.object(prometheus_provider, "query", new_callable=AsyncMock) as mock_query:
             mock_query.return_value = {
                 "status": "success",
@@ -238,6 +238,22 @@ class TestGetSliValue:
             }
 
             sli = await prometheus_provider.get_sli_value("nonexistent_metric")
+
+            assert sli is None
+
+    @pytest.mark.asyncio
+    async def test_get_sli_value_zero_is_total_outage(self, prometheus_provider):
+        """Prometheus returning 0.0 is a real measurement (total outage), not None."""
+        with patch.object(prometheus_provider, "query", new_callable=AsyncMock) as mock_query:
+            mock_query.return_value = {
+                "status": "success",
+                "data": {
+                    "resultType": "vector",
+                    "result": [{"metric": {}, "value": [1609459200, "0"]}],
+                },
+            }
+
+            sli = await prometheus_provider.get_sli_value("metric")
 
             assert sli == 0.0
 
@@ -257,8 +273,40 @@ class TestGetSliValue:
 
             sli = await prometheus_provider.get_sli_value("broken_metric")
 
-            # Prometheus returns NaN as-is, not converted to 0
+            # Prometheus returns NaN as-is, not converted to None
             assert math.isnan(sli)
+
+    @pytest.mark.asyncio
+    async def test_get_sli_value_short_value_tuple_returns_none(self, prometheus_provider):
+        """Malformed value tuple (length < 2) returns None."""
+        with patch.object(prometheus_provider, "query", new_callable=AsyncMock) as mock_query:
+            mock_query.return_value = {
+                "status": "success",
+                "data": {
+                    "resultType": "vector",
+                    "result": [{"metric": {}, "value": [1609459200]}],
+                },
+            }
+
+            sli = await prometheus_provider.get_sli_value("broken_metric")
+
+            assert sli is None
+
+    @pytest.mark.asyncio
+    async def test_get_sli_value_non_numeric_returns_none(self, prometheus_provider):
+        """Non-numeric value strings return None rather than swallowing as 0.0."""
+        with patch.object(prometheus_provider, "query", new_callable=AsyncMock) as mock_query:
+            mock_query.return_value = {
+                "status": "success",
+                "data": {
+                    "resultType": "vector",
+                    "result": [{"metric": {}, "value": [1609459200, "not-a-number"]}],
+                },
+            }
+
+            sli = await prometheus_provider.get_sli_value("broken_metric")
+
+            assert sli is None
 
 
 class TestGetSliTimeSeries:

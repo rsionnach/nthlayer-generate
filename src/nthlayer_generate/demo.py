@@ -25,6 +25,10 @@ from nthlayer_generate.cli.alerts import handle_alerts_command, register_alerts_
 from nthlayer_generate.cli.generate_loki import handle_loki_command, register_loki_parser
 from nthlayer_generate.cli.identity import handle_identity_command, register_identity_parser
 from nthlayer_generate.cli.migrate import handle_migrate_command, register_migrate_parser
+from nthlayer_generate.cli.migrate_manifest import (
+    handle_migrate_manifest_command,
+    register_migrate_manifest_parser,
+)
 from nthlayer_generate.cli.ownership import handle_ownership_command, register_ownership_parser
 from nthlayer_generate.cli.recommend_metrics import (
     handle_recommend_metrics_command,
@@ -829,6 +833,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # Migrate command (legacy to OpenSRM)
     register_migrate_parser(subparsers)
+    register_migrate_manifest_parser(subparsers)
 
     # Monte Carlo SLO simulation
     register_simulate_parser(subparsers)
@@ -1236,6 +1241,9 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     if args.command == "migrate":
         sys.exit(handle_migrate_command(args))
+
+    if args.command == "migrate-manifest":
+        sys.exit(handle_migrate_manifest_command(args))
 
     if args.command == "simulate":
         sys.exit(handle_simulate_command(args))

@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.1.0](https://github.com/rsionnach/nthlayer-generate/compare/v1.0.0...v1.1.0) (2026-05-10)
+
+
+### Features
+
+* **cli:** add `nthlayer migrate-manifest` for v1→v2 migration (P2-A.2) ([81fa10e](https://github.com/rsionnach/nthlayer-generate/commit/81fa10ed5e93a79f57afd13cc5068e9af62d4f18))
+
+
+### Bug Fixes
+
+* **slo:** distinguish None (no data) from 0.0 (total outage) in collect CLI ([895428e](https://github.com/rsionnach/nthlayer-generate/commit/895428ea02ae1924a3e07783ab353a2114af57c1))
+
+
+### Code Refactoring
+
+* **slo:** unconditional percentage-&gt;ratio at OpenSLO boundary ([66346b9](https://github.com/rsionnach/nthlayer-generate/commit/66346b96ec4568489cb55fc30f3981c72685a734))
+
+
+### Documentation
+
+* **CLAUDE.md:** consolidation refs + e1gk auto-memory updates ([89fb35a](https://github.com/rsionnach/nthlayer-generate/commit/89fb35af304c184a5c73410485919f2b0494aee7))
+* **CLAUDE.md:** document migrate-manifest CLI ([82c230e](https://github.com/rsionnach/nthlayer-generate/commit/82c230efdedb2baee9bffc08f4b3d83c1ee4236a))
+* **CLAUDE.md:** document unconditional OpenSLO boundary conversion ([aac90bc](https://github.com/rsionnach/nthlayer-generate/commit/aac90bce2a21ffe0f7cb56119ee57cf2c2c3c3e1))
+* **claude:** repoint stale superpowers spec ref to nthlayer/ ([92b0a36](https://github.com/rsionnach/nthlayer-generate/commit/92b0a36c2ae34496f7a236600e8c8c6f1336a973))
+
 ## v0.1.0a18 (March 6, 2026)
 
 ### Build-Time Policy Engine

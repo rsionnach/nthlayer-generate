@@ -87,6 +87,7 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 - Add tests for new features
 - Ensure existing tests pass
 - Integration tests in `tests/integration/`
+- Ecosystem testing conventions: [../nthlayer/docs/testing.md](../nthlayer/docs/testing.md).
 
 ## Questions?
 

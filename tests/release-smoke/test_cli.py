@@ -13,7 +13,6 @@ import subprocess
 
 import pytest
 
-
 # nthlayer-generate registers two entry points: a primary and a legacy
 # alias. Both must work post-install.
 CONSOLE_SCRIPTS = ["nthlayer-generate", "nthlayer"]

@@ -4,7 +4,12 @@ import warnings
 
 import pytest
 
-from nthlayer_generate.specs import ManifestLoadError, ReliabilityManifest, SLODefinition, load_manifest
+from nthlayer_generate.specs import (
+    ManifestLoadError,
+    ReliabilityManifest,
+    SLODefinition,
+    load_manifest,
+)
 from nthlayer_generate.specs.loader import LegacyFormatWarning
 from nthlayer_generate.specs.manifest import (
     SERVICE_TYPE_ALIASES,
@@ -860,7 +865,9 @@ class TestManifestRecordingRuleBuilder:
 
     def test_build_standard_slo_rules(self):
         """Test building recording rules for standard SLOs."""
-        from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
+        from nthlayer_generate.recording_rules.manifest_builder import (
+            build_recording_rules_from_manifest,
+        )
 
         manifest = ReliabilityManifest(
             name="payment-api",
@@ -882,7 +889,9 @@ class TestManifestRecordingRuleBuilder:
 
     def test_build_judgment_slo_rules(self):
         """Test building recording rules for AI gate judgment SLOs."""
-        from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
+        from nthlayer_generate.recording_rules.manifest_builder import (
+            build_recording_rules_from_manifest,
+        )
 
         manifest = ReliabilityManifest(
             name="fraud-detector",
@@ -909,7 +918,9 @@ class TestManifestRecordingRuleBuilder:
 
     def test_build_health_rules(self):
         """Test building health metrics rules."""
-        from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
+        from nthlayer_generate.recording_rules.manifest_builder import (
+            build_recording_rules_from_manifest,
+        )
 
         manifest = ReliabilityManifest(
             name="api",
@@ -2422,7 +2433,9 @@ class TestManifestBuilderExtended:
 
     def test_build_rules_with_all_slo_types(self):
         """Test building rules with all SLO types."""
-        from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
+        from nthlayer_generate.recording_rules.manifest_builder import (
+            build_recording_rules_from_manifest,
+        )
 
         manifest = ReliabilityManifest(
             name="full-api",
@@ -2442,7 +2455,9 @@ class TestManifestBuilderExtended:
 
     def test_build_rules_for_worker(self):
         """Test building rules for worker service type."""
-        from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
+        from nthlayer_generate.recording_rules.manifest_builder import (
+            build_recording_rules_from_manifest,
+        )
 
         manifest = ReliabilityManifest(
             name="processor",
@@ -2460,7 +2475,9 @@ class TestManifestBuilderExtended:
 
     def test_build_rules_for_stream(self):
         """Test building rules for stream service type."""
-        from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
+        from nthlayer_generate.recording_rules.manifest_builder import (
+            build_recording_rules_from_manifest,
+        )
 
         manifest = ReliabilityManifest(
             name="event-processor",
@@ -2477,7 +2494,9 @@ class TestManifestBuilderExtended:
 
     def test_build_all_judgment_slo_rules(self):
         """Test building all judgment SLO rule types."""
-        from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
+        from nthlayer_generate.recording_rules.manifest_builder import (
+            build_recording_rules_from_manifest,
+        )
 
         manifest = ReliabilityManifest(
             name="ml-classifier",

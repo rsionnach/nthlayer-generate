@@ -143,6 +143,7 @@ class TestDemoSpecsViaCLI:
     @pytest.mark.parametrize("filename", DEMO_FILES)
     def test_demo_spec_migrates_via_cli(self, tmp_path, demo_dir: Path, filename: str):
         from nthlayer_common.manifest.parser.v2 import parse_opensrm_v2
+
         from nthlayer_generate.cli.migrate_manifest import migrate_manifest_command
 
         src = demo_dir / filename

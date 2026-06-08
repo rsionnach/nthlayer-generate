@@ -6,7 +6,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from nthlayer_generate.dependencies.models import DependencyType
-from nthlayer_generate.dependencies.providers.base import deduplicate_dependencies, infer_dependency_type
+from nthlayer_generate.dependencies.providers.base import (
+    deduplicate_dependencies,
+    infer_dependency_type,
+)
 
 # Sample Curator-style instance data
 SAMPLE_INSTANCE_DATA = json.dumps(

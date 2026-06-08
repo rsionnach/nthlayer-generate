@@ -17,7 +17,9 @@ from nthlayer_generate.specs.environments import EnvironmentLoader
 from nthlayer_generate.specs.models import Resource, ServiceContext
 from nthlayer_generate.specs.template import substitute_variables
 from nthlayer_generate.specs.templates import TemplateRegistry
-from nthlayer_generate.specs.variable_substitution import substitute_variables as substitute_env_variables
+from nthlayer_generate.specs.variable_substitution import (
+    substitute_variables as substitute_env_variables,
+)
 
 
 class ServiceParseError(Exception):

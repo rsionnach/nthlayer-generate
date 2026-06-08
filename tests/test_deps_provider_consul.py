@@ -5,7 +5,10 @@ import respx
 from httpx import Response
 
 from nthlayer_generate.dependencies.models import DependencyType
-from nthlayer_generate.dependencies.providers.base import deduplicate_dependencies, infer_dependency_type
+from nthlayer_generate.dependencies.providers.base import (
+    deduplicate_dependencies,
+    infer_dependency_type,
+)
 from nthlayer_generate.dependencies.providers.consul import (
     ConsulDepProvider,
     ConsulDepProviderError,

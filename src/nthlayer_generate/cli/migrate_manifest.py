@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-
 from nthlayer_common.manifest.parser.v2 import OpenSRMV2ParseError, parse_opensrm_v2
 from nthlayer_common.manifest.v1_compat import convert_v1_to_v2
 

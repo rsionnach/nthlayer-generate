@@ -11,7 +11,10 @@ from typing import TYPE_CHECKING, Any, List
 import yaml
 
 from nthlayer_generate.alerts import AlertRule, AlertTemplateLoader
-from nthlayer_generate.specs.helpers import extract_dependency_technologies, infer_technology_from_name
+from nthlayer_generate.specs.helpers import (
+    extract_dependency_technologies,
+    infer_technology_from_name,
+)
 from nthlayer_generate.specs.manifest import ReliabilityManifest
 from nthlayer_generate.specs.models import Resource
 from nthlayer_generate.specs.parser import parse_service_file

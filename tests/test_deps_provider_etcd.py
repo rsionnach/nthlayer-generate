@@ -6,7 +6,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from nthlayer_generate.dependencies.models import DependencyType
-from nthlayer_generate.dependencies.providers.base import deduplicate_dependencies, infer_dependency_type
+from nthlayer_generate.dependencies.providers.base import (
+    deduplicate_dependencies,
+    infer_dependency_type,
+)
 
 # Sample service data for testing
 SAMPLE_SERVICE_DATA = json.dumps(

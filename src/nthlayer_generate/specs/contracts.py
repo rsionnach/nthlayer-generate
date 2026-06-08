@@ -66,7 +66,11 @@ class ContractRegistry:
         Loads each manifest file found via is_manifest_file() and
         registers any contracts.
         """
-        from nthlayer_generate.specs.loader import ManifestLoadError, is_manifest_file, load_manifest
+        from nthlayer_generate.specs.loader import (
+            ManifestLoadError,
+            is_manifest_file,
+            load_manifest,
+        )
 
         registry = cls()
         path = Path(directory)

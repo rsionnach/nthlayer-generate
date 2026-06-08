@@ -232,7 +232,9 @@ class TestLabelConsistency:
 
     def test_elasticsearch_uses_service_label(self):
         """Elasticsearch queries should use service label, not cluster."""
-        from nthlayer_generate.dashboards.templates.elasticsearch_intent import ElasticsearchIntentTemplate
+        from nthlayer_generate.dashboards.templates.elasticsearch_intent import (
+            ElasticsearchIntentTemplate,
+        )
 
         template = ElasticsearchIntentTemplate()
         specs = template.get_panel_specs("$service")

@@ -8,7 +8,11 @@ import yaml
 from nthlayer_generate.cli.ux import console, error, header, info, success, warning
 
 logger = structlog.get_logger()
-from nthlayer_generate.dashboards.intents import ALL_INTENTS, get_intents_for_technology, list_technologies
+from nthlayer_generate.dashboards.intents import (
+    ALL_INTENTS,
+    get_intents_for_technology,
+    list_technologies,
+)
 from nthlayer_generate.dashboards.resolver import ResolutionStatus
 from nthlayer_generate.dashboards.validator import (
     DashboardValidator,

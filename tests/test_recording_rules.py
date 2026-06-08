@@ -7,7 +7,11 @@ import pytest
 import yaml
 
 from nthlayer_generate.recording_rules.builder import build_recording_rules
-from nthlayer_generate.recording_rules.models import RecordingRule, RecordingRuleGroup, create_rule_groups
+from nthlayer_generate.recording_rules.models import (
+    RecordingRule,
+    RecordingRuleGroup,
+    create_rule_groups,
+)
 from nthlayer_generate.specs.models import Resource, ServiceContext
 
 

@@ -15,7 +15,9 @@ from nthlayer_generate.dashboards.templates.etcd_intent import EtcdIntentTemplat
 from nthlayer_generate.dashboards.templates.haproxy_intent import HaproxyIntentTemplate
 from nthlayer_generate.dashboards.templates.http_intent import HTTPIntentTemplate
 from nthlayer_generate.dashboards.templates.kafka_intent import KafkaIntentTemplate
-from nthlayer_generate.dashboards.templates.kubernetes import KubernetesTemplate  # No intent version yet
+from nthlayer_generate.dashboards.templates.kubernetes import (
+    KubernetesTemplate,  # No intent version yet
+)
 from nthlayer_generate.dashboards.templates.mongodb_intent import MongoDBIntentTemplate
 from nthlayer_generate.dashboards.templates.mysql_intent import MySQLIntentTemplate
 from nthlayer_generate.dashboards.templates.nats_intent import NatsIntentTemplate

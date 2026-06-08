@@ -21,7 +21,10 @@ from nthlayer_generate.cli.recording_rules import generate_recording_rules_comma
 from nthlayer_generate.cli.slo import handle_slo_command, register_slo_parser
 from nthlayer_generate.cli.templates import list_templates_command
 from nthlayer_generate.cli.validate import validate_command
-from nthlayer_generate.cli.validate_slo import handle_validate_slo_command, register_validate_slo_parser
+from nthlayer_generate.cli.validate_slo import (
+    handle_validate_slo_command,
+    register_validate_slo_parser,
+)
 
 __all__ = [
     "generate_slo_command",

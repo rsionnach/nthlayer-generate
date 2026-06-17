@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.1](https://github.com/rsionnach/nthlayer-generate/compare/v1.1.0...v1.1.1) (2026-06-08)
+
+
+### Bug Fixes
+
+* **ci:** add tag-push + workflow_dispatch triggers to release.yml ([0beff7b](https://github.com/rsionnach/nthlayer-generate/commit/0beff7ba2bdae76c8208b13876d83e28907204dc))
+* **ci:** move release smoke to tests/release-smoke/ (avoid collision) ([08185ac](https://github.com/rsionnach/nthlayer-generate/commit/08185acb937b1d091be956962e6a3fe67250980d))
+* **lint:** autofix 23 ruff I001 import-order violations ([15c1dd2](https://github.com/rsionnach/nthlayer-generate/commit/15c1dd20f1c6c762e08ca6f8372e99eadec2cbf5))
+* **tests:** set pythonpath=["src"] so pytest finds nthlayer_generate ([a6621e3](https://github.com/rsionnach/nthlayer-generate/commit/a6621e3a778245ec9461b8c66d38988a2c95e26d))
+
+
+### Documentation
+
+* **CLAUDE.md:** document release-please + smoke gate + Dependabot ([2146eb4](https://github.com/rsionnach/nthlayer-generate/commit/2146eb423018a21d31c2152fcc70595bc3fc01f4))
+* link to ecosystem testing conventions (opensrm-2wkc) ([77a3411](https://github.com/rsionnach/nthlayer-generate/commit/77a341100b11882ab723768c1b35b933674bec6a))
+* thin CLAUDE.md; defer to AGENTS.md + existing docs/ ([922d203](https://github.com/rsionnach/nthlayer-generate/commit/922d20397a6f8aa4727ec0e0e09021437454bff8))
+
 ## [1.1.0](https://github.com/rsionnach/nthlayer-generate/compare/v1.0.0...v1.1.0) (2026-05-10)
 
 

@@ -1,102 +1,114 @@
-# Contributing to NthLayer
+# Contributing to nthlayer-generate
 
-First off, thank you for considering contributing to NthLayer! We're in early alpha and actively seeking feedback from the SRE/DevOps community.
+Thank you for considering contributing to **nthlayer-generate** — the pure,
+deterministic compiler that turns OpenSRM specs into reliability artifacts
+(SLOs, alerts, dashboards, deployment gates). Reliability at build time, not
+incident time. We're in active development and welcome feedback from the
+SRE/DevOps community.
 
 ## Ways to Contribute
 
-### 1. Try It Out and Share Feedback
+- **Try it out** — run NthLayer against a real service and
+  [open a Discussion](https://github.com/rsionnach/nthlayer/discussions) or
+  [report bugs](https://github.com/rsionnach/nthlayer-generate/issues).
+- **Code & docs** — pull requests welcome (see below).
+- **Technology templates** — add support for new technologies (Kafka,
+  RabbitMQ, cloud-specific metrics). See `src/nthlayer_generate/` templates.
 
-The most valuable contribution right now is **using NthLayer on a real service** and telling us what works and what doesn't:
+## Development Setup
 
-- [Open a Discussion](https://github.com/rsionnach/nthlayer/discussions) to share your experience
-- [Report bugs](https://github.com/rsionnach/nthlayer/issues/new?labels=bug) you encounter
-- [Request features](https://github.com/rsionnach/nthlayer/issues/new?labels=enhancement) that would help your workflow
-
-### 2. Code Contributions
-
-We welcome pull requests! Here's how to get started:
+This is the **only** ecosystem repo with a `Makefile` and the only one with
+mypy configured.
 
 ```bash
 # Install uv (https://docs.astral.sh/uv/)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Clone and setup
-git clone https://github.com/rsionnach/nthlayer.git
-cd nthlayer
-uv sync --extra dev      # Install dependencies from lockfile
+# Clone alongside nthlayer-common (resolved as a sibling path locally)
+git clone https://github.com/rsionnach/nthlayer-common.git
+git clone https://github.com/rsionnach/nthlayer-generate.git
+cd nthlayer-generate
+git checkout develop                 # all work targets develop, not main
+uv sync --extra dev                  # installs deps + test/lint/typecheck tools
+make pre-commit-install              # install git hooks
 
-# Install pre-commit hooks (required)
-make pre-commit-install
-
-# Run tests
-make test
-
-# Run linting
-make lint
+# Tests / lint / typecheck / format
+make test                            # pytest
+make smoke                           # CLI smoke (~40s, offline)
+make lint                            # ruff + see custom linters below
+make typecheck                       # mypy
+make format
+./scripts/lint/run-all.sh            # custom golden-principle linters
 ```
 
-#### Pull Request Process
+> **The `nthlayer-common` clone above is required** for local dev — `uv sync`
+> resolves it via an editable sibling path and fails without it. (CI instead
+> uses `uv sync --no-sources --extra dev` to pull it from PyPI; you don't need
+> that variant locally.) Requires Python 3.11+ (`uv` will provision it via
+> `uv python install` if needed).
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Ensure tests pass (`make test`)
-5. Ensure linting passes (`make lint`)
-6. Commit with a descriptive message
-7. Push to your fork and open a PR
+A clean clone to a green `make test` should take well under five minutes.
 
-### 3. Documentation
+## Pull Request Process
 
-Help us improve documentation:
+This repo uses a **`develop` → `main`** flow (unlike the other ecosystem
+repos, which commit to `main` directly):
 
-- Fix typos or unclear explanations
-- Add examples for your use case
-- Improve the getting started guide
-
-### 4. Technology Templates
-
-Add support for new technologies:
-
-- Kafka, RabbitMQ, Cassandra, etc.
-- Cloud-specific metrics (AWS RDS, GCP Cloud SQL)
-- Custom application metrics
-
-See `src/nthlayer/dashboards/templates/` for existing templates.
+1. Fork the repository.
+2. Create a feature branch off `develop` (`git checkout -b feat/your-change`).
+3. Make your change with tests.
+4. Ensure `make test`, `make lint`, and `make typecheck` pass.
+5. Commit using the message format below.
+6. Open a PR targeting **`develop`**. `main` is only updated by merging
+   `develop` at release time — never commit directly to `main`.
 
 ## Development Guidelines
 
 ### Code Style
 
-- Python 3.11+
-- Type hints required
-- Ruff for linting and formatting (enforced by pre-commit)
-- Follow existing patterns in the codebase
+- Python 3.11+, type hints required (mypy, `python_version = "3.11"`).
+- Ruff config here is `select = ["E","F","I","B"]` with `E402`/`E501` ignored
+  (distinct from the ecosystem floor — this repo predates it).
+- Enforced golden principles (custom linters): structured logging only (no
+  bare `print` outside CLI), no bare `except: pass`, every `TODO` references a
+  bead ID, template system for all generated output. See
+  `docs/golden-principles.md`.
 
 ### Commit Messages
 
 ```
-<type>: <description>
-
-<optional body>
+<type>: <description> (<bead-id>)
 ```
 
-Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `lint`. When
+fixing a GitHub Issue: `fix: <description> (<bead-id>, closes #<number>)`.
 
 ### Testing
 
-- Add tests for new features
-- Ensure existing tests pass
-- Integration tests in `tests/integration/`
+- Add tests for new behaviour. Integration tests via `make test-integration`.
 - Ecosystem testing conventions: [../nthlayer/docs/testing.md](../nthlayer/docs/testing.md).
 
-## Questions?
+## Finding Something to Work On
 
-- [GitHub Discussions](https://github.com/rsionnach/nthlayer/discussions) - General questions
-- [GitHub Issues](https://github.com/rsionnach/nthlayer/issues) - Bug reports and feature requests
+Browse [open issues](https://github.com/rsionnach/nthlayer-generate/issues) and
+look for `good-first-issue` / `help-wanted` labels. Maintainers track detailed
+work in **Beads**, a Dolt-backed board in the `opensrm` repo
+(`cd ../opensrm && bd ready --json`) — you don't need it to contribute.
 
 ## Code of Conduct
 
-Be respectful and constructive. We're all here to build better reliability tooling.
+Be respectful and constructive — we're all here to build better reliability
+tooling.
+
+## Questions?
+
+- [GitHub Issues](https://github.com/rsionnach/nthlayer-generate/issues) — bugs and features.
+- [GitHub Discussions](https://github.com/rsionnach/nthlayer/discussions) — general questions.
+
+## License
+
+nthlayer-generate is MIT licensed. By contributing, you agree that your
+contributions will be licensed under the same terms (see `LICENSE`).
 
 ---
 

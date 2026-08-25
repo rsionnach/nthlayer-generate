@@ -452,7 +452,7 @@ def _adr_initial_architecture(manifest: ReliabilityManifest) -> str:
 
 def _generate_api_docs(manifest: ReliabilityManifest) -> str:
     """Generate API documentation stub matched to service type."""
-    if manifest.type in ("api", "web"):
+    if manifest.type in ("api", "x-web"):
         return _api_docs_http(manifest)
     elif manifest.type in ("worker", "batch"):
         return _api_docs_worker(manifest)

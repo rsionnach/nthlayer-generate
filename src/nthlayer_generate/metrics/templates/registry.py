@@ -27,6 +27,11 @@ _TEMPLATES: dict[str, ServiceTypeTemplate] = {
     "gateway": GATEWAY_TEMPLATE,
     "cache": CACHE_TEMPLATE,
     # Aliases for common alternative names
+    # Both spellings: `x-web` is what a manifest stores post-opensrm-ih0v,
+    # `web` is what older manifests and hand-typed lookups still say. This
+    # table is a permissive name->template index, not a validation rule —
+    # note `http`, `rest`, `db` below, which are not service types at all.
+    "x-web": API_TEMPLATE,
     "web": API_TEMPLATE,
     "http": API_TEMPLATE,
     "rest": API_TEMPLATE,

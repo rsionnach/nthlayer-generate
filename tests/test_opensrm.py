@@ -22,6 +22,7 @@ from nthlayer_generate.specs.manifest import (
     RosterMember,
     RotationConfig,
     SourceFormat,
+    is_valid_service_type,
 )
 from nthlayer_generate.specs.opensrm_parser import (
     OpenSRMParseError,
@@ -447,12 +448,22 @@ class TestServiceTypeConstants:
         assert "ai-gate" in VALID_SERVICE_TYPES
         assert "batch" in VALID_SERVICE_TYPES  # OpenSRM canonical name
         assert "database" in VALID_SERVICE_TYPES
-        assert "web" in VALID_SERVICE_TYPES  # NthLayer extension
+
+        # `web` is NOT a member post-opensrm-ih0v. It was an NthLayer
+        # extension invented before the spec had a mechanism for one; it now
+        # goes through the spec's `^x-[a-z][a-z0-9-]*$` branch as `x-web`,
+        # which is why membership is the wrong question to ask of it — use
+        # the predicate, which knows about the extension branch.
+        assert "web" not in VALID_SERVICE_TYPES
+        assert is_valid_service_type("x-web")
 
     def test_type_aliases(self):
         """Test type aliases for backward compatibility."""
         assert SERVICE_TYPE_ALIASES["background-job"] == "worker"
         assert SERVICE_TYPE_ALIASES["pipeline"] == "batch"
+        # Added by opensrm-ih0v so manifests already written with `web`
+        # keep parsing after the rename.
+        assert SERVICE_TYPE_ALIASES["web"] == "x-web"
 
 
 class TestOpenSRMFileParser:

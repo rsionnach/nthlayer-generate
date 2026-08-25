@@ -371,9 +371,14 @@ class TestExtractTechnologies:
         assert "http" in result
 
     def test_adds_http_for_web_services(self):
-        """Test HTTP is added for web services."""
+        """Test HTTP is added for web services.
+
+        `x-web` is what a real ServiceContext holds post-opensrm-z3ab: the
+        dataclass resolves `web` through nthlayer-common's alias map at
+        construction, so no parsed context ever carries the bare spelling.
+        """
         context = MagicMock()
-        context.type = "web"
+        context.type = "x-web"
 
         result = extract_technologies(context, [])
 

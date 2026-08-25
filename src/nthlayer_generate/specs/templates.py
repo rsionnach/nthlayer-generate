@@ -30,7 +30,7 @@ class ServiceTemplate:
         if self.tier not in TIER_NAMES:
             raise ValueError(f"Invalid tier: {self.tier}. Valid: {', '.join(TIER_NAMES)}")
 
-        valid_types = ["api", "background-job", "pipeline", "web", "database"]
+        valid_types = ["api", "background-job", "pipeline", "x-web", "database"]
         if self.type not in valid_types:
             raise ValueError(f"Invalid type: {self.type}")
 

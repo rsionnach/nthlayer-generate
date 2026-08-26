@@ -508,7 +508,9 @@ class ReliabilityManifest:
             raise ValueError("Service team is required")
         if not self.tier:
             raise ValueError("Service tier is required")
-        if not self.type:
+        # See the note in specs/models.py: falsy-but-present is invalid,
+        # not missing, and must not be reported as "is required".
+        if self.type is None or self.type == "":
             raise ValueError("Service type is required")
 
         # Validate tier
@@ -516,6 +518,12 @@ class ReliabilityManifest:
             raise ValueError(
                 f"Invalid tier '{self.tier}'. Must be one of: {', '.join(sorted(VALID_TIERS))}"
             )
+
+        # Authored spelling retained for `${type}` substitution — see the
+        # note on ServiceContext.__post_init__. generators/sloth.py puts it
+        # into indicator queries that run against the operator's existing
+        # Prometheus, where renormalising it selects zero series.
+        self.authored_type = self.type
 
         # Resolved and validated in one step by nthlayer-common, which owns
         # the rule (opensrm-z3ab). It applies aliases FIRST — an alias is

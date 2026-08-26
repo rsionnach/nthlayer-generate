@@ -250,7 +250,7 @@ def _convert_slo_definition_to_sloth(
     query = query.replace("${service}", manifest.name)
     query = query.replace("${team}", manifest.team)
     query = query.replace("${tier}", manifest.tier)
-    query = query.replace("${type}", manifest.type)
+    query = query.replace("${type}", manifest.authored_type)
 
     # Build SLI based on indicator type
     indicator: dict[str, Any] = {

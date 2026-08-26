@@ -269,3 +269,77 @@ def test_manifest_module_re_exports_the_whole_rule():
     assert "web" not in VALID_SERVICE_TYPES
     assert SERVICE_TYPE_ALIASES["web"] == "x-web"
     assert ReliabilityManifest is not None
+
+
+# =============================================================================
+# ${type} is a data-plane value, not a manifest field
+# =============================================================================
+
+
+@pytest.mark.parametrize("authored", ["web", "background-job", "pipeline", "api"])
+def test_type_template_variable_keeps_the_authored_spelling(authored: str):
+    """``${type}`` substitutes into user-authored PromQL, so it must not be
+    silently renormalised (opensrm-z3ab R5 edge cases).
+
+    ServiceContext.to_dict feeds template substitution, and normalising
+    self.type meant an existing service.yaml with ``type: web`` and a query
+    matching ``svc_type="${type}"`` began generating ``svc_type="x-web"``.
+    That matcher selects ZERO series against the Prometheus the author
+    already runs, so the SLO reads no-data and its burn-rate alerts never
+    fire.
+
+    Nothing catches it: the generated rules are still schema-valid and still
+    parse. It is the same shape as the latency-SLO regression this bead's
+    correctness pass found — valid output, wrong content, silent at runtime.
+
+    The authored spelling is a label matcher against live data. It is not
+    ours to rewrite.
+    """
+    from nthlayer_generate.specs.models import Resource, ServiceContext
+    from nthlayer_generate.specs.parser import render_resource_spec
+
+    context = ServiceContext(name="shop", team="t", tier="critical", type=authored)
+    resource = Resource(
+        kind="SLO",
+        name="availability",
+        spec={"query": 'sum(rate(http_total{svc_type="${type}"}[5m]))'},
+        context=context,
+    )
+
+    rendered = render_resource_spec(resource)
+
+    assert f'svc_type="{authored}"' in rendered["query"], (
+        f"${{type}} rendered as {rendered['query']!r}; the authored spelling "
+        f"{authored!r} must survive into the query"
+    )
+
+
+def test_context_still_exposes_the_resolved_type_for_branching():
+    """The resolved value is what internal branches compare against — that
+    is why ServiceContext normalises at all. Both must be available: the
+    resolved one for code, the authored one for substitution."""
+    from nthlayer_generate.specs.models import ServiceContext
+
+    context = ServiceContext(name="s", team="t", tier="critical", type="web")
+
+    assert context.type == "x-web"
+    assert context.to_dict()["type"] == "web"
+
+
+@pytest.mark.parametrize("authored", ["web", "background-job", "api"])
+def test_sloth_indicator_query_keeps_the_authored_type(authored: str):
+    """The same data-plane rule on the ReliabilityManifest path.
+
+    generators/sloth.py substitutes ``${type}`` into an SLO's
+    indicator_query, which becomes a Sloth spec and then recording rules
+    and burn-rate alerts. It must carry the authored spelling for the same
+    reason ServiceContext.to_dict does.
+    """
+    from nthlayer_generate.specs.manifest import ReliabilityManifest
+
+    manifest = ReliabilityManifest(name="shop", team="t", tier="critical", type=authored)
+
+    assert manifest.authored_type == authored
+    assert manifest.type == (
+        "x-web" if authored == "web" else "worker" if authored == "background-job" else "api"
+    )

@@ -34,6 +34,11 @@ class ServiceContext:
     team: str
     tier: str
     type: str
+    # Declared, not set in __post_init__: as a bare attribute it was
+    # silently recomputed by dataclasses.replace(), so replacing an
+    # unrelated field reverted the authored spelling to the resolved one.
+    # None means "derive from `type`" — the ordinary construction path.
+    authored_type: str | None = None
     support_model: str = "self"  # self | shared | sre | business_hours
     language: str | None = None
     framework: str | None = None
@@ -83,7 +88,8 @@ class ServiceContext:
         # Resolve-or-keep, never raise: type validity is REPORTED by
         # specs/validator.py as a collected error, and raising here would
         # turn that into a crash.
-        self.authored_type = self.type
+        if self.authored_type is None:
+            self.authored_type = self.type
         if self.type:
             self.type = resolve_service_type(self.type) or self.type
 

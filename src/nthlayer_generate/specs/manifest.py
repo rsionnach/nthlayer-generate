@@ -458,6 +458,10 @@ class ReliabilityManifest:
     # ==========================================================================
     # Optional Metadata (OpenSRM: metadata section)
     # ==========================================================================
+    # See ServiceContext.authored_type — declared rather than set in
+    # __post_init__ so it survives dataclasses.replace(). None means
+    # "derive from `type`", which is the ordinary construction path.
+    authored_type: str | None = None
     description: str | None = None
     labels: dict[str, str] = field(default_factory=dict)
     annotations: dict[str, str] = field(default_factory=dict)
@@ -523,7 +527,8 @@ class ReliabilityManifest:
         # note on ServiceContext.__post_init__. generators/sloth.py puts it
         # into indicator queries that run against the operator's existing
         # Prometheus, where renormalising it selects zero series.
-        self.authored_type = self.type
+        if self.authored_type is None:
+            self.authored_type = self.type
 
         # Resolved and validated in one step by nthlayer-common, which owns
         # the rule (opensrm-z3ab). It applies aliases FIRST — an alias is
@@ -569,7 +574,10 @@ class ReliabilityManifest:
             "service": self.name,
             "team": self.team,
             "tier": self.tier,
-            "type": self.type,
+            # Authored, matching ServiceContext.to_dict() — this method
+            # documents itself as producing that shape, and the value feeds
+            # ${type} substitution into user-authored PromQL.
+            "type": self.authored_type,
             "support_model": self.support_model,
             "language": self.language or "",
             "framework": self.framework or "",
@@ -603,6 +611,11 @@ class ReliabilityManifest:
             team=self.team,
             tier=self.tier,
             type=self.type,
+            # Carried explicitly: ServiceContext derives authored_type from
+            # whatever `type` it is handed, so passing only the resolved
+            # value would recompute it and destroy the authored spelling on
+            # every manifest -> context hop (opensrm-z3ab).
+            authored_type=self.authored_type,
             support_model=self.support_model,
             language=self.language,
             framework=self.framework,

@@ -250,7 +250,11 @@ def _convert_slo_definition_to_sloth(
     query = query.replace("${service}", manifest.name)
     query = query.replace("${team}", manifest.team)
     query = query.replace("${tier}", manifest.tier)
-    query = query.replace("${type}", manifest.authored_type)
+    # `or manifest.type` for the type-checker only: authored_type is
+    # declared Optional so it can default to None and mean "derive from
+    # type", and __post_init__ always fills it. The fallback is unreachable
+    # after construction.
+    query = query.replace("${type}", manifest.authored_type or manifest.type)
 
     # Build SLI based on indicator type
     indicator: dict[str, Any] = {

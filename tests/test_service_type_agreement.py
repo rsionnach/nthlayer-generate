@@ -343,3 +343,37 @@ def test_sloth_indicator_query_keeps_the_authored_type(authored: str):
     assert manifest.type == (
         "x-web" if authored == "web" else "worker" if authored == "background-job" else "api"
     )
+
+
+def test_authored_type_survives_manifest_to_context_conversion():
+    """The manifest -> context hop must not re-derive the authored spelling.
+
+    as_service_context() / to_service_context() built a ServiceContext from
+    the RESOLVED type, so authored_type was recomputed from `x-web` and the
+    authored `web` was destroyed — reopening the zero-series matcher bug on
+    exactly the path specs/loader.py:load_as_legacy uses.
+    """
+    from nthlayer_generate.specs.manifest import ReliabilityManifest
+
+    manifest = ReliabilityManifest(name="shop", team="t", tier="critical", type="web")
+
+    assert manifest.authored_type == "web"
+    assert manifest.as_service_context().authored_type == "web"
+    assert manifest.to_service_context()["type"] == "web"
+
+
+def test_authored_type_survives_dataclasses_replace():
+    """authored_type must be a declared field, not an attribute set in
+    __post_init__.
+
+    As an undeclared attribute it was silently recomputed by
+    dataclasses.replace() — so replacing an unrelated field like tier
+    reverted the authored spelling to the resolved one.
+    """
+    import dataclasses
+
+    from nthlayer_generate.specs.models import ServiceContext
+
+    context = ServiceContext(name="s", team="t", tier="critical", type="web")
+
+    assert dataclasses.replace(context, tier="high").authored_type == "web"

@@ -162,3 +162,108 @@ def test_service_context_keeps_an_unresolvable_type_for_the_validator():
     context = ServiceContext(name="svc", team="t", tier="critical", type="ml")
 
     assert context.type == "ml"
+
+
+# =============================================================================
+# cli/init.py — resolve ONCE, at the top
+# =============================================================================
+
+
+@pytest.mark.parametrize("menu_type", ["web", "x-web", "api"])
+def test_init_emits_latency_slo_for_http_service_types(menu_type: str):
+    """A silent output regression, not a validation one (opensrm-z3ab R5).
+
+    opensrm-z3ab retargeted _build_resources_yaml's branch from
+    ``("api", "web")`` to ``("api", "x-web")``, but only the ``type:``
+    interpolation was resolved — every other consumer of ``service_type``
+    in _generate_service_yaml_v2 still saw the raw menu value. So
+    ``nthlayer init --type web`` emitted a manifest typed ``x-web`` with
+    an availability SLO and NO latency SLO.
+
+    Nothing caught it because the output is still VALID: a manifest may
+    legitimately have no latency SLO. Only asserting on the generated
+    content catches a resource silently going missing.
+
+    Parametrised over both spellings because both must reach the same
+    branch — that is the whole point of resolving once at the top rather
+    than at each use site.
+    """
+    from nthlayer_generate.cli.init import _generate_service_yaml_v2
+
+    yaml_out = _generate_service_yaml_v2("shop", "team", "critical", menu_type, [])
+
+    assert "latency-p95" in yaml_out, (
+        f"--type {menu_type} produced a manifest with no latency SLO"
+    )
+
+
+def test_init_writes_a_resolved_type_for_every_menu_entry():
+    """Whatever the menu offers, the file must carry a resolved value.
+
+    `ml` is the exception and is deliberately left alone (opensrm-8qpd) —
+    it resolves to nothing, so it is written raw and stays loudly invalid
+    rather than being silently mapped to something plausible.
+    """
+    from nthlayer_common.manifest.models import resolve_service_type
+
+    from nthlayer_generate.cli.init import SERVICE_TYPES, _generate_service_yaml_v2
+
+    for menu_type in SERVICE_TYPES:
+        resolved = resolve_service_type(menu_type)
+        if resolved is None:
+            continue  # opensrm-8qpd
+        yaml_out = _generate_service_yaml_v2("s", "t", "critical", menu_type, [])
+        type_line = next(
+            line.strip() for line in yaml_out.splitlines() if line.strip().startswith("type:")
+        )
+        assert type_line == f"type: {resolved}", (
+            f"menu entry {menu_type!r} wrote {type_line!r}, expected type: {resolved}"
+        )
+
+
+def test_template_vocabulary_round_trips_with_the_init_filter():
+    """specs/templates.py and cli/init.py must agree on TEMPLATE types.
+
+    These are a separate vocabulary from manifest service types — the table
+    also carries `background-job` and `pipeline`, which are manifest aliases,
+    not manifest types. opensrm-z3ab half-migrated it, changing only the
+    `web` entry to `x-web`, which broke both ends: a custom template
+    declaring `type: web` stopped loading, and one declaring `x-web` was
+    never matched, because SERVICE_TYPE_TO_TEMPLATE_TYPE still maps the menu
+    entry to `"web"`.
+
+    Whatever the table accepts must be what the filter looks for. Settling
+    which vocabulary it should use at all is opensrm-8qpd.
+    """
+    from nthlayer_generate.cli.init import SERVICE_TYPE_TO_TEMPLATE_TYPE
+    from nthlayer_generate.specs.templates import ServiceTemplate
+
+    for template_type in set(SERVICE_TYPE_TO_TEMPLATE_TYPE.values()):
+        # A template declaring the type init will search for must construct.
+        ServiceTemplate(
+            name=f"t-{template_type}",
+            description="probe",
+            tier="critical",
+            type=template_type,
+            resources=[],
+        )
+
+
+def test_manifest_module_star_export_is_not_narrowed():
+    """specs/manifest.py must not hide its public surface.
+
+    opensrm-z3ab added
+    `__all__ = [*globals().get('__all__', []), 'is_valid_service_type']`
+    intending to EXTEND the export list. The module had no prior `__all__`,
+    so it created one naming a single symbol — hiding ReliabilityManifest,
+    VALID_SERVICE_TYPES, VALID_TIERS and everything else from `import *`
+    and from re-export-strict typecheckers.
+    """
+    import nthlayer_generate.specs.manifest as m
+
+    exported = getattr(m, "__all__", None)
+    if exported is not None:
+        for required in ("ReliabilityManifest", "VALID_SERVICE_TYPES", "VALID_TIERS"):
+            assert required in exported, (
+                f"__all__ omits {required!r}, narrowing the module's public surface"
+            )

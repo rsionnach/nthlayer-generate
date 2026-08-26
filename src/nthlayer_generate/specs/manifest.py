@@ -22,7 +22,7 @@ from nthlayer_common.manifest.models import (
     VALID_SERVICE_TYPES as _COMMON_VALID_SERVICE_TYPES,
 )
 from nthlayer_common.manifest.models import (
-    is_valid_service_type,
+    is_valid_service_type,  # noqa: F401  (re-exported)
     resolve_service_type,
     valid_service_types_phrase,
 )
@@ -54,11 +54,12 @@ VALID_TIERS = {
 VALID_SERVICE_TYPES = _COMMON_VALID_SERVICE_TYPES
 SERVICE_TYPE_ALIASES = _COMMON_SERVICE_TYPE_ALIASES
 
-# Re-exported alongside the constants: the predicate is what actually
-# decides the rule, and a consumer reading only the two sets above would
-# not learn that the x- extension branch exists — which is how this
-# divergence started.
-__all__ = [*globals().get('__all__', []), 'is_valid_service_type']
+# `is_valid_service_type` is re-exported alongside the constants above: the
+# predicate is what actually decides the rule, and a consumer reading only
+# the two sets would not learn that the x- extension branch exists — which
+# is how this divergence started. It is kept alive by the noqa on its import
+# rather than by an __all__: this module has never declared one, so adding a
+# single-name list would NARROW its public surface rather than extend it.
 
 # Judgment SLO types for ai-gate services
 JUDGMENT_SLO_TYPES = {

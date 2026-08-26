@@ -274,6 +274,15 @@ def _generate_service_yaml_v2(
     Returns:
         YAML content as string
     """
+    # Resolve ONCE, here, before anything reads it. Resolving at each use
+    # site instead is what shipped the opensrm-z3ab regression: only the
+    # `type:` interpolation was resolved, so _build_resources_yaml still saw
+    # the raw menu value `web` while its branch had been retargeted to
+    # `x-web` — and `nthlayer init --type web` silently emitted a manifest
+    # with no latency SLO. Valid output, missing content, nothing to catch
+    # it but a test that reads what was generated.
+    service_type = _manifest_type(service_type)
+
     # Build resources section
     resources_yaml = _build_resources_yaml(service_name, tier, service_type, dependencies)
 
@@ -287,7 +296,7 @@ service:
   name: {service_name}
   team: {team}
   tier: {tier}
-  type: {_manifest_type(service_type)}
+  type: {service_type}
 {template_line}
 resources:
 {resources_yaml}

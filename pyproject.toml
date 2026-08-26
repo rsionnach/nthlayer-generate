@@ -9,7 +9,14 @@ description = "NthLayer - The Missing Layer of Reliability"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "nthlayer-common>=0.1.5",
+    # >=2.0.0: generate imports resolve_service_type /
+    # valid_service_types_phrase / is_valid_service_type from
+    # nthlayer_common.manifest.models, which land in 2.0.0 (opensrm-ih0v).
+    # The old >=0.1.5 floor claimed a compatibility that no longer exists —
+    # CI resolves this from PyPI via `uv sync --no-sources`, so an
+    # unsatisfiable floor fails at resolution with a clear message instead
+    # of at import with a confusing ImportError.
+    "nthlayer-common>=2.0.0",
     "grafana-foundation-sdk>=0.0.11",
     "pydantic>=2.7.0,<3.0.0",
     "pydantic-settings>=2.2.1,<3.0.0",

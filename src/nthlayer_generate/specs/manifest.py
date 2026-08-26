@@ -15,6 +15,18 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
+from nthlayer_common.manifest.models import (
+    SERVICE_TYPE_ALIASES as _COMMON_SERVICE_TYPE_ALIASES,
+)
+from nthlayer_common.manifest.models import (
+    VALID_SERVICE_TYPES as _COMMON_VALID_SERVICE_TYPES,
+)
+from nthlayer_common.manifest.models import (
+    is_valid_service_type,
+    resolve_service_type,
+    valid_service_types_phrase,
+)
+
 if TYPE_CHECKING:
     from nthlayer_generate.specs.alerting import AlertingConfig
     from nthlayer_generate.specs.models import Resource
@@ -33,22 +45,20 @@ VALID_TIERS = {
     "low",
 }
 
-# Valid service types (OpenSRM defines 6 types)
-VALID_SERVICE_TYPES = {
-    "api",  # Request/response services
-    "worker",  # Background processors (OpenSRM canonical name)
-    "stream",  # Event processors
-    "ai-gate",  # AI decision services with judgment SLOs
-    "batch",  # Scheduled jobs (OpenSRM canonical name)
-    "database",  # Managed database instances
-    "web",  # Web frontend (NthLayer extension)
-}
+# Service types come from nthlayer-common, which is the single source of
+# truth for the rule (opensrm-z3ab). generate kept its own copy until the
+# two silently disagreed: it accepted `web`, which schema.json rejects,
+# and rejected `x-web`, which schema.json accepts and which common
+# produces from a `web` input. Re-exported here so existing importers
+# keep their path.
+VALID_SERVICE_TYPES = _COMMON_VALID_SERVICE_TYPES
+SERVICE_TYPE_ALIASES = _COMMON_SERVICE_TYPE_ALIASES
 
-# Type aliases for backward compatibility
-SERVICE_TYPE_ALIASES = {
-    "background-job": "worker",  # NthLayer legacy → OpenSRM
-    "pipeline": "batch",  # NthLayer legacy → OpenSRM
-}
+# Re-exported alongside the constants: the predicate is what actually
+# decides the rule, and a consumer reading only the two sets above would
+# not learn that the x- extension branch exists — which is how this
+# divergence started.
+__all__ = [*globals().get('__all__', []), 'is_valid_service_type']
 
 # Judgment SLO types for ai-gate services
 JUDGMENT_SLO_TYPES = {
@@ -492,9 +502,12 @@ class ReliabilityManifest:
 
     def __post_init__(self) -> None:
         """Validate and normalize the manifest."""
-        # Normalize service type aliases
-        if self.type in SERVICE_TYPE_ALIASES:
-            self.type = SERVICE_TYPE_ALIASES[self.type]
+        # Resolve and validate the service type through nthlayer-common,
+        # which owns the rule (opensrm-z3ab). resolve_service_type applies
+        # aliases first — an alias is deliberately not itself a valid type,
+        # so validating before resolving would reject every one of them.
+        # The check itself lives below, after the required-field guards, so
+        # a missing type still reports "Service type is required".
 
         # Validate required fields
         if not self.name:
@@ -512,10 +525,14 @@ class ReliabilityManifest:
                 f"Invalid tier '{self.tier}'. Must be one of: {', '.join(sorted(VALID_TIERS))}"
             )
 
-        # Validate type (after alias normalization)
-        if self.type not in VALID_SERVICE_TYPES:
-            valid = ", ".join(sorted(VALID_SERVICE_TYPES))
-            raise ValueError(f"Invalid type '{self.type}'. Must be one of: {valid}")
+        # Validate type (resolving aliases first — see __post_init__ note)
+        resolved_type = resolve_service_type(self.type)
+        if resolved_type is None:
+            raise ValueError(
+                f"Invalid type '{self.type}'. "
+                f"Must be one of: {valid_service_types_phrase()}."
+            )
+        self.type = resolved_type
 
         # Validate ai-gate specific requirements
         if self.type == "ai-gate":

@@ -28,7 +28,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 git clone https://github.com/rsionnach/nthlayer-common.git
 git clone https://github.com/rsionnach/nthlayer-generate.git
 cd nthlayer-generate
-git checkout develop                 # all work targets develop, not main
+git checkout -b feat/your-change     # branch from main; there is no develop
 uv sync --extra dev                  # installs deps + test/lint/typecheck tools
 make pre-commit-install              # install git hooks
 
@@ -51,16 +51,20 @@ A clean clone to a green `make test` should take well under five minutes.
 
 ## Pull Request Process
 
-This repo uses a **`develop` → `main`** flow (unlike the other ecosystem
-repos, which commit to `main` directly):
+This repo uses feature branch → PR → `main`, the same as every other
+ecosystem repo:
 
 1. Fork the repository.
-2. Create a feature branch off `develop` (`git checkout -b feat/your-change`).
+2. Create a feature branch off `main` (`git checkout -b feat/your-change`).
 3. Make your change with tests.
 4. Ensure `make test`, `make lint`, and `make typecheck` pass.
 5. Commit using the message format below.
-6. Open a PR targeting **`develop`**. `main` is only updated by merging
-   `develop` at release time — never commit directly to `main`.
+6. Open a PR targeting **`main`** — never commit to it directly.
+
+> Earlier versions of this guide described a `develop` → `main` flow and
+> called it out as an exception to the rest of the ecosystem. That was
+> never true on the remote: no `origin/develop` ever existed, and every
+> merge went to `main`. Corrected under opensrm-z9sz.
 
 ## Development Guidelines
 

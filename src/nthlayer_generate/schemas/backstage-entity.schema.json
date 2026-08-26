@@ -4,7 +4,11 @@
   "title": "NthLayer Backstage Entity",
   "description": "JSON artifact for Backstage integration with NthLayer reliability data",
   "type": "object",
-  "required": ["schemaVersion", "generatedAt", "service"],
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "service"
+  ],
   "properties": {
     "schemaVersion": {
       "const": "v1",
@@ -41,7 +45,12 @@
   "$defs": {
     "serviceContext": {
       "type": "object",
-      "required": ["name", "team", "tier", "type"],
+      "required": [
+        "name",
+        "team",
+        "tier",
+        "type"
+      ],
       "properties": {
         "name": {
           "type": "string",
@@ -53,21 +62,52 @@
         },
         "tier": {
           "type": "string",
-          "enum": ["critical", "high", "standard", "low"],
+          "enum": [
+            "critical",
+            "high",
+            "standard",
+            "low"
+          ],
           "description": "Service tier for SLO thresholds and alerting"
         },
         "type": {
           "type": "string",
-          "enum": ["api", "worker", "stream", "ai-gate", "batch", "database", "web"],
-          "description": "Service type"
+          "description": "Service operational pattern. Mirrors OpenSRM v2 schema.json's ServiceType (opensrm-z3ab): the six standard values, or an implementation-specific type under the reserved x- prefix. The not/newline guard is deliberate \u2014 regex engines disagree about whether $ matches before a trailing newline, so without it a block scalar 'x-web\\n' is rejected by ECMA-262 engines and accepted by Python's re.",
+          "oneOf": [
+            {
+              "enum": [
+                "api",
+                "worker",
+                "stream",
+                "ai-gate",
+                "batch",
+                "database"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^x-[a-z][a-z0-9-]*$",
+              "not": {
+                "pattern": "\\n"
+              }
+            }
+          ]
         },
         "description": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Human-readable service description"
         },
         "supportModel": {
           "type": "string",
-          "enum": ["self", "shared", "sre", "business_hours"],
+          "enum": [
+            "self",
+            "shared",
+            "sre",
+            "business_hours"
+          ],
           "default": "self",
           "description": "Support model for on-call routing"
         }
@@ -75,7 +115,11 @@
     },
     "slo": {
       "type": "object",
-      "required": ["name", "target", "window"],
+      "required": [
+        "name",
+        "target",
+        "window"
+      ],
       "properties": {
         "name": {
           "type": "string",
@@ -92,21 +136,46 @@
           "description": "Time window (e.g., 30d, 7d)"
         },
         "sloType": {
-          "type": ["string", "null"],
-          "enum": ["availability", "latency", "error_rate", "throughput", "judgment", null],
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "availability",
+            "latency",
+            "error_rate",
+            "throughput",
+            "judgment",
+            null
+          ],
           "description": "SLO type classification"
         },
         "description": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Human-readable SLO description"
         },
         "currentValue": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "description": "Current measured value (null if live data not available)"
         },
         "status": {
-          "type": ["string", "null"],
-          "enum": ["healthy", "warning", "critical", "exhausted", null],
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "healthy",
+            "warning",
+            "critical",
+            "exhausted",
+            null
+          ],
           "description": "Current SLO status based on error budget consumption"
         }
       }
@@ -115,30 +184,54 @@
       "type": "object",
       "properties": {
         "totalMinutes": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "description": "Total error budget in minutes for the window"
         },
         "consumedMinutes": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "description": "Error budget consumed in minutes"
         },
         "remainingMinutes": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "description": "Error budget remaining in minutes"
         },
         "remainingPercent": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "minimum": 0,
           "maximum": 100,
           "description": "Percentage of error budget remaining"
         },
         "burnRate": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "description": "Current burn rate multiplier (null if live data not available)"
         },
         "status": {
-          "type": ["string", "null"],
-          "enum": ["healthy", "warning", "critical", "exhausted", null],
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "healthy",
+            "warning",
+            "critical",
+            "exhausted",
+            null
+          ],
           "description": "Overall error budget status"
         }
       }
@@ -147,24 +240,55 @@
       "type": "object",
       "properties": {
         "score": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "minimum": 0,
           "maximum": 100,
           "description": "Weighted reliability score (0-100)"
         },
         "grade": {
-          "type": ["string", "null"],
-          "enum": ["A", "B", "C", "D", "F", null],
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "F",
+            null
+          ],
           "description": "Letter grade (A=excellent, B=good, C=fair, D=poor, F=critical)"
         },
         "band": {
-          "type": ["string", "null"],
-          "enum": ["excellent", "good", "fair", "poor", "critical", null],
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "excellent",
+            "good",
+            "fair",
+            "poor",
+            "critical",
+            null
+          ],
           "description": "Score band classification"
         },
         "trend": {
-          "type": ["string", "null"],
-          "enum": ["improving", "stable", "degrading", null],
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "improving",
+            "stable",
+            "degrading",
+            null
+          ],
           "description": "Score trend direction"
         },
         "components": {
@@ -177,19 +301,31 @@
       "description": "Breakdown of score components",
       "properties": {
         "sloCompliance": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "description": "SLO compliance score (0-100, 40% weight)"
         },
         "incidentScore": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "description": "Incident score (0-100, 30% weight)"
         },
         "deploySuccessRate": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "description": "Deployment success rate (0-100, 20% weight)"
         },
         "errorBudgetRemaining": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "description": "Error budget remaining score (0-100, 10% weight)"
         }
       }
@@ -199,23 +335,39 @@
       "properties": {
         "status": {
           "type": "string",
-          "enum": ["APPROVED", "WARNING", "BLOCKED"],
+          "enum": [
+            "APPROVED",
+            "WARNING",
+            "BLOCKED"
+          ],
           "description": "Current deployment gate status"
         },
         "message": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Human-readable status message"
         },
         "budgetRemainingPercent": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "description": "Current error budget remaining percentage"
         },
         "warningThreshold": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "description": "Warning threshold percentage"
         },
         "blockingThreshold": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "description": "Blocking threshold percentage"
         },
         "recommendations": {
@@ -232,25 +384,40 @@
       "description": "Related links for the service",
       "properties": {
         "grafanaDashboard": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "format": "uri",
           "description": "URL to Grafana dashboard"
         },
         "runbook": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "format": "uri",
           "description": "URL to runbook documentation"
         },
         "serviceManifest": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Path to source NthLayer manifest"
         },
         "slothSpec": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Path to generated Sloth specification"
         },
         "alertsYaml": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Path to generated alerts YAML"
         }
       }

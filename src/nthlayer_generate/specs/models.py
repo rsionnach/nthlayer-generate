@@ -7,6 +7,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from nthlayer_common.manifest.models import resolve_service_type
+
 
 @dataclass
 class PagerDutyConfig:
@@ -64,6 +66,19 @@ class ServiceContext:
 
     def __post_init__(self) -> None:
         """Validate required fields."""
+        # Resolve the service type at the boundary, so downstream code sees
+        # one spelling (hard rule 1). specs/parser.py hands the raw YAML
+        # value straight in, so without this a `type: web` file yields a
+        # context holding `web` while every branch tests for `x-web` — web
+        # services would silently lose their HTTP dashboard panels and
+        # latency docs (opensrm-z3ab).
+        #
+        # Resolve-or-keep, never raise: type validity is REPORTED by
+        # specs/validator.py as a collected error, and raising here would
+        # turn that into a crash.
+        if self.type:
+            self.type = resolve_service_type(self.type) or self.type
+
         if not self.name:
             raise ValueError("Service name is required")
         if not self.team:
@@ -139,26 +154,14 @@ VALID_TIERS = {
     "low",
 }
 
-# Valid service types (OpenSRM defines 6 types, NthLayer adds 'web')
-VALID_SERVICE_TYPES = {
-    "api",  # Request/response services
-    "worker",  # Background processors (OpenSRM canonical name)
-    "stream",  # Event processors
-    "ai-gate",  # AI decision services with judgment SLOs
-    "batch",  # Scheduled jobs (OpenSRM canonical name)
-    "database",  # Managed database instances
-    "web",  # Web frontend (NthLayer extension)
-    # Legacy aliases (deprecated, use canonical names)
-    "background-job",  # → worker
-    "pipeline",  # → batch
-}
+# Service types are NOT defined here. nthlayer-common owns the rule; import
+# VALID_SERVICE_TYPES / resolve_service_type from
+# nthlayer_common.manifest.models, or from specs.manifest which re-exports
+# them. The copy that used to live here was unreferenced dead code, and it
+# listed the legacy aliases as VALID types — which schema.json rejects and
+# which would have let generate store an alias (opensrm-z3ab).
 
 # Type aliases for backward compatibility
-SERVICE_TYPE_ALIASES = {
-    "background-job": "worker",  # NthLayer legacy → OpenSRM
-    "pipeline": "batch",  # NthLayer legacy → OpenSRM
-}
-
 # Valid support models
 VALID_SUPPORT_MODELS = {
     "self",  # Team handles everything 24/7

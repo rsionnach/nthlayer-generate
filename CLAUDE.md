@@ -102,11 +102,18 @@ See `docs/golden-principles.md` for the full list with rationale.
    (e.g. Prometheus metric existence verification), it belongs in a
    verifier subcommand, not the generation path.
 
-8. **Branching: `develop` is integration, `main` is release.** All
-   work goes to `develop` via feature branches and PRs. `main` is
-   only updated by merging `develop` at release time. Never commit
-   directly to `main`. Feature branches: `feat/<slug>`, merged to
-   `develop` via PR.
+8. **Branching: feature branch → PR → `main`.** Same as every other
+   ecosystem repo. Feature branches are `feat/<slug>` or `fix/<slug>`,
+   branched from `main` and merged back via PR. Never commit directly
+   to `main`.
+
+   This rule previously described a `develop` → `main` flow. There was
+   no `origin/develop`; the only `develop` was a local branch, 46
+   ahead and 32 behind, still carrying the pre-rename
+   `src/nthlayer/` layout, and merging it would have deleted the
+   release-please pipeline and `cli/migrate_manifest.py`. It was
+   archived as tag `archive/develop-2026-08-26` and deleted
+   (opensrm-z9sz). Do not recreate it.
 
 9. **Commit messages: `<type>: <description> (<bead-id>)`.** Types:
    `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `lint`. When
@@ -141,8 +148,13 @@ Autonomous loop: `.claude/ralph-loop.sh [max-iterations]` runs the
 Ralph loop; prompt at `.claude/ralph-prompt.md`; signal completion
 with `RALPH_COMPLETE`.
 
-Release: update `CHANGELOG.md`, merge `develop` → `main`, create
-GitHub release → auto-publishes to PyPI.
+Release: driven by `release-please` (`.github/workflows/release-please.yml`,
+`release-please-config.json`, `.release-please-manifest.json`), same as the
+other ecosystem repos. Merging a conventional commit to `main` updates the
+standing release PR; merging that PR tags the release and publishes to PyPI
+via `release.yml`. **`CHANGELOG.md` and the version are generated — do not
+hand-edit either.** A `feat!:` or a `BREAKING CHANGE:` footer drives the
+major bump.
 
 ## Where to find detail
 

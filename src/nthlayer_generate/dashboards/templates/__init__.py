@@ -71,7 +71,8 @@ TECHNOLOGY_TEMPLATES: Dict[str, Type[TechnologyTemplate]] = {
     # Service types (for health panels)
     "http": HTTPIntentTemplate,
     "api": HTTPIntentTemplate,
-    "web": HTTPIntentTemplate,
+    "x-web": HTTPIntentTemplate,
+    "web": HTTPIntentTemplate,  # pre-opensrm-ih0v spelling, still looked up
     "service": HTTPIntentTemplate,
     "stream": StreamIntentTemplate,
     "worker": WorkerIntentTemplate,

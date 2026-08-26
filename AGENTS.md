@@ -403,20 +403,24 @@ When adding a new database/cache template:
 
 ## Git Workflow
 
-1. **Never commit directly to `main`** - All work goes to `develop` first
-2. Commit to `develop` branch for all changes
-3. Create PR from `develop` → `main` for review before merging
-4. Run `make lint && make typecheck && make test` before committing
-5. Commit messages: `<type>: <description>` (e.g., `fix: Add sum by (le) to histogram queries`)
-6. Update `.beads/issues.jsonl` when completing tasks
+1. **Never commit directly to `main`** — branch, then PR.
+2. Feature branches are `feat/<slug>` or `fix/<slug>`, branched from `main`.
+3. Create the PR against `main`. There is no `develop` branch — see
+   opensrm-z9sz and hard rule 8 in CLAUDE.md.
+4. Run `make lint && make typecheck && make test` before committing.
+5. Commit messages: `<type>: <description> (<bead-id>)`
+   (e.g., `fix: add sum by (le) to histogram queries (opensrm-1234)`).
+6. Beads live in **`../opensrm`'s Dolt DB**, not in this repo. Run `bd`
+   from there. Do not create a local `.beads/` directory.
 
 ```bash
 # Correct workflow
-git checkout develop
+git checkout main && git pull
+git checkout -b feat/my-change
 # ... make changes ...
-git add . && git commit -m "feat: Add new feature"
-git push origin develop
-gh pr create --base main --head develop --title "feat: Add new feature"
+git add . && git commit -m "feat: add new feature (opensrm-1234)"
+git push -u origin feat/my-change
+gh pr create --base main --title "feat: add new feature (opensrm-1234)"
 
 # WRONG - never do this
 git checkout main
@@ -449,23 +453,25 @@ git commit -m "..."  # Do not commit to main directly
 - X = Feature releases (monthly)
 - Y = Patches/hotfixes (as needed)
 
-**Release Process (uses Trusted Publishing - no tokens needed):**
+**Release Process — automated by `release-please` (Trusted Publishing, no
+tokens needed):**
 
-**Required before releasing:**
-1. Update version in `pyproject.toml` (e.g., `"0.1.0a1"` → `"0.1.0a2"`)
-2. **Update `CHANGELOG.md`** - This is mandatory. Include all features, fixes, and breaking changes since last release.
+There are no manual release steps. Do **not** bump the version in
+`pyproject.toml` and do **not** hand-edit `CHANGELOG.md` — release-please
+generates both, and hand edits are overwritten.
 
-```bash
-# Commit, tag, and push
-git add pyproject.toml CHANGELOG.md
-git commit -m "release: vX.Y.Z"
-git tag -a vX.Y.Z -m "Release vX.Y.Z - description"
-git push origin develop
-git push origin vX.Y.Z
+1. Merge conventional commits to `main`. `.github/workflows/release-please.yml`
+   opens or updates a standing `chore(main): release X.Y.Z` PR.
+2. Merge that PR when you want to ship. It tags the release and creates the
+   GitHub Release, which triggers `release.yml` → PyPI.
 
-# Create GitHub Release (triggers PyPI publish)
-gh release create vX.Y.Z --title "vX.Y.Z - Title" --notes "Release notes here"
-```
+Version bumps follow the commit types: `fix:` → patch, `feat:` → minor,
+`feat!:` or a `BREAKING CHANGE:` footer → major. Because release-please
+reads individual commits, **merge PRs with a merge commit rather than a
+squash** when a `BREAKING CHANGE:` footer must survive — a squash collapses
+it into the PR description where release-please will not see it.
+
+Current version is tracked in `.release-please-manifest.json`.
 
 **What happens automatically:**
 - `.github/workflows/release.yml` triggers on release publish

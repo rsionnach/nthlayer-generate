@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+from nthlayer_common.manifest.models import resolve_service_type
+
 from nthlayer_generate.cli.ux import (
     console,
     error,
@@ -285,11 +287,28 @@ service:
   name: {service_name}
   team: {team}
   tier: {tier}
-  type: {service_type}
+  type: {_manifest_type(service_type)}
 {template_line}
 resources:
 {resources_yaml}
 """
+
+
+def _manifest_type(service_type: str) -> str:
+    """Resolve the CLI's friendly type to the value a manifest may store.
+
+    The menu keeps author-friendly names (`web`, and the aliases a template
+    may supply), but a manifest must carry a value schema.json accepts —
+    `web` is not one, `x-web` is (opensrm-z3ab). Resolving here rather than
+    renaming the menu keeps `nthlayer init --type web` working while making
+    its output valid.
+
+    Falls back to the raw value when it does not resolve, so this does not
+    silently change behaviour for the menu entries that were already invalid
+    (`ml` is the live one) — that is opensrm-8qpd's to fix, and it
+    should keep failing loudly at validation until then.
+    """
+    return resolve_service_type(service_type) or service_type
 
 
 def _build_resources_yaml(
@@ -336,7 +355,7 @@ def _build_resources_yaml(
         )
 
     # Add latency SLO for API types
-    if service_type in ("api", "web"):
+    if service_type in ("api", "x-web"):
         resources.append(
             """
   # Latency SLO - p95

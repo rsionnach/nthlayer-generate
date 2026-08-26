@@ -12,6 +12,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from nthlayer_common.manifest.models import (
+    resolve_service_type,
+    valid_service_types_phrase,
+)
+
 from nthlayer_generate.specs.contracts import (
     ContractRegistry,
     validate_dependency_expectations,
@@ -22,7 +27,7 @@ from nthlayer_generate.specs.loader import (
     ManifestLoadError,
     load_manifest,
 )
-from nthlayer_generate.specs.manifest import SERVICE_TYPE_ALIASES, VALID_SERVICE_TYPES, VALID_TIERS
+from nthlayer_generate.specs.manifest import VALID_TIERS
 from nthlayer_generate.specs.models import VALID_RESOURCE_KINDS
 from nthlayer_generate.specs.parser import ServiceParseError, parse_service_file
 from nthlayer_generate.specs.template import validate_template_variables
@@ -208,12 +213,14 @@ def validate_service_file(
             f"Must be one of: {', '.join(sorted(VALID_TIERS))}"
         )
 
-    # Validate type (accept canonical types and legacy aliases)
-    all_valid_types = VALID_SERVICE_TYPES | set(SERVICE_TYPE_ALIASES.keys())
-    if service_context.type not in all_valid_types:
+    # Validate type through nthlayer-common, which owns the rule
+    # (opensrm-z3ab). resolve_service_type accepts canonical types, the
+    # spec's x- extension branch, and legacy aliases — the union this used
+    # to build by hand, plus the extension branch it was missing.
+    if resolve_service_type(service_context.type) is None:
         errors.append(
             f"Invalid type: '{service_context.type}'. "
-            f"Must be one of: {', '.join(sorted(VALID_SERVICE_TYPES))}"
+            f"Must be one of: {valid_service_types_phrase()}."
         )
 
     # Check for duplicate resource names

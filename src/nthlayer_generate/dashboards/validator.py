@@ -190,7 +190,7 @@ def extract_technologies(context: Any, resources: list[Any]) -> set[str]:
             technologies.add(cache_type)
 
     # Always include HTTP for API services
-    if context.type in ("api", "service", "web"):
+    if context.type in ("api", "service", "x-web"):
         technologies.add("http")
 
     return technologies

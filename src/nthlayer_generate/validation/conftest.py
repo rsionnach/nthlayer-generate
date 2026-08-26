@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from nthlayer_common.manifest.models import resolve_service_type
 
 from nthlayer_generate.core.tiers import VALID_TIERS
 from nthlayer_generate.slos.ceiling import validate_slo_ceiling
@@ -272,9 +273,11 @@ class ConftestValidator:
                     )
                 )
 
-            # Valid type
-            valid_types = {"api", "worker", "stream", "web", "batch", "ml"}
-            if service.get("type") and service["type"] not in valid_types:
+            # Valid type — delegated to nthlayer-common, which owns the rule
+            # (opensrm-z3ab). This hand-maintained set had drifted three ways:
+            # it carried `web` and `ml`, which are not service types, and was
+            # missing `ai-gate` and `database`, which are.
+            if service.get("type") and resolve_service_type(service["type"]) is None:
                 result.issues.append(
                     ValidationIssue(
                         severity=Severity.WARNING,

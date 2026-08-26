@@ -274,14 +274,8 @@ def _generate_service_yaml_v2(
     Returns:
         YAML content as string
     """
-    # Resolve ONCE, here, before anything reads it. Resolving at each use
-    # site instead is what shipped the opensrm-z3ab regression: only the
-    # `type:` interpolation was resolved, so _build_resources_yaml still saw
-    # the raw menu value `web` while its branch had been retargeted to
-    # `x-web` — and `nthlayer init --type web` silently emitted a manifest
-    # with no latency SLO. Valid output, missing content, nothing to catch
-    # it but a test that reads what was generated.
-    service_type = _manifest_type(service_type)
+    # Resolve ONCE, here, so every consumer below sees the same spelling.
+    service_type = _resolve_manifest_type(service_type)
 
     # Build resources section
     resources_yaml = _build_resources_yaml(service_name, tier, service_type, dependencies)
@@ -303,19 +297,16 @@ resources:
 """
 
 
-def _manifest_type(service_type: str) -> str:
+def _resolve_manifest_type(service_type: str) -> str:
     """Resolve the CLI's friendly type to the value a manifest may store.
 
-    The menu keeps author-friendly names (`web`, and the aliases a template
-    may supply), but a manifest must carry a value schema.json accepts —
-    `web` is not one, `x-web` is (opensrm-z3ab). Resolving here rather than
-    renaming the menu keeps `nthlayer init --type web` working while making
-    its output valid.
+    The menu keeps author-friendly names, but a manifest must carry a value
+    schema.json accepts — `web` is not one, `x-web` is. Resolving rather
+    than renaming the menu keeps `nthlayer init --type web` working.
 
-    Falls back to the raw value when it does not resolve, so this does not
-    silently change behaviour for the menu entries that were already invalid
-    (`ml` is the live one) — that is opensrm-8qpd's to fix, and it
-    should keep failing loudly at validation until then.
+    Falls back to the raw value when it does not resolve, so menu entries
+    that are already invalid (`ml`) keep failing loudly at validation
+    instead of being silently mapped to something plausible — opensrm-8qpd.
     """
     return resolve_service_type(service_type) or service_type
 

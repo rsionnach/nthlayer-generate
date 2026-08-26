@@ -30,15 +30,11 @@ class ServiceTemplate:
         if self.tier not in TIER_NAMES:
             raise ValueError(f"Invalid tier: {self.tier}. Valid: {', '.join(TIER_NAMES)}")
 
-        # TEMPLATE types, a separate vocabulary from manifest service types
-        # — note `background-job` and `pipeline`, which are manifest ALIASES
-        # rather than manifest types. opensrm-z3ab briefly changed `web` here
-        # to `x-web` and broke both ends of the lookup: templates declaring
-        # `web` stopped loading, and ones declaring `x-web` were never
-        # matched, because cli/init.py's SERVICE_TYPE_TO_TEMPLATE_TYPE still
-        # maps to `web`. Whether templates and manifests should share a
-        # vocabulary at all is opensrm-8qpd; until then this table stays
-        # internally consistent.
+        # TEMPLATE types — a SEPARATE vocabulary from manifest service
+        # types: `background-job` and `pipeline` are manifest aliases, not
+        # manifest types. Must stay in step with cli/init.py's
+        # SERVICE_TYPE_TO_TEMPLATE_TYPE, which is what looks templates up.
+        # Whether the two vocabularies should be merged is opensrm-8qpd.
         valid_types = ["api", "background-job", "pipeline", "web", "database"]
         if self.type not in valid_types:
             raise ValueError(f"Invalid type: {self.type}")

@@ -249,21 +249,23 @@ def test_template_vocabulary_round_trips_with_the_init_filter():
         )
 
 
-def test_manifest_module_star_export_is_not_narrowed():
-    """specs/manifest.py must not hide its public surface.
+def test_manifest_module_re_exports_the_whole_rule():
+    """specs/manifest.py is the import path consumers already use, so all
+    three parts of the rule must be reachable from it — the two sets and
+    the predicate that actually decides.
 
-    opensrm-z3ab added
-    `__all__ = [*globals().get('__all__', []), 'is_valid_service_type']`
-    intending to EXTEND the export list. The module had no prior `__all__`,
-    so it created one naming a single symbol — hiding ReliabilityManifest,
-    VALID_SERVICE_TYPES, VALID_TIERS and everything else from `import *`
-    and from re-export-strict typecheckers.
+    Asserted by importing, not by inspecting ``__all__``: this module does
+    not declare one, so an ``__all__``-based check would pass vacuously
+    while the symbols were missing.
     """
-    import nthlayer_generate.specs.manifest as m
+    from nthlayer_generate.specs.manifest import (
+        SERVICE_TYPE_ALIASES,
+        VALID_SERVICE_TYPES,
+        ReliabilityManifest,
+        is_valid_service_type,
+    )
 
-    exported = getattr(m, "__all__", None)
-    if exported is not None:
-        for required in ("ReliabilityManifest", "VALID_SERVICE_TYPES", "VALID_TIERS"):
-            assert required in exported, (
-                f"__all__ omits {required!r}, narrowing the module's public surface"
-            )
+    assert is_valid_service_type("x-web")
+    assert "web" not in VALID_SERVICE_TYPES
+    assert SERVICE_TYPE_ALIASES["web"] == "x-web"
+    assert ReliabilityManifest is not None

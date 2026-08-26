@@ -55,11 +55,8 @@ VALID_SERVICE_TYPES = _COMMON_VALID_SERVICE_TYPES
 SERVICE_TYPE_ALIASES = _COMMON_SERVICE_TYPE_ALIASES
 
 # `is_valid_service_type` is re-exported alongside the constants above: the
-# predicate is what actually decides the rule, and a consumer reading only
-# the two sets would not learn that the x- extension branch exists — which
-# is how this divergence started. It is kept alive by the noqa on its import
-# rather than by an __all__: this module has never declared one, so adding a
-# single-name list would NARROW its public surface rather than extend it.
+# predicate is what decides the rule, and the two sets alone do not reveal
+# that the x- extension branch exists.
 
 # Judgment SLO types for ai-gate services
 JUDGMENT_SLO_TYPES = {
@@ -503,12 +500,6 @@ class ReliabilityManifest:
 
     def __post_init__(self) -> None:
         """Validate and normalize the manifest."""
-        # Resolve and validate the service type through nthlayer-common,
-        # which owns the rule (opensrm-z3ab). resolve_service_type applies
-        # aliases first — an alias is deliberately not itself a valid type,
-        # so validating before resolving would reject every one of them.
-        # The check itself lives below, after the required-field guards, so
-        # a missing type still reports "Service type is required".
 
         # Validate required fields
         if not self.name:
@@ -526,7 +517,12 @@ class ReliabilityManifest:
                 f"Invalid tier '{self.tier}'. Must be one of: {', '.join(sorted(VALID_TIERS))}"
             )
 
-        # Validate type (resolving aliases first — see __post_init__ note)
+        # Resolved and validated in one step by nthlayer-common, which owns
+        # the rule (opensrm-z3ab). It applies aliases FIRST — an alias is
+        # deliberately not itself a valid type, so validating before
+        # resolving would reject every one. Placed after the required-field
+        # guards above so a missing type still reports "is required" rather
+        # than "is invalid".
         resolved_type = resolve_service_type(self.type)
         if resolved_type is None:
             raise ValueError(

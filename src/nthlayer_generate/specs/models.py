@@ -154,14 +154,11 @@ VALID_TIERS = {
     "low",
 }
 
-# Service types are NOT defined here. nthlayer-common owns the rule; import
+# Service types are NOT defined here. nthlayer-common owns the rule: import
 # VALID_SERVICE_TYPES / resolve_service_type from
-# nthlayer_common.manifest.models, or from specs.manifest which re-exports
-# them. The copy that used to live here was unreferenced dead code, and it
-# listed the legacy aliases as VALID types — which schema.json rejects and
-# which would have let generate store an alias (opensrm-z3ab).
+# nthlayer_common.manifest.models, or from specs.manifest, which re-exports
+# them (opensrm-z3ab).
 
-# Type aliases for backward compatibility
 # Valid support models
 VALID_SUPPORT_MODELS = {
     "self",  # Team handles everything 24/7

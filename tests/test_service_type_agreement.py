@@ -162,3 +162,240 @@ def test_service_context_keeps_an_unresolvable_type_for_the_validator():
     context = ServiceContext(name="svc", team="t", tier="critical", type="ml")
 
     assert context.type == "ml"
+
+
+# =============================================================================
+# cli/init.py — resolve ONCE, at the top
+# =============================================================================
+
+
+@pytest.mark.parametrize("menu_type", ["web", "x-web", "api"])
+def test_init_emits_latency_slo_for_http_service_types(menu_type: str):
+    """A silent output regression, not a validation one (opensrm-z3ab R5).
+
+    opensrm-z3ab retargeted _build_resources_yaml's branch from
+    ``("api", "web")`` to ``("api", "x-web")``, but only the ``type:``
+    interpolation was resolved — every other consumer of ``service_type``
+    in _generate_service_yaml_v2 still saw the raw menu value. So
+    ``nthlayer init --type web`` emitted a manifest typed ``x-web`` with
+    an availability SLO and NO latency SLO.
+
+    Nothing caught it because the output is still VALID: a manifest may
+    legitimately have no latency SLO. Only asserting on the generated
+    content catches a resource silently going missing.
+
+    Parametrised over both spellings because both must reach the same
+    branch — that is the whole point of resolving once at the top rather
+    than at each use site.
+    """
+    from nthlayer_generate.cli.init import _generate_service_yaml_v2
+
+    yaml_out = _generate_service_yaml_v2("shop", "team", "critical", menu_type, [])
+
+    assert "latency-p95" in yaml_out, (
+        f"--type {menu_type} produced a manifest with no latency SLO"
+    )
+
+
+def test_init_writes_a_resolved_type_for_every_menu_entry():
+    """Whatever the menu offers, the file must carry a resolved value.
+
+    `ml` is the exception and is deliberately left alone (opensrm-8qpd) —
+    it resolves to nothing, so it is written raw and stays loudly invalid
+    rather than being silently mapped to something plausible.
+    """
+    from nthlayer_common.manifest.models import resolve_service_type
+
+    from nthlayer_generate.cli.init import SERVICE_TYPES, _generate_service_yaml_v2
+
+    for menu_type in SERVICE_TYPES:
+        resolved = resolve_service_type(menu_type)
+        if resolved is None:
+            continue  # opensrm-8qpd
+        yaml_out = _generate_service_yaml_v2("s", "t", "critical", menu_type, [])
+        type_line = next(
+            line.strip() for line in yaml_out.splitlines() if line.strip().startswith("type:")
+        )
+        assert type_line == f"type: {resolved}", (
+            f"menu entry {menu_type!r} wrote {type_line!r}, expected type: {resolved}"
+        )
+
+
+def test_template_vocabulary_round_trips_with_the_init_filter():
+    """specs/templates.py and cli/init.py must agree on TEMPLATE types.
+
+    These are a separate vocabulary from manifest service types — the table
+    also carries `background-job` and `pipeline`, which are manifest aliases,
+    not manifest types. opensrm-z3ab half-migrated it, changing only the
+    `web` entry to `x-web`, which broke both ends: a custom template
+    declaring `type: web` stopped loading, and one declaring `x-web` was
+    never matched, because SERVICE_TYPE_TO_TEMPLATE_TYPE still maps the menu
+    entry to `"web"`.
+
+    Whatever the table accepts must be what the filter looks for. Settling
+    which vocabulary it should use at all is opensrm-8qpd.
+    """
+    from nthlayer_generate.cli.init import SERVICE_TYPE_TO_TEMPLATE_TYPE
+    from nthlayer_generate.specs.templates import ServiceTemplate
+
+    for template_type in set(SERVICE_TYPE_TO_TEMPLATE_TYPE.values()):
+        # A template declaring the type init will search for must construct.
+        ServiceTemplate(
+            name=f"t-{template_type}",
+            description="probe",
+            tier="critical",
+            type=template_type,
+            resources=[],
+        )
+
+
+def test_manifest_module_re_exports_the_whole_rule():
+    """specs/manifest.py is the import path consumers already use, so all
+    three parts of the rule must be reachable from it — the two sets and
+    the predicate that actually decides.
+
+    Asserted by importing, not by inspecting ``__all__``: this module does
+    not declare one, so an ``__all__``-based check would pass vacuously
+    while the symbols were missing.
+    """
+    from nthlayer_generate.specs.manifest import (
+        SERVICE_TYPE_ALIASES,
+        VALID_SERVICE_TYPES,
+        ReliabilityManifest,
+        is_valid_service_type,
+    )
+
+    assert is_valid_service_type("x-web")
+    assert "web" not in VALID_SERVICE_TYPES
+    assert SERVICE_TYPE_ALIASES["web"] == "x-web"
+    assert ReliabilityManifest is not None
+
+
+# =============================================================================
+# ${type} is a data-plane value, not a manifest field
+# =============================================================================
+
+
+@pytest.mark.parametrize("authored", ["web", "background-job", "pipeline", "api"])
+def test_type_template_variable_keeps_the_authored_spelling(authored: str):
+    """``${type}`` substitutes into user-authored PromQL, so it must not be
+    silently renormalised (opensrm-z3ab R5 edge cases).
+
+    ServiceContext.to_dict feeds template substitution, and normalising
+    self.type meant an existing service.yaml with ``type: web`` and a query
+    matching ``svc_type="${type}"`` began generating ``svc_type="x-web"``.
+    That matcher selects ZERO series against the Prometheus the author
+    already runs, so the SLO reads no-data and its burn-rate alerts never
+    fire.
+
+    Nothing catches it: the generated rules are still schema-valid and still
+    parse. It is the same shape as the latency-SLO regression this bead's
+    correctness pass found — valid output, wrong content, silent at runtime.
+
+    The authored spelling is a label matcher against live data. It is not
+    ours to rewrite.
+    """
+    from nthlayer_generate.specs.models import Resource, ServiceContext
+    from nthlayer_generate.specs.parser import render_resource_spec
+
+    context = ServiceContext(name="shop", team="t", tier="critical", type=authored)
+    resource = Resource(
+        kind="SLO",
+        name="availability",
+        spec={"query": 'sum(rate(http_total{svc_type="${type}"}[5m]))'},
+        context=context,
+    )
+
+    rendered = render_resource_spec(resource)
+
+    assert f'svc_type="{authored}"' in rendered["query"], (
+        f"${{type}} rendered as {rendered['query']!r}; the authored spelling "
+        f"{authored!r} must survive into the query"
+    )
+
+
+def test_context_still_exposes_the_resolved_type_for_branching():
+    """The resolved value is what internal branches compare against — that
+    is why ServiceContext normalises at all. Both must be available: the
+    resolved one for code, the authored one for substitution."""
+    from nthlayer_generate.specs.models import ServiceContext
+
+    context = ServiceContext(name="s", team="t", tier="critical", type="web")
+
+    assert context.type == "x-web"
+    assert context.to_dict()["type"] == "web"
+
+
+@pytest.mark.parametrize("authored", ["web", "background-job", "api"])
+def test_sloth_indicator_query_keeps_the_authored_type(tmp_path, authored: str):
+    """The same data-plane rule, exercised through sloth itself.
+
+    generators/sloth.py substitutes ``${type}`` into an SLO's
+    indicator_query, which becomes a Sloth spec and then recording rules
+    and burn-rate alerts. That one substitution is the line this bead
+    changed, so the test drives the real generator rather than asserting
+    on the dataclass — an earlier version of this test constructed a
+    manifest and checked ``authored_type``, which duplicated coverage
+    above and left sloth.py itself untested.
+    """
+    from nthlayer_generate.generators.sloth import generate_sloth_from_manifest
+    from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
+
+    manifest = ReliabilityManifest(
+        name="shop",
+        team="t",
+        tier="critical",
+        type=authored,
+        slos=[
+            SLODefinition(
+                name="availability",
+                slo_type="availability",
+                target=99.9,
+                indicator_query='sum(rate(http_total{svc_type="${type}"}[5m]))',
+            )
+        ],
+    )
+
+    result = generate_sloth_from_manifest(manifest, tmp_path)
+
+    assert result.success and result.output_file, f"sloth generation failed: {result.error}"
+    rendered = result.output_file.read_text()
+
+    assert f'svc_type="{authored}"' in rendered, (
+        f"sloth rendered {authored!r} as something else; the authored "
+        f"spelling must survive into the SLI query"
+    )
+
+
+def test_authored_type_survives_manifest_to_context_conversion():
+    """The manifest -> context hop must not re-derive the authored spelling.
+
+    as_service_context() / to_service_context() built a ServiceContext from
+    the RESOLVED type, so authored_type was recomputed from `x-web` and the
+    authored `web` was destroyed — reopening the zero-series matcher bug on
+    exactly the path specs/loader.py:load_as_legacy uses.
+    """
+    from nthlayer_generate.specs.manifest import ReliabilityManifest
+
+    manifest = ReliabilityManifest(name="shop", team="t", tier="critical", type="web")
+
+    assert manifest.authored_type == "web"
+    assert manifest.as_service_context().authored_type == "web"
+    assert manifest.to_service_context()["type"] == "web"
+
+
+def test_authored_type_survives_dataclasses_replace():
+    """authored_type must be a declared field, not an attribute set in
+    __post_init__.
+
+    As an undeclared attribute it was silently recomputed by
+    dataclasses.replace() — so replacing an unrelated field like tier
+    reverted the authored spelling to the resolved one.
+    """
+    import dataclasses
+
+    from nthlayer_generate.specs.models import ServiceContext
+
+    context = ServiceContext(name="s", team="t", tier="critical", type="web")
+
+    assert dataclasses.replace(context, tier="high").authored_type == "web"

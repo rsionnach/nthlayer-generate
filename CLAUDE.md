@@ -107,13 +107,10 @@ See `docs/golden-principles.md` for the full list with rationale.
    branched from `main` and merged back via PR. Never commit directly
    to `main`.
 
-   This rule previously described a `develop` → `main` flow. There was
-   no `origin/develop`; the only `develop` was a local branch, 46
-   ahead and 32 behind, still carrying the pre-rename
-   `src/nthlayer/` layout, and merging it would have deleted the
-   release-please pipeline and `cli/migrate_manifest.py`. It was
-   archived as tag `archive/develop-2026-08-26` and deleted
-   (opensrm-z9sz). Do not recreate it.
+   This rule previously described a `develop` → `main` flow. No
+   `origin/develop` ever existed; the stale local branch was archived as
+   tag `archive/develop-2026-08-26` and deleted (opensrm-z9sz). Do not
+   recreate it.
 
 9. **Commit messages: `<type>: <description> (<bead-id>)`.** Types:
    `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `lint`. When

@@ -447,11 +447,13 @@ git commit -m "..."  # Do not commit to main directly
 
 ## PyPI Releases
 
-**Cadence:** Monthly releases + hotfixes as needed
+**Cadence:** whenever the standing release PR is merged — there is no fixed
+schedule.
 
-**Versioning:** `0.X.Y` (pre-1.0 alpha)
-- X = Feature releases (monthly)
-- Y = Patches/hotfixes (as needed)
+**Versioning:** semver, derived from conventional commits by release-please
+(`fix:` → patch, `feat:` → minor, `feat!:` / `BREAKING CHANGE:` → major).
+Do not set the version by hand; `.release-please-manifest.json` is the
+record.
 
 **Release Process — automated by `release-please` (Trusted Publishing, no
 tokens needed):**

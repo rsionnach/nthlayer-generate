@@ -22,7 +22,7 @@ from nthlayer_common.manifest.models import (
     VALID_SERVICE_TYPES as _COMMON_VALID_SERVICE_TYPES,
 )
 from nthlayer_common.manifest.models import (
-    is_valid_service_type,
+    is_valid_service_type,  # noqa: F401  (re-exported)
     resolve_service_type,
     valid_service_types_phrase,
 )
@@ -54,11 +54,9 @@ VALID_TIERS = {
 VALID_SERVICE_TYPES = _COMMON_VALID_SERVICE_TYPES
 SERVICE_TYPE_ALIASES = _COMMON_SERVICE_TYPE_ALIASES
 
-# Re-exported alongside the constants: the predicate is what actually
-# decides the rule, and a consumer reading only the two sets above would
-# not learn that the x- extension branch exists — which is how this
-# divergence started.
-__all__ = [*globals().get('__all__', []), 'is_valid_service_type']
+# `is_valid_service_type` is re-exported alongside the constants above: the
+# predicate is what decides the rule, and the two sets alone do not reveal
+# that the x- extension branch exists.
 
 # Judgment SLO types for ai-gate services
 JUDGMENT_SLO_TYPES = {
@@ -455,11 +453,15 @@ class ReliabilityManifest:
     name: str
     team: str
     tier: str  # critical, high, standard, low
-    type: str  # api, worker, stream, ai-gate, batch, database, web
+    type: str  # RESOLVED: one of the six, or x-*; see authored_type
 
     # ==========================================================================
     # Optional Metadata (OpenSRM: metadata section)
     # ==========================================================================
+    # See ServiceContext.authored_type — declared rather than set in
+    # __post_init__ so it survives dataclasses.replace(). None means
+    # "derive from `type`", which is the ordinary construction path.
+    authored_type: str | None = None
     description: str | None = None
     labels: dict[str, str] = field(default_factory=dict)
     annotations: dict[str, str] = field(default_factory=dict)
@@ -502,12 +504,6 @@ class ReliabilityManifest:
 
     def __post_init__(self) -> None:
         """Validate and normalize the manifest."""
-        # Resolve and validate the service type through nthlayer-common,
-        # which owns the rule (opensrm-z3ab). resolve_service_type applies
-        # aliases first — an alias is deliberately not itself a valid type,
-        # so validating before resolving would reject every one of them.
-        # The check itself lives below, after the required-field guards, so
-        # a missing type still reports "Service type is required".
 
         # Validate required fields
         if not self.name:
@@ -516,7 +512,9 @@ class ReliabilityManifest:
             raise ValueError("Service team is required")
         if not self.tier:
             raise ValueError("Service tier is required")
-        if not self.type:
+        # See the note in specs/models.py: falsy-but-present is invalid,
+        # not missing, and must not be reported as "is required".
+        if self.type is None or self.type == "":
             raise ValueError("Service type is required")
 
         # Validate tier
@@ -525,7 +523,19 @@ class ReliabilityManifest:
                 f"Invalid tier '{self.tier}'. Must be one of: {', '.join(sorted(VALID_TIERS))}"
             )
 
-        # Validate type (resolving aliases first — see __post_init__ note)
+        # Authored spelling retained for `${type}` substitution — see the
+        # note on ServiceContext.__post_init__. generators/sloth.py puts it
+        # into indicator queries that run against the operator's existing
+        # Prometheus, where renormalising it selects zero series.
+        if self.authored_type is None:
+            self.authored_type = self.type
+
+        # Resolved and validated in one step by nthlayer-common, which owns
+        # the rule (opensrm-z3ab). It applies aliases FIRST — an alias is
+        # deliberately not itself a valid type, so validating before
+        # resolving would reject every one. Placed after the required-field
+        # guards above so a missing type still reports "is required" rather
+        # than "is invalid".
         resolved_type = resolve_service_type(self.type)
         if resolved_type is None:
             raise ValueError(
@@ -564,7 +574,10 @@ class ReliabilityManifest:
             "service": self.name,
             "team": self.team,
             "tier": self.tier,
-            "type": self.type,
+            # Authored, matching ServiceContext.to_dict() — this method
+            # documents itself as producing that shape, and the value feeds
+            # ${type} substitution into user-authored PromQL.
+            "type": self.authored_type,
             "support_model": self.support_model,
             "language": self.language or "",
             "framework": self.framework or "",
@@ -598,6 +611,11 @@ class ReliabilityManifest:
             team=self.team,
             tier=self.tier,
             type=self.type,
+            # Carried explicitly: ServiceContext derives authored_type from
+            # whatever `type` it is handed, so passing only the resolved
+            # value would recompute it and destroy the authored spelling on
+            # every manifest -> context hop (opensrm-z3ab).
+            authored_type=self.authored_type,
             support_model=self.support_model,
             language=self.language,
             framework=self.framework,
@@ -771,6 +789,13 @@ class ReliabilityManifest:
                 "tier": self.tier,
             },
             "spec": {
+                # RESOLVED here, deliberately, unlike to_service_context()
+                # which emits authored_type. This method serialises a
+                # manifest back to a FILE (nthlayer migrate), and a file
+                # should carry the canonical spelling the spec accepts —
+                # `x-web`, not `web`. to_service_context feeds ${type}
+                # substitution into queries, where the authored spelling
+                # must survive. Different destinations, different rules.
                 "type": self.type,
             },
         }

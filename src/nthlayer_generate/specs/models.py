@@ -34,6 +34,11 @@ class ServiceContext:
     team: str
     tier: str
     type: str
+    # Declared, not set in __post_init__: as a bare attribute it was
+    # silently recomputed by dataclasses.replace(), so replacing an
+    # unrelated field reverted the authored spelling to the resolved one.
+    # None means "derive from `type`" — the ordinary construction path.
+    authored_type: str | None = None
     support_model: str = "self"  # self | shared | sre | business_hours
     language: str | None = None
     framework: str | None = None
@@ -52,7 +57,7 @@ class ServiceContext:
             "service": self.name,
             "team": self.team,
             "tier": self.tier,
-            "type": self.type,
+            "type": self.authored_type,
             "support_model": self.support_model,
             "language": self.language or "",
             "framework": self.framework or "",
@@ -66,16 +71,25 @@ class ServiceContext:
 
     def __post_init__(self) -> None:
         """Validate required fields."""
-        # Resolve the service type at the boundary, so downstream code sees
-        # one spelling (hard rule 1). specs/parser.py hands the raw YAML
-        # value straight in, so without this a `type: web` file yields a
-        # context holding `web` while every branch tests for `x-web` — web
-        # services would silently lose their HTTP dashboard panels and
-        # latency docs (opensrm-z3ab).
+        # Two spellings, deliberately (opensrm-z3ab):
+        #
+        #   self.type      resolved — what internal branches compare against,
+        #                  so code sees one spelling (hard rule 1).
+        #   authored_type  exactly what the author wrote — what `${type}`
+        #                  substitutes into generated PromQL.
+        #
+        # The split exists because `${type}` lands in user-authored label
+        # matchers run against the Prometheus they already have. Rewriting
+        # `web` to `x-web` there produces a matcher selecting zero series:
+        # the SLO reads no-data and its burn-rate alerts never fire, while
+        # the generated rules stay perfectly valid. That is a data-plane
+        # change, and not ours to make.
         #
         # Resolve-or-keep, never raise: type validity is REPORTED by
         # specs/validator.py as a collected error, and raising here would
         # turn that into a crash.
+        if self.authored_type is None:
+            self.authored_type = self.type
         if self.type:
             self.type = resolve_service_type(self.type) or self.type
 
@@ -85,7 +99,11 @@ class ServiceContext:
             raise ValueError("Service team is required")
         if not self.tier:
             raise ValueError("Service tier is required")
-        if not self.type:
+        # `is None` / empty-string only: a falsy-but-present value like
+        # `type: 0` or `type: []` is a WRONG type, not a missing one, and
+        # reporting "is required" for it sends the author looking for an
+        # absent line that is right there.
+        if self.type is None or self.type == "":
             raise ValueError("Service type is required")
 
 
@@ -154,14 +172,11 @@ VALID_TIERS = {
     "low",
 }
 
-# Service types are NOT defined here. nthlayer-common owns the rule; import
+# Service types are NOT defined here. nthlayer-common owns the rule: import
 # VALID_SERVICE_TYPES / resolve_service_type from
-# nthlayer_common.manifest.models, or from specs.manifest which re-exports
-# them. The copy that used to live here was unreferenced dead code, and it
-# listed the legacy aliases as VALID types — which schema.json rejects and
-# which would have let generate store an alias (opensrm-z3ab).
+# nthlayer_common.manifest.models, or from specs.manifest, which re-exports
+# them (opensrm-z3ab).
 
-# Type aliases for backward compatibility
 # Valid support models
 VALID_SUPPORT_MODELS = {
     "self",  # Team handles everything 24/7

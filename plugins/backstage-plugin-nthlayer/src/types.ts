@@ -17,7 +17,18 @@ export interface ServiceContext {
   name: string;
   team: string;
   tier: 'critical' | 'high' | 'standard' | 'low';
-  type: 'api' | 'worker' | 'stream' | 'ai-gate' | 'batch' | 'database' | 'web';
+  // Mirrors backstage-entity.schema.json's ServiceType, which in turn
+  // mirrors OpenSRM v2's: the six standard values, or an implementation
+  // type under the reserved `x-` prefix. `web` was removed and is now the
+  // extension type `x-web` (opensrm-z3ab).
+  type:
+    | 'api'
+    | 'worker'
+    | 'stream'
+    | 'ai-gate'
+    | 'batch'
+    | 'database'
+    | `x-${string}`;
   description?: string | null;
   supportModel?: 'self' | 'shared' | 'sre' | 'business_hours';
 }

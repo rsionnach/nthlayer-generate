@@ -109,6 +109,29 @@ These are hard rules — violations are bugs, not style issues.
 10. External service integrations must use official SDKs (`grafana-foundation-sdk`, `pagerduty`, `boto3`) — no bespoke HTTP clients
 11. Exit codes must follow convention: 0=success, 1=warning/error, 2=critical/blocked
 
+## Service types: resolved vs authored
+
+`nthlayer_common` owns the service-type rule — the six OpenSRM v2 values
+plus the `^x-[a-z][a-z0-9-]*$` extension branch. generate does not keep its
+own copy; import `resolve_service_type` / `is_valid_service_type` /
+`valid_service_types_phrase` from `nthlayer_common.manifest.models`, or from
+`specs.manifest`, which re-exports them (opensrm-z3ab).
+
+`ServiceContext` and `ReliabilityManifest` each carry **two** spellings, and
+picking the wrong one is a silent bug:
+
+| Field | Value | Use it for |
+|---|---|---|
+| `.type` | resolved — aliases applied (`web` → `x-web`) | internal branching, comparisons, emitted labels, serialising a manifest back to a file |
+| `.authored_type` | exactly what the author wrote | `${type}` substitution into generated PromQL |
+
+The split exists because `${type}` lands in **label matchers run against the
+operator's existing Prometheus**. Rewriting `web` to `x-web` there yields a
+matcher selecting zero series: the SLO reads no-data and its burn-rate
+alerts never fire, while every generated artifact stays perfectly valid.
+Emitted labels and migrated files take the resolved spelling; anything that
+queries pre-existing data takes the authored one.
+
 ## Known Intentional Patterns
 
 Do not flag these during review or audit:
@@ -120,7 +143,16 @@ Do not flag these during review or audit:
 
 ## Release Process
 
-- PyPI uses trusted publisher (no token needed)
-- Create a GitHub release → triggers `.github/workflows/release.yml` → auto-publishes to PyPI
-- Version is defined **only** in `pyproject.toml` (single source of truth via `importlib.metadata`)
-- **CHANGELOG.md must be updated** before every release with all changes since the last release
+Driven by `release-please` — there are no manual release steps.
+
+- Merging conventional commits to `main` opens or updates a standing
+  `chore(main): release X.Y.Z` PR; merging THAT PR tags the release and
+  triggers `.github/workflows/release.yml` → PyPI (trusted publisher, no
+  token).
+- **`CHANGELOG.md` and the version are GENERATED. Do not hand-edit either** —
+  release-please overwrites them. The version of record is
+  `.release-please-manifest.json`.
+- `fix:` → patch, `feat:` → minor, `feat!:` or a `BREAKING CHANGE:` footer
+  → major. Merge such PRs with a MERGE COMMIT, not a squash: release-please
+  reads individual commits, and a squash collapses the footer into the PR
+  description where it will not be seen.

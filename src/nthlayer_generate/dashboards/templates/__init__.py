@@ -72,7 +72,7 @@ TECHNOLOGY_TEMPLATES: Dict[str, Type[TechnologyTemplate]] = {
     "http": HTTPIntentTemplate,
     "api": HTTPIntentTemplate,
     "x-web": HTTPIntentTemplate,
-    "web": HTTPIntentTemplate,  # pre-opensrm-ih0v spelling, still looked up
+    "web": HTTPIntentTemplate,  # accepted for callers passing an unresolved value
     "service": HTTPIntentTemplate,
     "stream": StreamIntentTemplate,
     "worker": WorkerIntentTemplate,

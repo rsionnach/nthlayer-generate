@@ -104,6 +104,8 @@ def generate_sloth_spec(
             "labels": {
                 "tier": service_context.tier,
                 "team": service_context.team,
+                # Resolved — an emitted label, not a matcher. See the note
+                # on the manifest path below (opensrm-z3ab).
                 "type": service_context.type,
             },
             "slos": slos,
@@ -175,6 +177,11 @@ def generate_sloth_from_manifest(
             "labels": {
                 "tier": manifest.tier,
                 "team": manifest.team,
+                # Resolved: this is an emitted LABEL on the generated rule,
+                # not a matcher against existing series, so it carries
+                # the canonical spelling. The SLI query in the same
+                # document keeps the authored one — see the ${type}
+                # substitution below (opensrm-z3ab).
                 "type": manifest.type,
             },
             "slos": slos,
@@ -250,7 +257,11 @@ def _convert_slo_definition_to_sloth(
     query = query.replace("${service}", manifest.name)
     query = query.replace("${team}", manifest.team)
     query = query.replace("${tier}", manifest.tier)
-    query = query.replace("${type}", manifest.type)
+    # `or manifest.type` for the type-checker only: authored_type is
+    # declared Optional so it can default to None and mean "derive from
+    # type", and __post_init__ always fills it. The fallback is unreachable
+    # after construction.
+    query = query.replace("${type}", manifest.authored_type or manifest.type)
 
     # Build SLI based on indicator type
     indicator: dict[str, Any] = {

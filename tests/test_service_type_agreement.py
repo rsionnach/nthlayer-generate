@@ -327,21 +327,43 @@ def test_context_still_exposes_the_resolved_type_for_branching():
 
 
 @pytest.mark.parametrize("authored", ["web", "background-job", "api"])
-def test_sloth_indicator_query_keeps_the_authored_type(authored: str):
-    """The same data-plane rule on the ReliabilityManifest path.
+def test_sloth_indicator_query_keeps_the_authored_type(tmp_path, authored: str):
+    """The same data-plane rule, exercised through sloth itself.
 
     generators/sloth.py substitutes ``${type}`` into an SLO's
     indicator_query, which becomes a Sloth spec and then recording rules
-    and burn-rate alerts. It must carry the authored spelling for the same
-    reason ServiceContext.to_dict does.
+    and burn-rate alerts. That one substitution is the line this bead
+    changed, so the test drives the real generator rather than asserting
+    on the dataclass — an earlier version of this test constructed a
+    manifest and checked ``authored_type``, which duplicated coverage
+    above and left sloth.py itself untested.
     """
-    from nthlayer_generate.specs.manifest import ReliabilityManifest
+    from nthlayer_generate.generators.sloth import generate_sloth_from_manifest
+    from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
 
-    manifest = ReliabilityManifest(name="shop", team="t", tier="critical", type=authored)
+    manifest = ReliabilityManifest(
+        name="shop",
+        team="t",
+        tier="critical",
+        type=authored,
+        slos=[
+            SLODefinition(
+                name="availability",
+                slo_type="availability",
+                target=99.9,
+                indicator_query='sum(rate(http_total{svc_type="${type}"}[5m]))',
+            )
+        ],
+    )
 
-    assert manifest.authored_type == authored
-    assert manifest.type == (
-        "x-web" if authored == "web" else "worker" if authored == "background-job" else "api"
+    result = generate_sloth_from_manifest(manifest, tmp_path)
+
+    assert result.success and result.output_file, f"sloth generation failed: {result.error}"
+    rendered = result.output_file.read_text()
+
+    assert f'svc_type="{authored}"' in rendered, (
+        f"sloth rendered {authored!r} as something else; the authored "
+        f"spelling must survive into the SLI query"
     )
 
 

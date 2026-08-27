@@ -114,7 +114,16 @@ Specification files live in `specs/`. When implementing from a spec, always refe
 
 ## Release Process
 
-- PyPI uses trusted publisher (no token needed)
-- Create a GitHub release → triggers `.github/workflows/release.yml` → auto-publishes to PyPI
-- Version is defined **only** in `pyproject.toml` (single source of truth via `importlib.metadata`)
-- **CHANGELOG.md must be updated** before every release with all changes since the last release
+Driven by `release-please` — there are no manual release steps.
+
+- Merging conventional commits to `main` opens or updates a standing
+  `chore(main): release X.Y.Z` PR; merging THAT PR tags the release and
+  triggers `.github/workflows/release.yml` → PyPI (trusted publisher, no
+  token).
+- **`CHANGELOG.md` and the version are GENERATED. Do not hand-edit either** —
+  release-please overwrites them. The version of record is
+  `.release-please-manifest.json`.
+- `fix:` → patch, `feat:` → minor, `feat!:` or a `BREAKING CHANGE:` footer
+  → major. Merge such PRs with a MERGE COMMIT, not a squash: release-please
+  reads individual commits, and a squash collapses the footer into the PR
+  description where it will not be seen.

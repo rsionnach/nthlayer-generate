@@ -138,6 +138,37 @@ $ nthlayer validate service.yaml --policies policies.yaml
 
 ---
 
+## ⚠️ Upgrading: `type: web` becomes `x-web`
+
+If any `service.yaml` declares `type: web`, read this before upgrading.
+
+OpenSRM v2 defines six service types — `api`, `worker`, `stream`,
+`ai-gate`, `batch`, `database` — plus a reserved `x-` prefix for
+implementation-specific ones. `web` was an NthLayer addition predating that
+mechanism, so it is now the extension type **`x-web`**.
+
+**Your file keeps working.** `web` is accepted as an alias and resolves
+automatically; you do not have to edit anything.
+
+**What changes is the output.** Generated artifacts now carry `x-web`:
+
+- Backstage entity JSON, and the plugin's `ServiceContext['type']`
+- the `type` label on generated Sloth rules
+- manifests rewritten by `nthlayer migrate`
+
+So **anything downstream keying on `type="web"`** — a Grafana variable, a
+dashboard filter, a Backstage query, a policy rule — needs updating to
+`x-web`. Nothing will error; those consumers will simply stop matching.
+
+**One thing deliberately does not change**: `${type}` in your own PromQL
+still substitutes the spelling you wrote. It is a matcher against the
+metrics you already have, so rewriting it would silently select zero series.
+If you author `type: web` and query `svc_type="${type}"`, you still get
+`svc_type="web"`.
+
+To move fully over, change `type: web` to `type: x-web` in your
+`service.yaml` and update any downstream consumer at the same time.
+
 ## 🚀 Quick Start
 
 ```bash

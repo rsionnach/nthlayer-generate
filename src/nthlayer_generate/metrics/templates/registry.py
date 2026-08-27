@@ -28,7 +28,7 @@ _TEMPLATES: dict[str, ServiceTypeTemplate] = {
     "cache": CACHE_TEMPLATE,
     # Aliases for common alternative names
     "x-web": API_TEMPLATE,
-    "web": API_TEMPLATE,  # pre-opensrm-ih0v spelling, still looked up
+    "web": API_TEMPLATE,  # accepted for callers passing an unresolved value
     "http": API_TEMPLATE,
     "rest": API_TEMPLATE,
     "background-job": WORKER_TEMPLATE,

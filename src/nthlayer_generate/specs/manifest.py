@@ -453,7 +453,7 @@ class ReliabilityManifest:
     name: str
     team: str
     tier: str  # critical, high, standard, low
-    type: str  # api, worker, stream, ai-gate, batch, database, web
+    type: str  # RESOLVED: one of the six, or x-*; see authored_type
 
     # ==========================================================================
     # Optional Metadata (OpenSRM: metadata section)

@@ -789,6 +789,13 @@ class ReliabilityManifest:
                 "tier": self.tier,
             },
             "spec": {
+                # RESOLVED here, deliberately, unlike to_service_context()
+                # which emits authored_type. This method serialises a
+                # manifest back to a FILE (nthlayer migrate), and a file
+                # should carry the canonical spelling the spec accepts —
+                # `x-web`, not `web`. to_service_context feeds ${type}
+                # substitution into queries, where the authored spelling
+                # must survive. Different destinations, different rules.
                 "type": self.type,
             },
         }

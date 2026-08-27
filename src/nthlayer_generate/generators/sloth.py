@@ -104,6 +104,8 @@ def generate_sloth_spec(
             "labels": {
                 "tier": service_context.tier,
                 "team": service_context.team,
+                # Resolved — an emitted label, not a matcher. See the note
+                # on the manifest path below (opensrm-z3ab).
                 "type": service_context.type,
             },
             "slos": slos,
@@ -175,6 +177,11 @@ def generate_sloth_from_manifest(
             "labels": {
                 "tier": manifest.tier,
                 "team": manifest.team,
+                # Resolved: this is an emitted LABEL on the generated rule,
+                # not a matcher against existing series, so it carries
+                # the canonical spelling. The SLI query in the same
+                # document keeps the authored one — see the ${type}
+                # substitution below (opensrm-z3ab).
                 "type": manifest.type,
             },
             "slos": slos,

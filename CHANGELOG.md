@@ -1,5 +1,35 @@
 # Changelog
 
+## [2.0.0](https://github.com/rsionnach/nthlayer-generate/compare/v1.1.1...v2.0.0) (2026-08-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* the `web` service type is now the OpenSRM extension type `x-web`. Existing manifests keep working — `web` resolves as an alias — but generated output changes: Backstage entity JSON, the plugin's ServiceContext['type'] union, the `type` label on Sloth rules, and manifests rewritten by `nthlayer migrate` all now carry `x-web`. Downstream consumers keying on `type="web"` must be updated; they will stop matching rather than error. `${type}` substitution deliberately keeps the authored spelling, since it targets pre-existing metrics. Requires nthlayer-common>=2.0.0.
+
+### Features
+
+* rename the web service type to the spec extension x-web (opensrm-z3ab) ([040bdaa](https://github.com/rsionnach/nthlayer-generate/commit/040bdaac405a1116069213a9e4622c60dc413a27))
+
+
+### Bug Fixes
+
+* carry authored_type across every construction path (opensrm-z3ab) ([2d0eda9](https://github.com/rsionnach/nthlayer-generate/commit/2d0eda9c2384b8b21350b61589cdf24401417a32))
+* import service-type rule from nthlayer-common (opensrm-z3ab) ([d227a3b](https://github.com/rsionnach/nthlayer-generate/commit/d227a3bb109172bcbaa4c05dcedb7287e142cf7d))
+* import service-type rule from nthlayer-common (opensrm-z3ab) ([494f9b6](https://github.com/rsionnach/nthlayer-generate/commit/494f9b6de087f28bff1d0223bc6c3a33a0c8320b))
+* keep the authored spelling for ${type} substitution (opensrm-z3ab) ([8292d9c](https://github.com/rsionnach/nthlayer-generate/commit/8292d9c7f9e818bbbc3fcce227de371d566bf000))
+* require nthlayer-common&gt;=2.0.0 (opensrm-z3ab) ([21ce3ab](https://github.com/rsionnach/nthlayer-generate/commit/21ce3ab65ff2c041d05f59377929c0b9d11adfc6))
+* resolve service type once in init, restore template vocabulary (opensrm-z3ab) ([8352615](https://github.com/rsionnach/nthlayer-generate/commit/8352615bf2976ab988b1fb256d3ea99f503cc82c))
+
+
+### Documentation
+
+* correct the versioning policy and a stale field comment (opensrm-z3ab) ([5f8866a](https://github.com/rsionnach/nthlayer-generate/commit/5f8866a447fcd6f259de18b5afaa3af51cd377e4))
+* document the real branching and release flow (opensrm-z9sz) ([698421a](https://github.com/rsionnach/nthlayer-generate/commit/698421a8f1aefae45165ebc1d345dccb6199d844))
+* note where the resolved and authored spellings each belong (opensrm-z3ab) ([104ceb6](https://github.com/rsionnach/nthlayer-generate/commit/104ceb663e03c71992de9b66f66fe777ac985903))
+* rewrite contributing guide (opensrm-tu04.4) ([#14](https://github.com/rsionnach/nthlayer-generate/issues/14)) ([7c8f621](https://github.com/rsionnach/nthlayer-generate/commit/7c8f6213864687c26e6f46842c29f04143f41354))
+* trim fix-archaeology, fix a stale comment and a vacuous test (opensrm-z3ab) ([124e692](https://github.com/rsionnach/nthlayer-generate/commit/124e692565b5f9f516e6c72bc0280a26810c6b3c))
+
 ## [1.1.1](https://github.com/rsionnach/nthlayer-generate/compare/v1.1.0...v1.1.1) (2026-06-08)
 
 

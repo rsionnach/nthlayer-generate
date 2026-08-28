@@ -77,7 +77,7 @@ Select dependencies (space to toggle):
 
 ## Generated Output
 
-Based on your selections, `init` generates appropriate resources:
+Based on your selections, `init` generates appropriate resources. Both blocks below are verbatim output, comments included.
 
 ### Critical Tier API
 
@@ -89,7 +89,7 @@ service:
   type: api
 
 resources:
-  # Availability SLO (99.95% for critical)
+  # Availability SLO - critical tier
   - kind: SLO
     name: availability
     spec:
@@ -98,7 +98,7 @@ resources:
       indicator:
         type: availability
 
-  # Latency SLO (auto-added for api and x-web types)
+  # Latency SLO - p95
   - kind: SLO
     name: latency-p95
     spec:
@@ -109,14 +109,14 @@ resources:
         percentile: 95
         threshold_ms: 500
 
-  # PagerDuty integration (auto-added for critical tier)
+  # PagerDuty integration
   - kind: PagerDuty
     name: primary
     spec:
       urgency: high
       auto_create: true
 
-  # Dependencies
+  # Service dependencies
   - kind: Dependencies
     name: infrastructure
     spec:

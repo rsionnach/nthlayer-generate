@@ -39,8 +39,11 @@ DOC_PAGES = (
 # A fenced shell block. Leading whitespace is allowed because this docs-site
 # nests fences inside numbered lists, and a trailing info string is allowed
 # because it uses attributes like ```bash title="...".
+# The closing marker is back-referenced so a ``` block cannot be closed by a
+# ~~~ one. `~~~` is accepted because mkdocs.yml enables pymdownx.superfences,
+# for which it is an equivalent fence.
 _SHELL_FENCE = re.compile(
-    r"^[ \t]*```[ \t]*(?:bash|sh|shell|console)\b[^\n]*\n(.*?)^[ \t]*```",
+    r"^[ \t]*(```|~~~)[ \t]*(?:bash|sh|shell|console)\b[^\n]*\n(.*?)^[ \t]*\1",
     re.M | re.S,
 )
 
@@ -55,11 +58,11 @@ _PLACEHOLDER = re.compile(r"[\[\]<>]|^[A-Z][A-Z0-9_]*$")
 _HEADING = re.compile(r"^(#+)[ \t]+(.*?)[ \t]*$", re.M)
 
 # Any fenced block, whatever its language.
-_ANY_FENCE = re.compile(r"^[ \t]*```.*?^[ \t]*```[ \t]*$", re.M | re.S)
+_ANY_FENCE = re.compile(r"^[ \t]*(```|~~~).*?^[ \t]*\1[ \t]*$", re.M | re.S)
 
 # The heading that opens an init section: `# nthlayer init`, `### init`, or
 # either wrapped in backticks.
-_INIT_HEADING = re.compile(r"(?:`?nthlayer[ \t]+)?init`?", re.I)
+_INIT_HEADING = re.compile(r"`?(?:nthlayer[ \t]+)?init`?", re.I)
 
 
 def _init_parser() -> argparse.ArgumentParser:
@@ -85,10 +88,10 @@ def _parser_flags() -> set[str]:
 def _mask_fences(text: str) -> str:
     """The same text with fenced-block bodies blanked, offsets preserved.
 
-    Headings have to be found outside code. `commands/init.md` opens shell
-    blocks with `# List available templates` and YAML blocks with
-    `# payment-api Service Definition`; read as headings, the first of them
-    ends the page's only section three paragraphs in.
+    Headings have to be found outside code. `commands/init.md` opens a shell
+    block with `# List available templates`; read as a heading, that single
+    line ends the page's only section and takes Non-Interactive Mode — the
+    part this bead exists to guard — out of range.
     """
     masked = list(text)
     for match in _ANY_FENCE.finditer(text):
@@ -131,7 +134,7 @@ def _documented_invocations(text: str) -> list[list[str]]:
     as the single command a reader would run.
     """
     invocations = []
-    for block in _SHELL_FENCE.findall(text):
+    for _marker, block in _SHELL_FENCE.findall(text):
         for line in block.replace("\\\n", " ").splitlines():
             argv = shlex.split(line.strip().removeprefix("$ "), comments=True)
             if argv[:2] == ["nthlayer", "init"]:
@@ -207,6 +210,10 @@ nthlayer init continued-service \\
   --no-interactive
 ```
 
+~~~bash
+nthlayer init tilde-service --team platform
+~~~
+
 ```yaml
 nthlayer init not-a-shell-block --team platform
 ```
@@ -226,6 +233,7 @@ nthlayer init wrong-section --team platform
             "attributed-service",
             "prompted-service",
             "continued-service",
+            "tilde-service",
         ], "a shell-block form this docs-site uses is being skipped"
 
     def test_continuations_are_joined(self):
@@ -246,6 +254,20 @@ nthlayer init wrong-section --team platform
         section = _init_section(self.MARKDOWN)
         assert "wrong-section" not in section
         assert "not-a-shell-block" in section  # in range, but not a shell fence
+
+    def test_section_stops_at_a_higher_level_heading(self):
+        """The `<` half of `<=`, which neither real page exercises today.
+
+        `reference/cli.md` happens to follow `### init` with another `###`.
+        Were init its last command before a `## Environment Variables`, an
+        equality-only stop would swallow the rest of the page.
+        """
+        markdown = (
+            "## Commands\n\n### init\n\n```bash\nnthlayer init mine --team platform\n```\n\n"
+            "## Environment Variables\n\n```bash\nnthlayer init leaked --team platform\n```\n"
+        )
+        names = [argv[1] for argv in _documented_invocations(_init_section(markdown))]
+        assert names == ["mine"]
 
     def test_placeholders_are_not_runnable(self):
         markdown = "# init\n\n```bash\nnthlayer init [SERVICE_NAME] [options]\n```\n"

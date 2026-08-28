@@ -60,6 +60,13 @@ _PLACEHOLDER = re.compile(r"[\[\]<>]|^[A-Z][A-Z0-9_]*$")
 
 _HEADING = re.compile(r"^(#+)[ \t]+(.*?)[ \t]*$", re.M)
 
+# Console scripts that reach demo:main. pyproject declares both, so an example
+# spelled with either runs the same parser and must be checked the same way.
+_ENTRY_POINTS = ("nthlayer", "nthlayer-generate")
+
+# Runners a docs example may put in front of the entry point.
+_RUNNER_PREFIXES = (["uv", "run"], ["python", "-m"], ["uvx"])
+
 # Any fenced block, whatever its language — the masking counterpart of
 # _SHELL_FENCE above. Edit the two together; this one accepts any info
 # string, requires a bare closing line, and captures no body.
@@ -126,10 +133,18 @@ def _init_section(text: str) -> str:
 
 def _init_docs() -> list[tuple[str, str]]:
     """(label, markdown) for every place documenting `nthlayer init`."""
-    return [
-        (page.relative_to(DOCS_ROOT).as_posix(), _init_section(page.read_text()))
-        for page in DOC_PAGES
-    ]
+    docs = []
+    for page in DOC_PAGES:
+        label = page.relative_to(DOCS_ROOT).as_posix()
+        assert page.is_file(), f"{label} is listed in DOC_PAGES but does not exist"
+        # CRLF would defeat every `[ \t]*$` anchor below — fences would stop
+        # masking and headings would stop matching — so normalise once here.
+        text = page.read_text().replace("\r\n", "\n")
+        try:
+            docs.append((label, _init_section(text)))
+        except AssertionError as exc:
+            raise AssertionError(f"{label}: {exc}") from exc
+    return docs
 
 
 def _documented_invocations(text: str) -> list[list[str]]:
@@ -147,10 +162,24 @@ def _documented_invocations(text: str) -> list[list[str]]:
     invocations = []
     for _marker, block in _SHELL_FENCE.findall(text):
         for line in block.replace("\\\n", " ").splitlines():
-            argv = shlex.split(line.strip().removeprefix("$ "), comments=True)
-            if argv[:2] == ["nthlayer", "init"]:
+            command = line.strip().removeprefix("$ ")
+            try:
+                argv = shlex.split(command, comments=True)
+            except ValueError as exc:
+                # An unbalanced quote is a broken example, not a test bug.
+                raise AssertionError(f"unparseable shell line {command!r}: {exc}") from exc
+            argv = _strip_runner(argv)
+            if len(argv) >= 2 and argv[0] in _ENTRY_POINTS and argv[1] == "init":
                 invocations.append(argv[1:])
     return invocations
+
+
+def _strip_runner(argv: list[str]) -> list[str]:
+    """Drop a leading `uv run` / `python -m` / `uvx` so the entry point is first."""
+    for prefix in _RUNNER_PREFIXES:
+        if argv[: len(prefix)] == prefix:
+            return argv[len(prefix) :]
+    return argv
 
 
 def _runnable_invocations(text: str) -> list[list[str]]:
@@ -167,9 +196,31 @@ def _runnable_invocations(text: str) -> list[list[str]]:
     ]
 
 
-def _service_name(argv: list[str]) -> str:
-    """The positional service name out of an argv from _documented_invocations."""
-    return argv[1]
+def _value_taking_flags() -> set[str]:
+    """Init's option strings that consume a following token."""
+    return {
+        option
+        for action in _init_parser()._actions  # noqa: SLF001
+        for option in action.option_strings
+        if action.nargs != 0
+    }
+
+
+def _service_name(argv: list[str]) -> str | None:
+    """The positional service name in an argv, or None for a bare `init`.
+
+    A flag's value is not a positional: in `init --team platform`, `platform`
+    belongs to `--team`. Which flags consume a token is read off the parser
+    rather than hardcoded, so adding one cannot silently break this.
+    """
+    takes_value = _value_taking_flags()
+    remaining = iter(argv[1:])
+    for arg in remaining:
+        if arg in takes_value:
+            next(remaining, None)
+        elif not arg.startswith("-"):
+            return arg
+    return None
 
 
 def _flag_value(argv: list[str], flag: str) -> str | None:
@@ -187,12 +238,15 @@ def _documented_flags(text: str) -> set[str]:
     # The Options table renders each option in the first cell, e.g.
     # `| `--output, -o PATH` | Output file path |`. Only the first cell is
     # read; a prose description may legitimately name another command's flag.
-    # Read over the masked text for the same reason _init_section is: a `|`
-    # line inside a fence is table syntax to this loop but output to a reader.
+    # `lstrip` because this docs-site indents tables under list items, the same
+    # reason the fence regex allows a leading indent. Read over the masked text
+    # for the same reason _init_section is: a `|` line inside a fence is table
+    # syntax to this loop but output to a reader.
     for line in _mask_fences(text).splitlines():
-        if not line.startswith("|"):
+        stripped = line.lstrip()
+        if not stripped.startswith("|"):
             continue
-        first_cell = line.split("|")[1]
+        first_cell = stripped.split("|")[1]
         for token in re.split(r"[\s,`]+", first_cell):
             if _FLAG.fullmatch(token):
                 flags.add(token)
@@ -245,6 +299,19 @@ nthlayer init continued-service \\
 nthlayer init tilde-service --team platform
 ~~~
 
+```bash
+nthlayer-generate init sibling-entrypoint-service --team platform
+uv run nthlayer init runner-prefixed-service --team platform
+```
+
+An Options table indented under a list item:
+
+1. Like so:
+
+   | Option | Description |
+   |--------|-------------|
+   | `--indented-table-flag` | Must still be seen |
+
 ```yaml
 nthlayer init not-a-shell-block --team platform
 ```
@@ -267,7 +334,9 @@ nthlayer init wrong-section --team platform
             "prompted-service",
             "continued-service",
             "tilde-service",
-        ], "a shell-block form this docs-site uses is being skipped"
+            "sibling-entrypoint-service",
+            "runner-prefixed-service",
+        ], "a shell-block form or command spelling is being skipped"
 
     def test_continuations_are_joined(self):
         continued = next(
@@ -302,6 +371,27 @@ nthlayer init wrong-section --team platform
         names = [_service_name(argv) for argv in _documented_invocations(_init_section(markdown))]
         assert names == ["mine"]
 
+    def test_indented_option_tables_are_read(self):
+        """The table half of _documented_flags had no positive control.
+
+        It is also where the phantom flags this bead removed actually lived,
+        so a silently-vacuous table scan is the likeliest way they come back.
+        """
+        assert "--indented-table-flag" in _documented_flags(_init_section(self.MARKDOWN))
+
+    def test_a_bare_init_has_no_service_name(self):
+        assert _service_name(["init", "--team", "platform"]) is None
+        assert _service_name(["init", "svc", "--team", "platform"]) == "svc"
+
+    def test_an_unbalanced_quote_names_the_offending_line(self):
+        markdown = "# init\n\n```bash\nnthlayer init 'unclosed --team platform\n```\n"
+        with pytest.raises(AssertionError, match="unparseable shell line"):
+            _documented_invocations(markdown)
+
+    def test_a_missing_init_heading_is_diagnosable(self):
+        with pytest.raises(AssertionError, match="no heading introducing"):
+            _init_section("# validate\n\nNothing about init here.\n")
+
     def test_placeholders_are_not_runnable(self):
         markdown = "# init\n\n```bash\nnthlayer init [SERVICE_NAME] [options]\n```\n"
         assert _documented_invocations(markdown)
@@ -319,6 +409,15 @@ class TestDocumentedFlagsExist:
         # regex that stopped matching, would otherwise make the tests below
         # vacuously green.
         assert _documented_flags(text), f"no flags parsed out of {label}"
+
+    def test_fence_markers_are_balanced(self, label, text):
+        """An unclosed fence pairs with the NEXT fence's opening line.
+
+        Everything between them stops being read, and nothing fails — the
+        silent-coverage-loss case the extraction tests cannot see.
+        """
+        markers = re.findall(r"^[ \t]*(?:```|~~~)", text, re.M)
+        assert len(markers) % 2 == 0, f"{label} has an unclosed code fence"
 
     def test_every_documented_flag_is_accepted(self, label, text):
         undefined = _documented_flags(text) - _parser_flags()
@@ -407,7 +506,11 @@ class TestNonInteractiveFlag:
 class TestDocumentedTemplatesExist:
     """`--template TEMPLATE` examples must name templates the registry has."""
 
-    def test_documented_template_names_resolve(self):
+    def test_documented_template_names_resolve(self, tmp_path, monkeypatch):
+        # CustomTemplateLoader walks up from cwd looking for .nthlayer/templates,
+        # so without this the result depends on where pytest was invoked — and
+        # could disagree with the sibling test, which runs from tmp_path.
+        monkeypatch.chdir(tmp_path)
         registry = CustomTemplateLoader.load_all_templates()
         documented = {
             name

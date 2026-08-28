@@ -76,7 +76,10 @@ def init_command(
     """
     header("Initialize NthLayer Service")
     console.print()
-    console.print("[muted]Create a new service.yaml with interactive prompts[/muted]")
+    if interactive:
+        console.print("[muted]Create a new <service-name>.yaml with interactive prompts[/muted]")
+    else:
+        console.print("[muted]Create a new <service-name>.yaml from the given flags[/muted]")
     console.print()
 
     # Load templates (built-in + custom)
@@ -95,6 +98,10 @@ def init_command(
 
     if not service_name:
         error("Service name is required")
+        if not interactive:
+            console.print(
+                "   [muted]Pass it as the first argument: nthlayer init <service-name>[/muted]"
+            )
         return 1
 
     # Validate service name format
@@ -110,6 +117,8 @@ def init_command(
 
     if not team:
         error("Team name is required")
+        if not interactive:
+            console.print("   [muted]Pass it with --team <team>[/muted]")
         return 1
 
     # Select service tier using interactive menu

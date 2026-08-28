@@ -64,8 +64,21 @@ _HEADING = re.compile(r"^(#+)[ \t]+(.*?)[ \t]*$", re.M)
 # spelled with either runs the same parser and must be checked the same way.
 _ENTRY_POINTS = ("nthlayer", "nthlayer-generate")
 
-# Runners a docs example may put in front of the entry point.
-_RUNNER_PREFIXES = (["uv", "run"], ["python", "-m"], ["uvx"])
+# How many leading tokens may precede the entry point — `uv run nthlayer`,
+# `uvx --from nthlayer-generate nthlayer`. Scanning for the entry point beats
+# stripping a list of known runners: `python -m nthlayer` would have been
+# accepted and run despite there being no __main__, and
+# `uvx --from x nthlayer` would have been skipped.
+_MAX_RUNNER_TOKENS = 5
+
+# Shell operators that chain two commands on one line. Each side is treated as
+# its own invocation; without this the tail lands in argv and argparse reports
+# `unrecognized arguments` on a line that is perfectly valid shell.
+_SHELL_OPERATOR = re.compile(r"\s*(?:&&|\|\||;|\|)\s*")
+
+# A fence opening or closing line, capturing the marker run so a four-backtick
+# superfence is not closed by the three-backtick fence it wraps.
+_FENCE_LINE = re.compile(r"^[ \t]*(`{3,}|~{3,})([^\n]*)$", re.M)
 
 # Any fenced block, whatever its language — the masking counterpart of
 # _SHELL_FENCE above. Edit the two together; this one accepts any info
@@ -162,24 +175,54 @@ def _documented_invocations(text: str) -> list[list[str]]:
     invocations = []
     for _marker, block in _SHELL_FENCE.findall(text):
         for line in block.replace("\\\n", " ").splitlines():
-            command = line.strip().removeprefix("$ ")
-            try:
-                argv = shlex.split(command, comments=True)
-            except ValueError as exc:
-                # An unbalanced quote is a broken example, not a test bug.
-                raise AssertionError(f"unparseable shell line {command!r}: {exc}") from exc
-            argv = _strip_runner(argv)
-            if len(argv) >= 2 and argv[0] in _ENTRY_POINTS and argv[1] == "init":
-                invocations.append(argv[1:])
+            line = line.strip().removeprefix("$ ")
+            for command in _SHELL_OPERATOR.split(line):
+                try:
+                    argv = shlex.split(command, comments=True)
+                except ValueError as exc:
+                    # An unbalanced quote is a broken example, not a test bug.
+                    raise AssertionError(f"unparseable shell line {command!r}: {exc}") from exc
+                argv = _strip_runner(argv)
+                if len(argv) >= 2 and argv[0] in _ENTRY_POINTS and argv[1] == "init":
+                    invocations.append(argv[1:])
     return invocations
 
 
 def _strip_runner(argv: list[str]) -> list[str]:
-    """Drop a leading `uv run` / `python -m` / `uvx` so the entry point is first."""
-    for prefix in _RUNNER_PREFIXES:
-        if argv[: len(prefix)] == prefix:
-            return argv[len(prefix) :]
+    """Drop any runner prefix so the entry point running `init` leads argv.
+
+    Anchoring on the entry point *followed by* `init` matters: in
+    `uvx --from nthlayer-generate nthlayer init`, the dist name appears first
+    as the `--from` value, and matching that would leave `init` at argv[2]
+    where the caller looks for it at argv[1] — a silent skip.
+    """
+    for index, token in enumerate(argv[:_MAX_RUNNER_TOKENS]):
+        if argv[index - 1 : index] == ["-m"]:
+            # `python -m nthlayer` is not runnable — the package ships two
+            # console scripts and no __main__ — so it must not be recognised
+            # and then executed by the end-to-end test, which would certify a
+            # command that raises ModuleNotFoundError as pasteable.
+            continue
+        if token in _ENTRY_POINTS and argv[index + 1 : index + 2] == ["init"]:
+            return argv[index:]
     return argv
+
+
+def _unclosed_fence(text: str) -> str | None:
+    """The opening line of the first fence never closed, or None.
+
+    Pairs markers rather than counting them. A count is even for two unclosed
+    fences and odd for a page that merely quotes fence syntax, so it both
+    misses real breakage and fires on correct pages.
+    """
+    opening: tuple[str, str] | None = None
+    for match in _FENCE_LINE.finditer(text):
+        marker, info = match.group(1), match.group(2).strip()
+        if opening is None:
+            opening = (marker, match.group(0).strip())
+        elif marker[0] == opening[0][0] and len(marker) >= len(opening[0]) and not info:
+            opening = None
+    return opening[1] if opening else None
 
 
 def _runnable_invocations(text: str) -> list[list[str]]:
@@ -379,18 +422,88 @@ nthlayer init wrong-section --team platform
         """
         assert "--indented-table-flag" in _documented_flags(_init_section(self.MARKDOWN))
 
-    def test_a_bare_init_has_no_service_name(self):
-        assert _service_name(["init", "--team", "platform"]) is None
-        assert _service_name(["init", "svc", "--team", "platform"]) == "svc"
-
     def test_an_unbalanced_quote_names_the_offending_line(self):
         markdown = "# init\n\n```bash\nnthlayer init 'unclosed --team platform\n```\n"
         with pytest.raises(AssertionError, match="unparseable shell line"):
             _documented_invocations(markdown)
 
+    def test_crlf_pages_are_normalised(self, tmp_path, monkeypatch):
+        """CRLF defeats every `[ \\t]*$` anchor: fences stop masking, headings
+        stop matching. _init_docs normalises at read; without it this raises.
+        """
+        page = tmp_path / "commands" / "init.md"
+        page.parent.mkdir(parents=True)
+        page.write_text(self.MARKDOWN.replace("\n", "\r\n"))
+        monkeypatch.setattr("test_init_documented_flags.DOCS_ROOT", tmp_path)
+        monkeypatch.setattr("test_init_documented_flags.DOC_PAGES", (page,))
+
+        ((label, text),) = _init_docs()
+        assert label == "commands/init.md"
+        assert "plain-service" in text
+
+    def test_a_missing_page_names_itself(self, tmp_path, monkeypatch):
+        missing = tmp_path / "commands" / "gone.md"
+        monkeypatch.setattr("test_init_documented_flags.DOCS_ROOT", tmp_path)
+        monkeypatch.setattr("test_init_documented_flags.DOC_PAGES", (missing,))
+
+        with pytest.raises(AssertionError, match="commands/gone.md is listed in DOC_PAGES"):
+            _init_docs()
+
     def test_a_missing_init_heading_is_diagnosable(self):
         with pytest.raises(AssertionError, match="no heading introducing"):
             _init_section("# validate\n\nNothing about init here.\n")
+
+    def test_runner_prefixes_and_entry_points(self):
+        """Pin what leads an invocation, so the constants cannot drift silently."""
+        assert _strip_runner(["uv", "run", "nthlayer", "init"]) == ["nthlayer", "init"]
+        assert _strip_runner(["uvx", "--from", "nthlayer-generate", "nthlayer", "init"]) == [
+            "nthlayer",
+            "init",
+        ]
+        assert _strip_runner(["nthlayer-generate", "init"]) == ["nthlayer-generate", "init"]
+        # `pip install nthlayer` is not an invocation of init.
+        assert _strip_runner(["pip", "install", "nthlayer"]) == ["pip", "install", "nthlayer"]
+        # No __main__ module exists, so `python -m nthlayer` is not runnable and
+        # must not be certified as such by the end-to-end test.
+        assert (
+            _documented_invocations("# init\n\n```bash\npython -m nthlayer init a --team p\n```\n")
+            == []
+        )
+
+    def test_chained_commands_are_split(self):
+        markdown = (
+            "# init\n\n```bash\n"
+            "nthlayer init chained --team platform && nthlayer validate chained.yaml\n"
+            "```\n"
+        )
+        invocations = _documented_invocations(markdown)
+        assert invocations == [["init", "chained", "--team", "platform"]]
+        # The `&&` tail must not survive into argv, where argparse would report
+        # `unrecognized arguments` on a line that is valid shell.
+        build_parser().parse_args(invocations[0])
+
+    def test_service_name_ignores_flag_values(self):
+        assert _service_name(["init", "--team", "platform"]) is None
+        assert _service_name(["init", "--team=platform"]) is None
+        assert _service_name(["init", "--team=platform", "svc"]) == "svc"
+        assert _service_name(["init", "--no-interactive", "svc"]) == "svc"
+        assert _service_name(["init", "--template", "critical-api", "svc"]) == "svc"
+
+    def test_unclosed_fences_are_detected_and_correct_pages_are_not(self):
+        """The negative control for test_every_fence_is_closed.
+
+        Both real pages are balanced, so without this nothing proves the
+        assertion can fire — nor that it stays quiet on a page that merely
+        quotes fence syntax.
+        """
+        assert _unclosed_fence("```bash\nnthlayer init a\n```\n") is None
+        assert _unclosed_fence("```bash\nnthlayer init a\n") == "```bash"
+        # Two unclosed fences: an even marker count that a parity check passed.
+        assert _unclosed_fence("```bash\nfirst\n```bash\nsecond\n") == "```bash"
+        # A block quoting fence syntax is odd-counted but correctly closed.
+        assert _unclosed_fence("```text\n```bash\n```\n") is None
+        # A four-backtick superfence is not closed by the fence it wraps.
+        assert _unclosed_fence("````md\n```bash\nx\n```\n````\n") is None
 
     def test_placeholders_are_not_runnable(self):
         markdown = "# init\n\n```bash\nnthlayer init [SERVICE_NAME] [options]\n```\n"
@@ -410,14 +523,14 @@ class TestDocumentedFlagsExist:
         # vacuously green.
         assert _documented_flags(text), f"no flags parsed out of {label}"
 
-    def test_fence_markers_are_balanced(self, label, text):
+    def test_every_fence_is_closed(self, label, text):
         """An unclosed fence pairs with the NEXT fence's opening line.
 
         Everything between them stops being read, and nothing fails — the
         silent-coverage-loss case the extraction tests cannot see.
         """
-        markers = re.findall(r"^[ \t]*(?:```|~~~)", text, re.M)
-        assert len(markers) % 2 == 0, f"{label} has an unclosed code fence"
+        unclosed = _unclosed_fence(text)
+        assert unclosed is None, f"{label} has an unclosed code fence: {unclosed}"
 
     def test_every_documented_flag_is_accepted(self, label, text):
         undefined = _documented_flags(text) - _parser_flags()

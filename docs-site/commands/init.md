@@ -5,20 +5,23 @@ Interactively create a new service specification file.
 ## Synopsis
 
 ```bash
-nthlayer init [options]
+nthlayer init [SERVICE_NAME] [options]
 ```
 
 ## Description
 
-The `init` command guides you through creating a `service.yaml` file with interactive prompts. It auto-generates appropriate resources based on your selections.
+The `init` command guides you through creating a service YAML file with interactive prompts. It auto-generates appropriate resources based on your selections.
+
+The file is written to `<service-name>.yaml` in the current directory, alongside a `.nthlayer/config.yaml`. There is no output-path option; `cd` to where you want the file. `init` never overwrites an existing manifest — it errors instead.
 
 ## Options
 
 | Option | Description |
 |--------|-------------|
-| `--output, -o PATH` | Output file path (default: `service.yaml`) |
-| `--template NAME` | Use a pre-built template |
-| `--no-interactive` | Use defaults without prompts |
+| `SERVICE_NAME` | Positional. Service name, lowercase-with-hyphens. Prompted for if omitted. |
+| `--team NAME` | Team name. Prompted for if omitted. |
+| `--template NAME` | Use a pre-built template (see [Templates](#templates)) |
+| `--no-interactive` | Skip every prompt and take the defaults |
 
 ## Interactive Mode
 
@@ -45,8 +48,8 @@ Service name: payment-api
 Team: payments
 
 Select service tier:
-  ❯ critical  - 99.95% availability, 5min escalation
-    standard  - 99.9% availability, 15min escalation
+    critical  - 99.95% availability, 5min escalation
+  ❯ standard  - 99.9% availability, 15min escalation
     low       - 99.5% availability, business hours
 
 Select service type:
@@ -66,7 +69,8 @@ Select dependencies (space to toggle):
   ○ elasticsearch
   ○ rabbitmq
 
-✓ Created services/payment-api.yaml
+✓ Created payment-api.yaml
+✓ Created .nthlayer/
 ```
 
 ## Generated Output
@@ -94,24 +98,34 @@ resources:
 
   # Latency SLO (auto-added for api and x-web types)
   - kind: SLO
-    name: latency-p99
+    name: latency-p95
     spec:
       objective: 99.0
-      threshold_ms: 200
+      window: 30d
       indicator:
         type: latency
-        percentile: 99
+        percentile: 95
+        threshold_ms: 500
+
+  # PagerDuty integration (auto-added for critical tier)
+  - kind: PagerDuty
+    name: primary
+    spec:
+      urgency: high
+      auto_create: true
 
   # Dependencies
   - kind: Dependencies
-    name: deps
+    name: infrastructure
     spec:
       databases:
-        - type: postgresql
+        - name: payment-api-postgresql
+          type: postgresql
           criticality: high
       caches:
-        - type: redis
-          criticality: high
+        - name: payment-api-redis
+          type: redis
+          criticality: medium
 ```
 
 ### Standard Tier Worker
@@ -146,33 +160,50 @@ resources:
 Use pre-built templates for common patterns:
 
 ```bash
-# List available templates
-nthlayer init --list-templates
+# List available templates (a separate command, not a flag on init)
+nthlayer list-templates
 
 # Use a template
-nthlayer init --template api-with-postgres
+nthlayer init payment-api --team payments --template critical-api
 ```
 
-### Available Templates
+### Built-in Templates
 
-| Template | Description |
-|----------|-------------|
-| `api-basic` | Simple API with availability SLO |
-| `api-with-postgres` | API with PostgreSQL dependency |
-| `worker-basic` | Background worker |
-| `stream-kafka` | Kafka stream processor |
+| Template | Tier | Type | Description |
+|----------|------|------|-------------|
+| `critical-api` | critical | api | High-traffic API with 99.9% availability SLO and critical PagerDuty escalation |
+| `standard-api` | standard | api | Standard API with 99.5% availability SLO and low urgency PagerDuty |
+| `low-api` | low | api | Low-priority API with 99.0% availability SLO |
+| `background-job` | standard | worker | Background worker service with success rate SLO |
+| `pipeline` | standard | batch | Data pipeline with 95% success rate SLO |
+
+Custom templates are discovered alongside these; `nthlayer list-templates` shows the full set for your project.
 
 ## Non-Interactive Mode
 
-Generate with defaults:
+For CI, scripts, or any context without a TTY, `--no-interactive` skips every prompt:
 
 ```bash
-nthlayer init --no-interactive \
-  --name my-service \
-  --team platform \
-  --tier standard \
-  --type api
+nthlayer init my-service --team platform --no-interactive
 ```
+
+Because nothing is prompted for, the two required values must be supplied on the command line: the positional service name and `--team`. Omitting either is an error, not a prompt.
+
+Everything else takes a default:
+
+| Value | Default without prompts |
+|-------|-------------------------|
+| Tier | `standard` |
+| Type | `api` |
+| Dependencies | none |
+
+`--template` overrides the tier and type defaults with the template's own, so a fully-specified non-interactive run looks like:
+
+```bash
+nthlayer init my-service --team platform --template critical-api --no-interactive
+```
+
+That writes a `critical`-tier `api` manifest. Tier and type are not otherwise settable from the command line — pick a template, or edit the generated file.
 
 ## See Also
 

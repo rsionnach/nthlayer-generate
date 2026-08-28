@@ -118,7 +118,11 @@ class TestBuiltinTemplates:
         template = registry.get("background-job")
 
         assert template.tier == "standard"
-        assert template.type == "background-job"
+        # The template is NAMED background-job; its type resolves to the
+        # manifest value `worker` (opensrm-8qpd). The name is an identifier,
+        # the type is a vocabulary value, and only the latter reaches a
+        # manifest — via cli/init.py's template-derived type fallback.
+        assert template.type == "worker"
 
         # Should have success-rate SLO
         slos = [r for r in template.resources if r.kind == "SLO"]
@@ -130,7 +134,9 @@ class TestBuiltinTemplates:
         template = registry.get("pipeline")
 
         assert template.tier == "standard"
-        assert template.type == "pipeline"
+        # Named pipeline, typed batch — `pipeline` is a manifest alias, not
+        # a manifest type (opensrm-8qpd). See test_background_job_template.
+        assert template.type == "batch"
 
         # Should have success rate and freshness SLOs
         slos = [r for r in template.resources if r.kind == "SLO"]

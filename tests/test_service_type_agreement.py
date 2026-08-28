@@ -16,7 +16,10 @@ either side alone cannot see the drift.
 Latent at the time of filing — no manifest in the ecosystem declared
 ``type: web`` — which is why it was worth closing before it bit someone.
 """
+
 from __future__ import annotations
+
+import pathlib
 
 import pytest
 from nthlayer_common.manifest.models import (
@@ -25,6 +28,8 @@ from nthlayer_common.manifest.models import (
     resolve_service_type,
 )
 
+import nthlayer_generate
+from nthlayer_generate.cli.init import SERVICE_TYPES
 from nthlayer_generate.specs.manifest import ReliabilityManifest
 from nthlayer_generate.specs.validator import validate_service_file
 
@@ -122,8 +127,7 @@ def test_validator_agrees_with_the_manifest_model(tmp_path, service_type: str):
 
     type_errors = [e for e in result.errors if "type" in str(e).lower()]
     assert not type_errors, (
-        f"validator rejected {service_type!r}, which the manifest model "
-        f"accepts: {type_errors}"
+        f"validator rejected {service_type!r}, which the manifest model accepts: {type_errors}"
     )
 
 
@@ -154,8 +158,13 @@ def test_service_context_keeps_an_unresolvable_type_for_the_validator():
 
     Type validity is reported by specs/validator.py as a collected error,
     not by raising at construction. Raising here would turn a reported
-    problem into a crash — and `ml` is currently offered by the CLI menu
-    (opensrm-8qpd), so this path is live.
+    problem into a crash.
+
+    This once justified itself by `ml` being offered in the CLI menu.
+    opensrm-8qpd removed it, so no NthLayer entry point produces an
+    unresolvable type any more — but ServiceContext is built from parsed
+    YAML, and a hand-written manifest may still carry anything at all.
+    The path is fed by authors now, not by our own menu.
     """
     from nthlayer_generate.specs.models import ServiceContext
 
@@ -192,61 +201,7 @@ def test_init_emits_latency_slo_for_http_service_types(menu_type: str):
 
     yaml_out = _generate_service_yaml_v2("shop", "team", "critical", menu_type, [])
 
-    assert "latency-p95" in yaml_out, (
-        f"--type {menu_type} produced a manifest with no latency SLO"
-    )
-
-
-def test_init_writes_a_resolved_type_for_every_menu_entry():
-    """Whatever the menu offers, the file must carry a resolved value.
-
-    `ml` is the exception and is deliberately left alone (opensrm-8qpd) —
-    it resolves to nothing, so it is written raw and stays loudly invalid
-    rather than being silently mapped to something plausible.
-    """
-    from nthlayer_common.manifest.models import resolve_service_type
-
-    from nthlayer_generate.cli.init import SERVICE_TYPES, _generate_service_yaml_v2
-
-    for menu_type in SERVICE_TYPES:
-        resolved = resolve_service_type(menu_type)
-        if resolved is None:
-            continue  # opensrm-8qpd
-        yaml_out = _generate_service_yaml_v2("s", "t", "critical", menu_type, [])
-        type_line = next(
-            line.strip() for line in yaml_out.splitlines() if line.strip().startswith("type:")
-        )
-        assert type_line == f"type: {resolved}", (
-            f"menu entry {menu_type!r} wrote {type_line!r}, expected type: {resolved}"
-        )
-
-
-def test_template_vocabulary_round_trips_with_the_init_filter():
-    """specs/templates.py and cli/init.py must agree on TEMPLATE types.
-
-    These are a separate vocabulary from manifest service types — the table
-    also carries `background-job` and `pipeline`, which are manifest aliases,
-    not manifest types. opensrm-z3ab half-migrated it, changing only the
-    `web` entry to `x-web`, which broke both ends: a custom template
-    declaring `type: web` stopped loading, and one declaring `x-web` was
-    never matched, because SERVICE_TYPE_TO_TEMPLATE_TYPE still maps the menu
-    entry to `"web"`.
-
-    Whatever the table accepts must be what the filter looks for. Settling
-    which vocabulary it should use at all is opensrm-8qpd.
-    """
-    from nthlayer_generate.cli.init import SERVICE_TYPE_TO_TEMPLATE_TYPE
-    from nthlayer_generate.specs.templates import ServiceTemplate
-
-    for template_type in set(SERVICE_TYPE_TO_TEMPLATE_TYPE.values()):
-        # A template declaring the type init will search for must construct.
-        ServiceTemplate(
-            name=f"t-{template_type}",
-            description="probe",
-            tier="critical",
-            type=template_type,
-            resources=[],
-        )
+    assert "latency-p95" in yaml_out, f"--type {menu_type} produced a manifest with no latency SLO"
 
 
 def test_manifest_module_re_exports_the_whole_rule():
@@ -399,3 +354,236 @@ def test_authored_type_survives_dataclasses_replace():
     context = ServiceContext(name="s", team="t", tier="critical", type="web")
 
     assert dataclasses.replace(context, tier="high").authored_type == "web"
+
+
+# =============================================================================
+# The CLI menu is the manifest vocabulary — opensrm-8qpd
+# =============================================================================
+#
+# Settling the question opensrm-z3ab deferred: cli/init.py kept a THIRD
+# service-type vocabulary, agreeing with neither nthlayer-common nor
+# generate's own validator, and offered `ml` — a value generate then
+# rejected.
+#
+# The decision: the menu's keys ARE the values a manifest stores. Nothing
+# translates. These are never typed — SERVICE_TYPES renders as
+# `key - description` in an interactive list — so the spec spelling costs a
+# menu user nothing, and the friendly wording lives in the description
+# beside it, where it always did.
+
+
+def test_the_menu_offers_only_values_a_manifest_can_store():
+    """Every menu key must resolve to ITSELF, not merely resolve.
+
+    Identity, not validity, is the invariant: an alias like `web` resolves
+    fine but lands in the file spelled `x-web`, so the user is shown one
+    word and given another. That mismatch is the confusion this bead
+    exists to remove, and only identity catches it.
+    """
+    for menu_type in SERVICE_TYPES:
+        assert resolve_service_type(menu_type) == menu_type, (
+            f"menu entry {menu_type!r} is not a storable service type: it "
+            f"resolves to {resolve_service_type(menu_type)!r}"
+        )
+
+
+def test_the_menu_offers_every_service_type_the_spec_defines():
+    """And the converse — the menu must not be NARROWER than the spec.
+
+    `ai-gate` and `database` were absent from the menu for as long as it
+    existed, so `nthlayer init` could not produce either, despite both
+    being among the six values OpenSRM v2 defines. A menu that silently
+    omits a spec type is the same defect as one that invents a type,
+    pointed the other way.
+    """
+    missing = VALID_SERVICE_TYPES - set(SERVICE_TYPES)
+    assert not missing, f"menu does not offer spec service types: {sorted(missing)}"
+
+
+def test_ml_is_dropped_from_the_menu_rather_than_mapped():
+    """`ml` is ambiguous by construction, so it is removed, not translated.
+
+    An ML service that MAKES decisions is an `ai-gate`; one that serves
+    inference over HTTP is an `api`. The CLI cannot tell which, and
+    guessing `ai-gate` would recreate the exact inversion opensrm-6w9d and
+    opensrm-ih0v spent two beads eliminating. Pinned as its own test so a
+    later "helpful" alias has to delete this reasoning to land.
+    """
+    assert "ml" not in SERVICE_TYPES
+
+
+@pytest.mark.parametrize("menu_type", sorted(SERVICE_TYPES))
+def test_every_menu_entry_generates_a_manifest_that_validates(tmp_path, menu_type: str):
+    """The bead's acceptance criterion, over the FULL menu, not spot-checks.
+
+    Spot-checking is how `ml` survived: every type anyone thought to test
+    was one of the valid ones.
+
+    On `spec/v2/validate.sh`: generate's CI installs nthlayer-common from
+    PyPI and has no `opensrm/` checkout, so a schema.json test here would
+    `pytest.skip` in exactly the environment meant to gate the merge —
+    green because it never ran. `is_valid_service_type` is documented as
+    the ECMA-262-parity mirror of schema.json's ServiceType (it uses
+    fullmatch precisely so the two cannot disagree about `x-web\\n`), so
+    asserting through nthlayer-common is equivalent for this field and
+    always runs.
+    """
+    from nthlayer_generate.cli.init import _generate_service_yaml_v2
+
+    service_file = tmp_path / "svc.yaml"
+    service_file.write_text(_generate_service_yaml_v2("svc", "t", "critical", menu_type, []))
+
+    result = validate_service_file(service_file)
+
+    type_errors = [e for e in result.errors if "type" in str(e).lower()]
+    assert not type_errors, f"menu entry {menu_type!r} generated an invalid manifest: {type_errors}"
+    assert f"type: {menu_type}\n" in service_file.read_text(), (
+        f"menu entry {menu_type!r} did not survive into the manifest verbatim"
+    )
+
+
+# =============================================================================
+# Templates share that one vocabulary — opensrm-8qpd
+# =============================================================================
+
+
+@pytest.mark.parametrize(
+    ("declared", "stored"),
+    [("background-job", "worker"), ("pipeline", "batch"), ("web", "x-web"), ("api", "api")],
+)
+def test_a_template_resolves_its_type_exactly_as_a_manifest_does(declared: str, stored: str):
+    """ServiceTemplate had its own `valid_types` list — a second vocabulary.
+
+    It accepted `background-job` and `pipeline`, which are manifest
+    ALIASES rather than manifest types, and rejected `worker`, `stream`
+    and `ai-gate`, which are types. Resolving at construction, as
+    ReliabilityManifest does, makes the two one vocabulary — which is what
+    makes init.py's template-derived fallback safe by construction rather
+    than by a guard at the write site.
+    """
+    from nthlayer_generate.specs.templates import ServiceTemplate
+
+    template = ServiceTemplate(
+        name="t", description="probe", tier="critical", type=declared, resources=[]
+    )
+
+    assert template.type == stored
+
+
+@pytest.mark.parametrize("service_type", ["worker", "stream", "ai-gate", "database", "x-web"])
+def test_a_template_may_declare_any_manifest_service_type(service_type: str):
+    """The old `valid_types` list rejected three of the spec's six types.
+
+    So a template for a worker, a stream processor or an AI gate could not
+    be written at all — including by the custom-template loader, which
+    users point at their own YAML.
+    """
+    from nthlayer_generate.specs.templates import ServiceTemplate
+
+    template = ServiceTemplate(
+        name="t", description="probe", tier="critical", type=service_type, resources=[]
+    )
+
+    assert template.type == service_type
+
+
+def test_a_template_still_rejects_a_type_no_manifest_could_store():
+    """Widening the accepted set must not mean accepting anything."""
+    from nthlayer_generate.specs.templates import ServiceTemplate
+
+    with pytest.raises(ValueError):
+        ServiceTemplate(name="t", description="probe", tier="critical", type="ml", resources=[])
+
+
+def test_built_in_templates_declare_types_a_manifest_can_store():
+    """init_command takes `service_type = template_obj.type` when no type
+    was chosen, so a template's type becomes a manifest's type directly.
+
+    That is the bead's "second path": `background-job.yaml` and
+    `pipeline.yaml` both declare manifest aliases on disk, which
+    schema.json rejects. They must arrive resolved.
+
+    Asserted against the RAW YAML, not against loaded ServiceTemplates.
+    Loading them and checking `resolve_service_type(t.type) == t.type`
+    cannot fail — __post_init__ enforces exactly that, so every object
+    that exists already satisfies it. The real failure mode is a template
+    that does not load at all: TemplateLoader.load_builtin swallows
+    per-file exceptions, so a bad declaration shows up as an ABSENT
+    template, which a check over whatever loaded would never see.
+
+    Uses load_builtin(), not load_all_templates(): the latter walks
+    ancestor directories for a gitignored `.nthlayer/templates`, so from a
+    developer's checkout it silently pulls in untracked local templates and
+    the test stops being about this repo's contents.
+    """
+    import yaml
+
+    from nthlayer_generate.specs.template_loader import TemplateLoader
+
+    template_dir = pathlib.Path(nthlayer_generate.__file__).parent / "specs" / "builtin_templates"
+    yaml_files = sorted(template_dir.glob("*.yaml"))
+    assert yaml_files, f"test premise broken: no built-in templates at {template_dir}"
+
+    declared_names = set()
+    for path in yaml_files:
+        data = yaml.safe_load(path.read_text())
+        declared = data.get("type")
+        assert resolve_service_type(declared) is not None, (
+            f"{path.name} declares type {declared!r}, which no manifest can store"
+        )
+        declared_names.add(data.get("name"))
+
+    # And every one of them actually loaded — an unresolvable declaration
+    # would be swallowed into absence rather than raised.
+    #
+    # Compared against the names the YAML DECLARES, not the file stems:
+    # keying on stems would quietly pin a name==filename convention this
+    # test has no opinion on, and renaming a template inside its own file
+    # would then be reported as "one failed to load" when none did.
+    registry = TemplateLoader.load_builtin()
+    assert set(registry.templates) == declared_names, (
+        f"built-in templates on disk {sorted(declared_names)} do not match "
+        f"those loaded {sorted(registry.templates)} — one failed to load"
+    )
+    for template in registry.list():
+        assert resolve_service_type(template.type) == template.type
+
+
+def test_resolving_a_template_type_is_idempotent():
+    """__post_init__ mutates self.type, so constructing a template FROM
+    another's type must be a fixed point.
+
+    init_command does exactly that round trip — `template_obj.type` becomes
+    `service_type`, which _resolve_manifest_type then resolves a second
+    time. That is only safe while no alias key is itself a canonical value,
+    an invariant owned by nthlayer-common, not by this repo. Pinned here
+    because this repo is what breaks if it changes.
+    """
+    from nthlayer_generate.specs.templates import ServiceTemplate
+
+    for declared in list(SERVICE_TYPE_ALIASES) + sorted(VALID_SERVICE_TYPES):
+        once = ServiceTemplate(
+            name="t", description="p", tier="critical", type=declared, resources=[]
+        ).type
+        twice = ServiceTemplate(
+            name="t", description="p", tier="critical", type=once, resources=[]
+        ).type
+        assert once == twice, f"{declared!r} resolved to {once!r} then {twice!r}"
+
+
+def test_the_translation_table_is_gone():
+    """SERVICE_TYPE_TO_TEMPLATE_TYPE is deleted, not merely unused.
+
+    A guard, not a behaviour test — it asserts a symbol's absence so the
+    table cannot quietly come back as a "convenience" while the filter
+    still reads as plain equality. The behaviour it used to stand for is
+    covered by test_selecting_a_type_with_no_template_offers_none in
+    tests/test_init.py, which drives the filter through init_command.
+
+    Retired alongside it: test_template_vocabulary_round_trips_with_the_
+    init_filter, which pinned that the two vocabularies agreed with each
+    other. There is now one.
+    """
+    from nthlayer_generate.cli import init
+
+    assert not hasattr(init, "SERVICE_TYPE_TO_TEMPLATE_TYPE")

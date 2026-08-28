@@ -7,6 +7,11 @@ reused across services with optional overrides.
 from dataclasses import dataclass
 from typing import Dict, List
 
+from nthlayer_common.manifest.models import (
+    resolve_service_type,
+    valid_service_types_phrase,
+)
+
 from nthlayer_generate.core.tiers import TIER_NAMES
 
 from .models import Resource
@@ -23,21 +28,28 @@ class ServiceTemplate:
     name: str  # e.g., "critical-api"
     description: str
     tier: str  # critical | standard | low
-    type: str  # api | background-job | pipeline | web | database
+    type: str  # a manifest service type; aliases resolve in __post_init__
     resources: List[Resource]
 
     def __post_init__(self):
         if self.tier not in TIER_NAMES:
             raise ValueError(f"Invalid tier: {self.tier}. Valid: {', '.join(TIER_NAMES)}")
 
-        # TEMPLATE types — a SEPARATE vocabulary from manifest service
-        # types: `background-job` and `pipeline` are manifest aliases, not
-        # manifest types. Must stay in step with cli/init.py's
-        # SERVICE_TYPE_TO_TEMPLATE_TYPE, which is what looks templates up.
-        # Whether the two vocabularies should be merged is opensrm-8qpd.
-        valid_types = ["api", "background-job", "pipeline", "web", "database"]
-        if self.type not in valid_types:
-            raise ValueError(f"Invalid type: {self.type}")
+        # Templates and manifests share ONE vocabulary (opensrm-8qpd).
+        #
+        # Resolve rather than validate, exactly as ReliabilityManifest does.
+        # It matters because cli/init.py takes `template.type` as the
+        # manifest type when the author chose none, so an alias declared on
+        # disk — background-job.yaml and pipeline.yaml both do — would
+        # otherwise land in a document schema.json rejects. Normalising at
+        # construction makes that path safe by construction rather than by a
+        # guard at the write site.
+        resolved_type = resolve_service_type(self.type)
+        if resolved_type is None:
+            raise ValueError(
+                f"Invalid type: {self.type!r}. Must be one of: {valid_service_types_phrase()}."
+            )
+        self.type = resolved_type
 
 
 @dataclass

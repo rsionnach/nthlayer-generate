@@ -8,7 +8,7 @@ Complete reference for service specification files.
 # Required fields
 name: string              # Service identifier (lowercase, hyphens)
 tier: integer | string    # 1/2/3 or critical/standard/low
-type: string              # api, worker, stream
+type: string              # api, worker, stream, batch, database, ai-gate, x-web
 
 # Optional fields
 team: string              # Team name
@@ -70,13 +70,34 @@ tier: critical
 
 **Required** | `string`
 
-Service type determines default metrics and SLOs:
+Service type determines default metrics and SLOs. These are the six types
+OpenSRM v2 defines, plus NthLayer's one extension type:
 
 | Type | Description |
 |------|-------------|
-| `api` | HTTP/REST service |
+| `api` | REST/GraphQL API service |
 | `worker` | Background job processor |
-| `stream` | Event/message processor |
+| `stream` | Stream processing service (Kafka, etc.) |
+| `batch` | Batch processing job |
+| `database` | Managed datastore or data service |
+| `ai-gate` | AI/LLM service that makes or gates decisions |
+| `x-web` | Web application (frontend) — NthLayer extension type |
+
+`x-web` uses the spec's extension escape hatch, `x-<lowercase-name>`. Any
+type matching that pattern is accepted; NthLayer gives `x-web` its own
+dashboard panels and docs sections, so prefer it over `api` for a frontend.
+
+Three older spellings are accepted as **input** and normalised on the way
+in, so a manifest never stores them:
+
+| You write | Stored as |
+|-----------|-----------|
+| `background-job` | `worker` |
+| `pipeline` | `batch` |
+| `web` | `x-web` |
+
+There is no `ml` type. An ML service that makes or gates decisions is an
+`ai-gate`; one that serves inference over HTTP is an `api`.
 
 ### team
 
@@ -265,7 +286,7 @@ metadata:
   template: string          # Optional base template name
 
 spec:
-  type: string              # api, worker, stream, ai-gate, batch, database, web
+  type: string              # api, worker, stream, batch, database, ai-gate, x-web
 
   slos:                     # SLO definitions (map, not list)
     <slo-name>:

@@ -31,7 +31,7 @@ The wizard prompts for:
 1. **Service name** - e.g., `payment-api`
 2. **Team** - e.g., `platform`
 3. **Tier** - critical, standard, or low
-4. **Type** - api, worker, stream, web, batch, or ml
+4. **Type** - api, worker, stream, batch, database, ai-gate, or x-web
 5. **Dependencies** - databases, caches, queues
 
 ### Example Session
@@ -50,12 +50,13 @@ Select service tier:
     low       - 99.5% availability, business hours
 
 Select service type:
-  ❯ api       - HTTP/REST API service
+  ❯ api       - REST/GraphQL API service
     worker    - Background job processor
-    stream    - Event/stream processor
-    web       - Web application
+    stream    - Stream processing service (Kafka, etc.)
     batch     - Batch processing job
-    ml        - ML inference service
+    database  - Managed datastore or data service
+    ai-gate   - AI/LLM service that makes or gates decisions
+    x-web     - Web application (frontend) - NthLayer extension type
 
 Select dependencies (space to toggle):
   ◉ postgresql
@@ -91,7 +92,7 @@ resources:
       indicator:
         type: availability
 
-  # Latency SLO (auto-added for API type)
+  # Latency SLO (auto-added for api and x-web types)
   - kind: SLO
     name: latency-p99
     spec:
@@ -137,9 +138,7 @@ resources:
 | Tier: critical | Higher SLO targets |
 | Tier: standard | Standard SLO targets |
 | Tier: low | Lower SLO targets |
-| Type: api | Latency SLO |
-| Type: worker | Job completion SLO |
-| Type: stream | Throughput SLO |
+| Type: api, x-web | Latency SLO |
 | Dependencies | Dependencies resource |
 
 ## Templates

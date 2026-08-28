@@ -18,24 +18,25 @@ from nthlayer_generate.cli.ux import (
 from nthlayer_generate.core.tiers import TIER_CONFIGS
 from nthlayer_generate.specs.custom_templates import CustomTemplateLoader
 
-# Service type descriptions
+# The service-type menu. INVARIANT: every key is a value a manifest can
+# store verbatim — nothing here is translated on the way out (opensrm-8qpd).
+#
+# The friendly wording is the description beside each key, never the key
+# itself. These are never typed: the menu renders as `key - description` in
+# an interactive list, so the spec spelling costs the user nothing, while a
+# key of `web` against a file saying `x-web` would cost them a translation.
+#
+# There is deliberately no `ml` entry and no alias for one: an ML service
+# that makes decisions is an `ai-gate`, one serving inference over HTTP is
+# an `api`, and nothing here knows which.
 SERVICE_TYPES = {
     "api": "REST/GraphQL API service",
     "worker": "Background job processor",
     "stream": "Stream processing service (Kafka, etc.)",
-    "web": "Web application (frontend)",
     "batch": "Batch processing job",
-    "ml": "Machine learning/AI service",
-}
-
-# Map user-friendly service types to template types
-SERVICE_TYPE_TO_TEMPLATE_TYPE = {
-    "api": "api",
-    "worker": "background-job",
-    "stream": "pipeline",
-    "web": "web",
-    "batch": "pipeline",
-    "ml": "api",  # ML services often have API interfaces
+    "database": "Managed datastore or data service",
+    "ai-gate": "AI/LLM service that makes or gates decisions",
+    "x-web": "Web application (frontend) - NthLayer extension type",
 }
 
 # Tier descriptions derived from centralized config
@@ -139,8 +140,10 @@ def init_command(
         templates = registry.list()
         # Filter templates by service type if one was selected
         if service_type and templates:
-            template_type = SERVICE_TYPE_TO_TEMPLATE_TYPE.get(service_type, service_type)
-            templates = [t for t in templates if t.type == template_type]
+            # Plain equality: ServiceTemplate resolves its declared type
+            # through the same rule a manifest does, so both sides of this
+            # comparison are already canonical (opensrm-8qpd).
+            templates = [t for t in templates if t.type == service_type]
         if templates:
             template_choices = [f"{t.name} - {t.description}" for t in templates]
             template_choices.insert(0, "none - Generate from selections above")
@@ -298,15 +301,22 @@ resources:
 
 
 def _resolve_manifest_type(service_type: str) -> str:
-    """Resolve the CLI's friendly type to the value a manifest may store.
+    """Resolve an authored type to the value a manifest may store.
 
-    The menu keeps author-friendly names, but a manifest must carry a value
-    schema.json accepts — `web` is not one, `x-web` is. Resolving rather
-    than renaming the menu keeps `nthlayer init --type web` working.
+    Since opensrm-8qpd the menu and the template registry both supply
+    already-canonical values, so for them this is identity. It stays as the
+    boundary guard for the one input that is not canonical by construction:
+    a `service_type` argument passed straight to _generate_service_yaml_v2,
+    which today means the tests and, if opensrm-noc6 adds it, `--type`.
 
-    Falls back to the raw value when it does not resolve, so menu entries
-    that are already invalid (`ml`) keep failing loudly at validation
-    instead of being silently mapped to something plausible — opensrm-8qpd.
+    Resolving once here is hard rule 1 — the alternative is every consumer
+    below _generate_service_yaml_v2 learning both spellings, which is the
+    regression opensrm-z3ab's correctness pass found when only the `type:`
+    interpolation was resolved and the latency-SLO branch was not.
+
+    Falls back to the raw value when it does not resolve, so an
+    unresolvable type fails loudly at validation rather than being silently
+    mapped to something plausible.
     """
     return resolve_service_type(service_type) or service_type
 
@@ -441,7 +451,7 @@ service:
   name: {service_name}
   team: {team}
   tier: {template.tier}     # critical | standard | low
-  type: {template.type}     # api | background-job | pipeline | web | database
+  type: {template.type}     # api | worker | stream | batch | database | ai-gate | x-web
   template: {template.name}
 
 # Template provides:

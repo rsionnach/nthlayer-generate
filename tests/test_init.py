@@ -2,7 +2,10 @@
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from nthlayer_generate.cli.init import (
+    SERVICE_TYPES,
     _build_resources_yaml,
     _format_template_resources,
     _generate_config_yaml,
@@ -305,6 +308,55 @@ class TestInitCommandInteractive:
         assert result == 0
         content = (tmp_path / "my-api.yaml").read_text()
         assert "type: worker" in content
+
+    @patch("nthlayer_generate.cli.init.text_input")
+    @patch("nthlayer_generate.cli.init.select")
+    @patch("nthlayer_generate.cli.init.multi_select")
+    @pytest.mark.parametrize("menu_type", ["stream", "database", "ai-gate", "x-web"])
+    def test_selecting_a_type_with_no_template_offers_none(
+        self,
+        mock_multi_select,
+        mock_select,
+        mock_text_input,
+        tmp_path,
+        monkeypatch,
+        menu_type,
+    ):
+        """The template filter must not offer a template of a different type.
+
+        Before opensrm-8qpd the filter translated through
+        SERVICE_TYPE_TO_TEMPLATE_TYPE, which mapped the menu's `stream` to
+        the `pipeline` template — whose type resolves to `batch`. So
+        choosing a stream processor offered you a batch template, and
+        accepting it would have typed the manifest `batch`.
+
+        No built-in template declares any of these four types, so the
+        correct behaviour is to offer none and never reach a third
+        `select`. All four are the same branch, parametrised because the
+        empty-filter path is only interesting when it is actually empty —
+        api, worker and batch do match templates, and
+        test_interactive_service_type_selection covers that side.
+
+        A third CALL is the regression. It surfaces as an exhausted
+        `side_effect` — StopIteration — rather than as the assertion below,
+        which cannot run once select has raised. The assertion is kept as a
+        belt-and-braces check on the count, not as the mechanism.
+        """
+        monkeypatch.chdir(tmp_path)
+        mock_text_input.return_value = "my-team"
+        mock_select.side_effect = [
+            "standard - Standard tier",
+            f"{menu_type} - {SERVICE_TYPES[menu_type]}",
+        ]
+        mock_multi_select.return_value = []
+
+        result = init_command(service_name="my-svc", team=None, interactive=True)
+
+        assert result == 0
+        assert mock_select.call_count == 2, (
+            f"init prompted for a template when none matches {menu_type!r}"
+        )
+        assert f"type: {menu_type}" in (tmp_path / "my-svc.yaml").read_text()
 
     @patch("nthlayer_generate.cli.init.text_input")
     @patch("nthlayer_generate.cli.init.select")

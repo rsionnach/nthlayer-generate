@@ -150,3 +150,6 @@ UAT.md
 
 # Local backups created by the auto-memory retirement plan (2026-06-04)
 *.bak
+
+# R5 supervisor run state (local supervisor artifact, not repo content)
+.claude/r5-state.json

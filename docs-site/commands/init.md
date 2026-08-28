@@ -1,6 +1,6 @@
 # nthlayer init
 
-Interactively create a new service specification file.
+Create a new service specification file, interactively or from flags.
 
 ## Synopsis
 
@@ -10,7 +10,7 @@ nthlayer init [SERVICE_NAME] [options]
 
 ## Description
 
-The `init` command guides you through creating a service YAML file with interactive prompts. It auto-generates appropriate resources based on your selections.
+The `init` command guides you through creating a service YAML file with interactive prompts, auto-generating resources from your selections. For CI and scripts, [`--no-interactive`](#non-interactive-mode) skips the prompts entirely.
 
 The file is written to `<service-name>.yaml` in the current directory, alongside a `.nthlayer/config.yaml`. There is no output-path option; `cd` to where you want the file. `init` never overwrites an existing manifest — it errors instead.
 
@@ -19,9 +19,9 @@ The file is written to `<service-name>.yaml` in the current directory, alongside
 | Option | Description |
 |--------|-------------|
 | `SERVICE_NAME` | Positional. Service name, lowercase-with-hyphens. Prompted for if omitted. |
-| `--team NAME` | Team name. Prompted for if omitted. |
-| `--template NAME` | Use a pre-built template (see [Templates](#templates)) |
-| `--no-interactive` | Skip every prompt and take the defaults |
+| `--team TEAM` | Team name. Prompted for if omitted. |
+| `--template TEMPLATE` | Use a pre-built template (see [Templates](#templates)) |
+| `--no-interactive` | Skip every prompt and take the defaults (tier `standard`, type `api`) |
 
 ## Interactive Mode
 

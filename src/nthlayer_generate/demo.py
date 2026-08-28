@@ -646,7 +646,7 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser.add_argument(
         "--no-interactive",
         action="store_true",
-        help="Skip all prompts; requires service_name and --team (tier defaults to "
+        help="Skip every prompt; requires service_name and --team (tier defaults to "
         "standard, type to api unless --template supplies them)",
     )
 

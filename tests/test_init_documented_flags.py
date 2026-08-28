@@ -25,6 +25,7 @@ from pathlib import Path
 import pytest
 
 from nthlayer_generate.demo import build_parser, main
+from nthlayer_generate.specs.custom_templates import CustomTemplateLoader
 
 DOCS_ROOT = Path(__file__).resolve().parents[1] / "docs-site"
 
@@ -50,14 +51,18 @@ _SHELL_FENCE = re.compile(
 # A flag token: one or two leading dashes then a letter. Deliberately does
 # not match a bare `-`, so the ` - ` separators in the menu transcript and
 # the option tables are not mistaken for flags.
-_FLAG = re.compile(r"^-{1,2}[A-Za-z][A-Za-z0-9-]*$")
+_FLAG = re.compile(r"-{1,2}[A-Za-z][A-Za-z0-9-]*")
 
 # `[options]`, `<path>`, `SERVICE_NAME` — a metavariable, not a real argument.
+# Used with `search`, so the bracket class fires anywhere in a token while
+# the anchored branch only fires on a token that is entirely upper-case.
 _PLACEHOLDER = re.compile(r"[\[\]<>]|^[A-Z][A-Z0-9_]*$")
 
 _HEADING = re.compile(r"^(#+)[ \t]+(.*?)[ \t]*$", re.M)
 
-# Any fenced block, whatever its language.
+# Any fenced block, whatever its language — the masking counterpart of
+# _SHELL_FENCE above. Edit the two together; they differ only in that this
+# one accepts any info string and requires a bare closing line.
 _ANY_FENCE = re.compile(r"^[ \t]*(```|~~~).*?^[ \t]*\1[ \t]*$", re.M | re.S)
 
 # The heading that opens an init section: `# nthlayer init`, `### init`, or
@@ -107,11 +112,12 @@ def _init_section(text: str) -> str:
     Runs from its heading to the next heading of the same or higher level, so
     a per-command reference page contributes only its own `init` section.
     """
-    for heading in _HEADING.finditer(_mask_fences(text)):
+    masked = _mask_fences(text)
+    for heading in _HEADING.finditer(masked):
         level = len(heading.group(1))
         if not _INIT_HEADING.fullmatch(heading.group(2)):
             continue
-        for later in _HEADING.finditer(_mask_fences(text), heading.end()):
+        for later in _HEADING.finditer(masked, heading.end()):
             if len(later.group(1)) <= level:
                 return text[heading.start() : later.start()]
         return text[heading.start() :]
@@ -128,6 +134,11 @@ def _init_docs() -> list[tuple[str, str]]:
 
 def _documented_invocations(text: str) -> list[list[str]]:
     """Every `nthlayer init ...` command line in a shell block, as argv.
+
+    argv is returned in the shape `main()` takes: the leading `nthlayer` is
+    stripped and `init` retained, so a result can be passed straight to
+    `main(argv)` or `build_parser().parse_args(argv)`. `_service_name` reads
+    the positional out of it.
 
     Backslash continuations are joined, `#` comment lines dropped, and a
     `console`-style `$ ` prompt stripped, so a multi-line example comes back
@@ -156,25 +167,37 @@ def _runnable_invocations(text: str) -> list[list[str]]:
     ]
 
 
+def _service_name(argv: list[str]) -> str:
+    """The positional service name out of an argv from _documented_invocations."""
+    return argv[1]
+
+
+def _all_runnable_invocations() -> list[tuple[str, list[str]]]:
+    """(label, argv) for every runnable example across every page."""
+    return [(label, argv) for label, text in _init_docs() for argv in _runnable_invocations(text)]
+
+
 def _documented_flags(text: str) -> set[str]:
     """Flags the docs claim `init` takes: from the examples and the table."""
-    flags = {arg for argv in _documented_invocations(text) for arg in argv if _FLAG.match(arg)}
+    flags = {arg for argv in _documented_invocations(text) for arg in argv if _FLAG.fullmatch(arg)}
 
     # The Options table renders each option in the first cell, e.g.
     # `| `--output, -o PATH` | Output file path |`. Only the first cell is
     # read; a prose description may legitimately name another command's flag.
-    for line in text.splitlines():
+    # Read over the masked text for the same reason _init_section is: a `|`
+    # line inside a fence is table syntax to this loop but output to a reader.
+    for line in _mask_fences(text).splitlines():
         if not line.startswith("|"):
             continue
         first_cell = line.split("|")[1]
         for token in re.split(r"[\s,`]+", first_cell):
-            if _FLAG.match(token):
+            if _FLAG.fullmatch(token):
                 flags.add(token)
 
     return flags
 
 
-class TestExtractionItself:
+class TestMarkdownExtraction:
     """Positive controls for the helpers above.
 
     Every other test in this file is only as good as this extraction. A regex
@@ -226,7 +249,9 @@ nthlayer init wrong-section --team platform
 """
 
     def test_every_fence_form_is_seen(self):
-        names = [argv[1] for argv in _documented_invocations(_init_section(self.MARKDOWN))]
+        names = [
+            _service_name(argv) for argv in _documented_invocations(_init_section(self.MARKDOWN))
+        ]
         assert names == [
             "plain-service",
             "indented-service",
@@ -240,7 +265,7 @@ nthlayer init wrong-section --team platform
         continued = next(
             argv
             for argv in _documented_invocations(_init_section(self.MARKDOWN))
-            if argv[1] == "continued-service"
+            if _service_name(argv) == "continued-service"
         )
         assert continued == [
             "init",
@@ -266,7 +291,7 @@ nthlayer init wrong-section --team platform
             "## Commands\n\n### init\n\n```bash\nnthlayer init mine --team platform\n```\n\n"
             "## Environment Variables\n\n```bash\nnthlayer init leaked --team platform\n```\n"
         )
-        names = [argv[1] for argv in _documented_invocations(_init_section(markdown))]
+        names = [_service_name(argv) for argv in _documented_invocations(_init_section(markdown))]
         assert names == ["mine"]
 
     def test_placeholders_are_not_runnable(self):
@@ -295,17 +320,19 @@ class TestDocumentedFlagsExist:
 
     def test_documented_invocations_parse(self, label, text):
         # Not asserted non-empty per page: `reference/cli.md` is a synopsis
-        # index and carries no runnable example, by that page's own house
-        # style. Non-vacuity is covered by test_the_page_documents_some_flags
-        # above, by TestExtractionItself, and by the two tests below that
-        # require at least one runnable example across all pages.
+        # index with no runnable example, by that page's house style.
+        # Non-vacuity is covered by the other tests here and below.
         parser = build_parser()
         for argv in _runnable_invocations(text):
             parser.parse_args(argv)
 
 
 class TestNonInteractiveFlag:
-    """`--no-interactive` reaches `init_command(interactive=False)`."""
+    """`--no-interactive` reaches `init_command(interactive=False)`.
+
+    The last test here is docs-driven rather than unit-ish; it lives in this
+    class because it needs the `no_prompting` fixture.
+    """
 
     @pytest.fixture
     def no_prompting(self, monkeypatch):
@@ -351,8 +378,7 @@ class TestNonInteractiveFlag:
         """Run the docs' own non-interactive examples, verbatim."""
         examples = [
             (label, argv)
-            for label, text in _init_docs()
-            for argv in _runnable_invocations(text)
+            for label, argv in _all_runnable_invocations()
             if "--no-interactive" in argv
         ]
         assert examples, "the init docs no longer show a --no-interactive example"
@@ -374,13 +400,10 @@ class TestDocumentedTemplatesExist:
     """`--template NAME` examples must name templates the registry has."""
 
     def test_documented_template_names_resolve(self):
-        from nthlayer_generate.specs.custom_templates import CustomTemplateLoader
-
         registry = CustomTemplateLoader.load_all_templates()
         documented = {
             argv[argv.index("--template") + 1]
-            for _, text in _init_docs()
-            for argv in _runnable_invocations(text)
+            for _label, argv in _all_runnable_invocations()
             if "--template" in argv and argv.index("--template") + 1 < len(argv)
         }
         assert documented, "the init docs no longer show a --template example"

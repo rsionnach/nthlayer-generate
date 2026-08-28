@@ -48,9 +48,9 @@ Service name: payment-api
 Team: payments
 
 Select service tier:
-    critical  - 99.95% availability, 5min escalation
-  ❯ standard  - 99.9% availability, 15min escalation
-    low       - 99.5% availability, business hours
+    critical - Tier 1 - Critical
+  ❯ standard - Tier 2 - Standard
+    low - Tier 3 - Low Priority
 
 Select service type:
   ❯ api       - REST/GraphQL API service
@@ -63,11 +63,13 @@ Select service type:
 
 Select dependencies (space to toggle):
   ◉ postgresql
+  ○ mysql
   ◉ redis
-  ○ kafka
   ○ mongodb
   ○ elasticsearch
+  ○ kafka
   ○ rabbitmq
+  ○ dynamodb
 
 ✓ Created payment-api.yaml
 ✓ Created .nthlayer/
@@ -138,22 +140,26 @@ service:
   type: worker
 
 resources:
+  # Availability SLO
   - kind: SLO
     name: availability
     spec:
       objective: 99.9
       window: 30d
+      indicator:
+        type: availability
 ```
 
 ## Resource Auto-Generation
 
 | Selection | Generated Resources |
 |-----------|---------------------|
-| Tier: critical | Higher SLO targets |
-| Tier: standard | Standard SLO targets |
-| Tier: low | Lower SLO targets |
-| Type: api, x-web | Latency SLO |
+| Tier: critical | 99.95% availability SLO, plus a PagerDuty resource |
+| Tier: standard, low | 99.9% availability SLO |
+| Type: api, x-web | Latency SLO (p95, 500ms) |
 | Dependencies | Dependencies resource |
+
+Only `critical` currently differs: `standard` and `low` generate the same 99.9% objective.
 
 ## Templates
 

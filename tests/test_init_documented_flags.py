@@ -1,14 +1,20 @@
-"""The init docs page and the init parser must not drift (opensrm-noc6).
+"""The init docs and the init parser must not drift (opensrm-noc6).
 
 `docs-site/commands/init.md` promised `--name`, `--tier`, `--type` and
 `--no-interactive`; the parser had none of them, so the documented
 non-interactive invocation exited 2 on `unrecognized arguments`. Nothing
 caught it because no test read the docs.
 
-These tests take the DOC as the fixture and the PARSER as the thing under
+These tests take the DOCS as the fixture and the PARSER as the thing under
 test, deliberately in that direction. A test that enumerated the parser's
 flags and looked for them in prose would pass against a page documenting
 four flags that do not exist — which is exactly the state this bead found.
+
+Two pages document `init`, and the first version of this file guarded only
+one of them; `docs-site/reference/cli.md` was still promising `--name` after
+`commands/init.md` had been corrected. Every page that documents `init` is
+listed in `DOC_PAGES`, and the same defect on a third page would be caught
+only by adding it here.
 """
 
 import argparse
@@ -20,12 +26,23 @@ import pytest
 
 from nthlayer_generate.demo import build_parser, main
 
-DOC_PATH = Path(__file__).resolve().parents[1] / "docs-site" / "commands" / "init.md"
+DOCS_ROOT = Path(__file__).resolve().parents[1] / "docs-site"
 
-# Fenced blocks whose info string marks them as shell. The page also has
-# unfenced-language blocks (the transcript of an interactive session, the
-# generated YAML) which are output, not invocations.
-_SHELL_FENCE = re.compile(r"^```(?:bash|sh|shell|console)\n(.*?)^```", re.M | re.S)
+# Every page documenting `nthlayer init`. `commands/init.md` is entirely about
+# init; `reference/cli.md` covers every command, so only its `init` section is
+# read — the rest of that page's flags belong to other subparsers.
+DOC_PAGES = (
+    DOCS_ROOT / "commands" / "init.md",
+    DOCS_ROOT / "reference" / "cli.md",
+)
+
+# A fenced shell block. Leading whitespace is allowed because this docs-site
+# nests fences inside numbered lists, and a trailing info string is allowed
+# because it uses attributes like ```bash title="...".
+_SHELL_FENCE = re.compile(
+    r"^[ \t]*```[ \t]*(?:bash|sh|shell|console)\b[^\n]*\n(.*?)^[ \t]*```",
+    re.M | re.S,
+)
 
 # A flag token: one or two leading dashes then a letter. Deliberately does
 # not match a bare `-`, so the ` - ` separators in the menu transcript and
@@ -35,13 +52,22 @@ _FLAG = re.compile(r"^-{1,2}[A-Za-z][A-Za-z0-9-]*$")
 # `[options]`, `<path>`, `SERVICE_NAME` — a metavariable, not a real argument.
 _PLACEHOLDER = re.compile(r"[\[\]<>]|^[A-Z][A-Z0-9_]*$")
 
+_HEADING = re.compile(r"^(#+)[ \t]+(.*?)[ \t]*$", re.M)
+
+# Any fenced block, whatever its language.
+_ANY_FENCE = re.compile(r"^[ \t]*```.*?^[ \t]*```[ \t]*$", re.M | re.S)
+
+# The heading that opens an init section: `# nthlayer init`, `### init`, or
+# either wrapped in backticks.
+_INIT_HEADING = re.compile(r"(?:`?nthlayer[ \t]+)?init`?", re.I)
+
 
 def _init_parser() -> argparse.ArgumentParser:
     """The `init` subparser out of the real top-level parser."""
     parser = build_parser()
     subparsers = next(
         action
-        for action in parser._actions
+        for action in parser._actions  # noqa: SLF001
         if isinstance(action, argparse._SubParsersAction)  # noqa: SLF001
     )
     return subparsers.choices["init"]
@@ -56,20 +82,58 @@ def _parser_flags() -> set[str]:
     }
 
 
-def _doc_text() -> str:
-    return DOC_PATH.read_text()
+def _mask_fences(text: str) -> str:
+    """The same text with fenced-block bodies blanked, offsets preserved.
+
+    Headings have to be found outside code. `commands/init.md` opens shell
+    blocks with `# List available templates` and YAML blocks with
+    `# payment-api Service Definition`; read as headings, the first of them
+    ends the page's only section three paragraphs in.
+    """
+    masked = list(text)
+    for match in _ANY_FENCE.finditer(text):
+        for index in range(match.start(), match.end()):
+            if masked[index] != "\n":
+                masked[index] = " "
+    return "".join(masked)
+
+
+def _init_section(text: str) -> str:
+    """The slice of a page that documents `init`.
+
+    Runs from its heading to the next heading of the same or higher level, so
+    a per-command reference page contributes only its own `init` section.
+    """
+    for heading in _HEADING.finditer(_mask_fences(text)):
+        level = len(heading.group(1))
+        if not _INIT_HEADING.fullmatch(heading.group(2)):
+            continue
+        for later in _HEADING.finditer(_mask_fences(text), heading.end()):
+            if len(later.group(1)) <= level:
+                return text[heading.start() : later.start()]
+        return text[heading.start() :]
+    raise AssertionError("no heading introducing an `init` section")
+
+
+def _init_docs() -> list[tuple[str, str]]:
+    """(label, markdown) for every place documenting `nthlayer init`."""
+    return [
+        (page.relative_to(DOCS_ROOT).as_posix(), _init_section(page.read_text()))
+        for page in DOC_PAGES
+    ]
 
 
 def _documented_invocations(text: str) -> list[list[str]]:
     """Every `nthlayer init ...` command line in a shell block, as argv.
 
-    Backslash continuations are joined and `#` comment lines dropped, so a
-    multi-line example is returned as the single command a user would run.
+    Backslash continuations are joined, `#` comment lines dropped, and a
+    `console`-style `$ ` prompt stripped, so a multi-line example comes back
+    as the single command a reader would run.
     """
     invocations = []
     for block in _SHELL_FENCE.findall(text):
         for line in block.replace("\\\n", " ").splitlines():
-            argv = shlex.split(line, comments=True)
+            argv = shlex.split(line.strip().removeprefix("$ "), comments=True)
             if argv[:2] == ["nthlayer", "init"]:
                 invocations.append(argv[1:])
     return invocations
@@ -90,7 +154,7 @@ def _runnable_invocations(text: str) -> list[list[str]]:
 
 
 def _documented_flags(text: str) -> set[str]:
-    """Flags the page claims `init` takes: from its examples and its table."""
+    """Flags the docs claim `init` takes: from the examples and the table."""
     flags = {arg for argv in _documented_invocations(text) for arg in argv if _FLAG.match(arg)}
 
     # The Options table renders each option in the first cell, e.g.
@@ -107,24 +171,114 @@ def _documented_flags(text: str) -> set[str]:
     return flags
 
 
+class TestExtractionItself:
+    """Positive controls for the helpers above.
+
+    Every other test in this file is only as good as this extraction. A regex
+    that silently matched nothing would leave them green and vacuous, which is
+    the same failure mode as the bug they exist to catch.
+    """
+
+    MARKDOWN = """
+# nthlayer init
+
+```bash
+nthlayer init plain-service --team platform
+```
+
+1. Indented inside a list, as this docs-site already does elsewhere:
+
+   ```bash
+   nthlayer init indented-service --team platform
+   ```
+
+```bash title="attributed fence"
+nthlayer init attributed-service --team platform
+```
+
+```console
+$ nthlayer init prompted-service --team platform
+```
+
+```bash
+# A comment line, and a continuation:
+nthlayer init continued-service \\
+  --team platform \\
+  --no-interactive
+```
+
+```yaml
+nthlayer init not-a-shell-block --team platform
+```
+
+# validate
+
+```bash
+nthlayer init wrong-section --team platform
+```
+"""
+
+    def test_every_fence_form_is_seen(self):
+        names = [argv[1] for argv in _documented_invocations(_init_section(self.MARKDOWN))]
+        assert names == [
+            "plain-service",
+            "indented-service",
+            "attributed-service",
+            "prompted-service",
+            "continued-service",
+        ], "a shell-block form this docs-site uses is being skipped"
+
+    def test_continuations_are_joined(self):
+        continued = next(
+            argv
+            for argv in _documented_invocations(_init_section(self.MARKDOWN))
+            if argv[1] == "continued-service"
+        )
+        assert continued == [
+            "init",
+            "continued-service",
+            "--team",
+            "platform",
+            "--no-interactive",
+        ]
+
+    def test_sections_of_other_commands_are_excluded(self):
+        section = _init_section(self.MARKDOWN)
+        assert "wrong-section" not in section
+        assert "not-a-shell-block" in section  # in range, but not a shell fence
+
+    def test_placeholders_are_not_runnable(self):
+        markdown = "# init\n\n```bash\nnthlayer init [SERVICE_NAME] [options]\n```\n"
+        assert _documented_invocations(markdown)
+        assert not _runnable_invocations(markdown)
+
+
+@pytest.mark.parametrize(
+    "label,text", [pytest.param(label, text, id=label) for label, text in _init_docs()]
+)
 class TestDocumentedFlagsExist:
-    """Every flag the page promises is a flag the parser accepts."""
+    """Every flag the docs promise is a flag the parser accepts."""
 
-    def test_the_page_documents_some_flags(self):
+    def test_the_page_documents_some_flags(self, label, text):
         # Guards the guard: a page that stopped mentioning flags at all, or a
-        # regex that stopped matching, would otherwise make the test below
+        # regex that stopped matching, would otherwise make the tests below
         # vacuously green.
-        assert _documented_flags(_doc_text()), "no flags parsed out of the init docs"
+        assert _documented_flags(text), f"no flags parsed out of {label}"
 
-    def test_every_documented_flag_is_accepted(self):
-        undefined = _documented_flags(_doc_text()) - _parser_flags()
+    def test_every_documented_flag_is_accepted(self, label, text):
+        undefined = _documented_flags(text) - _parser_flags()
         assert not undefined, (
-            f"{DOC_PATH.name} documents flags the init parser does not define: {sorted(undefined)}"
+            f"{label} documents flags the init parser does not define: {sorted(undefined)}"
         )
 
-    def test_documented_invocations_parse(self):
+    def test_documented_invocations_parse(self, label, text):
+        # Not asserted non-empty per page: `reference/cli.md` is a synopsis
+        # index and carries no runnable example, by that page's own house
+        # style. Non-vacuity is covered by test_the_page_documents_some_flags
+        # above, by TestExtractionItself, and by the two tests below that
+        # require at least one runnable example across all pages.
         parser = build_parser()
-        for argv in _runnable_invocations(_doc_text()):
+        for argv in _runnable_invocations(text):
             parser.parse_args(argv)
 
 
@@ -171,18 +325,17 @@ class TestNonInteractiveFlag:
         with pytest.raises(AssertionError, match="prompted in non-interactive mode"):
             main(["init", "--team", "platform"])
 
-    def test_the_documented_non_interactive_command_succeeds(
-        self, tmp_path, monkeypatch, no_prompting
-    ):
-        """Run the page's own non-interactive example, verbatim."""
-        monkeypatch.chdir(tmp_path)
-
+    def test_documented_non_interactive_commands_succeed(self, tmp_path, monkeypatch, no_prompting):
+        """Run the docs' own non-interactive examples, verbatim."""
         examples = [
-            argv for argv in _runnable_invocations(_doc_text()) if "--no-interactive" in argv
+            (label, argv)
+            for label, text in _init_docs()
+            for argv in _runnable_invocations(text)
+            if "--no-interactive" in argv
         ]
         assert examples, "the init docs no longer show a --no-interactive example"
 
-        for index, argv in enumerate(examples):
+        for index, (label, argv) in enumerate(examples):
             # A fresh directory per example: init refuses to overwrite, so two
             # examples naming the same service would fail on the second.
             workdir = tmp_path / f"example-{index}"
@@ -191,8 +344,8 @@ class TestNonInteractiveFlag:
 
             with pytest.raises(SystemExit) as exit_info:
                 main(argv)
-            assert exit_info.value.code == 0, f"documented command failed: nthlayer init {argv}"
-            assert list(workdir.glob("*.yaml")), f"wrote no manifest: nthlayer init {argv}"
+            assert exit_info.value.code == 0, f"{label}: `nthlayer init {argv}` failed"
+            assert list(workdir.glob("*.yaml")), f"{label}: wrote no manifest"
 
 
 class TestDocumentedTemplatesExist:
@@ -204,11 +357,14 @@ class TestDocumentedTemplatesExist:
         registry = CustomTemplateLoader.load_all_templates()
         documented = {
             argv[argv.index("--template") + 1]
-            for argv in _runnable_invocations(_doc_text())
+            for _, text in _init_docs()
+            for argv in _runnable_invocations(text)
             if "--template" in argv and argv.index("--template") + 1 < len(argv)
         }
+        assert documented, "the init docs no longer show a --template example"
+
         unknown = {name for name in documented if not registry.exists(name)}
         assert not unknown, (
-            f"{DOC_PATH.name} shows templates that do not exist: {sorted(unknown)}; "
+            f"the init docs show templates that do not exist: {sorted(unknown)}; "
             f"available: {sorted(registry.templates)}"
         )

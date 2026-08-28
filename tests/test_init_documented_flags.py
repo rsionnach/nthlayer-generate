@@ -61,8 +61,8 @@ _PLACEHOLDER = re.compile(r"[\[\]<>]|^[A-Z][A-Z0-9_]*$")
 _HEADING = re.compile(r"^(#+)[ \t]+(.*?)[ \t]*$", re.M)
 
 # Any fenced block, whatever its language — the masking counterpart of
-# _SHELL_FENCE above. Edit the two together; they differ only in that this
-# one accepts any info string and requires a bare closing line.
+# _SHELL_FENCE above. Edit the two together; this one accepts any info
+# string, requires a bare closing line, and captures no body.
 _ANY_FENCE = re.compile(r"^[ \t]*(```|~~~).*?^[ \t]*\1[ \t]*$", re.M | re.S)
 
 # The heading that opens an init section: `# nthlayer init`, `### init`, or
@@ -172,9 +172,12 @@ def _service_name(argv: list[str]) -> str:
     return argv[1]
 
 
-def _all_runnable_invocations() -> list[tuple[str, list[str]]]:
-    """(label, argv) for every runnable example across every page."""
-    return [(label, argv) for label, text in _init_docs() for argv in _runnable_invocations(text)]
+def _flag_value(argv: list[str], flag: str) -> str | None:
+    """The value following `flag` in argv, or None if absent or trailing."""
+    if flag not in argv:
+        return None
+    value_at = argv.index(flag) + 1
+    return argv[value_at] if value_at < len(argv) else None
 
 
 def _documented_flags(text: str) -> set[str]:
@@ -195,6 +198,11 @@ def _documented_flags(text: str) -> set[str]:
                 flags.add(token)
 
     return flags
+
+
+def _all_runnable_invocations() -> list[tuple[str, list[str]]]:
+    """(label, argv) for every runnable example across every page."""
+    return [(label, argv) for label, text in _init_docs() for argv in _runnable_invocations(text)]
 
 
 class TestMarkdownExtraction:
@@ -397,14 +405,14 @@ class TestNonInteractiveFlag:
 
 
 class TestDocumentedTemplatesExist:
-    """`--template NAME` examples must name templates the registry has."""
+    """`--template TEMPLATE` examples must name templates the registry has."""
 
     def test_documented_template_names_resolve(self):
         registry = CustomTemplateLoader.load_all_templates()
         documented = {
-            argv[argv.index("--template") + 1]
+            name
             for _label, argv in _all_runnable_invocations()
-            if "--template" in argv and argv.index("--template") + 1 < len(argv)
+            if (name := _flag_value(argv, "--template")) is not None
         }
         assert documented, "the init docs no longer show a --template example"
 

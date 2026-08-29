@@ -23,20 +23,37 @@ import shlex
 from pathlib import Path
 
 import pytest
+import yaml
 
 from nthlayer_generate.demo import build_parser, main
 from nthlayer_generate.specs.custom_templates import CustomTemplateLoader
 
 DOCS_ROOT = Path(__file__).resolve().parents[1] / "docs-site"
 
-# Every page documenting `nthlayer init`. `commands/init.md` is entirely about
-# init; `reference/cli.md` covers every command, so only its `init` section is
-# read — the rest of that page's flags belong to other subparsers.
+# Pages that document init with an `init` heading of their own: `commands/init.md`
+# is entirely about init, `reference/cli.md` covers every command so only its
+# `### init` section is read. Listed rather than discovered because each needs a
+# heading to slice on — but see _pages_mentioning_init, which fails if a page
+# grows init FLAGS without being added here. A hand-maintained list guarding a
+# coverage gap is how reference/cli.md was missed the first time.
 DOC_PAGES = (
     DOCS_ROOT / "commands" / "init.md",
     DOCS_ROOT / "reference" / "cli.md",
 )
 
+# Pages that mention init in passing — a bare `nthlayer init` with no flags and
+# no section of its own. They carry no flag claims to check, so they are not in
+# DOC_PAGES; test_every_page_mentioning_init_is_accounted_for fails if that
+# stops being true, which is the guard DOC_PAGES itself lacks.
+MENTION_ONLY_PAGES = (
+    DOCS_ROOT / "architecture.md",
+    DOCS_ROOT / "commands" / "index.md",
+    DOCS_ROOT / "getting-started" / "adoption-path.md",
+)
+
+# `$ ` prompts appear in ```bash fences on this site (concepts/shift-left.md),
+# not in ```console ones; `console` is accepted anyway, but the fixture below
+# uses the observed shape rather than the one invented to match this regex.
 # A fenced shell block. Leading whitespace is allowed because this docs-site
 # nests fences inside numbered lists, and a trailing info string is allowed
 # because it uses attributes like ```bash title="...".
@@ -131,7 +148,13 @@ def _init_section(text: str) -> str:
 
     Runs from its heading to the next heading of the same or higher level, so
     a per-command reference page contributes only its own `init` section.
+
+    CRLF is normalised first: a trailing `\r` defeats every `[ \t]*$` anchor
+    below, so fences stop closing and headings stop matching. Pages read via
+    `Path.read_text` arrive already translated — this guard is for the callers
+    that pass a string directly, which is every synthetic fixture here.
     """
+    text = text.replace("\r\n", "\n")
     masked = _mask_fences(text)
     for heading in _HEADING.finditer(masked):
         level = len(heading.group(1))
@@ -150,11 +173,8 @@ def _init_docs() -> list[tuple[str, str]]:
     for page in DOC_PAGES:
         label = page.relative_to(DOCS_ROOT).as_posix()
         assert page.is_file(), f"{label} is listed in DOC_PAGES but does not exist"
-        # CRLF would defeat every `[ \t]*$` anchor below — fences would stop
-        # masking and headings would stop matching — so normalise once here.
-        text = page.read_text().replace("\r\n", "\n")
         try:
-            docs.append((label, _init_section(text)))
+            docs.append((label, _init_section(page.read_text())))
         except AssertionError as exc:
             raise AssertionError(f"{label}: {exc}") from exc
     return docs
@@ -267,11 +287,19 @@ def _service_name(argv: list[str]) -> str | None:
 
 
 def _flag_value(argv: list[str], flag: str) -> str | None:
-    """The value following `flag` in argv, or None if absent or trailing."""
-    if flag not in argv:
-        return None
-    value_at = argv.index(flag) + 1
-    return argv[value_at] if value_at < len(argv) else None
+    """The value `flag` carries in argv, or None if absent or trailing.
+
+    Handles both `--flag value` and `--flag=value`. _service_name already
+    tolerated the equals form, so a reader assumes this does too — before it
+    did, a docs example naming a deleted template as `--template=gone` was
+    certified correct by the registry check.
+    """
+    for index, arg in enumerate(argv):
+        if arg == flag:
+            return argv[index + 1] if index + 1 < len(argv) else None
+        if arg.startswith(f"{flag}="):
+            return arg.split("=", 1)[1]
+    return None
 
 
 def _documented_flags(text: str) -> set[str]:
@@ -281,8 +309,9 @@ def _documented_flags(text: str) -> set[str]:
     # The Options table renders each option in the first cell, e.g.
     # `| `--output, -o PATH` | Output file path |`. Only the first cell is
     # read; a prose description may legitimately name another command's flag.
-    # `lstrip` because this docs-site indents tables under list items, the same
-    # reason the fence regex allows a leading indent. Read over the masked text
+    # `lstrip` is defensive, not observed: no docs-site page indents a table
+    # today. It costs nothing and mirrors the fence regex, which DOES need the
+    # indent (getting-started/adoption-path.md:24). Read over the masked text
     # for the same reason _init_section is: a `|` line inside a fence is table
     # syntax to this loop but output to a reader.
     for line in _mask_fences(text).splitlines():
@@ -295,6 +324,11 @@ def _documented_flags(text: str) -> set[str]:
                 flags.add(token)
 
     return flags
+
+
+def _pages_mentioning_init() -> list[Path]:
+    """Every docs page that mentions `nthlayer init` at all."""
+    return sorted(page for page in DOCS_ROOT.rglob("*.md") if "nthlayer init" in page.read_text())
 
 
 def _all_runnable_invocations() -> list[tuple[str, list[str]]]:
@@ -327,7 +361,7 @@ nthlayer init plain-service --team platform
 nthlayer init attributed-service --team platform
 ```
 
-```console
+```bash
 $ nthlayer init prompted-service --team platform
 ```
 
@@ -427,19 +461,20 @@ nthlayer init wrong-section --team platform
         with pytest.raises(AssertionError, match="unparseable shell line"):
             _documented_invocations(markdown)
 
-    def test_crlf_pages_are_normalised(self, tmp_path, monkeypatch):
-        """CRLF defeats every `[ \\t]*$` anchor: fences stop masking, headings
-        stop matching. _init_docs normalises at read; without it this raises.
-        """
-        page = tmp_path / "commands" / "init.md"
-        page.parent.mkdir(parents=True)
-        page.write_text(self.MARKDOWN.replace("\n", "\r\n"))
-        monkeypatch.setattr("test_init_documented_flags.DOCS_ROOT", tmp_path)
-        monkeypatch.setattr("test_init_documented_flags.DOC_PAGES", (page,))
+    def test_crlf_text_is_normalised(self):
+        """A trailing `\\r` defeats every `[ \\t]*$` anchor.
 
-        ((label, text),) = _init_docs()
-        assert label == "commands/init.md"
-        assert "plain-service" in text
+        Fences stop closing and headings stop matching, so the section raises
+        or silently truncates. Asserted against _init_section with a STRING,
+        not against a file: Path.read_text translates CRLF itself, so a
+        file-based fixture passes with the normalisation deleted — which is
+        what the previous version of this test did.
+        """
+        crlf = self.MARKDOWN.replace("\n", "\r\n")
+        assert "\r" in crlf
+        assert [_service_name(argv) for argv in _documented_invocations(_init_section(crlf))] == [
+            _service_name(argv) for argv in _documented_invocations(_init_section(self.MARKDOWN))
+        ]
 
     def test_a_missing_page_names_itself(self, tmp_path, monkeypatch):
         missing = tmp_path / "commands" / "gone.md"
@@ -481,6 +516,12 @@ nthlayer init wrong-section --team platform
         # The `&&` tail must not survive into argv, where argparse would report
         # `unrecognized arguments` on a line that is valid shell.
         build_parser().parse_args(invocations[0])
+
+    def test_flag_value_reads_both_forms(self):
+        assert _flag_value(["init", "--template", "critical-api"], "--template") == "critical-api"
+        assert _flag_value(["init", "--template=critical-api"], "--template") == "critical-api"
+        assert _flag_value(["init", "--team", "t"], "--template") is None
+        assert _flag_value(["init", "--template"], "--template") is None
 
     def test_service_name_ignores_flag_values(self):
         assert _service_name(["init", "--team", "platform"]) is None
@@ -547,6 +588,50 @@ class TestDocumentedFlagsExist:
             parser.parse_args(argv)
 
 
+class TestGuardCoverage:
+    """DOC_PAGES is hand-maintained; this is what checks it stays complete."""
+
+    def test_doc_pages_is_not_empty(self):
+        # An empty DOC_PAGES makes the parametrised class SKIP — "got empty
+        # parameter set" — rather than fail. Asserted at module scope instead.
+        assert len(DOC_PAGES) >= 2
+        assert len(_init_docs()) == len(DOC_PAGES)
+
+    def test_every_page_mentioning_init_is_accounted_for(self):
+        """A new page mentioning init must be classified, not ignored.
+
+        Reducing DOC_PAGES to just commands/init.md left the suite green —
+        exactly the defect this module was written for, one level up.
+        """
+        classified = set(DOC_PAGES) | set(MENTION_ONLY_PAGES)
+        unclassified = set(_pages_mentioning_init()) - classified
+        assert not unclassified, (
+            "these pages mention `nthlayer init` but are in neither DOC_PAGES "
+            f"nor MENTION_ONLY_PAGES: {sorted(p.name for p in unclassified)}"
+        )
+
+    def test_mention_only_pages_invoke_init_bare(self):
+        """The claim that earns those pages their exemption.
+
+        Scoped to their init INVOCATIONS, not the whole page: these pages
+        tabulate other commands too, and architecture.md's `--lint` row belongs
+        to `nthlayer lint`, not to init. If an init example there grows a flag
+        it needs the full guard, so it must move into DOC_PAGES.
+        """
+        for page in MENTION_ONLY_PAGES:
+            assert page.is_file(), f"{page.name} is listed but does not exist"
+            flags = {
+                arg
+                for argv in _documented_invocations(page.read_text())
+                for arg in argv
+                if _FLAG.fullmatch(arg)
+            }
+            assert not flags, (
+                f"{page.name} is exempt as mention-only but its init examples "
+                f"pass {sorted(flags)} — move it into DOC_PAGES"
+            )
+
+
 class TestNonInteractiveFlag:
     """`--no-interactive` reaches `init_command(interactive=False)`.
 
@@ -576,12 +661,81 @@ class TestNonInteractiveFlag:
         # wrote nothing would satisfy "did not hang" and still be broken.
         manifest = tmp_path / "my-service.yaml"
         assert manifest.exists()
-        content = manifest.read_text()
-        assert "name: my-service" in content
-        assert "team: platform" in content
+        service = yaml.safe_load(manifest.read_text())["service"]
+        assert service["name"] == "my-service"
+        assert service["team"] == "platform"
         # The defaults init falls back to when no menu ran (cli/init.py).
-        assert "tier: standard" in content
-        assert "type: api" in content
+        assert service["tier"] == "standard"
+        assert service["type"] == "api"
+
+    def test_the_banner_describes_the_mode_it_is_in(self, tmp_path, monkeypatch, capsys):
+        """The banner is the only thing distinguishing what the two modes say.
+
+        Un-gated it tells a CI run it will prompt; inverted, it tells an
+        interactive user the opposite. Both are invisible without this.
+        """
+        monkeypatch.chdir(tmp_path)
+        with pytest.raises(SystemExit):
+            main(["init", "my-service", "--team", "platform", "--no-interactive"])
+        non_interactive = capsys.readouterr().out
+        assert "from the given flags" in non_interactive
+        assert "interactive prompts" not in non_interactive
+
+        # The interactive half, pinning the gate's direction: without it, a
+        # banner that ignored `interactive` entirely would still pass above.
+        monkeypatch.setattr(
+            "nthlayer_generate.cli.init.text_input", lambda *a, **k: "other-service"
+        )
+        monkeypatch.setattr("nthlayer_generate.cli.init.select", lambda *a, **k: "api - x")
+        monkeypatch.setattr("nthlayer_generate.cli.init.multi_select", lambda *a, **k: [])
+        with pytest.raises(SystemExit):
+            main(["init", "other-service", "--team", "platform"])
+        assert "interactive prompts" in capsys.readouterr().out
+
+    @pytest.mark.parametrize(
+        "argv,expected_hint",
+        [
+            (["init", "--team", "platform", "--no-interactive"], "first argument"),
+            (["init", "my-service", "--no-interactive"], "--team"),
+        ],
+        ids=["missing-service-name", "missing-team"],
+    )
+    def test_missing_required_values_say_how_to_supply_them(
+        self, tmp_path, monkeypatch, capsys, argv, expected_hint
+    ):
+        """Under --no-interactive these are how a CI misinvocation surfaces.
+
+        Interactively they fire only on Ctrl-D, so before this flag existed the
+        bare 'X is required' was enough. It is not now.
+        """
+        monkeypatch.chdir(tmp_path)
+        with pytest.raises(SystemExit) as exit_info:
+            main(argv)
+        assert exit_info.value.code == 1
+        assert expected_hint in capsys.readouterr().out
+
+    @pytest.mark.parametrize(
+        "argv,forbidden_hint",
+        [
+            # Both must reach their OWN check: with no service name the run
+            # errors out before the team branch, so a single case would leave
+            # the team hint's gate untested — as it did.
+            (["init", "--team", "platform"], "first argument"),
+            (["init", "my-service"], "Pass it with"),
+        ],
+        ids=["service-name-prompted", "team-prompted"],
+    )
+    def test_hints_are_silent_in_interactive_mode(
+        self, tmp_path, monkeypatch, capsys, argv, forbidden_hint
+    ):
+        """Telling someone to pass --team as they are about to be prompted for
+        it is advice contradicting the mode they are in."""
+        monkeypatch.chdir(tmp_path)
+        # An empty answer at the prompt, so each branch reaches its error.
+        monkeypatch.setattr("nthlayer_generate.cli.init.text_input", lambda *a, **k: "")
+        with pytest.raises(SystemExit):
+            main(argv)
+        assert forbidden_hint not in capsys.readouterr().out
 
     def test_omitting_the_flag_still_prompts(self, tmp_path, monkeypatch, no_prompting):
         """The flag's absence must not silently mean non-interactive.
@@ -613,7 +767,60 @@ class TestNonInteractiveFlag:
             with pytest.raises(SystemExit) as exit_info:
                 main(argv)
             assert exit_info.value.code == 0, f"{label}: `nthlayer init {argv}` failed"
-            assert list(workdir.glob("*.yaml")), f"{label}: wrote no manifest"
+            written = list(workdir.glob("*.yaml"))
+            assert written, f"{label}: wrote no manifest"
+            # The file is named after the positional, and parses.
+            assert written[0].stem == _service_name(argv)
+            assert yaml.safe_load(written[0].read_text())["service"]["name"] == _service_name(argv)
+
+
+class TestGeneratedOutputExamples:
+    """`commands/init.md` claims its YAML blocks are verbatim output.
+
+    That claim became precise in this change — the blocks were annotated
+    approximations before — so it is now falsifiable by any edit to the
+    emitter, and was checked by nothing.
+    """
+
+    PAGE = DOCS_ROOT / "commands" / "init.md"
+
+    # (heading, args to _generate_service_yaml_v2) — the selections the page
+    # says each block came from.
+    BLOCKS = (
+        (
+            "Critical Tier API",
+            ("payment-api", "payments", "critical", "api", ["postgresql", "redis"]),
+        ),
+        ("Standard Tier Worker", ("email-worker", "notifications", "standard", "worker", [])),
+    )
+
+    def _block(self, heading: str) -> str:
+        match = re.search(
+            rf"### {re.escape(heading)}\n\n```yaml\n(.*?)^```", self.PAGE.read_text(), re.M | re.S
+        )
+        assert match, f"no ```yaml block under '### {heading}'"
+        return match.group(1)
+
+    @pytest.mark.parametrize("heading,args", BLOCKS, ids=[b[0] for b in BLOCKS])
+    def test_block_is_byte_identical_to_real_output(self, heading, args):
+        from nthlayer_generate.cli.init import _generate_service_yaml_v2
+
+        assert self._block(heading) == _generate_service_yaml_v2(*args)
+
+    def test_built_in_template_table_matches_the_registry(self):
+        """The table's tier and type columns are what --template actually sets."""
+        registry = CustomTemplateLoader.load_all_templates()
+        rows = re.findall(
+            r"^\| `([a-z-]+)` \| ([a-z]+) \| ([a-z-]+) \|", self.PAGE.read_text(), re.M
+        )
+        assert len(rows) >= 5, "the Built-in Templates table stopped parsing"
+        for name, tier, service_type in rows:
+            assert registry.exists(name), f"table lists unknown template {name}"
+            template = registry.get(name)
+            assert (template.tier, template.type) == (tier, service_type), (
+                f"table says {name} is {tier}/{service_type}, "
+                f"registry says {template.tier}/{template.type}"
+            )
 
 
 class TestDocumentedTemplatesExist:

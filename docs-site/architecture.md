@@ -104,7 +104,7 @@ NthLayer is organized into these modules:
 |---------|---------|------------|
 | `nthlayer apply <service.yaml>` | Generate all resources (dashboards, alerts, SLOs, etc.) | 0=success, 1=error |
 | `nthlayer plan <service.yaml>` | Preview what would be generated (dry-run) | 0=success |
-| `nthlayer init` | Create a new service.yaml interactively | 0=success |
+| `nthlayer init` | Create a new <service-name>.yaml, interactively or from flags | 0=success |
 
 ### Validation Commands
 

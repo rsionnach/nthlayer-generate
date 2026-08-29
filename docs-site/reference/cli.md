@@ -307,14 +307,17 @@ Uses [pint](https://cloudflare.github.io/pint/) for validation.
 Create new service spec from template.
 
 ```bash
-nthlayer init [options]
+nthlayer init [SERVICE_NAME] [options]
 ```
 
 | Option | Description |
 |--------|-------------|
-| `--name NAME` | Service name |
-| `--team TEAM` | Team name |
+| `SERVICE_NAME` | Positional. Service name, lowercase-with-hyphens. Prompted for if omitted. |
+| `--team TEAM` | Team name. Prompted for if omitted. |
 | `--template TEMPLATE` | Template name |
+| `--no-interactive` | Skip every prompt and take the defaults (tier `standard`, type `api`) |
+
+See [nthlayer init](../commands/init.md) for the full page.
 
 ### list-templates
 

@@ -643,6 +643,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     init_parser.add_argument("--team", help="Team name")
     init_parser.add_argument("--template", help="Template name (e.g., critical-api)")
+    init_parser.add_argument(
+        "--no-interactive",
+        action="store_true",
+        help="Skip every prompt; requires service_name and --team (tier defaults to "
+        "standard, type to api unless --template supplies them)",
+    )
 
     subparsers.add_parser("list-templates", help="List available service templates")
 
@@ -1052,7 +1058,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 service_name=args.service_name,
                 team=args.team,
                 template=args.template,
-                interactive=True,
+                interactive=not args.no_interactive,
             )
         )
 

@@ -12,9 +12,10 @@ four flags that do not exist — which is exactly the state this bead found.
 
 Two pages document `init`, and the first version of this file guarded only
 one of them; `docs-site/reference/cli.md` was still promising `--name` after
-`commands/init.md` had been corrected. Every page that documents `init` is
-listed in `DOC_PAGES`, and the same defect on a third page would be caught
-only by adding it here.
+`commands/init.md` had been corrected. `DOC_PAGES` lists the pages with an
+`init` section of their own; `TestGuardCoverage` is what stops that hand-kept
+list going stale, by walking the docs tree and failing on any page that
+mentions init without being classified.
 """
 
 import argparse
@@ -118,6 +119,20 @@ def _init_parser() -> argparse.ArgumentParser:
     return subparsers.choices["init"]
 
 
+def _all_parser_flags() -> set[str]:
+    """Every option string ANY subcommand accepts, plus the top-level ones."""
+    parser = build_parser()
+    subparsers = next(
+        action
+        for action in parser._actions  # noqa: SLF001
+        if isinstance(action, argparse._SubParsersAction)  # noqa: SLF001
+    )
+    flags = {option for action in parser._actions for option in action.option_strings}  # noqa: SLF001
+    for subparser in subparsers.choices.values():
+        flags |= {option for action in subparser._actions for option in action.option_strings}  # noqa: SLF001
+    return flags
+
+
 def _parser_flags() -> set[str]:
     """Every option string `nthlayer init` accepts."""
     return {
@@ -188,15 +203,16 @@ def _documented_invocations(text: str) -> list[list[str]]:
     `main(argv)` or `build_parser().parse_args(argv)`. `_service_name` reads
     the positional out of it.
 
-    Backslash continuations are joined, `#` comment lines dropped, and a
-    `console`-style `$ ` prompt stripped, so a multi-line example comes back
-    as the single command a reader would run.
+    Backslash continuations are joined and `#` comment lines dropped, so a
+    multi-line example comes back as the single command a reader would run. A
+    leading `$ ` prompt needs no special handling: _strip_runner scans for the
+    entry point rather than assuming it leads, so the `$` token is skipped like
+    any other prefix. Pinned by test_runner_prefixes_and_entry_points.
     """
     invocations = []
     for _marker, block in _SHELL_FENCE.findall(text):
         for line in block.replace("\\\n", " ").splitlines():
-            line = line.strip().removeprefix("$ ")
-            for command in _SHELL_OPERATOR.split(line):
+            for command in _SHELL_OPERATOR.split(line.strip()):
                 try:
                     argv = shlex.split(command, comments=True)
                 except ValueError as exc:
@@ -496,6 +512,8 @@ nthlayer init wrong-section --team platform
             "init",
         ]
         assert _strip_runner(["nthlayer-generate", "init"]) == ["nthlayer-generate", "init"]
+        # A `$ ` prompt, which this site writes inside ```bash fences.
+        assert _strip_runner(["$", "nthlayer", "init"]) == ["nthlayer", "init"]
         # `pip install nthlayer` is not an invocation of init.
         assert _strip_runner(["pip", "install", "nthlayer"]) == ["pip", "install", "nthlayer"]
         # No __main__ module exists, so `python -m nthlayer` is not runnable and
@@ -597,6 +615,19 @@ class TestGuardCoverage:
         assert len(DOC_PAGES) >= 2
         assert len(_init_docs()) == len(DOC_PAGES)
 
+    def test_the_discovery_walk_finds_the_pages_we_already_know_about(self):
+        """The floor under _pages_mentioning_init.
+
+        test_every_page_mentioning_init_is_accounted_for asserts a set
+        DIFFERENCE is empty, which an empty walk satisfies trivially — it would
+        report success loudest at the moment it stopped looking. A wrong glob
+        (`*.markdown`), a non-recursive `glob` on a site nested two deep, or a
+        typo'd needle all empty the walk silently.
+
+        Self-maintaining: the floor rises as pages are classified.
+        """
+        assert len(_pages_mentioning_init()) >= len(DOC_PAGES) + len(MENTION_ONLY_PAGES)
+
     def test_every_page_mentioning_init_is_accounted_for(self):
         """A new page mentioning init must be classified, not ignored.
 
@@ -610,25 +641,29 @@ class TestGuardCoverage:
             f"nor MENTION_ONLY_PAGES: {sorted(p.name for p in unclassified)}"
         )
 
-    def test_mention_only_pages_invoke_init_bare(self):
+    def test_mention_only_pages_name_no_invented_flags(self):
         """The claim that earns those pages their exemption.
 
-        Scoped to their init INVOCATIONS, not the whole page: these pages
-        tabulate other commands too, and architecture.md's `--lint` row belongs
-        to `nthlayer lint`, not to init. If an init example there grows a flag
-        it needs the full guard, so it must move into DOC_PAGES.
+        Scans the WHOLE page, tables included: the flags this bead removed
+        (`--name`, `--tier`, `--type`) lived in an options table, not in an
+        invocation, so an invocation-only scan would exempt exactly the surface
+        the original bug used.
+
+        The predicate is "accepted by SOME subparser" rather than by init's,
+        because these pages tabulate other commands — architecture.md's
+        `--lint` is real, it just is not init's. Known gap: `--output`/`-o`
+        were in the original phantom list AND are real flags elsewhere, so they
+        would still pass here. Strictly better than an invocation-only scan,
+        not airtight; a page that grows a real init section belongs in
+        DOC_PAGES, which checks against the init parser specifically.
         """
+        real_flags = _all_parser_flags()
         for page in MENTION_ONLY_PAGES:
             assert page.is_file(), f"{page.name} is listed but does not exist"
-            flags = {
-                arg
-                for argv in _documented_invocations(page.read_text())
-                for arg in argv
-                if _FLAG.fullmatch(arg)
-            }
-            assert not flags, (
-                f"{page.name} is exempt as mention-only but its init examples "
-                f"pass {sorted(flags)} — move it into DOC_PAGES"
+            invented = _documented_flags(page.read_text()) - real_flags
+            assert not invented, (
+                f"{page.name} is exempt as mention-only but names flags no "
+                f"subparser accepts: {sorted(invented)} — move it into DOC_PAGES"
             )
 
 
@@ -800,6 +835,24 @@ class TestGeneratedOutputExamples:
         )
         assert match, f"no ```yaml block under '### {heading}'"
         return match.group(1)
+
+    def test_the_transcript_matches_the_block_it_produced(self):
+        """BLOCKS' arguments come from the Example Session, deliberately.
+
+        That is the right provenance — the page says the block is the output of
+        that session — but nothing tied the two, so editing the transcript's
+        service name or ticked dependencies left a block the page calls
+        verbatim describing a run it did not come from.
+        """
+        page = self.PAGE.read_text()
+        session = re.search(r"### Example Session\n\n```\n(.*?)^```", page, re.M | re.S)
+        assert session, "the Example Session transcript is gone"
+        transcript = session.group(1)
+
+        _name, _team, _tier, _type, dependencies = self.BLOCKS[0][1]
+        assert re.findall(r"^Service name: (\S+)", transcript, re.M) == [_name]
+        assert re.findall(r"^Team: (\S+)", transcript, re.M) == [_team]
+        assert re.findall(r"◉ (\S+)", transcript) == dependencies
 
     @pytest.mark.parametrize("heading,args", BLOCKS, ids=[b[0] for b in BLOCKS])
     def test_block_is_byte_identical_to_real_output(self, heading, args):

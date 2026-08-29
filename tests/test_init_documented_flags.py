@@ -614,6 +614,10 @@ class TestGuardCoverage:
         # parameter set" — rather than fail. Asserted at module scope instead.
         assert len(DOC_PAGES) >= 2
         assert len(_init_docs()) == len(DOC_PAGES)
+        # The floor below derives its strength from both constants: emptying
+        # MENTION_ONLY_PAGES *and* narrowing the walk to DOC_PAGES would make
+        # `2 >= 2 + 0` hold and the classification difference empty.
+        assert len(MENTION_ONLY_PAGES) >= 3
 
     def test_the_discovery_walk_finds_the_pages_we_already_know_about(self):
         """The floor under _pages_mentioning_init.
@@ -627,6 +631,19 @@ class TestGuardCoverage:
         Self-maintaining: the floor rises as pages are classified.
         """
         assert len(_pages_mentioning_init()) >= len(DOC_PAGES) + len(MENTION_ONLY_PAGES)
+
+    def test_all_parser_flags_discriminates(self):
+        """The positive control for the mention-only predicate.
+
+        If _all_parser_flags ever became over-broad, the exemption test would
+        go permanently vacuous with no signal. This pins both directions of the
+        discrimination its docstring claims.
+        """
+        real = _all_parser_flags()
+        assert "--lint" in real, "a real flag of another subcommand must be accepted"
+        assert not {"--name", "--tier", "--type"} & real, (
+            "the flags this bead removed must not be accepted by any subparser"
+        )
 
     def test_every_page_mentioning_init_is_accounted_for(self):
         """A new page mentioning init must be classified, not ignored.

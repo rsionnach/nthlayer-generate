@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.0.1](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.0...v2.0.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* bound the nthlayer-common range to the versions actually tested ([d749cce](https://github.com/rsionnach/nthlayer-generate/commit/d749cce37e0b31e85df18764bc944e91e4a7c164))
+* bound the nthlayer-common range to the versions actually tested (opensrm-z7gn) ([461e887](https://github.com/rsionnach/nthlayer-generate/commit/461e887a2d7c03f229a587c664d72403d6eca175))
+* close R5 correctness minors on the init doc guard (opensrm-noc6) ([c9748b4](https://github.com/rsionnach/nthlayer-generate/commit/c9748b42a37f8552493714ada63f9dfd449f6701))
+* correct init doc drift and non-interactive UX (opensrm-noc6) ([9977697](https://github.com/rsionnach/nthlayer-generate/commit/99776970f25d64f0da4a54d3e0c41ab228e28c90))
+* extend init doc/parser guard to reference/cli.md (opensrm-noc6) ([22f25de](https://github.com/rsionnach/nthlayer-generate/commit/22f25decb594d55b1fa1539f5c325fa30debe8c1))
+* make the init menu the manifest service-type vocabulary (opensrm-8qpd) ([85efd2e](https://github.com/rsionnach/nthlayer-generate/commit/85efd2e39fbff05b2dffd210b37c065c34ca89f6))
+* make the init menu the manifest service-type vocabulary (opensrm-8qpd) ([a8bfafd](https://github.com/rsionnach/nthlayer-generate/commit/a8bfafd92d5f46f3367c583cd2ef716a054917b0))
+* wire --no-interactive on init and correct its docs (opensrm-noc6) ([e442cd8](https://github.com/rsionnach/nthlayer-generate/commit/e442cd8f0c649e424bd35a794da2d4406065ecb5))
+* wire --no-interactive on init and correct its docs page (opensrm-noc6) ([6855d83](https://github.com/rsionnach/nthlayer-generate/commit/6855d83e450e35caae7a23661845cdfc18179c92))
+
+
+### Documentation
+
+* **tests:** state which half of rule 10 the container guard enforces ([4d54f95](https://github.com/rsionnach/nthlayer-generate/commit/4d54f95d77a373e40802fdec95fdb85fff407f8f))
+
 ## [2.0.0](https://github.com/rsionnach/nthlayer-generate/compare/v1.1.1...v2.0.0) (2026-08-27)
 
 

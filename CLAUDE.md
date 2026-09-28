@@ -117,6 +117,28 @@ See `docs/golden-principles.md` for the full list with rationale.
    fixing a GitHub Issue: `fix: <description> (<bead-id>, closes
    #<number>)`.
 
+10. **A declared dependency range must admit exactly the versions tested.**
+    Not the oldest that imports, not a future major. The floor equals the
+    installed sibling and there is always a ceiling. This repo had neither:
+    `nthlayer-common>=2.0.0` published support for 2.0.0/2.1.0/2.1.1, none of
+    which the suite ran against, and no upper bound at all — which made this
+    the ecosystem's last remaining escape hatch, the package a resolver reaches
+    for when it cannot otherwise satisfy a constraint. That is the role
+    nthlayer-core 1.0.0 played in opensrm-p3bm.
+
+    Enforced by two guards reading different things:
+    `tests/test_dependency_declarations.py` reads `pyproject.toml`;
+    `tests/release-smoke/test_resolved_dependencies.py` reads the BUILT
+    artifact's
+    metadata in the release container. Do not derive the expected major from
+    the declared range — that makes the test agree with a wrong range.
+
+    Note this repo resolves differently from its siblings:
+    `.github/workflows/ci.yml` sets `UV_NO_SOURCES: "1"`, so CI takes
+    nthlayer-common from PyPI rather than checking out the sibling. The floor
+    guard therefore reddens on a common RELEASE here, and on a sibling checkout
+    advancing locally [opensrm-z7gn].
+
 ## Beads (quick reference)
 
 ```bash
@@ -152,27 +174,6 @@ standing release PR; merging that PR tags the release and publishes to PyPI
 via `release.yml`. **`CHANGELOG.md` and the version are generated — do not
 hand-edit either.** A `feat!:` or a `BREAKING CHANGE:` footer drives the
 major bump.
-
-10. **A declared dependency range must admit exactly the versions tested.**
-    Not the oldest that imports, not a future major. The floor equals the
-    installed sibling and there is always a ceiling. This repo had neither:
-    `nthlayer-common>=2.0.0` published support for 2.0.0/2.1.0/2.1.1, none of
-    which the suite ran against, and no upper bound at all — which made this
-    the ecosystem's last remaining escape hatch, the package a resolver reaches
-    for when it cannot otherwise satisfy a constraint. That is the role
-    nthlayer-core 1.0.0 played in opensrm-p3bm.
-
-    Enforced by two guards reading different things:
-    `tests/test_dependency_declarations.py` reads `pyproject.toml`;
-    `tests/smoke/test_resolved_dependencies.py` reads the BUILT artifact's
-    metadata in the release container. Do not derive the expected major from
-    the declared range — that makes the test agree with a wrong range.
-
-    Note this repo resolves differently from its siblings:
-    `.github/workflows/ci.yml` sets `UV_NO_SOURCES: "1"`, so CI takes
-    nthlayer-common from PyPI rather than checking out the sibling. The floor
-    guard therefore reddens on a common RELEASE here, and on a sibling checkout
-    advancing locally [opensrm-z7gn].
 
 ## Where to find detail
 

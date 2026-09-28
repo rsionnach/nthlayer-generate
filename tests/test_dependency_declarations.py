@@ -2,11 +2,12 @@
 
 Reads pyproject.toml, the source of truth, and fails locally the moment a
 sibling outgrows the declared range. Its counterpart
-tests/smoke/test_resolved_dependencies.py reads the BUILT artifact's metadata
+tests/release-smoke/test_resolved_dependencies.py reads the BUILT artifact's
+metadata
 instead and is decisive in the release container.
 
 The full account of why both exist is nthlayer-generate CLAUDE.md hard rule 10
-[opensrm-p3bm]. The short version: `tool.uv.sources` points nthlayer-common at
+[opensrm-z7gn]. The short version: `tool.uv.sources` points nthlayer-common at
 the sibling checkout, a path source REPLACES registry resolution rather than
 being filtered by the version specifier, and nothing warned that the declared
 range and the tested version had diverged.

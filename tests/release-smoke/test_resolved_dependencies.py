@@ -82,10 +82,13 @@ SIBLINGS = sorted(_sibling_requirements())
 def test_at_least_one_sibling_was_discovered():
     """Non-vacuity floor. An empty parametrise list is `1 skipped`, exit 0.
 
-    Measured, not assumed. Two bugs elsewhere in this workspace shipped behind
-    a test that passed by never running — nthlayer-common's archetype suite and
-    nthlayer-workers' test_manifest_v2_archetypes.py, neither of them here — so
-    a guard against silent drift must not be able to go silent itself. If this fails, the artifact's metadata lost its sibling
+    Measured, not assumed. Two escapes elsewhere in this workspace shipped
+    behind tests that passed without testing anything:
+    nthlayer-common's test_manifest_v2_archetypes.py skipped its whole module
+    when a relative path lookup missed, and opensrm-oh27's gate predicate read
+    spec.slos as a list — a shape no real manifest has — so it never fired.
+    Neither is in this repo. A guard against silent drift must not be able to
+    go silent itself. If this fails, the artifact's metadata lost its sibling
     requirements — a packaging fault, not a version fault.
     """
     assert SIBLINGS, (
@@ -148,4 +151,34 @@ def test_installed_sibling_is_the_major_this_code_was_written_against(name):
         f"declared range in pyproject.toml admits a major nothing here has run "
         f"— the exact shape of opensrm-p3bm, where <2.0.0 shipped while 2.1.2 "
         f"was under test."
+    )
+
+
+# Operators that bound a range from above, mirroring the local guard's list.
+# "~=" is here on measurement: packaging exposes a compatible-release specifier
+# as the single operator "~=" and never decomposes it into ">=" plus "<".
+BOUNDING_OPERATORS = ("<", "<=", "==", "===", "~=")
+
+
+@pytest.mark.parametrize("name", SIBLINGS)
+def test_artifact_declares_an_upper_bound(name):
+    """The WHEEL's own metadata must carry a ceiling, not just pyproject.toml.
+
+    Added after a kill check showed this file passing against a wheel built
+    with the pre-opensrm-z7gn range. That range — `>=2.0.0`, no ceiling —
+    resolves nthlayer-common 2.0.0, whose MAJOR is still 2, so the major
+    assertion above is blind to it. This repo's defect was intra-major: a floor
+    below the tested version and no upper bound at all. The major check catches
+    the cross-major shape the other members had; this catches ours.
+
+    pyproject.toml is not mounted in the release container, so the local guard
+    cannot speak here. This is the only place the shipped artifact's own
+    declaration is checked against the rule it is supposed to follow.
+    """
+    specifier = _sibling_requirements()[name].specifier
+    assert any(s.operator in BOUNDING_OPERATORS for s in specifier), (
+        f"the built wheel declares '{name}{specifier}' with no upper bound, so "
+        f"every future major of {name} ships as supported without anything "
+        f"testing it — and this package becomes the resolver's escape hatch "
+        f"for constraints it cannot otherwise satisfy"
     )

@@ -1,15 +1,27 @@
 """Smoke test: the version actually installed, against what the artifact asked for.
 
-Runs in the normal suite AND in the release container. It is DECISIVE in the
-container, because that is the only place in this pipeline where the published
-ranges are the ones in force: the wheel is installed with
-`pip install /dist/*.whl` and every dependency comes from PyPI, whereas
-everywhere else `tool.uv.sources` substitutes the sibling checkout.
+Runs in the normal suite AND in the release container, and enforces HALF of
+CLAUDE.md rule 10 — deliberately, so read this before assuming it covers the
+rule.
+
+  ceiling half   enforced here. The wheel's own Requires-Dist must carry an
+                 upper bound, which pyproject.toml cannot be asked about
+                 inside a container where it is not mounted.
+  floor half     NOT enforced here. The container has no notion of "the
+                 version under test": it resolves the newest in range, so
+                 `>=2.0.0,<3.0.0` satisfies every assertion in this file while
+                 publishing support for two minors nobody ran. That half is
+                 tests/test_dependency_declarations.py's, pre-build.
+
+An expected-floor constant here would close the gap and was rejected: it would
+need updating on every nthlayer-common release, going stale between them, to
+cover a case the local guard already catches in CI — where ci.yml sets
+UV_NO_SOURCES, so that guard runs against a registry-resolved install.
 
 Reads installed metadata rather than pyproject.toml because that metadata is
 what consumers actually get — true in both environments. Its sibling
 tests/test_dependency_declarations.py reads the source of truth instead, so the
-two disagree exactly when a build is stale.
+two disagree exactly when a build is stale or hand-patched.
 
 Why this file exists: the container gate already ran and missed opensrm-p3bm.
 Resolving from the registry is not the same as checking WHAT it resolved, and

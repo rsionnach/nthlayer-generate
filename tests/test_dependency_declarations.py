@@ -169,7 +169,7 @@ def test_declared_floor_is_the_version_under_test(name):
 
     so a release, not a commit, is the trigger here. That also means CI already
     exercises the published range, which is why the companion guard in
-    tests/smoke/ matters less in this repo than in the others — it is kept for
+    tests/release-smoke/ matters less in this repo than in the others — it is kept for
     symmetry and because the release container is still the only place the
     BUILT artifact's own metadata is what resolves.
     """

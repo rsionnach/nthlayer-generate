@@ -23,7 +23,7 @@ dependencies = [
     # satisfy. Guarded by tests/test_dependency_declarations.py and
     # tests/release-smoke/test_resolved_dependencies.py; see CLAUDE.md rule 10
     # [opensrm-z7gn].
-    "nthlayer-common>=2.1.2,<3.0.0",
+    "nthlayer-common>=3.0.0,<4.0.0",
     "grafana-foundation-sdk>=0.0.11",
     "pydantic>=2.7.0,<3.0.0",
     "pydantic-settings>=2.2.1,<3.0.0",

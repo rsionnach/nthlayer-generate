@@ -9,28 +9,29 @@ description = "NthLayer - The Missing Layer of Reliability"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    # Floor is 3.0.0 (opensrm-ir5m): nthlayer-common 3.0.0 converts SLO
-    # targets at the INBOUND manifest boundary (opensrm-ocvu), and this
-    # package owns the OUTBOUND half — slos/pipeline.py divides
-    # SLODefinition.target by 100.0 — so a 2.x resolve would double-convert
-    # the v2 path. See nthlayer-common/docs/upgrading-3.0.md.
+    # WHY 3.0.0 (opensrm-ir5m): nthlayer-common 3.0.0 converts SLO targets at
+    # the INBOUND manifest boundary (opensrm-ocvu), and this package owns the
+    # OUTBOUND half — slos/pipeline.py divides SLODefinition.target by 100.0 —
+    # so a 2.x resolve would double-convert the v2 path. See
+    # nthlayer-common/docs/upgrading-3.0.md.
     #
-    # Earlier floors, kept for the record and still satisfied: 2.0.0 was
-    # required because generate imports resolve_service_type /
-    # valid_service_types_phrase / is_valid_service_type from
-    # nthlayer_common.manifest.models, which landed in 2.0.0 (opensrm-ih0v);
-    # the >=0.1.5 floor before it claimed a compatibility that no longer
-    # existed —
-    # CI resolves this from PyPI via `uv sync --no-sources`, so an
-    # unsatisfiable floor fails at resolution with a clear message instead
-    # of at import with a confusing ImportError.
-    # Floor is the version this repo is built and tested against, NOT the
-    # oldest one that happens to import, and the ceiling is mandatory — without
-    # one, every future major is declared compatible untested, and this package
-    # becomes the resolver's escape hatch for constraints it cannot otherwise
-    # satisfy. Guarded by tests/test_dependency_declarations.py and
+    # WHY A FLOOR AND CEILING ARE DECLARED AT ALL — standing policy, applies to
+    # whatever the current bound happens to be. CI resolves this from PyPI via
+    # `uv sync --no-sources`, so an unsatisfiable floor fails at resolution with
+    # a clear message instead of at import with a confusing ImportError. The
+    # floor is the version this repo is built and tested against, NOT the oldest
+    # one that happens to import. The ceiling is mandatory — without one, every
+    # future major is declared compatible untested, and this package becomes the
+    # resolver's escape hatch for constraints it cannot otherwise satisfy.
+    # Guarded by tests/test_dependency_declarations.py and
     # tests/release-smoke/test_resolved_dependencies.py; see CLAUDE.md rule 10
     # [opensrm-z7gn].
+    #
+    # EARLIER FLOORS, inherited and still satisfied. 2.0.0 was required because
+    # generate imports resolve_service_type / valid_service_types_phrase /
+    # is_valid_service_type from nthlayer_common.manifest.models, which landed
+    # in 2.0.0 (opensrm-ih0v). The >=0.1.5 floor before it claimed a
+    # compatibility that no longer existed.
     "nthlayer-common>=3.0.0,<4.0.0",
     "grafana-foundation-sdk>=0.0.11",
     "pydantic>=2.7.0,<3.0.0",

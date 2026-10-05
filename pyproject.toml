@@ -9,10 +9,18 @@ description = "NthLayer - The Missing Layer of Reliability"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    # >=2.0.0: generate imports resolve_service_type /
+    # Floor is 3.0.0 (opensrm-ir5m): nthlayer-common 3.0.0 converts SLO
+    # targets at the INBOUND manifest boundary (opensrm-ocvu), and this
+    # package owns the OUTBOUND half — slos/pipeline.py divides
+    # SLODefinition.target by 100.0 — so a 2.x resolve would double-convert
+    # the v2 path. See nthlayer-common/docs/upgrading-3.0.md.
+    #
+    # Earlier floors, kept for the record and still satisfied: 2.0.0 was
+    # required because generate imports resolve_service_type /
     # valid_service_types_phrase / is_valid_service_type from
-    # nthlayer_common.manifest.models, which land in 2.0.0 (opensrm-ih0v).
-    # The old >=0.1.5 floor claimed a compatibility that no longer exists —
+    # nthlayer_common.manifest.models, which landed in 2.0.0 (opensrm-ih0v);
+    # the >=0.1.5 floor before it claimed a compatibility that no longer
+    # existed —
     # CI resolves this from PyPI via `uv sync --no-sources`, so an
     # unsatisfiable floor fails at resolution with a clear message instead
     # of at import with a confusing ImportError.

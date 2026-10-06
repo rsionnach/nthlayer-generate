@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.2](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.1...v2.0.2) (2026-10-06)
+
+
+### Documentation
+
+* **deps:** section the comment so live policy is not filed as history ([bf3bfa6](https://github.com/rsionnach/nthlayer-generate/commit/bf3bfa680c20475890d5d17f75489356e457c020))
+* **deps:** stop the floor rationale asserting a floor that moved ([1fd53fa](https://github.com/rsionnach/nthlayer-generate/commit/1fd53fae50cb5ff88c3bbfa3fa7971c763908c5a))
+
 ## [2.0.1](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.0...v2.0.1) (2026-09-28)
 
 

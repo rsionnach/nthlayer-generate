@@ -6,7 +6,6 @@ Supports both OpenSRM format (apiVersion: srm/v1) and legacy NthLayer format.
 
 from __future__ import annotations
 
-import re
 import warnings as stdlib_warnings
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -27,7 +26,7 @@ from nthlayer_generate.specs.loader import (
     ManifestLoadError,
     load_manifest,
 )
-from nthlayer_generate.specs.manifest import VALID_TIERS
+from nthlayer_generate.specs.manifest import VALID_TIERS, is_valid_service_name
 from nthlayer_generate.specs.models import VALID_RESOURCE_KINDS
 from nthlayer_generate.specs.parser import ServiceParseError, parse_service_file
 from nthlayer_generate.specs.template import validate_template_variables
@@ -199,11 +198,13 @@ def validate_service_file(
                 )
 
     # Validate service name format
-    if not re.match(r"^[a-z][a-z0-9-]*$", service_context.name):
+    # Shared with cli/init.py's guard via specs/manifest (opensrm-t4rd). Two
+    # copies disagreed, so init exited 0 writing names this rejected.
+    if not is_valid_service_name(service_context.name):
         errors.append(
             f"Invalid service name: '{service_context.name}'. "
-            "Must start with lowercase letter and contain only lowercase letters, "
-            "numbers, and hyphens."
+            "Must start with a lowercase letter, contain only lowercase letters, "
+            "numbers and hyphens, and not end with a hyphen."
         )
 
     # Validate tier

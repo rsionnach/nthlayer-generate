@@ -11,6 +11,7 @@ this unified model, ensuring format-agnostic processing.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any
@@ -44,6 +45,50 @@ VALID_TIERS = {
     "standard",
     "low",
 }
+
+# THE service-name rule, in one place (opensrm-t4rd). Two copies disagreed:
+# cli/init.py's guard looped over `char.islower() or char.isdigit()`, which are
+# UNICODE predicates, and rejected only a leading or trailing hyphen — so
+# `1-svc`, `café` and fullwidth `ａbc` all passed the CLI and were then rejected
+# by specs/validator.py, which applies the pattern below. `nthlayer init` exited
+# 0 having written a manifest its own validator refuses, and an exit code is
+# what a CI gate keys on.
+#
+# Same shape as the service-type divergence recorded below under opensrm-z3ab,
+# which is why the rule lives here with it rather than in either caller.
+#
+# NOTE ON AUTHORITY. This pattern is generate's, not the spec's. opensrm v1
+# schema.json leaves `properties.service.properties.name` UNCONSTRAINED, and its
+# `definitions.Metadata.properties.name` is `^[a-z0-9-]+$`, which is looser —
+# it admits a leading digit and even a leading or trailing hyphen. So this rule
+# is deliberately stricter than the schema for output generate CREATES, and
+# schema-valid documents exist that `init` will refuse to write. Closing that
+# gap is a spec decision, tracked separately.
+# The union of what the two old guards each enforced, which is also opensrm v2's
+# DNS shape with a stricter first character:
+#   - must start with a lowercase letter   (validator.py had this; the CLI did not)
+#   - must not end with a hyphen           (the CLI had this; validator.py did not)
+# Checked first: no leading- or trailing-hyphen service name exists anywhere in
+# generate's tests or examples, nthlayer/demo, or opensrm's spec examples, so
+# tightening validator.py costs nothing that is in use. v2's
+# Metadata.name (`^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`) rejects `svc-` too.
+SERVICE_NAME_PATTERN = r"[a-z]([a-z0-9-]*[a-z0-9])?"
+_SERVICE_NAME_RE = re.compile(SERVICE_NAME_PATTERN)
+
+
+def is_valid_service_name(name: str) -> bool:
+    """True if *name* is a legal service name for generated manifests.
+
+    Uses ``fullmatch``, not ``match`` with a trailing ``$``. In Python ``$``
+    also matches just before a final newline, so ``re.match(r"...$", "svc\n")``
+    SUCCEEDS — and a trailing newline is an ordinary authoring accident from a
+    YAML block scalar. opensrm v2's schema documents a deliberate
+    ``not: {pattern: "\\n"}`` guard against exactly this for ServiceType,
+    noting that regex engines disagree about it; ``fullmatch`` is the Python
+    equivalent and needs no second pattern.
+    """
+    return bool(name) and _SERVICE_NAME_RE.fullmatch(name) is not None
+
 
 # Service types come from nthlayer-common, which is the single source of
 # truth for the rule (opensrm-z3ab). generate kept its own copy until the

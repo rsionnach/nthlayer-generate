@@ -1,5 +1,7 @@
 """CLI command for initializing new NthLayer services."""
 
+import json
+import re
 from pathlib import Path
 
 from nthlayer_common.manifest.models import resolve_service_type
@@ -17,6 +19,7 @@ from nthlayer_generate.cli.ux import (
 )
 from nthlayer_generate.core.tiers import TIER_CONFIGS
 from nthlayer_generate.specs.custom_templates import CustomTemplateLoader
+from nthlayer_generate.specs.manifest import is_valid_service_name
 
 # The service-type menu. INVARIANT: every key is a value a manifest can
 # store verbatim — nothing here is translated on the way out (opensrm-8qpd).
@@ -121,6 +124,14 @@ def init_command(
             console.print("   [muted]Pass it with --team <team>[/muted]")
         return 1
 
+    if not _is_valid_team(team):
+        error("Invalid team name")
+        console.print(
+            "   [muted]Team name must not contain line breaks, tabs or control "
+            "characters[/muted]"
+        )
+        return 1
+
     # Select service tier using interactive menu
     tier = None
     if interactive:
@@ -221,8 +232,25 @@ def init_command(
     # Success message
     console.print()
     success(f"Created {service_file}")
-    if nthlayer_dir.exists():
+    # is_dir(), NOT exists() (opensrm-t4rd). If .nthlayer is a regular FILE,
+    # mkdir raises FileExistsError and the config write raises
+    # NotADirectoryError; both are OSError, so both were downgraded to warnings
+    # above. exists() is then True *because it is a file*, so init printed
+    # "Created .nthlayer/" for a directory it had not created and returned 0.
+    if nthlayer_dir.is_dir():
         success(f"Created {nthlayer_dir}/")
+    else:
+        # NOT fatal, including under --no-interactive. Decided deliberately
+        # (opensrm-t4rd acceptance): the manifest is the primary artifact and it
+        # was written correctly, so a CI gate keying on the exit code is right to
+        # pass. What was wrong before was claiming the directory had been created;
+        # the warning below states plainly that it was not, and names the fix.
+        # Making it fatal would fail runs whose manifest is perfectly good merely
+        # because .nthlayer could not be created (read-only parent, a stray file).
+        warning(
+            f"{nthlayer_dir}/ was not created — config was not written. "
+            f"Remove or rename the existing {nthlayer_dir} entry and re-run."
+        )
 
     console.print()
     console.print("[bold]Next steps:[/bold]")
@@ -241,28 +269,66 @@ def init_command(
     return 0
 
 
-def _is_valid_service_name(name: str) -> bool:
-    """Check if service name is valid (lowercase with hyphens).
+_PLAIN_SCALAR_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9 ._-]*")
 
-    Args:
-        name: Service name to validate
 
-    Returns:
-        True if valid
+def _yaml_scalar(value: str) -> str:
+    """Render *value* as a YAML scalar that cannot alter the document.
+
+    Quoted only when it has to be, so the common case stays readable and the
+    documented example output in docs-site stays byte-identical to what init
+    actually writes (``test_block_is_byte_identical_to_real_output`` pins that,
+    and it is the docs-vs-reality guard from opensrm-noc6 — worth not breaking
+    for cosmetics).
+
+    When quoting IS needed, ``json.dumps`` is used: a JSON string is also a valid
+    YAML double-quoted scalar, and it escapes the two characters that made raw
+    interpolation dangerous — ``:`` becomes quoted, and a newline becomes a
+    literal ``\n`` rather than starting a new YAML line.
+
+    This is generate's hard rule 5 (no raw string construction for generated
+    output) applied at the one input that is scriptable and unvalidated
+    (opensrm-t4rd). Measured before the fix, all exiting 0:
+      --team 'Platform: Core'            -> the manifest failed to parse
+      --team $'ops\nname: hijacked'      -> injected a second service.name
+      --team $'ops\ntier: critical'      -> manifest VALIDATED CLEAN carrying a
+                                            bogus tier shadowed by the real one
+    A colon in a team name is ordinary, so quoting must be available, not
+    optional.
+
+    The allowlist is deliberately narrow: anything outside
+    ``[A-Za-z0-9][A-Za-z0-9 ._-]*`` is quoted rather than reasoned about. That
+    excludes every YAML indicator character (``:`` ``#`` ``-`` at the start,
+    ``{`` ``[`` ``&`` ``*`` ``!`` ``|`` ``>`` ``%`` ``@`` `` ` ``), leading and
+    trailing whitespace, and anything non-ASCII.
     """
-    if not name:
-        return False
+    if _PLAIN_SCALAR_RE.fullmatch(value):
+        return value
+    return json.dumps(value)
 
-    # Must be lowercase, numbers, and hyphens only
-    # Must not start or end with hyphen
-    if name[0] == "-" or name[-1] == "-":
-        return False
 
-    for char in name:
-        if not (char.islower() or char.isdigit() or char == "-"):
-            return False
+def _is_valid_team(team: str) -> bool:
+    """True if *team* is free of control characters.
 
-    return True
+    Quoting alone makes the document safe, so this is not what prevents
+    injection — it is what turns a newline in --team into a clear error instead
+    of a silently escaped ``\n`` in the output. A team name spanning lines is a
+    mistake every time.
+    """
+    return bool(team.strip()) and not any(ch in team for ch in "\n\r\t\x00")
+
+
+def _is_valid_service_name(name: str) -> bool:
+    """Delegates to the one service-name rule (opensrm-t4rd).
+
+    Kept as a thin wrapper rather than deleted: tests and callers import this
+    name. The body it replaced looped over ``char.islower() or char.isdigit()``
+    — UNICODE predicates — and rejected only a leading or trailing hyphen, so it
+    accepted `1-svc`, `café` and fullwidth `ａbc`, all of which
+    specs/validator.py then refused. `init` exited 0 having written a manifest
+    its own validator rejects, and the exit code is what a CI gate keys on.
+    """
+    return is_valid_service_name(name)
 
 
 def _generate_service_yaml_v2(
@@ -300,7 +366,7 @@ def _generate_service_yaml_v2(
 
 service:
   name: {service_name}
-  team: {team}
+  team: {_yaml_scalar(team)}
   tier: {tier}
   type: {service_type}
 {template_line}
@@ -458,7 +524,7 @@ def _generate_service_yaml(service_name: str, team: str, template) -> str:
 
 service:
   name: {service_name}
-  team: {team}
+  team: {_yaml_scalar(team)}
   tier: {template.tier}     # critical | standard | low
   type: {template.type}     # api | worker | stream | batch | database | ai-gate | x-web
   template: {template.name}

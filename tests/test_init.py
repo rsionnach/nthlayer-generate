@@ -619,3 +619,190 @@ class TestGenerateConfigYaml:
         assert "NthLayer Configuration" in result
         assert "error_budgets:" in result
         assert "inherited_attribution" in result
+
+
+class TestServiceNameRuleIsShared:
+    """opensrm-t4rd: init's guard and the validator must not disagree.
+
+    They did. `cli/init.py`'s guard looped over `char.islower() or
+    char.isdigit()`, which are UNICODE predicates, and rejected only a leading or
+    trailing hyphen. `specs/validator.py` applied `^[a-z][a-z0-9-]*$`. So
+    `nthlayer init 1-svc --team ops` exited 0, wrote the file, and `nthlayer
+    validate` on that file exited 1 — and an exit code is what a CI gate keys on.
+
+    PROVENANCE OF THIS TABLE. It is derived from the shared rule in
+    specs/manifest.py, which is generate's authority for names it GENERATES, not
+    from what either old guard happened to accept. It is deliberately not derived
+    from opensrm's schema, because the schema does not constrain the field init
+    writes: v1 `properties.service.properties.name` is unconstrained, and v1
+    `definitions.Metadata.properties.name` is `^[a-z0-9-]+$`, which is LOOSER —
+    it admits `1-svc` and even `-svc`. The bead's acceptance asked for a
+    schema-derived table; that is not available for this field, and saying so is
+    part of the finding. The spec gap is tracked separately.
+    """
+
+    # (name, expected) — every rejection names the rule it breaks.
+    NAMES = [
+        ("svc", True),
+        ("my-api", True),
+        ("service123", True),
+        ("my--api", True),  # a double hyphen INSIDE is fine
+        ("s", True),  # single character
+        ("1-svc", False),  # leading digit: validator rejected, old guard did not
+        ("-svc", False),  # leading hyphen
+        ("svc-", False),  # trailing hyphen: old guard rejected, validator did not
+        ("MyApi", False),  # uppercase
+        ("my_api", False),  # underscore
+        ("my api", False),  # space
+        ("my.api", False),  # period
+        ("", False),  # empty
+        ("café", False),  # non-ASCII lowercase: str.islower() is True for 'é'
+        ("ａbc", False),  # FULLWIDTH 'a': str.islower() is True for it too
+        ("٣svc", False),  # Arabic-Indic digit: str.isdigit() is True for it
+        ("svc\n", False),  # trailing newline: `re.match(..."$")` would ACCEPT this
+    ]
+
+    @pytest.mark.parametrize(("name", "expected"), NAMES)
+    def test_guard_matches_the_shared_rule(self, name, expected):
+        from nthlayer_generate.cli.init import _is_valid_service_name
+        from nthlayer_generate.specs.manifest import is_valid_service_name
+
+        assert is_valid_service_name(name) is expected
+        assert _is_valid_service_name(name) is expected, (
+            "the CLI guard has diverged from the shared rule again"
+        )
+
+    def test_the_table_is_not_vacuous(self):
+        """Both outcomes must be represented, or a broken rule could pass.
+
+        A predicate that returns a constant satisfies an all-True or all-False
+        table. Cheap guard against this class landing by edit.
+        """
+        outcomes = {expected for _, expected in self.NAMES}
+        assert outcomes == {True, False}
+
+    def test_trailing_newline_is_why_fullmatch(self):
+        """Pins the specific reason the rule uses fullmatch, not match + `$`.
+
+        In Python `$` also matches just before a final newline, so the old
+        `re.match(r"^[a-z][a-z0-9-]*$", "svc\\n")` SUCCEEDED. A trailing newline
+        is an ordinary authoring accident from a YAML block scalar. opensrm v2's
+        schema documents a deliberate `not: {pattern: "\\n"}` guard against
+        exactly this for ServiceType.
+        """
+        import re
+
+        from nthlayer_generate.specs.manifest import SERVICE_NAME_PATTERN
+
+        assert re.match(SERVICE_NAME_PATTERN + "$", "svc\n") is not None, (
+            "if this fails, Python changed and the fullmatch rationale needs revisiting"
+        )
+        assert re.compile(SERVICE_NAME_PATTERN).fullmatch("svc\n") is None
+
+
+class TestInitOutputSurvivesItsOwnValidator:
+    """opensrm-t4rd: the single test that catches defects 1 and 2 together.
+
+    The bead asked for a test that runs init and loads the result "through the
+    real manifest parser". The parser is not enough: measured, `load_manifest`
+    accepts `-svc`, `AB`, `café` and `sv_c` without complaint, because it does
+    not enforce the name pattern at all. The authority that rejected init's
+    output is `specs/validator.py`, so that is what this runs.
+    """
+
+    def test_a_colon_in_team_survives_init_and_the_validator(self, tmp_path, monkeypatch):
+        """A colon in a team name is ordinary, and used to break the document.
+
+        Before the fix: `--team 'Platform: Core'` produced YAML that failed to
+        parse, at exit 0.
+        """
+        monkeypatch.chdir(tmp_path)
+
+        assert init_command("svc", "Platform: Core", None, interactive=False) == 0
+
+        written = tmp_path / "svc.yaml"
+        import yaml
+
+        data = yaml.safe_load(written.read_text())
+        assert data["service"]["team"] == "Platform: Core"
+        assert data["service"]["name"] == "svc", "team must not be able to reach name"
+
+        from nthlayer_generate.specs.validator import validate_service_file
+
+        result = validate_service_file(written)
+        assert result.valid, f"init wrote something its own validator rejects: {result.errors}"
+
+    def test_a_newline_in_team_cannot_inject_a_field(self, tmp_path, monkeypatch):
+        """The dangerous case: an injected `tier:` VALIDATED CLEAN before the fix.
+
+        `--team $'ops\\ntier: critical'` wrote a second tier line, shadowed by the
+        generated one, and the manifest passed validation carrying it. Rejected at
+        the boundary now, so nothing is written at all.
+        """
+        monkeypatch.chdir(tmp_path)
+
+        assert init_command("svc", "ops\ntier: critical", None, interactive=False) == 1
+        assert not (tmp_path / "svc.yaml").exists(), (
+            "a rejected run must not leave a manifest behind"
+        )
+
+    def test_every_accepted_name_produces_a_valid_manifest(self, tmp_path, monkeypatch):
+        """The guard/validator agreement, end to end rather than unit-to-unit.
+
+        This is the assertion that would have failed before the fix: `1-svc` is
+        absent from the accepted set now, but had the guard stayed looser than the
+        validator, any name it admitted and the validator refused would surface
+        here.
+        """
+        from nthlayer_generate.specs.validator import validate_service_file
+
+        accepted = [n for n, ok in TestServiceNameRuleIsShared.NAMES if ok]
+        assert accepted, "vacuous: no accepted names to check"
+
+        for name in accepted:
+            d = tmp_path / name
+            d.mkdir()
+            monkeypatch.chdir(d)
+            assert init_command(name, "ops", None, interactive=False) == 0
+            result = validate_service_file(d / f"{name}.yaml")
+            assert result.valid, f"init accepted {name!r} but its validator rejects it: {result.errors}"
+
+
+class TestNthlayerDirFalseSuccess:
+    """opensrm-t4rd defect 3: success was reported for a directory not created."""
+
+    def test_a_file_named_nthlayer_does_not_produce_a_success_line(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        """`.nthlayer` as a regular FILE.
+
+        mkdir raises FileExistsError and the config write raises
+        NotADirectoryError; both are OSError, so both are downgraded to warnings.
+        The old check was `nthlayer_dir.exists()`, True *because it is a file*, so
+        init printed "Created .nthlayer/" for a directory it had not created.
+        """
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".nthlayer").write_text("not a directory")
+
+        # ux.warning() shells out to `gum` when it is installed, which writes to
+        # the real file descriptor and so bypasses capsys entirely. Forced off,
+        # or this test would pass or fail depending on whether the machine has
+        # gum — measured: it is installed here, and the warning was invisible.
+        monkeypatch.setattr("nthlayer_generate.cli.ux.has_gum", lambda: False)
+
+        rc = init_command("svc", "ops", None, interactive=False)
+        out = capsys.readouterr().out
+
+        # Structured state first: this part cannot depend on how output is rendered.
+        assert not (tmp_path / ".nthlayer").is_dir(), "no directory should exist"
+        assert not (tmp_path / ".nthlayer" / "config.yaml").exists(), "no config written"
+
+        assert "Created .nthlayer/" not in out, "claimed to create a directory it did not"
+        assert "was not created" in out, "the failure must be stated, not merely implied"
+
+        assert (tmp_path / ".nthlayer").is_file(), "the pre-existing file must be untouched"
+        assert (tmp_path / "svc.yaml").exists(), "the manifest is the primary artifact"
+        assert rc == 0, (
+            "deliberately NOT fatal: the manifest was written correctly, so a CI "
+            "gate keying on the exit code is right to pass (opensrm-t4rd)"
+        )

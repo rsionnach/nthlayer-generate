@@ -46,13 +46,19 @@ VALID_TIERS = {
     "low",
 }
 
-# THE service-name rule, in one place (opensrm-t4rd). Two copies disagreed:
+# THE service-name rule for the init path (opensrm-t4rd). Two copies of it
+# disagreed:
 # cli/init.py's guard looped over `char.islower() or char.isdigit()`, which are
 # UNICODE predicates, and rejected only a leading or trailing hyphen — so
 # `1-svc`, `café` and fullwidth `ａbc` all passed the CLI and were then rejected
 # by specs/validator.py, which applies the pattern below. `nthlayer init` exited
 # 0 having written a manifest its own validator refuses, and an exit code is
 # what a CI gate keys on.
+#
+# NOT exhaustive: cli/setup.py has a third, still-divergent copy that accepts
+# `123`, `café` and `1-svc` (it does reject both hyphen ends). Tracked in
+# opensrm-h9fq, and asserted by
+# test_init.py::TestSetupGuardStillDiverges so this note cannot rot quietly.
 #
 # Same shape as the service-type divergence recorded below under opensrm-z3ab,
 # which is why the rule lives here with it rather than in either caller.
@@ -86,8 +92,18 @@ def is_valid_service_name(name: str) -> bool:
     ``not: {pattern: "\\n"}`` guard against exactly this for ServiceType,
     noting that regex engines disagree about it; ``fullmatch`` is the Python
     equivalent and needs no second pattern.
+
+    ``isinstance`` is checked first because the loader hands this whatever YAML
+    resolved: a manifest with ``name: yes`` yields ``True``, which passes
+    ``bool(name)`` and then makes ``fullmatch`` raise ``TypeError``, so
+    ``nthlayer validate`` died with a traceback instead of reporting the error.
+    A non-str name is never valid, so returning False is both safe and correct.
     """
-    return bool(name) and _SERVICE_NAME_RE.fullmatch(name) is not None
+    return (
+        isinstance(name, str)
+        and bool(name)
+        and _SERVICE_NAME_RE.fullmatch(name) is not None
+    )
 
 
 # Service types come from nthlayer-common, which is the single source of

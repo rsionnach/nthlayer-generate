@@ -660,6 +660,21 @@ class TestServiceNameRuleIsShared:
         ("ａbc", False),  # FULLWIDTH 'a': str.islower() is True for it too
         ("٣svc", False),  # Arabic-Indic digit: str.isdigit() is True for it
         ("svc\n", False),  # trailing newline: `re.match(..."$")` would ACCEPT this
+        # Accepted names that YAML resolves to a non-string. Absent from this
+        # table, `test_every_accepted_name_produces_a_valid_manifest` passed
+        # while `nthlayer init no` exited 0 writing a manifest whose name
+        # loaded as False -- and `init yes` made the validator raise TypeError.
+        # The predicate was right; the table had no fixture of the hostile
+        # shape, which is the ecosystem fixture-provenance rule in one line.
+        ("no", True),
+        ("yes", True),
+        ("on", True),
+        ("off", True),
+        ("true", True),
+        ("false", True),
+        ("null", True),
+        ("n", True),  # a plain string in pyyaml, unlike `no`
+        ("y", True),
     ]
 
     @pytest.mark.parametrize(("name", "expected"), NAMES)
@@ -806,6 +821,10 @@ class TestTeamIsNotImplicitlyRetyped:
         "ops ",
     ]
 
+    def test_the_hostile_table_is_not_empty(self):
+        """Same vacuity guard as TestQuotedTeamRoundTrips."""
+        assert self.HOSTILE
+
     def test_every_hostile_value_is_actually_hostile(self):
         """Provenance guard: each fixture must be a value the loader retypes.
 
@@ -914,6 +933,16 @@ class TestQuotedTeamRoundTrips:
     ]
 
     CORPUS = HAZARDS + STRUCTURAL
+
+    def test_the_corpora_are_not_empty(self):
+        """Emptying either list would make every test here pass vacuously.
+
+        The parametrised tests would collect zero cases and the provenance
+        guard would iterate nothing, both silently green.
+        """
+        assert self.HAZARDS
+        assert self.STRUCTURAL
+        assert len(self.CORPUS) == len(self.HAZARDS) + len(self.STRUCTURAL)
 
     def test_hazards_are_provable_hazards(self):
         """Provenance guard: every HAZARDS entry must be demonstrably hostile.
@@ -1041,6 +1070,218 @@ class TestQuotedTeamRoundTrips:
         written = tmp_path / "svc.yaml"
         assert yaml.safe_load(written.read_text())["service"]["team"] == team
         assert validate_service_file(written).valid
+
+
+class TestServiceNameIsNotImplicitlyRetyped:
+    """opensrm-t4rd, found by the R5 correctness pass iteration 3.
+
+    `service_name` was the one field still interpolated raw, and the shared
+    rule accepts `yes no on off true false null` -- all of which YAML resolves
+    to a bool or None. Measured, at exit 0:
+
+      nthlayer init no   -> name loads as False -> validate reports invalid
+      nthlayer init yes  -> name loads as True  -> validate RAISES TypeError
+      nthlayer init null -> name loads as None  -> validate reports invalid
+
+    The predicate was correct the whole time; `NAMES` simply had no fixture of
+    that shape, so the end-to-end test agreed with the bug.
+    """
+
+    RESOLVABLE = ["no", "yes", "on", "off", "true", "false", "null"]
+
+    def test_the_table_is_not_empty(self):
+        assert self.RESOLVABLE
+
+    def test_every_resolvable_name_is_accepted_by_the_rule(self):
+        """Provenance: these matter only because the rule admits them.
+
+        If the rule is ever tightened to reject them, this test fails and says
+        so, rather than leaving the cases below quietly testing nothing.
+        """
+        from nthlayer_generate.specs.manifest import is_valid_service_name
+
+        for name in self.RESOLVABLE:
+            assert is_valid_service_name(name), (
+                f"{name!r} is no longer an accepted name; these cases exist "
+                f"because the rule accepts names YAML retypes"
+            )
+
+    def test_every_resolvable_name_is_retyped_by_the_loader(self):
+        """Provenance: and only because the loader retypes them."""
+        import yaml
+
+        for name in self.RESOLVABLE:
+            loaded = yaml.safe_load(name)
+            assert not (isinstance(loaded, str) and loaded == name), (
+                f"{name!r} is no longer retyped by the loader; it proves nothing"
+            )
+
+    @pytest.mark.parametrize("name", RESOLVABLE)
+    def test_init_writes_a_name_that_reads_back_as_a_string(
+        self, name, tmp_path, monkeypatch
+    ):
+        import yaml
+
+        monkeypatch.chdir(tmp_path)
+
+        assert init_command(name, "ops", None, interactive=False) == 0
+
+        written = yaml.safe_load((tmp_path / f"{name}.yaml").read_text())
+        assert written["service"]["name"] == name
+        assert isinstance(written["service"]["name"], str)
+
+    @pytest.mark.parametrize("name", RESOLVABLE)
+    def test_init_output_passes_its_own_validator(self, name, tmp_path, monkeypatch):
+        """The bead's subject: exit 0 must not mean "wrote something invalid"."""
+        from nthlayer_generate.specs.validator import validate_service_file
+
+        monkeypatch.chdir(tmp_path)
+
+        assert init_command(name, "ops", None, interactive=False) == 0
+
+        result = validate_service_file(tmp_path / f"{name}.yaml")
+        assert result.valid, (
+            f"init exited 0 writing a manifest its own validator rejects "
+            f"for name {name!r}: {result.errors}"
+        )
+
+
+class TestSetupGuardStillDiverges:
+    """A tripwire, not an endorsement (opensrm-h9fq).
+
+    `specs/manifest.py` says its rule is not exhaustive because
+    `cli/setup.py` keeps a third copy. That is a claim about another file, so
+    it is asserted here rather than left as prose that can rot -- the
+    ecosystem convention after six such comments went stale.
+
+    When h9fq is fixed this test FAILS, which is the point: it forces the
+    comment and the bead to be closed together.
+    """
+
+    # Measured against the real function, not a reimplementation of it:
+    # setup.py DOES reject `svc-` (it checks both end characters), so that
+    # one belongs in the agreeing set, not here.
+    DIVERGENT = ["123", "caf\u00e9", "1-svc"]
+    AGREED_REJECTED = ["svc-", "-svc", ""]
+
+    def test_setup_accepts_names_the_shared_rule_rejects(self):
+        from nthlayer_generate.cli.setup import (
+            _is_valid_service_name as setup_guard,
+        )
+        from nthlayer_generate.specs.manifest import is_valid_service_name
+
+        for name in self.DIVERGENT:
+            assert setup_guard(name), (
+                f"setup.py no longer accepts {name!r} -- if its guard now "
+                f"delegates to the shared rule, close opensrm-h9fq and delete "
+                f"this test plus the caveat in specs/manifest.py"
+            )
+            assert not is_valid_service_name(name), (
+                f"the shared rule now accepts {name!r}; this table is stale"
+            )
+
+    def test_both_guards_already_agree_on_these(self):
+        """The divergence is partial, so pin where it is NOT."""
+        from nthlayer_generate.cli.setup import (
+            _is_valid_service_name as setup_guard,
+        )
+        from nthlayer_generate.specs.manifest import is_valid_service_name
+
+        for name in self.AGREED_REJECTED:
+            assert not setup_guard(name)
+            assert not is_valid_service_name(name)
+
+
+class TestTemplateNameIsQuoted:
+    """opensrm-t4rd iteration 3: `template:` was the last raw interpolation.
+
+    Narrower than the others -- it needs a custom template file on disk -- but
+    the same shape. And `template.name` is `data["name"]` straight from the
+    loader with no coercion, and `ServiceTemplate.__post_init__` validates only
+    `tier`, so a template declaring `name: on` makes it a bool. Routing it
+    through `_yaml_scalar` without the non-str branch would have turned a
+    silent corruption into a TypeError crash.
+    """
+
+    def test_a_template_named_on_does_not_corrupt_the_manifest(
+        self, tmp_path, monkeypatch
+    ):
+        import yaml
+
+        from nthlayer_generate.specs.template_loader import TemplateLoader
+
+        templates = tmp_path / ".nthlayer" / "templates"
+        templates.mkdir(parents=True)
+        (templates / "t.yaml").write_text(
+            "name: on\ndescription: d\ntier: standard\ntype: api\nresources: []\n"
+        )
+
+        loaded = TemplateLoader.load_from_file(templates / "t.yaml")
+        # the fixture is only meaningful if the loader really hands back a bool
+        assert loaded.name is True, (
+            "template.name is no longer retyped by the loader; this case "
+            "proves nothing"
+        )
+
+        from nthlayer_generate.cli.init import _yaml_scalar
+
+        doc = f"service:\n  name: svc\n  template: {_yaml_scalar(loaded.name)}\n"
+        parsed = yaml.safe_load(doc)
+        assert isinstance(parsed["service"]["template"], str)
+        assert parsed["service"]["name"] == "svc"
+
+    @pytest.mark.parametrize("value", [True, False, None, 123, 1.5])
+    def test_a_non_string_is_quoted_not_raised(self, value):
+        """`re.fullmatch` raises TypeError on a non-str, so the branch is needed."""
+        import yaml
+
+        from nthlayer_generate.cli.init import _yaml_scalar
+
+        emitted = _yaml_scalar(value)
+        assert emitted.startswith('"') and emitted.endswith('"')
+        assert yaml.safe_load(f"t: {emitted}\n")["t"] == str(value)
+
+
+class TestValidatorSurvivesARetypedName:
+    """opensrm-t4rd: the rule is fed whatever the loader resolved.
+
+    Independent of init -- a hand-written manifest reaches this too, which is
+    why the guard lives in the rule rather than at the call site.
+    """
+
+    @pytest.mark.parametrize(
+        ("literal", "loads_as"),
+        [("yes", True), ("no", False), ("null", None), ("123", 123), ("1.5", 1.5)],
+    )
+    def test_a_non_string_name_is_reported_not_raised(
+        self, literal, loads_as, tmp_path
+    ):
+        """Before the guard, `name: yes` made `fullmatch` raise TypeError.
+
+        `nthlayer validate` died with a traceback instead of reporting the
+        problem, so the operator saw a crash rather than an error message.
+        """
+        import yaml
+
+        from nthlayer_generate.specs.validator import validate_service_file
+
+        manifest = tmp_path / "svc.yaml"
+        manifest.write_text(
+            f"service:\n  name: {literal}\n  team: ops\n  tier: standard\n"
+            f"  type: api\nresources: []\n"
+        )
+        # the fixture is only meaningful if the loader really retypes it
+        assert yaml.safe_load(manifest.read_text())["service"]["name"] == loads_as
+
+        result = validate_service_file(manifest)
+        assert not result.valid
+        assert any("name" in e.lower() for e in result.errors), result.errors
+
+    def test_the_rule_rejects_non_str_directly(self):
+        from nthlayer_generate.specs.manifest import is_valid_service_name
+
+        for value in (True, False, None, 123, 1.5, [], {}):
+            assert is_valid_service_name(value) is False
 
 
 class TestNthlayerDirFalseSuccess:

@@ -660,7 +660,14 @@ def _format_template_resources(template) -> str:
     """
     lines = []
     for resource in template.resources:
-        lines.append(f"#   - {resource.kind}: {resource.name}")
+        # A comment, but still a line in the document: `resource.kind` and
+        # `resource.name` come from a template file on disk with no
+        # validation, so a newline in either would escape the `#` and land
+        # at top level. `_yaml_scalar` escapes it instead, and leaves the
+        # ordinary values (`SLO`, `availability`) unquoted.
+        lines.append(
+            f"#   - {_yaml_scalar(resource.kind)}: {_yaml_scalar(resource.name)}"
+        )
     return "\n".join(lines) if lines else "#   (no resources)"
 
 

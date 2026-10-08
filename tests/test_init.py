@@ -1150,118 +1150,190 @@ class TestServiceNameIsNotImplicitlyRetyped:
 class TestNoFieldBypassesTheQuotingHelper:
     """The class guard for opensrm-t4rd, added after three fix iterations.
 
-    Correctness found the same defect three times in three different fields --
-    `team`, then `name`, then `template` -- because nothing FORCED a new
-    interpolated field through `_yaml_scalar`. Each round closed an instance.
-    This closes the class: it reads the template builders' own source and fails
-    if any interpolation is neither quoted nor explicitly exempted with a
-    reason.
+    Correctness found the same defect three times in three fields -- `team`,
+    then `name`, then `template` -- because nothing FORCED a new interpolated
+    field through `_yaml_scalar`. Each round closed an instance. This closes
+    the class.
 
-    Why the design is interpolation rather than `yaml.safe_dump` of a dict:
-    the generated manifests carry explanatory comments (`# Availability SLO`)
-    that a dict dump cannot emit, and
-    `test_block_is_byte_identical_to_real_output` pins them as the
-    docs-vs-reality guard from opensrm-noc6. So the mechanism stays, and gets
-    a guard instead.
+    Functions are DISCOVERED BY SHAPE, not listed by name. The first version of
+    this guard used a three-name allowlist, and the correctness pass pointed out
+    it could not notice a fourth builder -- and that it was already missing one:
+    `_format_template_resources` interpolated `resource.kind` and
+    `resource.name` raw, and my EXEMPT entry for it claimed it was an
+    "already-rendered YAML block", which was false. An allowlist only guards
+    what someone remembered to list.
 
-    Adding a field to either template without wrapping it fails here, naming
-    the expression.
+    Why the mechanism stays an f-string: the generated manifests carry
+    explanatory comments (`# Availability SLO`) that `yaml.safe_dump` of a dict
+    cannot emit, and `test_block_is_byte_identical_to_real_output` pins them as
+    the docs-vs-reality guard from opensrm-noc6. So the mechanism stays and
+    gets enforcement instead.
+
+    Known limits, stated rather than implied: this reads `cli/init.py` only,
+    and `.format()`/`%` interpolation would be invisible. Raw `+`
+    concatenation IS checked.
     """
 
-    BUILDERS = (
-        "_generate_service_yaml_v2",
-        "_build_resources_yaml",
-        "_generate_service_yaml",
-    )
+    MODULE = "nthlayer_generate.cli.init"
+    WRAPPERS = ("_yaml_scalar",)
 
-    # Expression -> why it does not need `_yaml_scalar`. Anything absent from
-    # this map and not wrapped is a failure. Keep the reasons checkable.
+    # Expression -> why it needs no wrapper. Anything else, in any
+    # YAML-shaped f-string in the module, fails. Keep every reason checkable.
     EXEMPT = {
-        # Closed sets: menu keys and template fields validated at construction.
+        # Closed sets. No --tier/--type flags exist; tier comes from
+        # TIER_CONFIGS or a template whose __post_init__ validates it, and
+        # dependencies come from the DEPENDENCIES multi-select.
         "tier": "closed set (TIER_CONFIGS keys)",
         "service_type": "closed set (SERVICE_TYPES keys, resolved)",
-        "template.tier": "validated against TIER_NAMES in __post_init__",
-        "template.type": "resolved to a manifest type in __post_init__",
+        "template.tier": "ServiceTemplate.__post_init__ raises on a bad tier",
+        "template.type": "ServiceTemplate.__post_init__ resolves or raises",
         "db": "closed set (DEPENDENCIES)",
         "cache": "closed set (DEPENDENCIES)",
         "queue": "closed set (DEPENDENCIES)",
-        # Pre-rendered YAML fragments, not scalars.
-        "resources_yaml": "already-rendered YAML block",
-        "template_line": "already-rendered YAML line",
-        "_format_template_resources(template)": "already-rendered YAML block",
-        # `service_name` bare: only ever in a YAML COMMENT line, or composed
-        # with a literal hyphen so the scalar can never resolve to a non-string.
-        # The name rule forbids a newline (fullmatch on `[a-z][a-z0-9-]*`),
-        # which is what keeps the comment case safe -- pinned by
-        # ("svc\n", False) in TestServiceNameRuleIsShared.NAMES.
+        # Already-rendered YAML, produced by a function this guard also covers,
+        # so its own interpolations are checked there rather than here.
+        "resources_yaml": "rendered by _build_resources_yaml, covered below",
+        "template_line": "rendered line, its value is wrapped at the source",
+        "_format_template_resources(template)": (
+            "rendered by _format_template_resources, covered below"
+        ),
+        # Bare `service_name` reaches only a comment line or a scalar composed
+        # with a literal hyphen, so it can never resolve to a non-string. The
+        # comment case is safe because the name rule forbids a newline --
+        # pinned by ("svc\n", False) in TestServiceNameRuleIsShared.NAMES.
         "service_name": "comment line, or composed with a literal hyphen",
     }
 
-    def _interpolations(self):
+    @staticmethod
+    def _yaml_shaped(joined):
+        """True if this f-string emits document structure rather than console text.
+
+        Multi-line with a `key:` in its literal part, or a comment line. Keeps
+        the guard off `init_command`'s menu strings like `f"{k} - {v}"`, which
+        are console output and would otherwise need meaningless exemptions.
+        """
         import ast
+        import re
 
-        from nthlayer_generate.cli import init as init_mod
+        literals = "".join(
+            v.value
+            for v in joined.values
+            if isinstance(v, ast.Constant) and isinstance(v.value, str)
+        )
+        has_key = re.search(r"[\w-]+:\s*(\n|$)", literals) is not None
+        return ("\n" in literals and has_key) or literals.lstrip().startswith("#")
 
-        source = pathlib.Path(init_mod.__file__).read_text()
-        tree = ast.parse(source)
+    def _covered(self):
+        """Every YAML-shaped interpolation in the module, by function."""
+        import ast
+        import importlib
+
+        module = importlib.import_module(self.MODULE)
+        tree = ast.parse(pathlib.Path(module.__file__).read_text())
         found = {}
         for fn in ast.walk(tree):
-            if not isinstance(fn, ast.FunctionDef) or fn.name not in self.BUILDERS:
+            if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
-            exprs = set()
-            for node in ast.walk(fn):
-                if isinstance(node, ast.JoinedStr):
-                    for value in node.values:
-                        if isinstance(value, ast.FormattedValue):
-                            exprs.add(ast.unparse(value.value))
-            found[fn.name] = exprs
+            for joined in [n for n in ast.walk(fn) if isinstance(n, ast.JoinedStr)]:
+                if not self._yaml_shaped(joined):
+                    continue
+                for value in joined.values:
+                    if isinstance(value, ast.FormattedValue):
+                        found.setdefault(fn.name, []).append(value.value)
         return found
 
-    def test_all_three_builders_were_found(self):
-        """Guards against the guard silently inspecting nothing."""
-        found = self._interpolations()
-        assert set(found) == set(self.BUILDERS), (
-            f"expected {self.BUILDERS}, found {sorted(found)} -- a builder was "
-            f"renamed or removed, so this guard stopped covering it"
+    def test_the_guard_covers_something(self):
+        """Anti-vacuity: a guard that inspects nothing passes everything."""
+        covered = self._covered()
+        assert len(covered) >= 4, (
+            f"only {len(covered)} YAML-emitting functions found ({sorted(covered)}); "
+            f"the shape heuristic has probably stopped matching"
         )
-        assert all(found.values()), f"a builder has no interpolations: {found}"
+        assert sum(len(v) for v in covered.values()) >= 15
 
-    def test_every_interpolation_is_quoted_or_exempt(self):
-        for builder, exprs in self._interpolations().items():
-            for expr in sorted(exprs):
-                if expr.startswith("_yaml_scalar("):
-                    continue
-                assert expr in self.EXEMPT, (
-                    f"{builder} interpolates {expr!r} raw into generated YAML. "
+    def test_every_interpolation_is_wrapped_or_exempt(self):
+        import ast
+
+        for fn_name, nodes in sorted(self._covered().items()):
+            for node in nodes:
+                expr = ast.unparse(node)
+                # An AST shape check, not a prefix match: `_yaml_scalar(x) + raw`
+                # and `_yaml_scalar(x)[1:-1]` both START with the wrapper name
+                # while defeating it.
+                wrapped = (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name)
+                    and node.func.id in self.WRAPPERS
+                )
+                assert wrapped or expr in self.EXEMPT, (
+                    f"{fn_name} interpolates {expr!r} raw into generated YAML. "
                     f"Wrap it: {{_yaml_scalar({expr})}}. If it genuinely cannot "
                     f"carry a hostile value, add it to "
                     f"TestNoFieldBypassesTheQuotingHelper.EXEMPT with the reason "
                     f"(opensrm-t4rd: three CRITICALs were exactly this)."
                 )
 
+    def test_no_raw_string_concatenation_in_a_covered_function(self):
+        """`deps_yaml += "  - name: " + dep` would evade the f-string walk.
+
+        `_build_resources_yaml` already builds with `+=`, so this is the
+        idiomatic next edit there.
+        """
+        import ast
+        import importlib
+
+        module = importlib.import_module(self.MODULE)
+        tree = ast.parse(pathlib.Path(module.__file__).read_text())
+        covered = set(self._covered())
+        for fn in ast.walk(tree):
+            if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            if fn.name not in covered:
+                continue
+            for node in ast.walk(fn):
+                operands = []
+                if isinstance(node, ast.AugAssign) and isinstance(node.op, ast.Add):
+                    operands = [node.value]
+                elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+                    operands = [node.left, node.right]
+                for operand in operands:
+                    if isinstance(operand, (ast.Constant, ast.JoinedStr)):
+                        continue
+                    wrapped = (
+                        isinstance(operand, ast.Call)
+                        and isinstance(operand.func, ast.Name)
+                        and operand.func.id in self.WRAPPERS
+                    )
+                    assert wrapped, (
+                        f"{fn.name} concatenates {ast.unparse(operand)!r} into "
+                        f"generated YAML without a wrapper. The f-string walk "
+                        f"cannot see concatenation, which is why this exists."
+                    )
+
     def test_the_exempt_map_has_no_dead_entries(self):
         """A stale exemption would hide a field that no longer exists."""
-        live = set().union(*self._interpolations().values())
+        import ast
+
+        live = {ast.unparse(n) for ns in self._covered().values() for n in ns}
         dead = set(self.EXEMPT) - live
         assert not dead, (
-            f"EXEMPT lists expressions no builder interpolates any more: "
-            f"{sorted(dead)} -- remove them so the map stays readable"
+            f"EXEMPT lists expressions no longer interpolated anywhere: "
+            f"{sorted(dead)} -- remove them so the map stays honest"
         )
 
-    def test_the_quoted_fields_are_actually_quoted(self):
-        """Pins which fields are currently routed through the helper.
+    def test_the_known_sensitive_fields_are_wrapped(self):
+        """Asserts the positive directly, not just the absence of a negative."""
+        import ast
 
-        If one is unwrapped, `test_every_interpolation_is_quoted_or_exempt`
-        catches it only when it is also absent from EXEMPT. This asserts the
-        positive directly.
-        """
-        live = set().union(*self._interpolations().values())
+        live = {ast.unparse(n) for ns in self._covered().values() for n in ns}
         for expr in (
             "_yaml_scalar(service_name)",
             "_yaml_scalar(team)",
             "_yaml_scalar(template.name)",
+            "_yaml_scalar(resource.kind)",
+            "_yaml_scalar(resource.name)",
         ):
-            assert expr in live, f"{expr} is no longer in any builder"
+            assert expr in live, f"{expr} is no longer wrapped anywhere"
 
 
 class TestSetupGuardStillDiverges:

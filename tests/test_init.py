@@ -1,5 +1,6 @@
 """Tests for init command."""
 
+import pathlib
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -1144,6 +1145,123 @@ class TestServiceNameIsNotImplicitlyRetyped:
             f"init exited 0 writing a manifest its own validator rejects "
             f"for name {name!r}: {result.errors}"
         )
+
+
+class TestNoFieldBypassesTheQuotingHelper:
+    """The class guard for opensrm-t4rd, added after three fix iterations.
+
+    Correctness found the same defect three times in three different fields --
+    `team`, then `name`, then `template` -- because nothing FORCED a new
+    interpolated field through `_yaml_scalar`. Each round closed an instance.
+    This closes the class: it reads the template builders' own source and fails
+    if any interpolation is neither quoted nor explicitly exempted with a
+    reason.
+
+    Why the design is interpolation rather than `yaml.safe_dump` of a dict:
+    the generated manifests carry explanatory comments (`# Availability SLO`)
+    that a dict dump cannot emit, and
+    `test_block_is_byte_identical_to_real_output` pins them as the
+    docs-vs-reality guard from opensrm-noc6. So the mechanism stays, and gets
+    a guard instead.
+
+    Adding a field to either template without wrapping it fails here, naming
+    the expression.
+    """
+
+    BUILDERS = (
+        "_generate_service_yaml_v2",
+        "_build_resources_yaml",
+        "_generate_service_yaml",
+    )
+
+    # Expression -> why it does not need `_yaml_scalar`. Anything absent from
+    # this map and not wrapped is a failure. Keep the reasons checkable.
+    EXEMPT = {
+        # Closed sets: menu keys and template fields validated at construction.
+        "tier": "closed set (TIER_CONFIGS keys)",
+        "service_type": "closed set (SERVICE_TYPES keys, resolved)",
+        "template.tier": "validated against TIER_NAMES in __post_init__",
+        "template.type": "resolved to a manifest type in __post_init__",
+        "db": "closed set (DEPENDENCIES)",
+        "cache": "closed set (DEPENDENCIES)",
+        "queue": "closed set (DEPENDENCIES)",
+        # Pre-rendered YAML fragments, not scalars.
+        "resources_yaml": "already-rendered YAML block",
+        "template_line": "already-rendered YAML line",
+        "_format_template_resources(template)": "already-rendered YAML block",
+        # `service_name` bare: only ever in a YAML COMMENT line, or composed
+        # with a literal hyphen so the scalar can never resolve to a non-string.
+        # The name rule forbids a newline (fullmatch on `[a-z][a-z0-9-]*`),
+        # which is what keeps the comment case safe -- pinned by
+        # ("svc\n", False) in TestServiceNameRuleIsShared.NAMES.
+        "service_name": "comment line, or composed with a literal hyphen",
+    }
+
+    def _interpolations(self):
+        import ast
+
+        from nthlayer_generate.cli import init as init_mod
+
+        source = pathlib.Path(init_mod.__file__).read_text()
+        tree = ast.parse(source)
+        found = {}
+        for fn in ast.walk(tree):
+            if not isinstance(fn, ast.FunctionDef) or fn.name not in self.BUILDERS:
+                continue
+            exprs = set()
+            for node in ast.walk(fn):
+                if isinstance(node, ast.JoinedStr):
+                    for value in node.values:
+                        if isinstance(value, ast.FormattedValue):
+                            exprs.add(ast.unparse(value.value))
+            found[fn.name] = exprs
+        return found
+
+    def test_all_three_builders_were_found(self):
+        """Guards against the guard silently inspecting nothing."""
+        found = self._interpolations()
+        assert set(found) == set(self.BUILDERS), (
+            f"expected {self.BUILDERS}, found {sorted(found)} -- a builder was "
+            f"renamed or removed, so this guard stopped covering it"
+        )
+        assert all(found.values()), f"a builder has no interpolations: {found}"
+
+    def test_every_interpolation_is_quoted_or_exempt(self):
+        for builder, exprs in self._interpolations().items():
+            for expr in sorted(exprs):
+                if expr.startswith("_yaml_scalar("):
+                    continue
+                assert expr in self.EXEMPT, (
+                    f"{builder} interpolates {expr!r} raw into generated YAML. "
+                    f"Wrap it: {{_yaml_scalar({expr})}}. If it genuinely cannot "
+                    f"carry a hostile value, add it to "
+                    f"TestNoFieldBypassesTheQuotingHelper.EXEMPT with the reason "
+                    f"(opensrm-t4rd: three CRITICALs were exactly this)."
+                )
+
+    def test_the_exempt_map_has_no_dead_entries(self):
+        """A stale exemption would hide a field that no longer exists."""
+        live = set().union(*self._interpolations().values())
+        dead = set(self.EXEMPT) - live
+        assert not dead, (
+            f"EXEMPT lists expressions no builder interpolates any more: "
+            f"{sorted(dead)} -- remove them so the map stays readable"
+        )
+
+    def test_the_quoted_fields_are_actually_quoted(self):
+        """Pins which fields are currently routed through the helper.
+
+        If one is unwrapped, `test_every_interpolation_is_quoted_or_exempt`
+        catches it only when it is also absent from EXEMPT. This asserts the
+        positive directly.
+        """
+        live = set().union(*self._interpolations().values())
+        for expr in (
+            "_yaml_scalar(service_name)",
+            "_yaml_scalar(team)",
+            "_yaml_scalar(template.name)",
+        ):
+            assert expr in live, f"{expr} is no longer in any builder"
 
 
 class TestSetupGuardStillDiverges:

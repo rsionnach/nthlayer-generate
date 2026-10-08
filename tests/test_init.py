@@ -18,6 +18,7 @@ from nthlayer_generate.cli.init import (
     _generate_service_yaml,
     _generate_service_yaml_v2,
     _is_valid_service_name,
+    _is_valid_team,
     _quoted_yaml_scalar,
     _yaml_scalar,
     init_command,
@@ -851,6 +852,46 @@ class TestTeamIsNotImplicitlyRetyped:
             f"init exited 0 writing a manifest its own validator rejects "
             f"for --team {team!r}: {result.errors}"
         )
+
+
+class TestTeamGuardAndMessageAgree:
+    """opensrm-t4rd clarity pass: the guard rejected more than it claimed.
+
+    `_is_valid_team` was `bool(team.strip()) and not any(...)`, but its summary
+    said only "free of control characters" and the CLI told the user "must not
+    contain line breaks, tabs or control characters". A whitespace-only --team
+    therefore got a message that was false for it.
+
+    Blankness moved to the caller's `if not team.strip()` branch, which already
+    had the right message, leaving this guard doing exactly what it says.
+    Asserted structurally rather than by scraping the console, per the
+    project's test-assertion rule.
+    """
+
+    def test_the_guard_no_longer_judges_blankness(self):
+        """It answers only the control-character question now."""
+        assert _is_valid_team("   ") is True
+        assert _is_valid_team("") is True
+        assert _is_valid_team("\t") is False  # a tab IS a control character
+
+    @pytest.mark.parametrize("team", ["\n", "\r", "\t", "\x00", "ops\nx"])
+    def test_the_guard_rejects_exactly_the_four(self, team):
+        assert _is_valid_team(team) is False
+
+    @pytest.mark.parametrize("team", ["\x1b", "\x07", "\x0b", "caf\u00e9", "a b"])
+    def test_the_guard_passes_what_quoting_handles(self, team):
+        """The rest are odd, not dangerous -- `_yaml_scalar` quotes them."""
+        assert _is_valid_team(team) is True
+
+    @pytest.mark.parametrize("team", ["", "   ", "\t", "o\tps", "ops\nname: x"])
+    def test_every_rejected_team_still_exits_1_and_writes_nothing(
+        self, team, tmp_path, monkeypatch
+    ):
+        """Whichever branch catches it, the contract is the same."""
+        monkeypatch.chdir(tmp_path)
+
+        assert init_command("svc", team, None, interactive=False) == 1
+        assert not (tmp_path / "svc.yaml").exists()
 
 
 class TestQuotingMechanismRoundTrips:

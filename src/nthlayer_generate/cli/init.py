@@ -118,7 +118,11 @@ def init_command(
     if not team and interactive:
         team = text_input("Team name", placeholder="e.g., platform, payments")
 
-    if not team:
+    # `not team` first: team is `str | None` here, so `.strip()` alone would
+    # raise on None and also lose the narrowing the calls below rely on. The
+    # `.strip()` half is what sends a whitespace-only --team here rather than
+    # to _is_valid_team, whose control-character message would be false for it.
+    if not team or not team.strip():
         error("Team name is required")
         if not interactive:
             console.print("   [muted]Pass it with --team <team>[/muted]")
@@ -278,9 +282,9 @@ def init_command(
 #   --team $'ops\ntier: critical'      -> manifest VALIDATED CLEAN carrying a
 #                                         bogus tier shadowed by the real one
 #
-# A colon in a team name is ordinary, so quoting has to be available rather
-# than optional — which is why these are three small functions and not one
-# `json.dumps`.
+# A colon in a team name is ordinary, so quoting has to be available. It is
+# applied conditionally, for the reason in `_yaml_scalar`, and done with
+# pyyaml rather than `json.dumps`, for the reason in `_quoted_yaml_scalar`.
 #
 # The allowlist is deliberately narrow: anything outside it is quoted rather
 # than reasoned about. It excludes every YAML indicator character (`:` `#`
@@ -389,17 +393,19 @@ def _emits_as_same_string(value: str) -> bool:
 
 
 def _is_valid_team(team: str) -> bool:
-    """True if *team* is free of control characters.
+    r"""True if *team* contains no line break, tab or NUL.
 
-    Quoting alone makes the document safe, so this is not what prevents
-    injection — it is what turns a newline in --team into a clear error instead
-    of a silently escaped ``\n`` in the output. A team name spanning lines is a
-    mistake every time.
+    Those four only, not every control character: the rest are quoted correctly
+    by ``_yaml_scalar`` and are merely odd, not dangerous. Blankness is not
+    checked here either — the caller rejects it first, with a message that
+    actually fits it.
 
-    Only these four are rejected, not every control character: the rest are
-    quoted correctly by ``_yaml_scalar`` and are merely odd, not dangerous.
+    Quoting alone already makes the document safe, so this is not what prevents
+    injection. It is what turns a newline in --team into a clear error rather
+    than a silently escaped ``\n`` in the output, because a team name spanning
+    lines is a mistake every time.
     """
-    return bool(team.strip()) and not any(ch in team for ch in "\n\r\t\x00")
+    return not any(ch in team for ch in "\n\r\t\x00")
 
 
 def _is_valid_service_name(name: str) -> bool:

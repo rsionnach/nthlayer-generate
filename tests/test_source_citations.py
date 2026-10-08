@@ -14,7 +14,7 @@ version of THIS file, whose docstring claimed it covered any test named from
 two citations added alongside it, in ``specs/manifest.py``, were invisible to
 it. A guard that overstates its own reach is worse than no guard, so the
 patterns below are deliberately broad and ``test_the_known_citations_are_seen``
-pins the count.
+holds a floor under what they match.
 
 Nothing else in the suite notices a dead citation, because a comment is never
 executed.
@@ -26,11 +26,11 @@ import re
 _SRC = pathlib.Path(__file__).resolve().parents[1] / "src"
 _TESTS = pathlib.Path(__file__).resolve().parent
 
-# The three spellings this codebase actually uses, in rough order of frequency.
-#   ``test_foo`` / ``TestFoo``      -- a bare name in reST double backticks
-#   `test_foo` / `TestFoo`          -- the same in single backticks
-#   test_mod.py::TestFoo            -- pytest node id, with or without backticks
-#   test_mod.py                     -- a whole module
+# The spellings this codebase actually uses, grouped into the three KINDS the
+# assertions below dispatch on -- "name", "node" and "module":
+#   name   ``test_foo`` / ``TestFoo``, or the same in single backticks
+#   node   test_mod.py::TestFoo        -- a pytest node id
+#   module test_mod.py                 -- a whole module
 _NAME = r"(?:test_[A-Za-z0-9_]+|Test[A-Za-z0-9_]+)"
 _NODE_ID = re.compile(r"(test_[A-Za-z0-9_]*\.py)::(" + _NAME + r")")
 _MODULE = re.compile(r"\b(test_[a-z0-9_]+\.py)\b(?!::)")

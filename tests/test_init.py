@@ -4,6 +4,7 @@ import ast
 import importlib
 import json
 import pathlib
+import re
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -156,41 +157,17 @@ class TestInitCommand:
 
 
 class TestServiceNameValidation:
-    """Tests for service name validation."""
+    """init's end-to-end rejection of a bad name.
 
-    def test_valid_service_names(self):
-        """Should accept valid service names."""
-        valid_names = [
-            "my-api",
-            "payment-api",
-            "user-service",
-            "api-v2",
-            "service123",
-            "my-api-v1",
-        ]
-
-        for name in valid_names:
-            assert _is_valid_service_name(name), f"{name} should be valid"
-
-    def test_invalid_service_names(self):
-        """Should reject invalid service names."""
-        invalid_names = [
-            "MyApi",  # uppercase
-            "my_api",  # underscore
-            "my api",  # space
-            "-my-api",  # starts with hyphen
-            "my-api-",  # ends with hyphen
-            "my--api",  # double hyphen is ok actually
-            "",  # empty
-            "my.api",  # period
-        ]
-
-        for name in invalid_names:
-            if name == "my--api":
-                # Double hyphen is actually valid
-                assert _is_valid_service_name(name)
-            else:
-                assert not _is_valid_service_name(name), f"{name} should be invalid"
+    The two table-driven tests that were here are gone (opensrm-t4rd): every
+    shape they covered -- uppercase, underscore, space, leading and trailing
+    hyphen, empty, period, an inner double hyphen, digits -- is in
+    `TestServiceNameRuleIsShared.NAMES`, which additionally asserts that the
+    CLI guard and the shared rule agree on each one. The old list also carried
+    `my--api` under `invalid_names` with an `if name == "my--api"` branch
+    asserting the opposite, which is the kind of contradiction a single table
+    makes impossible.
+    """
 
     def test_init_rejects_invalid_name(self, tmp_path, monkeypatch):
         """Should error on invalid service name."""
@@ -686,7 +663,6 @@ class TestServiceNameRuleIsShared:
 
     @pytest.mark.parametrize(("name", "expected"), NAMES)
     def test_guard_matches_the_shared_rule(self, name, expected):
-
         assert is_valid_service_name(name) is expected
         assert _is_valid_service_name(name) is expected, (
             "the CLI guard has diverged from the shared rule again"
@@ -710,8 +686,6 @@ class TestServiceNameRuleIsShared:
         schema documents a deliberate `not: {pattern: "\\n"}` guard against
         exactly this for ServiceType.
         """
-        import re
-
         from nthlayer_generate.specs.manifest import SERVICE_NAME_PATTERN
 
         assert re.match(SERVICE_NAME_PATTERN + "$", "svc\n") is not None, (
@@ -746,7 +720,6 @@ class TestInitOutputSurvivesItsOwnValidator:
         assert data["service"]["team"] == "Platform: Core"
         assert data["service"]["name"] == "svc", "team must not be able to reach name"
 
-
         result = validate_service_file(written)
         assert result.valid, f"init wrote something its own validator rejects: {result.errors}"
 
@@ -772,7 +745,6 @@ class TestInitOutputSurvivesItsOwnValidator:
         validator, any name it admitted and the validator refused would surface
         here.
         """
-
         accepted = [n for n, ok in TestServiceNameRuleIsShared.NAMES if ok]
         assert accepted, "vacuous: no accepted names to check"
 
@@ -782,7 +754,9 @@ class TestInitOutputSurvivesItsOwnValidator:
             monkeypatch.chdir(d)
             assert init_command(name, "ops", None, interactive=False) == 0
             result = validate_service_file(d / f"{name}.yaml")
-            assert result.valid, f"init accepted {name!r} but its validator rejects it: {result.errors}"
+            assert result.valid, (
+                f"init accepted {name!r} but its validator rejects it: {result.errors}"
+            )
 
 
 class TestTeamIsNotImplicitlyRetyped:
@@ -837,7 +811,6 @@ class TestTeamIsNotImplicitlyRetyped:
         Traces the table to the authority (what pyyaml actually does) rather
         than to `_emits_as_same_string`, which is the code under test.
         """
-
         for value in self.HOSTILE:
             loaded = yaml.safe_load(value)
             assert not (isinstance(loaded, str) and loaded == value), (
@@ -847,9 +820,7 @@ class TestTeamIsNotImplicitlyRetyped:
             )
 
     @pytest.mark.parametrize("team", HOSTILE)
-    def test_hostile_team_round_trips_as_the_exact_string(
-        self, team, tmp_path, monkeypatch
-    ):
+    def test_hostile_team_round_trips_as_the_exact_string(self, team, tmp_path, monkeypatch):
         """init must write a team that reads back as the string it was given.
 
         Before the fix, measured at exit 0: `--team null` loaded as None and the
@@ -857,7 +828,6 @@ class TestTeamIsNotImplicitlyRetyped:
         the manifest VALIDATED CLEAN carrying a bool in a field declared `str`;
         `--team 'ops '` silently lost its trailing space.
         """
-
         monkeypatch.chdir(tmp_path)
 
         assert init_command("svc", team, None, interactive=False) == 0
@@ -865,17 +835,13 @@ class TestTeamIsNotImplicitlyRetyped:
         written = tmp_path / "svc.yaml"
         data = yaml.safe_load(written.read_text())
         assert isinstance(data["service"]["team"], str), (
-            f"--team {team!r} was implicitly retyped to "
-            f"{type(data['service']['team']).__name__}"
+            f"--team {team!r} was implicitly retyped to {type(data['service']['team']).__name__}"
         )
         assert data["service"]["team"] == team
 
     @pytest.mark.parametrize("team", HOSTILE)
-    def test_hostile_team_still_passes_the_real_validator(
-        self, team, tmp_path, monkeypatch
-    ):
+    def test_hostile_team_still_passes_the_real_validator(self, team, tmp_path, monkeypatch):
         """The exit-0-then-invalid shape, which is the bead's whole subject."""
-
         monkeypatch.chdir(tmp_path)
 
         assert init_command("svc", team, None, interactive=False) == 0
@@ -906,9 +872,9 @@ class TestQuotingMechanismRoundTrips:
     # libraries, so a library change fails the test rather than quietly
     # emptying the corpus.
     HAZARDS = [
-        "\U0001F389 platform",  # non-BMP: json emits a surrogate PAIR
-        "\U0001D11E",
-        "\U0010FFFF",
+        "\U0001f389 platform",  # non-BMP: json emits a surrogate PAIR
+        "\U0001d11e",
+        "\U0010ffff",
         "Platform: Core",
         "ops ",
         "\u2028",
@@ -953,12 +919,9 @@ class TestQuotingMechanismRoundTrips:
         Derived from what `json` and `yaml` actually do, never from
         `_quoted_yaml_scalar`, which is the code under test.
         """
-
         for value in self.HAZARDS:
             try:
-                json_round_trips = (
-                    yaml.safe_load(f"t: {json.dumps(value)}\n")["t"] == value
-                )
+                json_round_trips = yaml.safe_load(f"t: {json.dumps(value)}\n")["t"] == value
             except Exception:
                 json_round_trips = False
             try:
@@ -974,7 +937,6 @@ class TestQuotingMechanismRoundTrips:
     @pytest.mark.parametrize("team", CORPUS)
     def test_team_round_trips_through_a_real_document(self, team):
         """The emitted scalar must read back as the exact string given."""
-
         doc = f"service:\n  name: svc\n  team: {_yaml_scalar(team)}\n"
         loaded = yaml.safe_load(doc)
         assert loaded["service"]["team"] == team
@@ -988,14 +950,12 @@ class TestQuotingMechanismRoundTrips:
         refuses it -- so this is the assertion that would have caught it even
         without a round-trip comparison.
         """
-
         doc = f"service:\n  team: {_yaml_scalar(team)}\n"
         assert yaml.safe_load(doc.encode("utf-8"))["service"]["team"] == team
 
     @pytest.mark.parametrize("team", CORPUS)
     def test_emitted_scalar_never_spans_lines(self, team):
         """The document is built by interpolation, so a newline would corrupt it."""
-
         assert "\n" not in _yaml_scalar(team)
 
     @pytest.mark.parametrize("team", CORPUS)
@@ -1005,7 +965,6 @@ class TestQuotingMechanismRoundTrips:
         Asserted on the quoted branch specifically: an unquoted plain scalar may
         legitimately end in `...` (see `ops...` in STRUCTURAL).
         """
-
         emitted = _quoted_yaml_scalar(team)
         assert emitted.startswith('"') and emitted.endswith('"')
         assert "\n" not in emitted
@@ -1019,19 +978,15 @@ class TestQuotingMechanismRoundTrips:
         could be dropped silently, turning every accented team name in a
         generated manifest into an escape sequence.
         """
-
         assert _quoted_yaml_scalar("caf\u00e9") == '"caf\u00e9"'
         assert "\\x" not in _quoted_yaml_scalar("caf\u00e9")
 
-    def test_init_does_not_crash_on_a_value_pyyaml_cannot_parse(
-        self, tmp_path, monkeypatch
-    ):
+    def test_init_does_not_crash_on_a_value_pyyaml_cannot_parse(self, tmp_path, monkeypatch):
         """`--team 0b_` raised an uncaught ValueError and wrote nothing.
 
         pyyaml's int constructor reaches `int("", 2)` for this input, which is a
         ValueError, not a YAMLError.
         """
-
         monkeypatch.chdir(tmp_path)
 
         assert init_command("svc", "0b_", None, interactive=False) == 0
@@ -1040,14 +995,9 @@ class TestQuotingMechanismRoundTrips:
         assert yaml.safe_load(written.read_text())["service"]["team"] == "0b_"
         assert validate_service_file(written).valid
 
-    @pytest.mark.parametrize(
-        "team", ["\U0001F389 platform", "caf\u00e9", "\U0001D11E"]
-    )
-    def test_non_ascii_team_survives_init_end_to_end(
-        self, team, tmp_path, monkeypatch
-    ):
+    @pytest.mark.parametrize("team", ["\U0001f389 platform", "caf\u00e9", "\U0001d11e"])
+    def test_non_ascii_team_survives_init_end_to_end(self, team, tmp_path, monkeypatch):
         """The regression, end to end: emoji round-tripped before the first fix."""
-
         monkeypatch.chdir(tmp_path)
 
         assert init_command("svc", team, None, interactive=False) == 0
@@ -1083,7 +1033,6 @@ class TestServiceNameIsNotImplicitlyRetyped:
         If the rule is ever tightened to reject them, this test fails and says
         so, rather than leaving the cases below quietly testing nothing.
         """
-
         for name in self.RESOLVABLE:
             assert is_valid_service_name(name), (
                 f"{name!r} is no longer an accepted name; these cases exist "
@@ -1092,7 +1041,6 @@ class TestServiceNameIsNotImplicitlyRetyped:
 
     def test_every_resolvable_name_is_retyped_by_the_loader(self):
         """Provenance: and only because the loader retypes them."""
-
         for name in self.RESOLVABLE:
             loaded = yaml.safe_load(name)
             assert not (isinstance(loaded, str) and loaded == name), (
@@ -1100,10 +1048,7 @@ class TestServiceNameIsNotImplicitlyRetyped:
             )
 
     @pytest.mark.parametrize("name", RESOLVABLE)
-    def test_init_writes_a_name_that_reads_back_as_a_string(
-        self, name, tmp_path, monkeypatch
-    ):
-
+    def test_init_writes_a_name_that_reads_back_as_a_string(self, name, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
 
         assert init_command(name, "ops", None, interactive=False) == 0
@@ -1183,8 +1128,6 @@ class TestNoFieldBypassesTheQuotingHelper:
         the guard off `init_command`'s menu strings like `f"{k} - {v}"`, which
         are console output and would otherwise need meaningless exemptions.
         """
-        import re
-
         literals = "".join(
             v.value
             for v in joined.values
@@ -1195,7 +1138,6 @@ class TestNoFieldBypassesTheQuotingHelper:
 
     def _covered(self):
         """Every YAML-shaped interpolation in the module, by function."""
-
         module = importlib.import_module(self.MODULE)
         tree = ast.parse(pathlib.Path(module.__file__).read_text())
         found = {}
@@ -1240,7 +1182,6 @@ class TestNoFieldBypassesTheQuotingHelper:
         )
 
     def test_every_interpolation_is_wrapped_or_exempt(self):
-
         for fn_name, nodes in sorted(self._covered().items()):
             for node in nodes:
                 expr = ast.unparse(node)
@@ -1266,7 +1207,6 @@ class TestNoFieldBypassesTheQuotingHelper:
         `_build_resources_yaml` already builds with `+=`, so this is the
         idiomatic next edit there.
         """
-
         module = importlib.import_module(self.MODULE)
         tree = ast.parse(pathlib.Path(module.__file__).read_text())
         covered = set(self._covered())
@@ -1297,7 +1237,6 @@ class TestNoFieldBypassesTheQuotingHelper:
 
     def test_the_exempt_map_has_no_dead_entries(self):
         """A stale exemption would hide a field that no longer exists."""
-
         live = {ast.unparse(n) for ns in self._covered().values() for n in ns}
         dead = set(self.EXEMPT) - live
         assert not dead, (
@@ -1307,7 +1246,6 @@ class TestNoFieldBypassesTheQuotingHelper:
 
     def test_the_known_sensitive_fields_are_wrapped(self):
         """Asserts the positive directly, not just the absence of a negative."""
-
         live = {ast.unparse(n) for ns in self._covered().values() for n in ns}
         for expr in (
             "_yaml_scalar(service_name)",
@@ -1338,7 +1276,6 @@ class TestSetupGuardStillDiverges:
     AGREED_REJECTED = ["svc-", "-svc", ""]
 
     def test_setup_accepts_names_the_shared_rule_rejects(self):
-
         for name in self.DIVERGENT:
             assert _setup_is_valid_service_name(name), (
                 f"setup.py no longer accepts {name!r} -- if its guard now "
@@ -1351,7 +1288,6 @@ class TestSetupGuardStillDiverges:
 
     def test_both_guards_already_agree_on_these(self):
         """The divergence is partial, so pin where it is NOT."""
-
         for name in self.AGREED_REJECTED:
             assert not _setup_is_valid_service_name(name)
             assert not is_valid_service_name(name)
@@ -1368,11 +1304,7 @@ class TestTemplateNameIsQuoted:
     silent corruption into a TypeError crash.
     """
 
-    def test_a_template_named_on_does_not_corrupt_the_manifest(
-        self, tmp_path, monkeypatch
-    ):
-
-
+    def test_a_template_named_on_does_not_corrupt_the_manifest(self, tmp_path, monkeypatch):
         templates = tmp_path / ".nthlayer" / "templates"
         templates.mkdir(parents=True)
         (templates / "t.yaml").write_text(
@@ -1382,10 +1314,8 @@ class TestTemplateNameIsQuoted:
         loaded = TemplateLoader.load_from_file(templates / "t.yaml")
         # the fixture is only meaningful if the loader really hands back a bool
         assert loaded.name is True, (
-            "template.name is no longer retyped by the loader; this case "
-            "proves nothing"
+            "template.name is no longer retyped by the loader; this case proves nothing"
         )
-
 
         doc = f"service:\n  name: svc\n  template: {_yaml_scalar(loaded.name)}\n"
         parsed = yaml.safe_load(doc)
@@ -1395,7 +1325,6 @@ class TestTemplateNameIsQuoted:
     @pytest.mark.parametrize("value", [True, False, None, 123, 1.5])
     def test_a_non_string_is_quoted_not_raised(self, value):
         """`re.fullmatch` raises TypeError on a non-str, so the branch is needed."""
-
         emitted = _yaml_scalar(value)
         assert emitted.startswith('"') and emitted.endswith('"')
         assert yaml.safe_load(f"t: {emitted}\n")["t"] == str(value)
@@ -1412,15 +1341,12 @@ class TestValidatorSurvivesARetypedName:
         ("literal", "loads_as"),
         [("yes", True), ("no", False), ("null", None), ("123", 123), ("1.5", 1.5)],
     )
-    def test_a_non_string_name_is_reported_not_raised(
-        self, literal, loads_as, tmp_path
-    ):
+    def test_a_non_string_name_is_reported_not_raised(self, literal, loads_as, tmp_path):
         """Before the guard, `name: yes` made `fullmatch` raise TypeError.
 
         `nthlayer validate` died with a traceback instead of reporting the
         problem, so the operator saw a crash rather than an error message.
         """
-
         manifest = tmp_path / "svc.yaml"
         manifest.write_text(
             f"service:\n  name: {literal}\n  team: ops\n  tier: standard\n"
@@ -1434,7 +1360,6 @@ class TestValidatorSurvivesARetypedName:
         assert any("name" in e.lower() for e in result.errors), result.errors
 
     def test_the_rule_rejects_non_str_directly(self):
-
         for value in (True, False, None, 123, 1.5, [], {}):
             assert is_valid_service_name(value) is False
 

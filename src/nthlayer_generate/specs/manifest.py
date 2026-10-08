@@ -96,11 +96,7 @@ def is_valid_service_name(name: str) -> bool:
     ``nthlayer validate`` died with a traceback instead of reporting the error.
     A non-str name is never valid, so returning False is both safe and correct.
     """
-    return (
-        isinstance(name, str)
-        and bool(name)
-        and _SERVICE_NAME_RE.fullmatch(name) is not None
-    )
+    return isinstance(name, str) and bool(name) and _SERVICE_NAME_RE.fullmatch(name) is not None
 
 
 # Service types come from nthlayer-common, which is the single source of
@@ -597,8 +593,7 @@ class ReliabilityManifest:
         resolved_type = resolve_service_type(self.type)
         if resolved_type is None:
             raise ValueError(
-                f"Invalid type '{self.type}'. "
-                f"Must be one of: {valid_service_types_phrase()}."
+                f"Invalid type '{self.type}'. Must be one of: {valid_service_types_phrase()}."
             )
         self.type = resolved_type
 

@@ -127,8 +127,7 @@ def init_command(
     if not _is_valid_team(team):
         error("Invalid team name")
         console.print(
-            "   [muted]Team name must not contain line breaks, tabs or control "
-            "characters[/muted]"
+            "   [muted]Team name must not contain line breaks, tabs or control characters[/muted]"
         )
         return 1
 
@@ -267,46 +266,41 @@ def init_command(
     return 0
 
 
+# WHY THE SCALAR HELPERS BELOW EXIST (opensrm-t4rd).
+#
+# generate's hard rule 5 — no raw string construction for generated output —
+# applied at the one input that is scriptable and unvalidated. `--team` was
+# interpolated raw with only a truthiness check. Measured before the fix, all
+# exiting 0:
+#
+#   --team 'Platform: Core'            -> the manifest failed to parse
+#   --team $'ops\nname: hijacked'      -> injected a second service.name
+#   --team $'ops\ntier: critical'      -> manifest VALIDATED CLEAN carrying a
+#                                         bogus tier shadowed by the real one
+#
+# A colon in a team name is ordinary, so quoting has to be available rather
+# than optional — which is why these are three small functions and not one
+# `json.dumps`.
+#
+# The allowlist is deliberately narrow: anything outside it is quoted rather
+# than reasoned about. It excludes every YAML indicator character (`:` `#`
+# `-` at the start, `{` `[` `&` `*` `!` `|` `>` `%` `@` and a backtick),
+# leading whitespace, and anything non-ASCII. Matching it is necessary but NOT
+# sufficient — see `_emits_as_same_string`.
 _PLAIN_SCALAR_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9 ._-]*")
 
 
 def _yaml_scalar(value: object) -> str:
     """Render *value* as a YAML scalar that cannot alter the document.
 
-    Quoted only when it has to be, so the common case stays readable and the
-    documented example output in docs-site stays byte-identical to what init
-    actually writes (``test_block_is_byte_identical_to_real_output`` pins that,
-    and it is the docs-vs-reality guard from opensrm-noc6 — worth not breaking
-    for cosmetics).
+    Plain when it provably round-trips, quoted otherwise. Quoting is
+    conditional so the documented example output stays byte-identical to what
+    init writes (``test_block_is_byte_identical_to_real_output``, the
+    docs-vs-reality guard from opensrm-noc6).
 
-    When quoting IS needed, ``_quoted_yaml_scalar`` does it; see there for why
-    it uses pyyaml's emitter rather than ``json.dumps``.
-
-    This is generate's hard rule 5 (no raw string construction for generated
-    output) applied at the one input that is scriptable and unvalidated
-    (opensrm-t4rd). Measured before the fix, all exiting 0:
-      --team 'Platform: Core'            -> the manifest failed to parse
-      --team $'ops\nname: hijacked'      -> injected a second service.name
-      --team $'ops\ntier: critical'      -> manifest VALIDATED CLEAN carrying a
-                                            bogus tier shadowed by the real one
-    A colon in a team name is ordinary, so quoting must be available, not
-    optional.
-
-    The allowlist is deliberately narrow: anything outside
-    ``[A-Za-z0-9][A-Za-z0-9 ._-]*`` is quoted rather than reasoned about. That
-    excludes every YAML indicator character (``:`` ``#`` ``-`` at the start,
-    ``{`` ``[`` ``&`` ``*`` ``!`` ``|`` ``>`` ``%`` ``@`` `` ` ``), leading
-    whitespace, and anything non-ASCII.
-
-    Matching the allowlist is necessary but NOT sufficient, so
-    ``_emits_as_same_string`` gates it too — see there for why.
-
-    A non-str is accepted and quoted rather than rejected. Values reach here
-    straight from a YAML loader — ``template.name`` is ``data["name"]`` with no
-    coercion — so a template declaring ``name: on`` makes this a bool, and
-    ``re.fullmatch`` would raise TypeError on it. Rendering ``str(value)``
-    quoted keeps the document a document. Recovering the author's original
-    spelling is impossible by then; that is filed separately.
+    A non-str is quoted rather than rejected: values arrive straight from a
+    YAML loader, so a template declaring ``name: on`` makes this a bool and
+    ``re.fullmatch`` would raise on it.
     """
     if not isinstance(value, str):
         return _quoted_yaml_scalar(str(value))
@@ -346,9 +340,7 @@ def _quoted_yaml_scalar(value: str) -> str:
     stripped, because ``default_style='"'`` means only pyyaml's
     double-quoted writer ever runs, and that writer never emits one.
     """
-    return yaml.safe_dump(
-        value, default_style='"', allow_unicode=True, width=_NO_WRAP
-    ).rstrip("\n")
+    return yaml.safe_dump(value, default_style='"', allow_unicode=True, width=_NO_WRAP).rstrip("\n")
 
 
 def _emits_as_same_string(value: str) -> bool:
@@ -648,9 +640,7 @@ def _format_template_resources(template) -> str:
         # validation, so a newline in either would escape the `#` and land
         # at top level. `_yaml_scalar` escapes it instead, and leaves the
         # ordinary values (`SLO`, `availability`) unquoted.
-        lines.append(
-            f"#   - {_yaml_scalar(resource.kind)}: {_yaml_scalar(resource.name)}"
-        )
+        lines.append(f"#   - {_yaml_scalar(resource.kind)}: {_yaml_scalar(resource.name)}")
     return "\n".join(lines) if lines else "#   (no resources)"
 
 

@@ -865,6 +865,184 @@ class TestTeamIsNotImplicitlyRetyped:
         )
 
 
+class TestQuotedTeamRoundTrips:
+    """opensrm-t4rd, found by the R5 correctness pass iteration 2.
+
+    Two defects in the quoting path itself, both reproducing shapes the bead
+    exists to close: `--team 0b_` crashed with an uncaught ValueError, and any
+    non-BMP team name was silently corrupted into a manifest that VALIDATED
+    CLEAN -- a regression, since the raw interpolation this replaced passed
+    emoji through intact.
+
+    The corpus is split by how each entry earns its place, because claiming all
+    of them are proven hazards would be false.
+    """
+
+    # Values some naive mechanism provably gets wrong: `json.dumps`-based
+    # quoting fails to round-trip them, or pyyaml raises on them, or pyyaml
+    # retypes them. `test_hazards_are_provable_hazards` re-derives this from the
+    # libraries, so a library change fails the test rather than quietly
+    # emptying the corpus.
+    HAZARDS = [
+        "\U0001F389 platform",  # non-BMP: json emits a surrogate PAIR
+        "\U0001D11E",
+        "\U0010FFFF",
+        "Platform: Core",
+        "ops ",
+        "\u2028",
+        "\u2029",
+        "\u0085",
+        "\u007f",
+        "\ufeff",
+        "0b_",  # pyyaml's int constructor raises ValueError
+        "0x_",
+        "null",
+        "...",
+    ]
+
+    # Chosen deliberately, and NOT mechanically hazardous -- the naive
+    # mechanism happens to handle these correctly. They are here as regression
+    # guards on YAML's structural characters and on the readability path, so a
+    # future change to the quoting cannot break them unnoticed.
+    STRUCTURAL = [
+        'he said "hi"',  # the quote character
+        "a\\b",  # the escape character
+        "ops...",  # a document-end-marker lookalike that is ordinary text
+        "caf\u00e9",  # BMP non-ASCII
+        "\u1e93algo",
+        "\u00a0",  # NBSP
+    ]
+
+    CORPUS = HAZARDS + STRUCTURAL
+
+    def test_hazards_are_provable_hazards(self):
+        """Provenance guard: every HAZARDS entry must be demonstrably hostile.
+
+        Derived from what `json` and `yaml` actually do, never from
+        `_quoted_yaml_scalar`, which is the code under test.
+        """
+        import json
+
+        import yaml
+
+        for value in self.HAZARDS:
+            try:
+                json_round_trips = (
+                    yaml.safe_load(f"t: {json.dumps(value)}\n")["t"] == value
+                )
+            except Exception:
+                json_round_trips = False
+            try:
+                loaded = yaml.safe_load(value)
+                load_agrees = isinstance(loaded, str) and loaded == value
+            except Exception:
+                load_agrees = False
+            assert not (json_round_trips and load_agrees), (
+                f"{value!r} is no longer hostile to either naive mechanism; "
+                f"it proves nothing -- move it to STRUCTURAL or remove it"
+            )
+
+    @pytest.mark.parametrize("team", CORPUS)
+    def test_team_round_trips_through_a_real_document(self, team):
+        """The emitted scalar must read back as the exact string given."""
+        import yaml
+
+        from nthlayer_generate.cli.init import _yaml_scalar
+
+        doc = f"service:\n  name: svc\n  team: {_yaml_scalar(team)}\n"
+        loaded = yaml.safe_load(doc)
+        assert loaded["service"]["team"] == team
+        assert loaded["service"]["name"] == "svc", "team must not reach name"
+
+    @pytest.mark.parametrize("team", CORPUS)
+    def test_team_survives_a_utf8_write(self, team):
+        """A value holding lone surrogates cannot be written to a file at all.
+
+        The surrogate-pair defect produced exactly that, and `.encode("utf-8")`
+        refuses it -- so this is the assertion that would have caught it even
+        without a round-trip comparison.
+        """
+        import yaml
+
+        from nthlayer_generate.cli.init import _yaml_scalar
+
+        doc = f"service:\n  team: {_yaml_scalar(team)}\n"
+        assert yaml.safe_load(doc.encode("utf-8"))["service"]["team"] == team
+
+    @pytest.mark.parametrize("team", CORPUS)
+    def test_emitted_scalar_never_spans_lines(self, team):
+        """The document is built by interpolation, so a newline would corrupt it."""
+        from nthlayer_generate.cli.init import _yaml_scalar
+
+        assert "\n" not in _yaml_scalar(team)
+
+    @pytest.mark.parametrize("team", CORPUS)
+    def test_quoted_form_carries_no_document_end_marker(self, team):
+        """Why `_quoted_yaml_scalar` strips only the trailing newline.
+
+        Asserted on the quoted branch specifically: an unquoted plain scalar may
+        legitimately end in `...` (see `ops...` in STRUCTURAL).
+        """
+        from nthlayer_generate.cli.init import _quoted_yaml_scalar
+
+        emitted = _quoted_yaml_scalar(team)
+        assert emitted.startswith('"') and emitted.endswith('"')
+        assert "\n" not in emitted
+
+    def test_bmp_non_ascii_is_emitted_literally_not_escaped(self):
+        """Pins `allow_unicode=True`, which is a readability choice.
+
+        Correctness does not depend on it -- flipping it to False leaves every
+        other test in this class green, because pyyaml round-trips its own
+        escapes either way. Without this test the flag would be unpinned and
+        could be dropped silently, turning every accented team name in a
+        generated manifest into an escape sequence.
+        """
+        from nthlayer_generate.cli.init import _quoted_yaml_scalar
+
+        assert _quoted_yaml_scalar("caf\u00e9") == '"caf\u00e9"'
+        assert "\\x" not in _quoted_yaml_scalar("caf\u00e9")
+
+    def test_init_does_not_crash_on_a_value_pyyaml_cannot_parse(
+        self, tmp_path, monkeypatch
+    ):
+        """`--team 0b_` raised an uncaught ValueError and wrote nothing.
+
+        pyyaml's int constructor reaches `int("", 2)` for this input, which is a
+        ValueError, not a YAMLError.
+        """
+        import yaml
+
+        from nthlayer_generate.specs.validator import validate_service_file
+
+        monkeypatch.chdir(tmp_path)
+
+        assert init_command("svc", "0b_", None, interactive=False) == 0
+
+        written = tmp_path / "svc.yaml"
+        assert yaml.safe_load(written.read_text())["service"]["team"] == "0b_"
+        assert validate_service_file(written).valid
+
+    @pytest.mark.parametrize(
+        "team", ["\U0001F389 platform", "caf\u00e9", "\U0001D11E"]
+    )
+    def test_non_ascii_team_survives_init_end_to_end(
+        self, team, tmp_path, monkeypatch
+    ):
+        """The regression, end to end: emoji round-tripped before the first fix."""
+        import yaml
+
+        from nthlayer_generate.specs.validator import validate_service_file
+
+        monkeypatch.chdir(tmp_path)
+
+        assert init_command("svc", team, None, interactive=False) == 0
+
+        written = tmp_path / "svc.yaml"
+        assert yaml.safe_load(written.read_text())["service"]["team"] == team
+        assert validate_service_file(written).valid
+
+
 class TestNthlayerDirFalseSuccess:
     """opensrm-t4rd defect 3: success was reported for a directory not created."""
 

@@ -1,6 +1,5 @@
 """CLI command for initializing new NthLayer services."""
 
-import json
 import re
 from pathlib import Path
 
@@ -282,10 +281,24 @@ def _yaml_scalar(value: str) -> str:
     and it is the docs-vs-reality guard from opensrm-noc6 — worth not breaking
     for cosmetics).
 
-    When quoting IS needed, ``json.dumps`` is used: a JSON string is also a valid
-    YAML double-quoted scalar, and it escapes the two characters that made raw
-    interpolation dangerous — ``:`` becomes quoted, and a newline becomes a
-    literal ``\n`` rather than starting a new YAML line.
+    When quoting IS needed, pyyaml's own emitter does it. ``json.dumps`` was
+    used here first, on the reasoning that a JSON string is also a valid YAML
+    double-quoted scalar. That is true for the BMP and false above it: with
+    ``ensure_ascii=True`` json escapes a non-BMP character as a UTF-16
+    surrogate PAIR, and pyyaml resolves each 16-bit escape separately
+    without recombining them. Measured, at exit 0:
+
+      --team '<emoji> platform'
+        -> emitted as a pair of 16-bit escapes rather than one character
+        -> read back as two lone surrogates, VALIDATES CLEAN, and the value
+           cannot even be re-encoded to UTF-8
+
+    which is the clean-manifest-carrying-a-wrong-value shape again, and a
+    regression against the raw interpolation this function replaced -- that
+    passed emoji through intact. ``ensure_ascii=False`` is not the fix either:
+    it mismatches on U+0085 and makes pyyaml raise on U+007F. Asking pyyaml to
+    emit YAML is what actually holds, across the whole corpus pinned in
+    ``TestQuotedTeamRoundTrips``.
 
     This is generate's hard rule 5 (no raw string construction for generated
     output) applied at the one input that is scriptable and unvalidated
@@ -308,7 +321,34 @@ def _yaml_scalar(value: str) -> str:
     """
     if _PLAIN_SCALAR_RE.fullmatch(value) and _emits_as_same_string(value):
         return value
-    return json.dumps(value)
+    return _quoted_yaml_scalar(value)
+
+
+# pyyaml wraps long scalars by default, which would emit a second line into a
+# document built by string interpolation. Large enough to never wrap.
+_NO_WRAP = 10**9
+
+
+def _quoted_yaml_scalar(value: str) -> str:
+    """Render *value* as a double-quoted YAML scalar on exactly one line.
+
+    ``default_style='"'`` forces the quoted form for every input, so the result
+    is always a single line and never a block scalar.
+
+    ``allow_unicode=True`` is readability only, not correctness: it emits BMP
+    non-ASCII literally (``cafe`` with its accent, rather than an escape).
+    Above the BMP pyyaml escapes regardless of the flag -- but as ONE 32-bit
+    escape, which its own reader resolves back to one character. That single
+    escape, not the flag, is what json's surrogate pair got wrong. Measured:
+    both settings round-trip every value in the corpus.
+
+    The trailing newline pyyaml adds is stripped. No document-end marker is
+    stripped, because a forced-quoted scalar never produces one -- pinned by
+    ``test_quoted_scalar_is_always_one_line``.
+    """
+    return yaml.safe_dump(
+        value, default_style='"', allow_unicode=True, width=_NO_WRAP
+    ).rstrip("\n")
 
 
 def _emits_as_same_string(value: str) -> bool:
@@ -338,10 +378,20 @@ def _emits_as_same_string(value: str) -> bool:
     Checking the bare scalar is faithful to the mapping-value position it is
     emitted into, because the allowlist already excludes every character whose
     resolution differs between those two contexts.
+
+    ``ValueError`` is caught alongside ``YAMLError`` because pyyaml's integer
+    constructor raises it rather than a YAML error on an allowlist-matching
+    input: ``0b_`` reaches ``int("", 2)``. Uncaught, that crashed ``nthlayer
+    init`` with a traceback and wrote nothing. Fuzzing every
+    allowlist-matching string up to length 4 (10248 of them) reaches exactly
+    these two types, ``ValueError`` on 3 inputs -- ``0b_``, ``0x_``, ``0b__``.
+
+    Either way the answer is the same: a value that will not load is not
+    provably a plain string, so it gets quoted.
     """
     try:
         loaded = yaml.safe_load(value)
-    except yaml.YAMLError:
+    except (yaml.YAMLError, ValueError):
         return False
     return isinstance(loaded, str) and loaded == value
 

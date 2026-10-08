@@ -209,10 +209,25 @@ def init_command(
         service_name, team, tier, service_type, dependencies, template_obj
     )
 
+    # encoding="utf-8" explicitly, and UnicodeError caught alongside OSError
+    # (opensrm-t4rd edge-case pass). Without the encoding, `write_text` uses the
+    # locale's, so on a non-UTF-8 system an ordinary accented team name raised
+    # UnicodeEncodeError -- which is a ValueError, NOT an OSError, so the handler
+    # below missed it and init died by traceback. Worse, `write_text` had already
+    # created the file, so a ZERO-BYTE manifest was left behind and every later
+    # run then hit the `exists()` guard above and refused, permanently, until
+    # someone deleted it by hand.
+    #
+    # The unlink is the rollback half of this bead's defect 3: a run that fails
+    # must not leave a partial artifact that blocks the next one.
     try:
-        service_file.write_text(service_content)
-    except OSError as e:
+        service_file.write_text(service_content, encoding="utf-8")
+    except (OSError, UnicodeError) as e:
         error(f"Error creating service file: {e}")
+        try:
+            service_file.unlink(missing_ok=True)
+        except OSError:
+            pass
         return 1
 
     # Create .nthlayer directory
@@ -222,13 +237,18 @@ def init_command(
     except OSError as e:
         warning(f"Could not create .nthlayer directory: {e}")
 
-    # Create config file if it doesn't exist
+    # Create config file if it doesn't exist.
+    #
+    # `is_file()`, NOT `exists()` -- the same confusion this bead fixed for
+    # `nthlayer_dir` below. With `.nthlayer/config.yaml` present as a DIRECTORY,
+    # `exists()` is True because it is a directory, so the write was skipped and
+    # init reported success for a config it had never written, with no warning.
     config_file = nthlayer_dir / "config.yaml"
-    if not config_file.exists():
+    if not config_file.is_file():
         config_content = _generate_config_yaml()
         try:
-            config_file.write_text(config_content)
-        except OSError as e:
+            config_file.write_text(config_content, encoding="utf-8")
+        except (OSError, UnicodeError) as e:
             warning(f"Could not create config file: {e}")
 
     # Success message
@@ -249,7 +269,7 @@ def init_command(
         # because .nthlayer could not be created (read-only parent, a stray file).
         warning(
             f"{nthlayer_dir}/ was not created — config was not written. "
-            f"Remove or rename the existing {nthlayer_dir} entry and re-run."
+            f"It already exists as a file, or the parent is not writable."
         )
 
     console.print()

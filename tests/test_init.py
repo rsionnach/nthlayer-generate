@@ -947,6 +947,11 @@ class TestQuotingMechanismRoundTrips:
         'he said "hi"',  # the quote character
         "a\\b",  # the escape character
         "ops...",  # a document-end-marker lookalike that is ordinary text
+        # Long enough to cross pyyaml's 80-column default wrap. Without these
+        # nothing in the corpus reached the threshold, so deleting
+        # `width=_NO_WRAP` left every test here green (opensrm-t4rd edge cases).
+        "platform team " * 20,
+        "x" * 10_000,
         "caf\u00e9",  # BMP non-ASCII
         "\u1e93algo",
         "\u00a0",  # NBSP
@@ -994,15 +999,18 @@ class TestQuotingMechanismRoundTrips:
         assert loaded["service"]["name"] == "svc", "team must not reach name"
 
     @pytest.mark.parametrize("team", CORPUS)
-    def test_team_survives_a_utf8_write(self, team):
+    def test_team_survives_a_real_utf8_file(self, team, tmp_path):
         """A value holding lone surrogates cannot be written to a file at all.
 
-        The surrogate-pair defect produced exactly that, and `.encode("utf-8")`
-        refuses it -- so this is the assertion that would have caught it even
-        without a round-trip comparison.
+        The surrogate-pair defect produced exactly that. This version WRITES a
+        file: the original only did `doc.encode("utf-8")` in memory, so it
+        passed regardless of what init actually wrote, and it was the test that
+        should have caught the default-encoding crash the edge-case pass found.
         """
         doc = f"service:\n  team: {_yaml_scalar(team)}\n"
-        assert yaml.safe_load(doc.encode("utf-8"))["service"]["team"] == team
+        written = tmp_path / "svc.yaml"
+        written.write_text(doc, encoding="utf-8")
+        assert yaml.safe_load(written.read_text(encoding="utf-8"))["service"]["team"] == team
 
     @pytest.mark.parametrize("team", CORPUS)
     def test_emitted_scalar_never_spans_lines(self, team):
@@ -1413,6 +1421,225 @@ class TestValidatorSurvivesARetypedName:
     def test_the_rule_rejects_non_str_directly(self):
         for value in (True, False, None, 123, 1.5, [], {}):
             assert is_valid_service_name(value) is False
+
+
+class TestWritesAreExplicitlyUtf8:
+    """opensrm-t4rd edge-case pass: the writes used the locale's encoding.
+
+    `write_text(content)` encodes with `locale.getpreferredencoding()`. On a
+    non-UTF-8 system an ordinary accented team name therefore raised
+    UnicodeEncodeError -- which is a ValueError, NOT an OSError, so the
+    `except OSError` handler missed it and init died by traceback. And
+    `write_text` had already created the file, so a ZERO-BYTE manifest was left
+    behind; every later run then hit the `exists()` guard and refused,
+    permanently, until someone deleted it by hand.
+
+    The diff had WIDENED this: `allow_unicode=True` emits non-ASCII literally,
+    where escaping would have kept the output pure ASCII and survived any sink.
+
+    An AST guard rather than a locale test, because pytest cannot portably
+    change the interpreter's filesystem encoding mid-process, and a test that
+    tried would skip on most machines -- the silent-skip failure mode this
+    project has been bitten by twice.
+    """
+
+    def test_no_text_io_in_init_omits_an_explicit_encoding(self):
+        module = importlib.import_module("nthlayer_generate.cli.init")
+        tree = ast.parse(pathlib.Path(module.__file__).read_text(encoding="utf-8"))
+
+        offenders = []
+        checked = 0
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            name = getattr(node.func, "attr", None)
+            if name not in ("write_text", "read_text", "open"):
+                continue
+            checked += 1
+            if not any(kw.arg == "encoding" for kw in node.keywords):
+                offenders.append(f"{name}() at line {node.lineno}")
+
+        assert checked >= 2, (
+            f"found only {checked} text-IO calls in cli/init.py; this guard has "
+            f"stopped matching, so it is inspecting almost nothing"
+        )
+        assert not offenders, (
+            "text IO without an explicit encoding= in cli/init.py: "
+            + ", ".join(offenders)
+            + ". The locale's encoding is not UTF-8 everywhere, and a failed "
+            "encode still leaves the file created but empty (opensrm-t4rd)."
+        )
+
+    def test_a_non_ascii_team_is_written_and_reads_back(self, tmp_path, monkeypatch):
+        """End to end, through a real file rather than an in-memory encode."""
+        monkeypatch.chdir(tmp_path)
+
+        assert init_command("svc", "caf\u00e9 \U0001f389", None, interactive=False) == 0
+
+        written = tmp_path / "svc.yaml"
+        assert written.stat().st_size > 0
+        loaded = yaml.safe_load(written.read_text(encoding="utf-8"))
+        assert loaded["service"]["team"] == "caf\u00e9 \U0001f389"
+
+
+class TestAFailedWriteLeavesNothingBehind:
+    """opensrm-t4rd defect 3's rollback half, which was missing.
+
+    A partial failure must not leave an artifact that blocks the next run.
+    """
+
+    @staticmethod
+    def _raise_after_creating(exc):
+        """Mimic `write_text`: create the file, then fail encoding it."""
+        real = pathlib.Path.write_text
+
+        def fake(self, *args, **kwargs):
+            if self.name == "svc.yaml":
+                self.touch()
+                raise exc
+            return real(self, *args, **kwargs)
+
+        return fake
+
+    @pytest.mark.parametrize(
+        "exc",
+        [
+            UnicodeEncodeError("ascii", "x", 0, 1, "simulated"),
+            OSError(28, "No space left on device"),
+        ],
+    )
+    def test_exit_1_and_no_partial_manifest(self, exc, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+
+        with patch.object(pathlib.Path, "write_text", self._raise_after_creating(exc)):
+            assert init_command("svc", "ops", None, interactive=False) == 1
+
+        assert not (tmp_path / "svc.yaml").exists(), (
+            "a failed run left a partial manifest, which the exists() guard "
+            "turns into a permanent refusal"
+        )
+
+    def test_a_rerun_after_a_failed_write_succeeds(self, tmp_path, monkeypatch):
+        """The property that made the zero-byte file unrecoverable."""
+        monkeypatch.chdir(tmp_path)
+
+        with patch.object(
+            pathlib.Path,
+            "write_text",
+            self._raise_after_creating(UnicodeEncodeError("ascii", "x", 0, 1, "s")),
+        ):
+            assert init_command("svc", "ops", None, interactive=False) == 1
+
+        assert init_command("svc", "ops", None, interactive=False) == 0
+        assert (tmp_path / "svc.yaml").stat().st_size > 0
+
+
+class TestConfigFileShapes:
+    """opensrm-t4rd edge-case pass: `exists()` again, one line up.
+
+    `.nthlayer/config.yaml` was guarded by `exists()`, which is True when the
+    path is a DIRECTORY -- so the write was skipped and init reported success
+    for a config it had never written, with no warning. The identical
+    confusion this bead fixed for `.nthlayer` itself.
+
+    Asserted on the filesystem, not the console: `warning()` shells out to
+    `gum` when it is installed, which bypasses capture entirely.
+    """
+
+    def test_a_directory_named_config_yaml_does_not_become_a_config(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".nthlayer").mkdir()
+        (tmp_path / ".nthlayer" / "config.yaml").mkdir()
+
+        assert init_command("svc", "ops", None, interactive=False) == 0
+
+        config = tmp_path / ".nthlayer" / "config.yaml"
+        assert config.is_dir(), "fixture no longer sets up a directory"
+        assert not config.is_file()
+        # the manifest, which is the primary artifact, is still correct
+        assert (
+            yaml.safe_load((tmp_path / "svc.yaml").read_text(encoding="utf-8"))["service"]["team"]
+            == "ops"
+        )
+
+    def test_a_directory_named_config_yaml_is_reported_not_passed_over(self, tmp_path, monkeypatch):
+        """The half the filesystem cannot show.
+
+        With `exists()` instead of `is_file()` the state asserted above is
+        IDENTICAL -- the write is skipped either way and the directory stays a
+        directory. The only difference is whether the user is told, so that is
+        what this asserts, by patching `warning` at init's own lookup path
+        rather than reading the console: `ux.warning` shells out to `gum` when
+        it is installed, which bypasses capsys entirely.
+        """
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".nthlayer").mkdir()
+        (tmp_path / ".nthlayer" / "config.yaml").mkdir()
+
+        with patch("nthlayer_generate.cli.init.warning") as warned:
+            assert init_command("svc", "ops", None, interactive=False) == 0
+
+        said = " ".join(str(call) for call in warned.call_args_list)
+        assert "config.yaml" in said, (
+            f"init reported success without mentioning the config it never "
+            f"wrote; warnings were: {warned.call_args_list}"
+        )
+
+    def test_a_normal_run_does_not_warn_about_the_config(self, tmp_path, monkeypatch):
+        """Guards the assertion above against passing for the wrong reason."""
+        monkeypatch.chdir(tmp_path)
+
+        with patch("nthlayer_generate.cli.init.warning") as warned:
+            assert init_command("svc", "ops", None, interactive=False) == 0
+
+        said = " ".join(str(call) for call in warned.call_args_list)
+        assert "config.yaml" not in said, f"unexpected warning: {warned.call_args_list}"
+
+    def test_an_existing_config_file_is_not_overwritten(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".nthlayer").mkdir()
+        config = tmp_path / ".nthlayer" / "config.yaml"
+        config.write_text("# mine\n", encoding="utf-8")
+
+        assert init_command("svc", "ops", None, interactive=False) == 0
+        assert config.read_text(encoding="utf-8") == "# mine\n"
+
+
+class TestInitIsNotSilentlyIdempotent:
+    """A second run must refuse rather than overwrite, and leave the first alone."""
+
+    def test_a_second_run_refuses_and_preserves_the_manifest(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+
+        assert init_command("svc", "ops", None, interactive=False) == 0
+        first = (tmp_path / "svc.yaml").read_bytes()
+
+        assert init_command("svc", "other-team", None, interactive=False) == 1
+        assert (tmp_path / "svc.yaml").read_bytes() == first, (
+            "the refused run still modified the existing manifest"
+        )
+
+
+class TestTemplateResourceContainers:
+    """`resource.kind`/`resource.name` arrive from a template file unvalidated.
+
+    `_yaml_scalar` renders a non-str via `str(value)`, so a list or dict yields
+    an ugly but harmless quoted scalar. What matters is that it stays ONE
+    comment line and cannot reach the document body.
+    """
+
+    @pytest.mark.parametrize("value", [None, [1, 2], {"a": "x\ny"}, [[1], [2]], 1.5, True])
+    def test_a_container_stays_one_comment_line(self, value):
+        resource = MagicMock()
+        resource.kind = "SLO"
+        resource.name = value
+        template = MagicMock()
+        template.resources = [resource]
+
+        rendered = _format_template_resources(template)
+
+        assert rendered.count("\n") == 0, f"{value!r} broke the comment onto two lines"
+        assert rendered.lstrip().startswith("#")
 
 
 class TestNthlayerDirFalseSuccess:

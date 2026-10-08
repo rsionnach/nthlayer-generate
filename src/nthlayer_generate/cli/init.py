@@ -4,6 +4,7 @@ import json
 import re
 from pathlib import Path
 
+import yaml
 from nthlayer_common.manifest.models import resolve_service_type
 
 from nthlayer_generate.cli.ux import (
@@ -299,12 +300,50 @@ def _yaml_scalar(value: str) -> str:
     The allowlist is deliberately narrow: anything outside
     ``[A-Za-z0-9][A-Za-z0-9 ._-]*`` is quoted rather than reasoned about. That
     excludes every YAML indicator character (``:`` ``#`` ``-`` at the start,
-    ``{`` ``[`` ``&`` ``*`` ``!`` ``|`` ``>`` ``%`` ``@`` `` ` ``), leading and
-    trailing whitespace, and anything non-ASCII.
+    ``{`` ``[`` ``&`` ``*`` ``!`` ``|`` ``>`` ``%`` ``@`` `` ` ``), leading
+    whitespace, and anything non-ASCII.
+
+    Matching the allowlist is necessary but NOT sufficient, so
+    ``_emits_as_same_string`` gates it too — see there for why.
     """
-    if _PLAIN_SCALAR_RE.fullmatch(value):
+    if _PLAIN_SCALAR_RE.fullmatch(value) and _emits_as_same_string(value):
         return value
     return json.dumps(value)
+
+
+def _emits_as_same_string(value: str) -> bool:
+    """True if *value* written as a plain YAML scalar reads back identically.
+
+    The allowlist excludes every YAML *indicator*, but says nothing about
+    implicit *type resolution*, which is the half that was missing. Measured,
+    every one of these matched the allowlist, was emitted unquoted, and loaded
+    back as something other than the string written -- all at exit 0:
+
+      --team null         -> None       -> validate FAILS, "team is required"
+      --team yes/on/true  -> True       -> validates CLEAN, bool in a str field
+      --team no/off/false -> False      -> validate FAILS
+      --team 123          -> 123        -> int
+      --team 1_000        -> 1000       -> int
+      --team 1.5          -> 1.5        -> float
+      --team 0x1f         -> 31         -> int
+      --team 2026-01-01   -> date(...)  -> datetime.date, validates CLEAN
+      --team 'ops '       -> 'ops'      -> trailing space silently stripped
+
+    Case variants resolve too (``NULL``, ``Yes``), which is why this asks the
+    loader instead of carrying a deny list that would have to track the YAML 1.1
+    type schema -- and stay correct as pyyaml changes. Both shapes above are the
+    bead's own defects one field over: the first writes a manifest generate's
+    validator rejects, the second a clean manifest carrying a wrong value.
+
+    Checking the bare scalar is faithful to the mapping-value position it is
+    emitted into, because the allowlist already excludes every character whose
+    resolution differs between those two contexts.
+    """
+    try:
+        loaded = yaml.safe_load(value)
+    except yaml.YAMLError:
+        return False
+    return isinstance(loaded, str) and loaded == value
 
 
 def _is_valid_team(team: str) -> bool:

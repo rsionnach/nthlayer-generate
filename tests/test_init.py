@@ -768,6 +768,103 @@ class TestInitOutputSurvivesItsOwnValidator:
             assert result.valid, f"init accepted {name!r} but its validator rejects it: {result.errors}"
 
 
+class TestTeamIsNotImplicitlyRetyped:
+    """opensrm-t4rd, found by the R5 correctness pass on the fix itself.
+
+    The quoting allowlist excluded every YAML *indicator*, which is what the
+    original defect was about, and then stopped. It said nothing about implicit
+    *type resolution*, so a second family of `--team` values matched the
+    allowlist, was emitted unquoted, and loaded back as something that is not a
+    string -- reproducing both of the bead's own failure shapes one field over.
+
+    HOSTILE is NOT derived from the implementation. Every entry is proved to be
+    a real hazard against the loader in
+    `test_every_hostile_value_is_actually_hostile` below: if pyyaml stops
+    resolving one of these, that test fails rather than this suite quietly
+    testing nothing. That is the fixture-provenance rule -- a fixture written
+    from the code under test agrees with the code under test, including its
+    bugs.
+    """
+
+    HOSTILE = [
+        "null",
+        "NULL",
+        "~",
+        "yes",
+        "Yes",
+        "no",
+        "on",
+        "off",
+        "true",
+        "false",
+        "123",
+        "1_000",
+        "1.5",
+        "0x1f",
+        "0b101",
+        "2026-01-01",
+        "ops ",
+    ]
+
+    def test_every_hostile_value_is_actually_hostile(self):
+        """Provenance guard: each fixture must be a value the loader retypes.
+
+        Traces the table to the authority (what pyyaml actually does) rather
+        than to `_emits_as_same_string`, which is the code under test.
+        """
+        import yaml
+
+        for value in self.HOSTILE:
+            loaded = yaml.safe_load(value)
+            assert not (isinstance(loaded, str) and loaded == value), (
+                f"{value!r} is no longer retyped by the loader "
+                f"(got {loaded!r}); it no longer proves anything -- "
+                f"replace or remove it"
+            )
+
+    @pytest.mark.parametrize("team", HOSTILE)
+    def test_hostile_team_round_trips_as_the_exact_string(
+        self, team, tmp_path, monkeypatch
+    ):
+        """init must write a team that reads back as the string it was given.
+
+        Before the fix, measured at exit 0: `--team null` loaded as None and the
+        validator then rejected the manifest; `--team yes` loaded as True and
+        the manifest VALIDATED CLEAN carrying a bool in a field declared `str`;
+        `--team 'ops '` silently lost its trailing space.
+        """
+        import yaml
+
+        monkeypatch.chdir(tmp_path)
+
+        assert init_command("svc", team, None, interactive=False) == 0
+
+        written = tmp_path / "svc.yaml"
+        data = yaml.safe_load(written.read_text())
+        assert isinstance(data["service"]["team"], str), (
+            f"--team {team!r} was implicitly retyped to "
+            f"{type(data['service']['team']).__name__}"
+        )
+        assert data["service"]["team"] == team
+
+    @pytest.mark.parametrize("team", HOSTILE)
+    def test_hostile_team_still_passes_the_real_validator(
+        self, team, tmp_path, monkeypatch
+    ):
+        """The exit-0-then-invalid shape, which is the bead's whole subject."""
+        from nthlayer_generate.specs.validator import validate_service_file
+
+        monkeypatch.chdir(tmp_path)
+
+        assert init_command("svc", team, None, interactive=False) == 0
+
+        result = validate_service_file(tmp_path / "svc.yaml")
+        assert result.valid, (
+            f"init exited 0 writing a manifest its own validator rejects "
+            f"for --team {team!r}: {result.errors}"
+        )
+
+
 class TestNthlayerDirFalseSuccess:
     """opensrm-t4rd defect 3: success was reported for a directory not created."""
 

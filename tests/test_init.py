@@ -950,6 +950,9 @@ class TestQuotingMechanismRoundTrips:
         # Long enough to cross pyyaml's 80-column default wrap. Without these
         # nothing in the corpus reached the threshold, so deleting
         # `width=_NO_WRAP` left every test here green (opensrm-t4rd edge cases).
+        # It is the SPACES that make this wrap -- pyyaml breaks at a space -- so
+        # this is the value that pins `width=_NO_WRAP`. `"x" * 10_000` below is
+        # emitted unwrapped and pins length handling only.
         "platform team " * 20,
         "x" * 10_000,
         "caf\u00e9",  # BMP non-ASCII
@@ -1198,7 +1201,7 @@ class TestNoFieldBypassesTheQuotingHelper:
     def _covered(self):
         """Every YAML-shaped interpolation in the module, by function."""
         module = importlib.import_module(self.MODULE)
-        tree = ast.parse(pathlib.Path(module.__file__).read_text())
+        tree = ast.parse(pathlib.Path(module.__file__).read_text(encoding="utf-8"))
         found = {}
         for fn in ast.walk(tree):
             if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -1267,7 +1270,7 @@ class TestNoFieldBypassesTheQuotingHelper:
         idiomatic next edit there.
         """
         module = importlib.import_module(self.MODULE)
-        tree = ast.parse(pathlib.Path(module.__file__).read_text())
+        tree = ast.parse(pathlib.Path(module.__file__).read_text(encoding="utf-8"))
         covered = set(self._covered())
         for fn in ast.walk(tree):
             if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -1452,7 +1455,17 @@ class TestWritesAreExplicitlyUtf8:
         for node in ast.walk(tree):
             if not isinstance(node, ast.Call):
                 continue
-            name = getattr(node.func, "attr", None)
+            # A method call (`path.write_text`, `io.open`) OR the bare `open()`
+            # builtin. The first version read only `.attr`, which is None for a
+            # plain Name call, so a bare `open("x")` without encoding= passed
+            # untouched -- and bare `open()` is this repo's dominant idiom,
+            # roughly 40 sites, so it is the likeliest future form.
+            if isinstance(node.func, ast.Attribute):
+                name = node.func.attr
+            elif isinstance(node.func, ast.Name):
+                name = node.func.id
+            else:
+                continue
             if name not in ("write_text", "read_text", "open"):
                 continue
             checked += 1
@@ -1628,7 +1641,24 @@ class TestTemplateResourceContainers:
     comment line and cannot reach the document body.
     """
 
-    @pytest.mark.parametrize("value", [None, [1, 2], {"a": "x\ny"}, [[1], [2]], 1.5, True])
+    # The plain-str entries carry this class. `str()` of a CONTAINER renders a
+    # newline as `\n` inside a repr, so no container value can break the line --
+    # with only those, this class passed with the escaping removed entirely
+    # (opensrm-t4rd edge-case pass, iteration 2).
+    @pytest.mark.parametrize(
+        "value",
+        [
+            "a\nb",
+            "x\nservice:\n  name: hijacked",
+            "ok\rtruncated",
+            None,
+            [1, 2],
+            {"a": "x\ny"},
+            [[1], [2]],
+            1.5,
+            True,
+        ],
+    )
     def test_a_container_stays_one_comment_line(self, value):
         resource = MagicMock()
         resource.kind = "SLO"

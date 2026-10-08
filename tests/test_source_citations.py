@@ -85,7 +85,7 @@ def test_the_known_citations_are_seen() -> None:
     )
     assert {"node", "module", "name"} <= kinds, (
         f"only these citation kinds were found: {sorted(kinds)}. All three "
-        f"spellings existed when this was written, so a missing kind means a "
+        f"kinds existed when this was written, so a missing one means a "
         f"pattern broke, not that the codebase changed style."
     )
 

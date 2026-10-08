@@ -120,8 +120,9 @@ def init_command(
 
     # `not team` first: team is `str | None` here, so `.strip()` alone would
     # raise on None and also lose the narrowing the calls below rely on. The
-    # `.strip()` half is what sends a whitespace-only --team here rather than
-    # to _is_valid_team, whose control-character message would be false for it.
+    # `.strip()` half is what catches a whitespace-only --team here, where the
+    # message fits it, rather than at the _is_valid_team branch below, whose
+    # message would be false for it.
     if not team or not team.strip():
         error("Team name is required")
         if not interactive:
@@ -130,9 +131,7 @@ def init_command(
 
     if not _is_valid_team(team):
         error("Invalid team name")
-        console.print(
-            "   [muted]Team name must not contain line breaks, tabs or control characters[/muted]"
-        )
+        console.print("   [muted]Team name must not contain line breaks, tabs or NUL[/muted]")
         return 1
 
     # Select service tier using interactive menu

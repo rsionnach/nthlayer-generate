@@ -854,7 +854,7 @@ class TestTeamIsNotImplicitlyRetyped:
         )
 
 
-class TestTeamGuardAndMessageAgree:
+class TestTeamGuardScope:
     """opensrm-t4rd clarity pass: the guard rejected more than it claimed.
 
     `_is_valid_team` was `bool(team.strip()) and not any(...)`, but its summary
@@ -862,10 +862,15 @@ class TestTeamGuardAndMessageAgree:
     contain line breaks, tabs or control characters". A whitespace-only --team
     therefore got a message that was false for it.
 
-    Blankness moved to the caller's `if not team.strip()` branch, which already
-    had the right message, leaving this guard doing exactly what it says.
+    Blankness moved to the caller's `if not team or not team.strip()` branch,
+    which already had the right message, leaving this guard doing exactly what
+    it says.
+
     Asserted structurally rather than by scraping the console, per the
-    project's test-assertion rule.
+    project's test-assertion rule. What that leaves UNASSERTED, stated rather
+    than implied: nothing here checks which message a given input produces,
+    only that the two branches separate and that every rejected team exits 1
+    writing nothing. The wording was verified by hand when it changed.
     """
 
     def test_the_guard_no_longer_judges_blankness(self):
@@ -875,7 +880,12 @@ class TestTeamGuardAndMessageAgree:
         assert _is_valid_team("\t") is False  # a tab IS a control character
 
     @pytest.mark.parametrize("team", ["\n", "\r", "\t", "\x00", "ops\nx"])
-    def test_the_guard_rejects_exactly_the_four(self, team):
+    def test_the_guard_rejects_the_four(self, team):
+        """Each of the four, plus one embedded in an otherwise ordinary name.
+
+        That exactness is the *other* half -- see
+        `test_the_guard_passes_what_quoting_handles`.
+        """
         assert _is_valid_team(team) is False
 
     @pytest.mark.parametrize("team", ["\x1b", "\x07", "\x0b", "caf\u00e9", "a b"])

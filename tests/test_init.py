@@ -1462,11 +1462,28 @@ class TestWritesAreExplicitlyUtf8:
             # roughly 40 sites, so it is the likeliest future form.
             if isinstance(node.func, ast.Attribute):
                 name = node.func.attr
+                # `os.open` returns a file DESCRIPTOR and takes no encoding, so
+                # demanding one would be wrong. Every other `.open` does.
+                if name == "open" and getattr(node.func.value, "id", None) == "os":
+                    continue
             elif isinstance(node.func, ast.Name):
                 name = node.func.id
             else:
                 continue
-            if name not in ("write_text", "read_text", "open"):
+            # `NamedTemporaryFile` and `fdopen` are here because they are the
+            # primitives an atomic create-or-fail write uses (opensrm-may6), so
+            # the guard would otherwise go blind at the moment it matters most.
+            # Both default to the locale's encoding in text mode. Verified
+            # evasions before this list grew.
+            if name not in (
+                "write_text",
+                "read_text",
+                "open",
+                "fdopen",
+                "NamedTemporaryFile",
+                "TemporaryFile",
+                "SpooledTemporaryFile",
+            ):
                 continue
             checked += 1
             if not any(kw.arg == "encoding" for kw in node.keywords):
@@ -1650,7 +1667,13 @@ class TestTemplateResourceContainers:
         [
             "a\nb",
             "x\nservice:\n  name: hijacked",
-            "ok\rtruncated",
+            # pyyaml's scan_line_break treats all four of these as line breaks,
+            # so each can end the comment and start a key. The earlier
+            # `count("\n") == 0` assertion was blind to every one of them.
+            "ok\rinjected: 1",
+            "ok\u0085injected: 1",
+            "ok\u2028injected: 1",
+            "ok\u2029injected: 1",
             None,
             [1, 2],
             {"a": "x\ny"},
@@ -1668,7 +1691,17 @@ class TestTemplateResourceContainers:
 
         rendered = _format_template_resources(template)
 
-        assert rendered.count("\n") == 0, f"{value!r} broke the comment onto two lines"
+        # Parse it, rather than looking for "\n". A comment can be ended by CR,
+        # NEL, LS or PS as well as LF, and the previous assertion saw none of
+        # them -- so `ok\rinjected: 1` satisfied it while adding a key
+        # (opensrm-t4rd edge-case pass, iteration 3).
+        document = f"service:\n  name: svc\n  team: ops\n{rendered}\n"
+        parsed = yaml.safe_load(document)
+
+        assert set(parsed) == {"service"}, (
+            f"{value!r} escaped the comment and added {sorted(set(parsed) - {'service'})}"
+        )
+        assert parsed["service"] == {"name": "svc", "team": "ops"}
         assert rendered.lstrip().startswith("#")
 
 

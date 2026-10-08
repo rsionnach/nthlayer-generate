@@ -63,21 +63,21 @@ VALID_TIERS = {
 # Same shape as the service-type divergence recorded below under opensrm-z3ab,
 # which is why the rule lives here with it rather than in either caller.
 #
-# NOTE ON AUTHORITY. This pattern is generate's, not the spec's. opensrm v1
-# schema.json leaves `properties.service.properties.name` UNCONSTRAINED, and its
-# `definitions.Metadata.properties.name` is `^[a-z0-9-]+$`, which is looser —
-# it admits a leading digit and even a leading or trailing hyphen. So this rule
-# is deliberately stricter than the schema for output generate CREATES, and
-# schema-valid documents exist that `init` will refuse to write. Closing that
-# gap is a spec decision, tracked separately.
-# The union of what the two old guards each enforced, which is also opensrm v2's
-# DNS shape with a stricter first character:
+# AUTHORITY: this pattern is generate's own, and is deliberately STRICTER than
+# the opensrm schema, so schema-valid documents exist that `init` refuses to
+# write. That gap is a spec decision, tracked in opensrm-fwnp — which is also
+# where the schema's actual patterns are recorded, rather than quoted here
+# where they would rot. A test cannot hold them: generate's CI installs
+# nthlayer-common from PyPI and has no `opensrm/` checkout, so a schema.json
+# assertion would `pytest.skip` in exactly the environment meant to gate the
+# merge (the reasoning is spelled out in test_service_type_agreement.py).
+#
+# The rule is the union of what the two old guards each enforced:
 #   - must start with a lowercase letter   (validator.py had this; the CLI did not)
 #   - must not end with a hyphen           (the CLI had this; validator.py did not)
-# Checked first: no leading- or trailing-hyphen service name exists anywhere in
-# generate's tests or examples, nthlayer/demo, or opensrm's spec examples, so
-# tightening validator.py costs nothing that is in use. v2's
-# Metadata.name (`^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`) rejects `svc-` too.
+# Neither was right alone, so aligning to either one would have loosened the
+# other. Checked before tightening: no leading- or trailing-hyphen service name
+# was in use anywhere in this repo.
 SERVICE_NAME_PATTERN = r"[a-z]([a-z0-9-]*[a-z0-9])?"
 _SERVICE_NAME_RE = re.compile(SERVICE_NAME_PATTERN)
 
@@ -88,10 +88,7 @@ def is_valid_service_name(name: str) -> bool:
     Uses ``fullmatch``, not ``match`` with a trailing ``$``. In Python ``$``
     also matches just before a final newline, so ``re.match(r"...$", "svc\n")``
     SUCCEEDS — and a trailing newline is an ordinary authoring accident from a
-    YAML block scalar. opensrm v2's schema documents a deliberate
-    ``not: {pattern: "\\n"}`` guard against exactly this for ServiceType,
-    noting that regex engines disagree about it; ``fullmatch`` is the Python
-    equivalent and needs no second pattern.
+    YAML block scalar.
 
     ``isinstance`` is checked first because the loader hands this whatever YAML
     resolved: a manifest with ``name: yes`` yields ``True``, which passes

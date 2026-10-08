@@ -232,11 +232,9 @@ def init_command(
     # Success message
     console.print()
     success(f"Created {service_file}")
-    # is_dir(), NOT exists() (opensrm-t4rd). If .nthlayer is a regular FILE,
-    # mkdir raises FileExistsError and the config write raises
-    # NotADirectoryError; both are OSError, so both were downgraded to warnings
-    # above. exists() is then True *because it is a file*, so init printed
-    # "Created .nthlayer/" for a directory it had not created and returned 0.
+    # is_dir(), NOT exists() (opensrm-t4rd): with .nthlayer a regular FILE,
+    # exists() is True *because it is a file*, so init claimed to have created
+    # a directory it had not.
     if nthlayer_dir.is_dir():
         success(f"Created {nthlayer_dir}/")
     else:
@@ -281,24 +279,8 @@ def _yaml_scalar(value: object) -> str:
     and it is the docs-vs-reality guard from opensrm-noc6 — worth not breaking
     for cosmetics).
 
-    When quoting IS needed, pyyaml's own emitter does it. ``json.dumps`` was
-    used here first, on the reasoning that a JSON string is also a valid YAML
-    double-quoted scalar. That is true for the BMP and false above it: with
-    ``ensure_ascii=True`` json escapes a non-BMP character as a UTF-16
-    surrogate PAIR, and pyyaml resolves each 16-bit escape separately
-    without recombining them. Measured, at exit 0:
-
-      --team '<emoji> platform'
-        -> emitted as a pair of 16-bit escapes rather than one character
-        -> read back as two lone surrogates, VALIDATES CLEAN, and the value
-           cannot even be re-encoded to UTF-8
-
-    which is the clean-manifest-carrying-a-wrong-value shape again, and a
-    regression against the raw interpolation this function replaced -- that
-    passed emoji through intact. ``ensure_ascii=False`` is not the fix either:
-    it mismatches on U+0085 and makes pyyaml raise on U+007F. Asking pyyaml to
-    emit YAML is what actually holds, across the whole corpus pinned in
-    ``TestQuotedTeamRoundTrips``.
+    When quoting IS needed, ``_quoted_yaml_scalar`` does it; see there for why
+    it uses pyyaml's emitter rather than ``json.dumps``.
 
     This is generate's hard rule 5 (no raw string construction for generated
     output) applied at the one input that is scriptable and unvalidated
@@ -344,6 +326,15 @@ def _quoted_yaml_scalar(value: str) -> str:
     ``default_style='"'`` forces the quoted form for every input, so the result
     is always a single line and never a block scalar.
 
+    ``json.dumps`` was used here first, on the reasoning that a JSON string is
+    also a valid YAML double-quoted scalar. True for the BMP, false above it:
+    with ``ensure_ascii=True`` json escapes a non-BMP character as a UTF-16
+    surrogate PAIR, and pyyaml resolves each 16-bit escape separately without
+    recombining them, so an emoji team name read back as two lone surrogates,
+    validated clean, and could not be re-encoded to UTF-8 at all.
+    ``ensure_ascii=False`` is no better: it mismatches on U+0085 and makes
+    pyyaml raise on U+007F.
+
     ``allow_unicode=True`` is readability only, not correctness: it emits BMP
     non-ASCII literally (``cafe`` with its accent, rather than an escape).
     Above the BMP pyyaml escapes regardless of the flag -- but as ONE 32-bit
@@ -352,8 +343,8 @@ def _quoted_yaml_scalar(value: str) -> str:
     both settings round-trip every value in the corpus.
 
     The trailing newline pyyaml adds is stripped. No document-end marker is
-    stripped, because a forced-quoted scalar never produces one -- pinned by
-    ``test_quoted_scalar_is_always_one_line``.
+    stripped, because ``default_style='"'`` means only pyyaml's
+    double-quoted writer ever runs, and that writer never emits one.
     """
     return yaml.safe_dump(
         value, default_style='"', allow_unicode=True, width=_NO_WRAP
@@ -420,15 +411,7 @@ def _is_valid_team(team: str) -> bool:
 
 
 def _is_valid_service_name(name: str) -> bool:
-    """Delegates to the one service-name rule (opensrm-t4rd).
-
-    Kept as a thin wrapper rather than deleted: tests and callers import this
-    name. The body it replaced looped over ``char.islower() or char.isdigit()``
-    — UNICODE predicates — and rejected only a leading or trailing hyphen, so it
-    accepted `1-svc`, `café` and fullwidth `ａbc`, all of which
-    specs/validator.py then refused. `init` exited 0 having written a manifest
-    its own validator rejects, and the exit code is what a CI gate keys on.
-    """
+    """Delegates to the one service-name rule; see specs/manifest for why."""
     return is_valid_service_name(name)
 
 

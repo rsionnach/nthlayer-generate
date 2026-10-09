@@ -46,8 +46,8 @@ VALID_TIERS = {
     "low",
 }
 
-# THE service-name rule for the init path (opensrm-t4rd). Two copies of it
-# disagreed:
+# THE service-name rule for every path that writes a manifest (opensrm-t4rd,
+# opensrm-h9fq). Two copies of it disagreed:
 # cli/init.py's guard looped over `char.islower() or char.isdigit()`, which are
 # UNICODE predicates, and rejected only a leading or trailing hyphen — so
 # `1-svc`, `café` and fullwidth `ａbc` all passed the CLI and were then rejected
@@ -57,9 +57,10 @@ VALID_TIERS = {
 #
 # Now genuinely the only copy: cli/init.py and cli/setup.py both delegate here,
 # and specs/validator.py applies it (opensrm-h9fq retired the third copy). That
-# is a claim about three other files, so it is asserted rather than left as
-# prose: test_cli_setup.py::TestTheNameRuleHasExactlyOneHome drives all three
-# callers over the shared table.
+# is a claim about other files, so it is asserted rather than left as prose:
+# test_cli_setup.py::TestTheNameRuleHasExactlyOneHome drives BOTH CLI guards
+# over the shared table. specs/validator.py is not driven there -- it calls
+# this function directly, with no copy of its own to diverge.
 #
 # Same shape as the service-type divergence recorded below under opensrm-z3ab,
 # which is why the rule lives here with it rather than in either caller.

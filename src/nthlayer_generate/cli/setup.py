@@ -17,6 +17,11 @@ import argparse
 import os
 from pathlib import Path
 
+# Reused from init rather than copied, which is this bead's whole point
+# (opensrm-h9fq). It is the only private cross-module import in src/, and
+# relocating these helpers to a shared home is tracked in opensrm-d5ce --
+# deferred because opensrm-t4rd's AST guards match them by name in cli/init.py
+# and that move needs its own verification.
 from nthlayer_generate.cli.init import _is_valid_team, _yaml_scalar
 from nthlayer_generate.cli.ux import (
     confirm,
@@ -461,14 +466,12 @@ def _generate_service_yaml(
         2: {"availability": 99.9, "latency_ms": 500, "tier_name": "standard"},
         3: {"availability": 99.5, "latency_ms": 1000, "tier_name": "low"},
     }
-    # Raise rather than defaulting (opensrm-h9fq). The old
-    # `tier_configs.get(tier, tier_configs[2])` silently yielded `standard` for
-    # 0, 4, 99, None and the STRING 'critical' -- and that last one is the
-    # hazard, because init's sibling `_generate_service_yaml_v2` takes
-    # `tier: str`, so a caller passing the name now that the emitted field IS a
-    # name would get a wrong-but-valid manifest with no error. Unreachable
-    # today, since `tier_map.get(tier_name, 2)` clamps, so this converts a
-    # latent silent-wrong into a loud failure.
+    # Raise rather than defaulting (opensrm-h9fq). The hazard is a STRING tier:
+    # init's sibling `_generate_service_yaml_v2` takes `tier: str`, so now that
+    # the emitted field is a name, a caller passing the name would otherwise get
+    # a wrong-but-valid manifest. Unreachable today, since `tier_map` clamps the
+    # menu to 1-3, so this is a loud guard on a latent silent-wrong rather than
+    # a live fix. The cases are enumerated in TestUnknownTierIsLoud.
     if tier not in tier_configs:
         raise ValueError(f"Unknown tier {tier!r}; expected one of {sorted(tier_configs)}")
     config = tier_configs[tier]
@@ -530,11 +533,7 @@ resources:
 def _is_valid_service_name(name: str) -> bool:
     """Delegates to the one service-name rule; see specs/manifest for why.
 
-    This was the THIRD private copy (opensrm-h9fq). It looped over
-    ``char.islower() or char.isdigit()``, which are UNICODE predicates, so
-    measured against the shared rule it accepted `123`, `café` and `1-svc`,
-    all of which `nthlayer validate` then refused. opensrm-t4rd removed the
-    same shape from cli/init.py.
+    This was the third private copy (opensrm-h9fq).
     """
     return is_valid_service_name(name)
 

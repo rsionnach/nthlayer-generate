@@ -11,6 +11,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml as yaml_mod
+from conftest import SERVICE_NAME_CASES
 
 from nthlayer_generate.cli.setup import (
     _create_first_service,
@@ -772,7 +773,7 @@ class TestIsValidServiceName:
         assert _is_valid_service_name("a") is True
         assert _is_valid_service_name("my-service-123") is True
 
-    def test_a_leading_digit_is_invalid(self):
+    def test_invalid_leading_digit(self):
         """`123` was asserted VALID here, which defended the defect.
 
         The old guard looped over `char.islower() or char.isdigit()`, so it
@@ -979,7 +980,7 @@ class TestWizardOutputSurvivesItsOwnValidator:
     # The wizard's own menu mapping, from cli/setup.py's `tier_map`.
     MENU_TIERS = [1, 2, 3]
 
-    def test_the_menu_choices_are_not_vacuous(self):
+    def test_the_table_is_not_empty(self):
         assert self.MENU_TIERS
 
     @pytest.mark.parametrize("tier", MENU_TIERS)
@@ -1002,11 +1003,10 @@ class TestWizardOutputSurvivesItsOwnValidator:
     @pytest.mark.parametrize("tier", MENU_TIERS)
     def test_the_emitted_tier_is_a_name_the_shared_vocabulary_admits(self, tier, tmp_path):
         """The specific regression: an int was emitted where a name was required."""
-        import yaml
         from nthlayer_common.manifest.models import VALID_TIERS
 
         written = _generate_service_yaml("payment-api", "payments", "api", tier)
-        emitted = yaml.safe_load(written)["service"]["tier"]
+        emitted = yaml_mod.safe_load(written)["service"]["tier"]
 
         assert isinstance(emitted, str), (
             f"tier was emitted as {type(emitted).__name__} ({emitted!r}); the "
@@ -1041,15 +1041,13 @@ class TestWizardQuotesUserSuppliedValues:
         "caf\u00e9 \U0001f389",
     ]
 
-    def test_the_hostile_table_is_not_empty(self):
+    def test_the_table_is_not_empty(self):
         assert self.HOSTILE
 
     @pytest.mark.parametrize("team", HOSTILE)
-    def test_a_hostile_team_round_trips_and_injects_nothing(self, team, tmp_path):
-        import yaml
-
+    def test_a_hostile_team_round_trips_and_injects_nothing(self, team):
         written = _generate_service_yaml("payment-api", team, "api", 2)
-        loaded = yaml.safe_load(written)
+        loaded = yaml_mod.safe_load(written)
 
         assert loaded["service"]["team"] == team
         assert set(loaded) == {"service", "resources"}, (
@@ -1084,8 +1082,6 @@ class TestTheNameRuleHasExactlyOneHome:
     """
 
     def test_all_three_callers_agree_with_the_shared_rule(self):
-        from test_init import TestServiceNameRuleIsShared as Table
-
         from nthlayer_generate.cli.init import (
             _is_valid_service_name as init_guard,
         )
@@ -1094,8 +1090,8 @@ class TestTheNameRuleHasExactlyOneHome:
         )
         from nthlayer_generate.specs.manifest import is_valid_service_name
 
-        assert Table.NAMES, "the shared table is empty, so this proves nothing"
-        for name, expected in Table.NAMES:
+        assert SERVICE_NAME_CASES, "the shared table is empty, so this proves nothing"
+        for name, expected in SERVICE_NAME_CASES:
             assert is_valid_service_name(name) is expected, f"shared rule: {name!r}"
             assert init_guard(name) is expected, f"init diverged on {name!r}"
             assert setup_guard(name) is expected, f"setup diverged on {name!r}"
@@ -1163,12 +1159,11 @@ class TestTeamIsGatedAtTheWizardBoundary:
         The gate rejects control characters only. Rejecting a colon would be
         the overcorrection opensrm-t4rd warned about.
         """
-        import yaml as y
 
         written = self._run_wizard(tmp_path, monkeypatch, "payment-api", "Platform: Core")
 
         assert written.exists()
-        loaded = y.safe_load(written.read_text(encoding="utf-8"))
+        loaded = yaml_mod.safe_load(written.read_text(encoding="utf-8"))
         assert loaded["service"]["team"] == "Platform: Core"
 
 

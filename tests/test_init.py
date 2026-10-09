@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml
+from conftest import SERVICE_NAME_CASES
 
 from nthlayer_generate.cli.init import (
     SERVICE_TYPES,
@@ -624,40 +625,7 @@ class TestServiceNameRuleIsShared:
     """
 
     # (name, expected) — every rejection names the rule it breaks.
-    NAMES = [
-        ("svc", True),
-        ("my-api", True),
-        ("service123", True),
-        ("my--api", True),  # a double hyphen INSIDE is fine
-        ("s", True),  # single character
-        ("1-svc", False),  # leading digit: validator rejected, old guard did not
-        ("-svc", False),  # leading hyphen
-        ("svc-", False),  # trailing hyphen: old guard rejected, validator did not
-        ("MyApi", False),  # uppercase
-        ("my_api", False),  # underscore
-        ("my api", False),  # space
-        ("my.api", False),  # period
-        ("", False),  # empty
-        ("café", False),  # non-ASCII lowercase: str.islower() is True for 'é'
-        ("ａbc", False),  # FULLWIDTH 'a': str.islower() is True for it too
-        ("٣svc", False),  # Arabic-Indic digit: str.isdigit() is True for it
-        ("svc\n", False),  # trailing newline: `re.match(..."$")` would ACCEPT this
-        # Accepted names that YAML resolves to a non-string. Absent from this
-        # table, `test_every_accepted_name_produces_a_valid_manifest` passed
-        # while `nthlayer init no` exited 0 writing a manifest whose name
-        # loaded as False -- and `init yes` made the validator raise TypeError.
-        # The predicate was right; the table had no fixture of the hostile
-        # shape, which is the ecosystem fixture-provenance rule in one line.
-        ("no", True),
-        ("yes", True),
-        ("on", True),
-        ("off", True),
-        ("true", True),
-        ("false", True),
-        ("null", True),
-        ("n", True),  # a plain string in pyyaml, unlike `no`
-        ("y", True),
-    ]
+    NAMES = SERVICE_NAME_CASES
 
     @pytest.mark.parametrize(("name", "expected"), NAMES)
     def test_guard_matches_the_shared_rule(self, name, expected):

@@ -17,6 +17,9 @@ import yaml as yaml_mod
 from service_name_cases import SERVICE_NAME_CASES
 
 from nthlayer_generate.cli.setup import (
+    TIER_CHOICES,
+    TIER_CONFIGS_BY_INDEX,
+    TIER_MAP,
     _create_first_service,
     _generate_service_yaml,
     _is_valid_service_name,
@@ -711,14 +714,29 @@ class TestCreateFirstService:
         _create_first_service()
 
     @patch("nthlayer_generate.cli.setup._prompt")
-    def test_invalid_name_rejected(self, mock_prompt, capsys):
-        """Test invalid service name is rejected."""
+    def test_invalid_name_rejected(self, mock_prompt, tmp_path, monkeypatch):
+        """Test invalid service name is rejected.
+
+        `monkeypatch.chdir` added by opensrm-h9fq's provenance pass: this was
+        the only test in the file without it, so under a mutation of the name
+        guard it wrote `services/Invalid_Name.yaml` into the repo working tree.
+
+        The old assertion was `"Invalid" in captured.out`, which the SUCCESS
+        message also satisfies because it contains the name. Asserted on the
+        reporter and the filesystem now, which also dodges `gum` bypassing
+        capsys.
+        """
+        monkeypatch.chdir(tmp_path)
         mock_prompt.return_value = "Invalid_Name"
 
-        _create_first_service()
+        with patch("nthlayer_generate.cli.setup.error") as reported:
+            _create_first_service()
 
-        captured = capsys.readouterr()
-        assert "Invalid" in captured.out or "lowercase" in captured.out
+        said = " ".join(str(c) for c in reported.call_args_list)
+        assert "Invalid service name" in said, (
+            f"the name was not rejected; errors were {reported.call_args_list}"
+        )
+        assert not (tmp_path / "services").exists(), "a rejected name still created services/"
 
 
 class TestGenerateServiceYaml:
@@ -1353,6 +1371,17 @@ class TestWizardFileIoIsHardened:
             + ". The locale's encoding is not UTF-8 everywhere (opensrm-h9fq)."
         )
 
+        # `checked` is currently 0 and that is EXPECTED: the manifest write uses
+        # no text IO at all. Recorded rather than left silent, because an
+        # assertion over an empty set proves nothing and the provenance pass
+        # flagged exactly that. The load-bearing half is the encode check below;
+        # this assertion exists so the vacuity is visible to a reader and so the
+        # text-IO rule still applies to anything added later.
+        assert checked or encodes_utf8_explicitly(tree), (
+            "cli/setup.py has neither text IO nor an explicit encode; the "
+            "manifest write has changed shape and this guard no longer covers it"
+        )
+
         # The manifest write deliberately uses no text IO at all now: it encodes
         # first and calls `write_bytes`, because `write_text` opens with "w" and
         # truncates before an encoding failure can be caught. So `offenders`
@@ -1593,3 +1622,60 @@ class TestRollbackNeverDeletesWhatItDidNotCreate:
         assert victim.read_bytes() == b"# the real file\n", (
             "the write went through the symlink and overwrote its victim"
         )
+
+
+def encodes_utf8_explicitly(tree) -> bool:
+    """True if any `.encode(...)` in *tree* names utf-8 (opensrm-h9fq)."""
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "encode"
+        ):
+            named = [a for a in node.args if isinstance(a, ast.Constant)] + [
+                kw.value for kw in node.keywords if kw.arg == "encoding"
+            ]
+            if any(isinstance(a, ast.Constant) and a.value == "utf-8" for a in named):
+                return True
+    return False
+
+
+class TestTheThreeTierTablesAgree:
+    """opensrm-h9fq provenance pass: a drift nothing could detect.
+
+    The wizard keeps three tier tables -- the menu `TIER_CHOICES`, the
+    name-to-index `TIER_MAP`, and the index-to-config `TIER_CONFIGS_BY_INDEX`.
+    While they were function-locals the provenance pass mutated `TIER_MAP` to
+    add a value with no matching config and the suite stayed GREEN, because
+    nothing could see them and the menu is a separate literal.
+
+    Lifted to module level so their agreement is assertable rather than
+    coincidental.
+    """
+
+    def test_the_tables_are_not_empty(self):
+        assert TIER_CHOICES and TIER_MAP and TIER_CONFIGS_BY_INDEX
+
+    def test_the_menu_offers_exactly_the_mapped_names(self):
+        offered = {choice.split(" - ")[0] for choice in TIER_CHOICES}
+        assert offered == set(TIER_MAP), (
+            f"the menu offers {sorted(offered)} but TIER_MAP knows "
+            f"{sorted(TIER_MAP)}; a choice with no mapping silently becomes the "
+            f"default"
+        )
+
+    def test_every_mapped_index_has_a_config(self):
+        assert set(TIER_MAP.values()) == set(TIER_CONFIGS_BY_INDEX), (
+            f"TIER_MAP yields {sorted(set(TIER_MAP.values()))} but configs exist "
+            f"for {sorted(TIER_CONFIGS_BY_INDEX)}; an index with no config now "
+            f"raises ValueError at generation time"
+        )
+
+    def test_every_config_names_a_tier_the_shared_vocabulary_admits(self):
+        from nthlayer_common.manifest.models import VALID_TIERS
+
+        for index, config in TIER_CONFIGS_BY_INDEX.items():
+            assert config["tier_name"] in VALID_TIERS, (
+                f"tier {index} emits {config['tier_name']!r}, which is not in "
+                f"nthlayer-common's VALID_TIERS {VALID_TIERS}"
+            )

@@ -382,6 +382,23 @@ def _test_pagerduty(config: IntegrationConfig) -> tuple[bool, str]:
         return False, str(e)
 
 
+# The wizard's three tier tables, lifted to module level so a test can assert
+# they AGREE (opensrm-h9fq). While they were function-locals, adding a value to
+# `tier_map` with no matching config was an undetectable drift -- the provenance
+# pass mutated exactly that and the suite stayed green.
+TIER_CHOICES = [
+    "critical - 99.95% availability, 5min escalation",
+    "standard - 99.9% availability, 15min escalation",
+    "low - 99.5% availability, 30min escalation",
+]
+TIER_MAP = {"critical": 1, "standard": 2, "low": 3}
+TIER_CONFIGS_BY_INDEX = {
+    1: {"availability": 99.95, "latency_ms": 200, "tier_name": "critical"},
+    2: {"availability": 99.9, "latency_ms": 500, "tier_name": "standard"},
+    3: {"availability": 99.5, "latency_ms": 1000, "tier_name": "low"},
+}
+
+
 def _create_first_service() -> None:
     """Guide user through creating their first service."""
     console.print()
@@ -425,14 +442,10 @@ def _create_first_service() -> None:
     service_type = selected_type.split(" - ")[0]
 
     # Service tier selection using interactive menu
-    tier_choices = [
-        "critical - 99.95% availability, 5min escalation",
-        "standard - 99.9% availability, 15min escalation",
-        "low - 99.5% availability, 30min escalation",
-    ]
+    tier_choices = list(TIER_CHOICES)
     selected_tier = select("Service tier", tier_choices, default=tier_choices[1])
     tier_name = selected_tier.split(" - ")[0]
-    tier_map = {"critical": 1, "standard": 2, "low": 3}
+    tier_map = dict(TIER_MAP)
     tier = tier_map.get(tier_name, 2)
 
     # All three of the following mirror cli/init.py's hardening from
@@ -474,9 +487,16 @@ def _create_first_service() -> None:
     # UnicodeError class in front of any file descriptor, so on that path
     # nothing is touched and saying so is true.
     #
-    # A lone surrogate reaches here because `_is_valid_team` rejects only line
-    # breaks, tabs and NUL; it is `surrogateescape` on stdin that can produce
-    # one, which varies by locale.
+    # DEFENSIVE ONLY: no wizard input is known to enter this handler, and the
+    # provenance pass confirmed it cannot be kill-checked -- replacing its body
+    # with `pass` leaves the suite green. An earlier version of this comment
+    # claimed a lone surrogate from `surrogateescape` on stdin reaches here.
+    # That is FALSE and was measured false in the same session it was written:
+    # `_quoted_yaml_scalar` escapes a surrogate to ASCII (`"\uDCE9"`), `name` is
+    # `[a-z0-9-]`, and `service_type` comes from a fixed menu, so the template
+    # is always encodable. It is kept because the encode-before-open ordering is
+    # the load-bearing part and a future field added without `_yaml_scalar`
+    # would make this reachable -- but it is insurance, not a tested path.
     try:
         payload = service_content.encode("utf-8")
     except UnicodeError as e:
@@ -521,11 +541,7 @@ def _generate_service_yaml(
 ) -> str:
     """Generate service YAML content."""
     # Tier-based defaults
-    tier_configs = {
-        1: {"availability": 99.95, "latency_ms": 200, "tier_name": "critical"},
-        2: {"availability": 99.9, "latency_ms": 500, "tier_name": "standard"},
-        3: {"availability": 99.5, "latency_ms": 1000, "tier_name": "low"},
-    }
+    tier_configs = TIER_CONFIGS_BY_INDEX
     # Raise rather than defaulting (opensrm-h9fq). The hazard is a STRING tier:
     # init's sibling `_generate_service_yaml_v2` takes `tier: str`, so now that
     # the emitted field is a name, a caller passing the name would otherwise get

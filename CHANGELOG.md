@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.0.3](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.2...v2.0.3) (2026-10-09)
+
+
+### Bug Fixes
+
+* **init:** name only the characters the team guard actually rejects (opensrm-t4rd) ([da46bd4](https://github.com/rsionnach/nthlayer-generate/commit/da46bd4135eae6f527c4d9a96c81f27770539149))
+* **init:** quote team values that YAML would retype (opensrm-t4rd) ([b8a2570](https://github.com/rsionnach/nthlayer-generate/commit/b8a2570acdd0053ccbd81467e3c13d39108835ce))
+* **init:** quote the service name, which YAML retyped for no/yes/null (opensrm-t4rd) ([aa7cce7](https://github.com/rsionnach/nthlayer-generate/commit/aa7cce7e8da0ca8e1cee7c2e7c6ef748b49a6563))
+* **init:** report a blank team as required, not as a control character (opensrm-t4rd) ([45dc02b](https://github.com/rsionnach/nthlayer-generate/commit/45dc02bed2fd4f063d4b58849aa2f0379703f1d0))
+* **init:** stop corrupting non-BMP team names and crashing on 0b_ (opensrm-t4rd) ([062bb38](https://github.com/rsionnach/nthlayer-generate/commit/062bb3808559653023ce5da497beeca3412865cb))
+* **init:** stop exiting 0 after writing a manifest that is wrong ([29ede75](https://github.com/rsionnach/nthlayer-generate/commit/29ede754445cc9bcf2a36e2509881ba56605d907))
+* **init:** write manifests as UTF-8 and roll back a failed write (opensrm-t4rd) ([2b0f401](https://github.com/rsionnach/nthlayer-generate/commit/2b0f401908f062006f5f4a75b7fc11c0f0e9891f))
+
+
+### Documentation
+
+* **init:** correct stale cross-file claims around the scalar helpers (opensrm-t4rd) ([fb4c8a2](https://github.com/rsionnach/nthlayer-generate/commit/fb4c8a246e7d92b9e5f6dadae57d39fffd36840b))
+* **init:** make the citation guard honest about its own reach (opensrm-t4rd) ([f40b0d8](https://github.com/rsionnach/nthlayer-generate/commit/f40b0d846528f39570e7ec2f9e7045d67a8591b4))
+
 ## [2.0.2](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.1...v2.0.2) (2026-10-06)
 
 

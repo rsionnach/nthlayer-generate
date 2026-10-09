@@ -11,6 +11,7 @@ this unified model, ensuring format-agnostic processing.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any
@@ -44,6 +45,59 @@ VALID_TIERS = {
     "standard",
     "low",
 }
+
+# THE service-name rule for the init path (opensrm-t4rd). Two copies of it
+# disagreed:
+# cli/init.py's guard looped over `char.islower() or char.isdigit()`, which are
+# UNICODE predicates, and rejected only a leading or trailing hyphen — so
+# `1-svc`, `café` and fullwidth `ａbc` all passed the CLI and were then rejected
+# by specs/validator.py, which applies the pattern below. `nthlayer init` exited
+# 0 having written a manifest its own validator refuses, and an exit code is
+# what a CI gate keys on.
+#
+# NOT exhaustive: cli/setup.py has a third, still-divergent copy that accepts
+# `123`, `café` and `1-svc` (it does reject both hyphen ends). Tracked in
+# opensrm-h9fq, and asserted by
+# test_init.py::TestSetupGuardStillDiverges so this note cannot rot quietly.
+#
+# Same shape as the service-type divergence recorded below under opensrm-z3ab,
+# which is why the rule lives here with it rather than in either caller.
+#
+# AUTHORITY: this pattern is generate's own, and is deliberately STRICTER than
+# the opensrm schema, so schema-valid documents exist that `init` refuses to
+# write. That gap is a spec decision, tracked in opensrm-fwnp — which is also
+# where the schema's actual patterns are recorded, rather than quoted here
+# where they would rot. A test cannot hold them: generate's CI installs
+# nthlayer-common from PyPI and has no `opensrm/` checkout, so a schema.json
+# assertion would `pytest.skip` in exactly the environment meant to gate the
+# merge (the reasoning is spelled out in test_service_type_agreement.py).
+#
+# The rule is the union of what the two old guards each enforced:
+#   - must start with a lowercase letter   (validator.py had this; the CLI did not)
+#   - must not end with a hyphen           (the CLI had this; validator.py did not)
+# Neither was right alone, so aligning to either one would have loosened the
+# other. Checked before tightening: no leading- or trailing-hyphen service name
+# was in use anywhere in this repo.
+SERVICE_NAME_PATTERN = r"[a-z]([a-z0-9-]*[a-z0-9])?"
+_SERVICE_NAME_RE = re.compile(SERVICE_NAME_PATTERN)
+
+
+def is_valid_service_name(name: str) -> bool:
+    """True if *name* is a legal service name for generated manifests.
+
+    Uses ``fullmatch``, not ``match`` with a trailing ``$``. In Python ``$``
+    also matches just before a final newline, so ``re.match(r"...$", "svc\n")``
+    SUCCEEDS — and a trailing newline is an ordinary authoring accident from a
+    YAML block scalar.
+
+    ``isinstance`` is checked first because the loader hands this whatever YAML
+    resolved: a manifest with ``name: yes`` yields ``True``, which passes
+    ``bool(name)`` and then makes ``fullmatch`` raise ``TypeError``, so
+    ``nthlayer validate`` died with a traceback instead of reporting the error.
+    A non-str name is never valid, so returning False is both safe and correct.
+    """
+    return isinstance(name, str) and bool(name) and _SERVICE_NAME_RE.fullmatch(name) is not None
+
 
 # Service types come from nthlayer-common, which is the single source of
 # truth for the rule (opensrm-z3ab). generate kept its own copy until the
@@ -539,8 +593,7 @@ class ReliabilityManifest:
         resolved_type = resolve_service_type(self.type)
         if resolved_type is None:
             raise ValueError(
-                f"Invalid type '{self.type}'. "
-                f"Must be one of: {valid_service_types_phrase()}."
+                f"Invalid type '{self.type}'. Must be one of: {valid_service_types_phrase()}."
             )
         self.type = resolved_type
 

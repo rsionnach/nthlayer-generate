@@ -1,7 +1,9 @@
 """CLI command for initializing new NthLayer services."""
 
+import re
 from pathlib import Path
 
+import yaml
 from nthlayer_common.manifest.models import resolve_service_type
 
 from nthlayer_generate.cli.ux import (
@@ -17,6 +19,7 @@ from nthlayer_generate.cli.ux import (
 )
 from nthlayer_generate.core.tiers import TIER_CONFIGS
 from nthlayer_generate.specs.custom_templates import CustomTemplateLoader
+from nthlayer_generate.specs.manifest import is_valid_service_name
 
 # The service-type menu. INVARIANT: every key is a value a manifest can
 # store verbatim — nothing here is translated on the way out (opensrm-8qpd).
@@ -115,10 +118,20 @@ def init_command(
     if not team and interactive:
         team = text_input("Team name", placeholder="e.g., platform, payments")
 
-    if not team:
+    # `not team` first: team is `str | None` here, so `.strip()` alone would
+    # raise on None and also lose the narrowing the calls below rely on. The
+    # `.strip()` half is what catches a whitespace-only --team here, where the
+    # message fits it, rather than at the _is_valid_team branch below, whose
+    # message would be false for it.
+    if not team or not team.strip():
         error("Team name is required")
         if not interactive:
             console.print("   [muted]Pass it with --team <team>[/muted]")
+        return 1
+
+    if not _is_valid_team(team):
+        error("Invalid team name")
+        console.print("   [muted]Team name must not contain line breaks, tabs or NUL[/muted]")
         return 1
 
     # Select service tier using interactive menu
@@ -196,10 +209,25 @@ def init_command(
         service_name, team, tier, service_type, dependencies, template_obj
     )
 
+    # encoding="utf-8" explicitly, and UnicodeError caught alongside OSError
+    # (opensrm-t4rd edge-case pass). Without the encoding, `write_text` uses the
+    # locale's, so on a non-UTF-8 system an ordinary accented team name raised
+    # UnicodeEncodeError -- which is a ValueError, NOT an OSError, so the handler
+    # below missed it and init died by traceback. Worse, `write_text` had already
+    # created the file, so a ZERO-BYTE manifest was left behind and every later
+    # run then hit the `exists()` guard above and refused, permanently, until
+    # someone deleted it by hand.
+    #
+    # The unlink is the rollback half of this bead's defect 3: a run that fails
+    # must not leave a partial artifact that blocks the next one.
     try:
-        service_file.write_text(service_content)
-    except OSError as e:
+        service_file.write_text(service_content, encoding="utf-8")
+    except (OSError, UnicodeError) as e:
         error(f"Error creating service file: {e}")
+        try:
+            service_file.unlink(missing_ok=True)
+        except OSError:
+            pass
         return 1
 
     # Create .nthlayer directory
@@ -209,20 +237,40 @@ def init_command(
     except OSError as e:
         warning(f"Could not create .nthlayer directory: {e}")
 
-    # Create config file if it doesn't exist
+    # Create config file if it doesn't exist.
+    #
+    # `is_file()`, NOT `exists()` -- the same confusion this bead fixed for
+    # `nthlayer_dir` below. With `.nthlayer/config.yaml` present as a DIRECTORY,
+    # `exists()` is True because it is a directory, so the write was skipped and
+    # init reported success for a config it had never written, with no warning.
     config_file = nthlayer_dir / "config.yaml"
-    if not config_file.exists():
+    if not config_file.is_file():
         config_content = _generate_config_yaml()
         try:
-            config_file.write_text(config_content)
-        except OSError as e:
+            config_file.write_text(config_content, encoding="utf-8")
+        except (OSError, UnicodeError) as e:
             warning(f"Could not create config file: {e}")
 
     # Success message
     console.print()
     success(f"Created {service_file}")
-    if nthlayer_dir.exists():
+    # is_dir(), NOT exists() (opensrm-t4rd): with .nthlayer a regular FILE,
+    # exists() is True *because it is a file*, so init claimed to have created
+    # a directory it had not.
+    if nthlayer_dir.is_dir():
         success(f"Created {nthlayer_dir}/")
+    else:
+        # NOT fatal, including under --no-interactive. Decided deliberately
+        # (opensrm-t4rd acceptance): the manifest is the primary artifact and it
+        # was written correctly, so a CI gate keying on the exit code is right to
+        # pass. What was wrong before was claiming the directory had been created;
+        # the warning below states plainly that it was not, and names the fix.
+        # Making it fatal would fail runs whose manifest is perfectly good merely
+        # because .nthlayer could not be created (read-only parent, a stray file).
+        warning(
+            f"{nthlayer_dir}/ was not created — config was not written. "
+            f"It already exists as a file, or the parent is not writable."
+        )
 
     console.print()
     console.print("[bold]Next steps:[/bold]")
@@ -241,28 +289,147 @@ def init_command(
     return 0
 
 
-def _is_valid_service_name(name: str) -> bool:
-    """Check if service name is valid (lowercase with hyphens).
+# WHY THE SCALAR HELPERS BELOW EXIST (opensrm-t4rd).
+#
+# generate's hard rule 5 — no raw string construction for generated output —
+# applied at the one input that is scriptable and unvalidated. `--team` was
+# interpolated raw with only a truthiness check. Measured before the fix, all
+# exiting 0:
+#
+#   --team 'Platform: Core'            -> the manifest failed to parse
+#   --team $'ops\nname: hijacked'      -> injected a second service.name
+#   --team $'ops\ntier: critical'      -> manifest VALIDATED CLEAN carrying a
+#                                         bogus tier shadowed by the real one
+#
+# A colon in a team name is ordinary, so quoting has to be available. It is
+# applied conditionally, for the reason in `_yaml_scalar`, and done with
+# pyyaml rather than `json.dumps`, for the reason in `_quoted_yaml_scalar`.
+#
+# The allowlist is deliberately narrow: anything outside it is quoted rather
+# than reasoned about. It excludes every YAML indicator character (`:` `#`
+# `-` at the start, `{` `[` `&` `*` `!` `|` `>` `%` `@` and a backtick),
+# leading whitespace, and anything non-ASCII. Matching it is necessary but NOT
+# sufficient — see `_emits_as_same_string`.
+_PLAIN_SCALAR_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9 ._-]*")
 
-    Args:
-        name: Service name to validate
 
-    Returns:
-        True if valid
+def _yaml_scalar(value: object) -> str:
+    """Render *value* as a YAML scalar that cannot alter the document.
+
+    Plain when it provably round-trips, quoted otherwise. Quoting is
+    conditional so the documented example output stays byte-identical to what
+    init writes (``test_block_is_byte_identical_to_real_output``, the
+    docs-vs-reality guard from opensrm-noc6).
+
+    A non-str is quoted rather than rejected: values arrive straight from a
+    YAML loader, so a template declaring ``name: on`` makes this a bool and
+    ``re.fullmatch`` would raise on it.
     """
-    if not name:
+    if not isinstance(value, str):
+        return _quoted_yaml_scalar(str(value))
+    if _PLAIN_SCALAR_RE.fullmatch(value) and _emits_as_same_string(value):
+        return value
+    return _quoted_yaml_scalar(value)
+
+
+# pyyaml wraps long scalars by default, which would emit a second line into a
+# document built by string interpolation. Large enough to never wrap.
+_NO_WRAP = 10**9
+
+
+def _quoted_yaml_scalar(value: str) -> str:
+    """Render *value* as a double-quoted YAML scalar on exactly one line.
+
+    ``default_style='"'`` forces the quoted form for every input, so the result
+    is always a single line and never a block scalar.
+
+    ``json.dumps`` was used here first, on the reasoning that a JSON string is
+    also a valid YAML double-quoted scalar. True for the BMP, false above it:
+    with ``ensure_ascii=True`` json escapes a non-BMP character as a UTF-16
+    surrogate PAIR, and pyyaml resolves each 16-bit escape separately without
+    recombining them, so an emoji team name read back as two lone surrogates,
+    validated clean, and could not be re-encoded to UTF-8 at all.
+    ``ensure_ascii=False`` is no better: it mismatches on U+0085 and makes
+    pyyaml raise on U+007F.
+
+    ``allow_unicode=True`` is readability only, not correctness: it emits BMP
+    non-ASCII literally (``cafe`` with its accent, rather than an escape).
+    Above the BMP pyyaml escapes regardless of the flag -- but as ONE 32-bit
+    escape, which its own reader resolves back to one character. That single
+    escape, not the flag, is what json's surrogate pair got wrong. Measured:
+    both settings round-trip every value in the corpus.
+
+    The trailing newline pyyaml adds is stripped. No document-end marker is
+    stripped, because ``default_style='"'`` means only pyyaml's
+    double-quoted writer ever runs, and that writer never emits one.
+    """
+    return yaml.safe_dump(value, default_style='"', allow_unicode=True, width=_NO_WRAP).rstrip("\n")
+
+
+def _emits_as_same_string(value: str) -> bool:
+    """True if *value* written as a plain YAML scalar reads back identically.
+
+    The allowlist excludes every YAML *indicator*, but says nothing about
+    implicit *type resolution*, which is the half that was missing. Measured,
+    every one of these matched the allowlist, was emitted unquoted, and loaded
+    back as something other than the string written -- all at exit 0:
+
+      --team null         -> None       -> validate FAILS, "team is required"
+      --team yes/on/true  -> True       -> validates CLEAN, bool in a str field
+      --team no/off/false -> False      -> validate FAILS
+      --team 123          -> 123        -> int
+      --team 1_000        -> 1000       -> int
+      --team 1.5          -> 1.5        -> float
+      --team 0x1f         -> 31         -> int
+      --team 2026-01-01   -> date(...)  -> datetime.date, validates CLEAN
+      --team 'ops '       -> 'ops'      -> trailing space silently stripped
+
+    Case variants resolve too (``NULL``, ``Yes``), which is why this asks the
+    loader instead of carrying a deny list that would have to track the YAML 1.1
+    type schema -- and stay correct as pyyaml changes. Both shapes above are the
+    bead's own defects one field over: the first writes a manifest generate's
+    validator rejects, the second a clean manifest carrying a wrong value.
+
+    Checking the bare scalar is faithful to the mapping-value position it is
+    emitted into, because the allowlist already excludes every character whose
+    resolution differs between those two contexts.
+
+    ``ValueError`` is caught alongside ``YAMLError`` because pyyaml's integer
+    constructor raises it rather than a YAML error on an allowlist-matching
+    input: ``0b_`` reaches ``int("", 2)``. Uncaught, that crashed ``nthlayer
+    init`` with a traceback and wrote nothing. Fuzzing every
+    allowlist-matching string up to length 4 (10248 of them) reaches exactly
+    these two types, ``ValueError`` on 3 inputs -- ``0b_``, ``0x_``, ``0b__``.
+
+    Either way the answer is the same: a value that will not load is not
+    provably a plain string, so it gets quoted.
+    """
+    try:
+        loaded = yaml.safe_load(value)
+    except (yaml.YAMLError, ValueError):
         return False
+    return isinstance(loaded, str) and loaded == value
 
-    # Must be lowercase, numbers, and hyphens only
-    # Must not start or end with hyphen
-    if name[0] == "-" or name[-1] == "-":
-        return False
 
-    for char in name:
-        if not (char.islower() or char.isdigit() or char == "-"):
-            return False
+def _is_valid_team(team: str) -> bool:
+    r"""True if *team* contains no line break, tab or NUL.
 
-    return True
+    Those four only, not every control character: the rest are quoted correctly
+    by ``_yaml_scalar`` and are merely odd, not dangerous. Blankness is not
+    checked here either — the caller rejects it first, with a message that
+    actually fits it.
+
+    Quoting alone already makes the document safe, so this is not what prevents
+    injection. It is what turns a newline in --team into a clear error rather
+    than a silently escaped ``\n`` in the output, because a team name spanning
+    lines is a mistake every time.
+    """
+    return not any(ch in team for ch in "\n\r\t\x00")
+
+
+def _is_valid_service_name(name: str) -> bool:
+    """Delegates to the one service-name rule; see specs/manifest for why."""
+    return is_valid_service_name(name)
 
 
 def _generate_service_yaml_v2(
@@ -293,14 +460,14 @@ def _generate_service_yaml_v2(
     resources_yaml = _build_resources_yaml(service_name, tier, service_type, dependencies)
 
     # Template line if using a template
-    template_line = f"  template: {template.name}\n" if template else ""
+    template_line = f"  template: {_yaml_scalar(template.name)}\n" if template else ""
 
     return f"""# {service_name} Service Definition
 # Generated by NthLayer
 
 service:
-  name: {service_name}
-  team: {team}
+  name: {_yaml_scalar(service_name)}
+  team: {_yaml_scalar(team)}
   tier: {tier}
   type: {service_type}
 {template_line}
@@ -457,11 +624,11 @@ def _generate_service_yaml(service_name: str, team: str, template) -> str:
 # Generated by NthLayer
 
 service:
-  name: {service_name}
-  team: {team}
+  name: {_yaml_scalar(service_name)}
+  team: {_yaml_scalar(team)}
   tier: {template.tier}     # critical | standard | low
   type: {template.type}     # api | worker | stream | batch | database | ai-gate | x-web
-  template: {template.name}
+  template: {_yaml_scalar(template.name)}
 
 # Template provides:
 {_format_template_resources(template)}
@@ -493,7 +660,12 @@ def _format_template_resources(template) -> str:
     """
     lines = []
     for resource in template.resources:
-        lines.append(f"#   - {resource.kind}: {resource.name}")
+        # A comment, but still a line in the document: `resource.kind` and
+        # `resource.name` come from a template file on disk with no
+        # validation, so a newline in either would escape the `#` and land
+        # at top level. `_yaml_scalar` escapes it instead, and leaves the
+        # ordinary values (`SLO`, `availability`) unquoted.
+        lines.append(f"#   - {_yaml_scalar(resource.kind)}: {_yaml_scalar(resource.name)}")
     return "\n".join(lines) if lines else "#   (no resources)"
 
 

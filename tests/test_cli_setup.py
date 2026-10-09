@@ -1170,3 +1170,113 @@ class TestTeamIsGatedAtTheWizardBoundary:
         assert written.exists()
         loaded = y.safe_load(written.read_text(encoding="utf-8"))
         assert loaded["service"]["team"] == "Platform: Core"
+
+
+class TestWizardNameIsNotImplicitlyRetyped:
+    """opensrm-h9fq correctness pass: the same defect as the field beside it.
+
+    The first fix quoted `team` but left `name: {name}` raw, on the argument
+    that the tightened rule `[a-z]([a-z0-9-]*[a-z0-9])?` admits only lowercase
+    letters, digits and hyphens, so nothing dangerous can appear. That argument
+    reasoned about CHARACTERS and forgot TYPE RESOLUTION, which is the exact
+    shape of opensrm-t4rd's first critical.
+
+    `no`, `yes`, `on`, `off`, `true`, `false` and `null` are pure lowercase
+    letters, all pass the rule, and pyyaml retypes every one. Measured through
+    the real wizard, at exit 0:
+
+      name=no    -> loads as False -> "Service name is required"
+      name=yes   -> loads as True  -> "Filename mismatch: expected 'True.yaml'"
+      name=null  -> loads as None  -> "Service name is required"
+
+    RESOLVABLE is traced to the loader and to the rule, not to the code under
+    test: the two guards below assert each value is accepted by the rule AND
+    retyped by pyyaml, so if either changes the table says so rather than
+    quietly proving nothing.
+    """
+
+    RESOLVABLE = ["no", "yes", "on", "off", "true", "false", "null"]
+
+    def test_the_table_is_not_empty(self):
+        assert self.RESOLVABLE
+
+    def test_every_value_is_accepted_by_the_name_rule(self):
+        """They matter only because the rule admits them."""
+        from nthlayer_generate.specs.manifest import is_valid_service_name
+
+        for name in self.RESOLVABLE:
+            assert is_valid_service_name(name), (
+                f"{name!r} is no longer an accepted service name; this table "
+                f"exists because the rule accepts names YAML retypes"
+            )
+
+    def test_every_value_is_retyped_by_the_loader(self):
+        """And only because pyyaml retypes them."""
+        for name in self.RESOLVABLE:
+            loaded = yaml_mod.safe_load(name)
+            assert not (isinstance(loaded, str) and loaded == name), (
+                f"{name!r} is no longer retyped by pyyaml; it proves nothing"
+            )
+
+    @pytest.mark.parametrize("name", RESOLVABLE)
+    def test_the_written_name_reads_back_as_the_exact_string(self, name):
+        written = _generate_service_yaml(name, "payments", "api", 2)
+        got = yaml_mod.safe_load(written)["service"]["name"]
+
+        assert isinstance(got, str), f"name {name!r} was retyped to {type(got).__name__} ({got!r})"
+        assert got == name
+
+    @pytest.mark.parametrize("name", RESOLVABLE)
+    def test_the_manifest_passes_the_real_validator(self, name, tmp_path):
+        from nthlayer_generate.specs.validator import validate_service_file
+
+        written = tmp_path / f"{name}.yaml"
+        written.write_text(_generate_service_yaml(name, "payments", "api", 2), encoding="utf-8")
+
+        result = validate_service_file(written)
+
+        assert result.valid, (
+            f"the wizard wrote a manifest its own validator rejects for "
+            f"name {name!r}: {result.errors}"
+        )
+
+    @pytest.mark.parametrize("name", RESOLVABLE + ["payment-api"])
+    def test_the_promql_queries_are_not_double_quoted(self, name):
+        """The PromQL sites must NOT be routed through `_yaml_scalar`.
+
+        They sit inside a double-quoted PromQL matcher inside a YAML block
+        scalar, so wrapping them yields `service=""no""` and corrupts the
+        query. Only the `name:` field needs quoting, which is why the fix is
+        one line rather than five.
+        """
+        written = _generate_service_yaml(name, "payments", "api", 2)
+
+        assert f'service="{name}"' in written, (
+            f"the PromQL matcher for {name!r} is not a plain quoted string; "
+            f"it was probably wrapped in _yaml_scalar"
+        )
+        assert f'service=""{name}""' not in written
+
+
+class TestUnknownTierIsLoud:
+    """opensrm-h9fq correctness pass: a silent fallback masked a caller error.
+
+    `tier_configs.get(tier, tier_configs[2])` yielded `standard` for 0, 4, 99,
+    None and the STRING `'critical'`. That last one is the hazard: init's
+    sibling `_generate_service_yaml_v2` takes `tier: str`, so once the emitted
+    field became a NAME a caller passing the name would have got a
+    wrong-but-valid manifest with no error at all.
+
+    Unreachable today because `tier_map.get(tier_name, 2)` clamps the menu, so
+    this converts a latent silent-wrong into a loud failure rather than fixing
+    a live bug.
+    """
+
+    @pytest.mark.parametrize("tier", [1, 2, 3])
+    def test_the_three_menu_tiers_are_accepted(self, tier):
+        assert _generate_service_yaml("svc", "ops", "api", tier)
+
+    @pytest.mark.parametrize("tier", [0, 4, 99, -1, None, "critical", "2"])
+    def test_anything_else_raises_rather_than_defaulting(self, tier):
+        with pytest.raises(ValueError, match="Unknown tier"):
+            _generate_service_yaml("svc", "ops", "api", tier)

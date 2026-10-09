@@ -1767,6 +1767,12 @@ class TestWizardExitCodeIsHonest:
 
         with (
             patch("nthlayer_generate.cli.setup._create_first_service", return_value=1),
+            # _quick_setup MUST be patched. Unpatched it runs the real wizard,
+            # which writes ~/.nthlayer/config.yaml and credentials.yaml in the
+            # developer's actual HOME -- it did exactly that when this test was
+            # first written, and it leaves _prompt live so `pytest -s` in a tty
+            # would block on input. Every sibling test here patches it.
+            patch("nthlayer_generate.cli.setup._quick_setup", return_value=0),
             patch("nthlayer_generate.cli.setup._test_connections"),
             patch("nthlayer_generate.cli.setup._print_welcome_banner"),
             patch("nthlayer_generate.cli.setup._confirm", return_value=True),

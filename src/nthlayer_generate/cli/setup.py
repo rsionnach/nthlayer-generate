@@ -467,28 +467,42 @@ def _create_first_service() -> None:
         error(f"{service_file} exists but is not a regular file")
         return
 
-    # encoding="utf-8" explicitly, and UnicodeError caught alongside OSError.
-    # Without it `write_text` used the locale's encoding, so on a non-UTF-8 host
-    # an ordinary accented team name raised UnicodeEncodeError -- a ValueError,
-    # NOT an OSError -- and left a ZERO-BYTE manifest behind.
+    # ENCODE BEFORE OPENING ANYTHING. `write_text` opens with "w", which
+    # truncates immediately, so an encoding failure lands AFTER the file is
+    # already empty. Measured: a 38-byte manifest went to 0 bytes and the user
+    # was told it had been left unchanged. Encoding first moves the whole
+    # UnicodeError class in front of any file descriptor, so on that path
+    # nothing is touched and saying so is true.
     #
-    # The rollback removes ONLY a file this run created, which is where setup
-    # must diverge from init rather than copy it. init refuses on `exists()`, so
-    # anything it unlinks is always its own; setup PROMPTS and overwrites, so
-    # the target can pre-exist. Measured with a pre-existing manifest at mode
-    # 0444: `write_text` fails at open, leaving the file untruncated, and an
-    # unconditional `unlink(missing_ok=True)` then deleted intact user content
-    # while reporting only a write error. POSIX unlink needs write permission on
-    # the DIRECTORY, not the file, so a read-only manifest is no protection.
-    # That was a regression this bead introduced: before it, the bare write gave
-    # a traceback and the file survived.
-    pre_existing = service_file.is_file()
+    # A lone surrogate reaches here because `_is_valid_team` rejects only line
+    # breaks, tabs and NUL; it is `surrogateescape` on stdin that can produce
+    # one, which varies by locale.
     try:
-        service_file.write_text(service_content, encoding="utf-8")
-    except (OSError, UnicodeError) as e:
+        payload = service_content.encode("utf-8")
+    except UnicodeError as e:
+        error(f"Could not encode the manifest: {e}")
+        info(f"{service_file} was not touched.")
+        return
+
+    # `is_symlink()` as well as `is_file()`. A symlink whose victim is missing
+    # is neither a file nor `exists()`, so without this the rollback below
+    # deleted a symlink this run did not create -- the same mistake as deleting
+    # a pre-existing regular file, one shape over.
+    #
+    # The rollback removes ONLY what this run created, which is where setup must
+    # diverge from init rather than copy it: init refuses on `exists()`, so
+    # anything it unlinks is its own, while setup prompts and overwrites.
+    pre_existing = service_file.is_file() or service_file.is_symlink()
+    try:
+        service_file.write_bytes(payload)
+    except OSError as e:
         error(f"Error creating {service_file}: {e}")
         if pre_existing:
-            info(f"{service_file} was left unchanged.")
+            # Deliberately not "unchanged": an OSError at open leaves it intact,
+            # but one raised mid-write leaves it partial, and this cannot tell
+            # them apart. Atomic replacement is opensrm-may6's scope; until then
+            # the message must not promise more than it knows.
+            info(f"{service_file} was not removed, but may be incomplete.")
         else:
             try:
                 service_file.unlink(missing_ok=True)

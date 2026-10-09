@@ -1347,16 +1347,35 @@ class TestWizardFileIoIsHardened:
             if not any(kw.arg == "encoding" for kw in node.keywords):
                 offenders.append(f"{name}() at line {node.lineno}")
 
-        assert checked >= 1, (
-            f"found only {checked} text-IO calls in cli/setup.py; this guard "
-            f"has stopped matching, so it is inspecting nothing"
-        )
         assert not offenders, (
             "text IO without an explicit encoding= in cli/setup.py: "
             + ", ".join(offenders)
-            + ". The locale's encoding is not UTF-8 everywhere, and a failed "
-            "encode still leaves the file created but empty (opensrm-h9fq)."
+            + ". The locale's encoding is not UTF-8 everywhere (opensrm-h9fq)."
         )
+
+        # The manifest write deliberately uses no text IO at all now: it encodes
+        # first and calls `write_bytes`, because `write_text` opens with "w" and
+        # truncates before an encoding failure can be caught. So `offenders`
+        # being empty is partly vacuous, and the load-bearing assertion is that
+        # the encode names utf-8 explicitly rather than relying on the default.
+        encodes = [
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "encode"
+        ]
+        assert encodes, (
+            "cli/setup.py no longer encodes the manifest explicitly; if the "
+            "write went back to write_text it must declare encoding= instead"
+        )
+        for node in encodes:
+            named = [a for a in node.args if isinstance(a, ast.Constant)] + [
+                kw.value for kw in node.keywords if kw.arg == "encoding"
+            ]
+            assert any(isinstance(a, ast.Constant) and a.value == "utf-8" for a in named), (
+                f"encode() at line {node.lineno} does not name utf-8"
+            )
 
     @pytest.mark.parametrize(
         ("label", "make"),
@@ -1402,15 +1421,15 @@ class TestWizardFileIoIsHardened:
     def test_a_failed_write_leaves_no_partial_manifest(self, tmp_path, monkeypatch):
         """The rollback half, which setup had no handler for at all."""
         monkeypatch.chdir(tmp_path)
-        real = pathlib.Path.write_text
+        real = pathlib.Path.write_bytes
 
         def fake(self, *args, **kwargs):
             if self.name == "payment-api.yaml":
                 self.touch()
-                raise UnicodeEncodeError("ascii", "x", 0, 1, "simulated")
+                raise OSError(28, "No space left on device")
             return real(self, *args, **kwargs)
 
-        with patch.object(pathlib.Path, "write_text", fake):
+        with patch.object(pathlib.Path, "write_bytes", fake):
             TestTeamIsGatedAtTheWizardBoundary._drive(
                 tmp_path, monkeypatch, "payment-api", "payments"
             )
@@ -1509,8 +1528,47 @@ class TestRollbackNeverDeletesWhatItDidNotCreate:
             )
 
         said = " ".join(str(c) for c in told.call_args_list)
-        assert "left unchanged" in said, (
+        assert "not removed" in said, (
             f"the user was not told the manifest survived; info calls were {told.call_args_list}"
+        )
+        assert "unchanged" not in said, (
+            "the message promises the file is unchanged, which an OSError raised "
+            "mid-write cannot guarantee (opensrm-h9fq)"
+        )
+
+    @pytest.mark.parametrize("victim_exists", [True, False])
+    def test_a_symlink_at_the_target_is_never_unlinked(self, victim_exists, tmp_path, monkeypatch):
+        """The case `is_symlink()` is in `pre_existing` FOR.
+
+        A symlink whose victim is MISSING is neither `is_file()` nor
+        `exists()`, so with `pre_existing = is_file()` alone the rollback ran
+        and deleted a link this run did not create. The resolvable-victim case
+        cannot show that, because `is_file()` already covers it — which is why
+        dropping `is_symlink()` left the first version of this class green.
+        """
+        monkeypatch.chdir(tmp_path)
+        services = tmp_path / "services"
+        services.mkdir()
+        victim = tmp_path / "elsewhere.yaml"
+        if victim_exists:
+            victim.write_text("# the real file\n", encoding="utf-8")
+        link = services / "payment-api.yaml"
+        link.symlink_to(victim)
+
+        real = pathlib.Path.write_bytes
+
+        def fake(self, *args, **kwargs):
+            if self.name == "payment-api.yaml":
+                raise OSError(28, "No space left on device")
+            return real(self, *args, **kwargs)
+
+        with patch.object(pathlib.Path, "write_bytes", fake):
+            TestTeamIsGatedAtTheWizardBoundary._drive(
+                tmp_path, monkeypatch, "payment-api", "payments", confirm=True
+            )
+
+        assert link.is_symlink(), (
+            f"the rollback deleted the user's symlink (victim_exists={victim_exists})"
         )
 
     def test_a_symlink_at_the_target_survives_a_failed_overwrite(self, tmp_path, monkeypatch):
@@ -1529,3 +1587,9 @@ class TestRollbackNeverDeletesWhatItDidNotCreate:
 
         assert link.is_symlink(), "the failed write removed the user's symlink"
         assert victim.exists(), "the symlink's target was orphaned or deleted"
+        # Without this the test passes vacuously wherever chmod is a no-op (as
+        # root, or in a container): the write simply succeeds through the link
+        # and both assertions above still hold.
+        assert victim.read_bytes() == b"# the real file\n", (
+            "the write went through the symlink and overwrote its victim"
+        )

@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml
-from conftest import SERVICE_NAME_CASES
+from service_name_cases import SERVICE_NAME_CASES
 
 from nthlayer_generate.cli.init import (
     SERVICE_TYPES,
@@ -616,16 +616,12 @@ class TestServiceNameRuleIsShared:
     `nthlayer validate` then refused. The divergence itself is recorded once,
     at the rule in specs/manifest.py.
 
-    PROVENANCE OF THIS TABLE: derived from that shared rule, which is
-    generate's authority for names it GENERATES -- not from what either old
-    guard happened to accept, and not from opensrm's schema, which does not
-    constrain this field and is looser where it speaks at all. The bead's
-    acceptance asked for a schema-derived table; one is not available here, and
-    saying so is part of the finding. The spec gap is opensrm-fwnp.
+    The table and its provenance live in tests/service_name_cases.py, shared
+    with the setup-wizard tests that assert the same rule.
     """
 
     # (name, expected) — every rejection names the rule it breaks.
-    NAMES = SERVICE_NAME_CASES
+    NAMES = SERVICE_NAME_CASES  # see tests/service_name_cases.py
 
     @pytest.mark.parametrize(("name", "expected"), NAMES)
     def test_guard_matches_the_shared_rule(self, name, expected):
@@ -634,7 +630,7 @@ class TestServiceNameRuleIsShared:
             "the CLI guard has diverged from the shared rule again"
         )
 
-    def test_the_table_is_not_vacuous(self):
+    def test_the_name_table_is_not_empty(self):
         """Both outcomes must be represented, or a broken rule could pass.
 
         A predicate that returns a constant satisfies an all-True or all-False

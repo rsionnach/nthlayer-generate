@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml as yaml_mod
-from conftest import SERVICE_NAME_CASES
+from service_name_cases import SERVICE_NAME_CASES
 
 from nthlayer_generate.cli.setup import (
     _create_first_service,
@@ -980,7 +980,7 @@ class TestWizardOutputSurvivesItsOwnValidator:
     # The wizard's own menu mapping, from cli/setup.py's `tier_map`.
     MENU_TIERS = [1, 2, 3]
 
-    def test_the_table_is_not_empty(self):
+    def test_the_menu_tier_table_is_not_empty(self):
         assert self.MENU_TIERS
 
     @pytest.mark.parametrize("tier", MENU_TIERS)
@@ -1041,7 +1041,7 @@ class TestWizardQuotesUserSuppliedValues:
         "caf\u00e9 \U0001f389",
     ]
 
-    def test_the_table_is_not_empty(self):
+    def test_the_hostile_table_is_not_empty(self):
         assert self.HOSTILE
 
     @pytest.mark.parametrize("team", HOSTILE)
@@ -1072,16 +1072,22 @@ class TestTheNameRuleHasExactlyOneHome:
     """Asserts what `specs/manifest.py`'s comment claims (opensrm-h9fq).
 
     That comment says the rule is "genuinely the only copy: cli/init.py and
-    cli/setup.py both delegate here". That is a checkable fact about three other
+    cli/setup.py both delegate here". That is a checkable fact about two other
     files, so by the ecosystem convention it is asserted rather than left as
-    prose. Five such claims went stale during opensrm-t4rd's gate.
+    prose. Thirteen such claims went stale across opensrm-t4rd and this bead,
+    including the count in this very docstring, which said "three" after the
+    comment it mirrors had already been corrected to two.
+
+    `specs/validator.py` is deliberately NOT driven here: it calls the shared
+    function directly and keeps no copy of its own, so there is nothing for it
+    to diverge from.
 
     This replaces `TestSetupGuardStillDiverges`, which asserted the opposite
     while setup.py still had its own copy and which failed, by design, when this
     bead landed.
     """
 
-    def test_all_three_callers_agree_with_the_shared_rule(self):
+    def test_both_cli_guards_agree_with_the_shared_rule(self):
         from nthlayer_generate.cli.init import (
             _is_valid_service_name as init_guard,
         )
@@ -1192,7 +1198,7 @@ class TestWizardNameIsNotImplicitlyRetyped:
 
     RESOLVABLE = ["no", "yes", "on", "off", "true", "false", "null"]
 
-    def test_the_table_is_not_empty(self):
+    def test_the_resolvable_table_is_not_empty(self):
         assert self.RESOLVABLE
 
     def test_every_value_is_accepted_by_the_name_rule(self):

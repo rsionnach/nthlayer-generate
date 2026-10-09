@@ -976,22 +976,60 @@ class TestQuotingMechanismRoundTrips:
         """Provenance guard: every HAZARDS entry must be demonstrably hostile.
 
         Derived from what `json` and `yaml` actually do, never from
-        `_quoted_yaml_scalar`, which is the code under test.
+        `_quoted_yaml_scalar`, which is the code under test. Using pyyaml as the
+        authority for what YAML means is not circular: pyyaml is the reader this
+        ecosystem actually uses, so "pyyaml retypes this" IS the hazard.
+
+        The bar is OR-shaped and deliberately so -- a value earns its place by
+        defeating EITHER naive mechanism, not both. `"ops "` defeats only the
+        plain path, for instance. The provenance pass flagged the previous
+        wording for implying a stronger bar than this enforces.
+
+        A library raising where neither was expected is reported, not counted as
+        hostility: the earlier version swallowed it into `False`, which silently
+        satisfied the claim.
         """
+        unexpected: list[str] = []
         for value in self.HAZARDS:
             try:
                 json_round_trips = yaml.safe_load(f"t: {json.dumps(value)}\n")["t"] == value
-            except Exception:
+            except Exception as exc:  # noqa: BLE001 - reported below, not swallowed
                 json_round_trips = False
+                unexpected.append(f"{value!r} via json path: {type(exc).__name__}")
             try:
                 loaded = yaml.safe_load(value)
                 load_agrees = isinstance(loaded, str) and loaded == value
-            except Exception:
+            except Exception:  # noqa: BLE001 - a raise IS the hazard for 0b_, 0x_
                 load_agrees = False
             assert not (json_round_trips and load_agrees), (
-                f"{value!r} is no longer hostile to either naive mechanism; "
-                f"it proves nothing -- move it to STRUCTURAL or remove it"
+                f"{value!r} defeats neither naive mechanism; it proves nothing "
+                f"-- move it to STRUCTURAL or remove it"
             )
+        assert not unexpected, (
+            f"the json round-trip probe raised, so hostility was assumed rather "
+            f"than measured for: {unexpected}"
+        )
+
+    # Values that MUST stay unquoted. Without these the plain branch was pinned
+    # only by test_init_documented_flags.py::test_block_is_byte_identical_to_
+    # real_output -- a different file, so a reader of this class would conclude
+    # the plain/quoted decision was covered here when it was half-covered
+    # (provenance pass, minor). `ops` and `platform` are the values the
+    # documented example output actually uses.
+    PLAIN = ["ops", "platform", "payments", "my-team", "team2", "a"]
+
+    def test_the_plain_table_is_not_empty(self):
+        assert self.PLAIN
+
+    @pytest.mark.parametrize("team", PLAIN)
+    def test_a_safe_value_is_emitted_without_quotes(self, team):
+        """The other half of the branch: quoting must stay CONDITIONAL.
+
+        Quoting everything would be safe and would break the docs-vs-reality
+        guard from opensrm-noc6, so "always quote" is a real regression risk.
+        """
+        assert _yaml_scalar(team) == team
+        assert not _yaml_scalar(team).startswith('"')
 
     @pytest.mark.parametrize("team", CORPUS)
     def test_team_round_trips_through_a_real_document(self, team):
@@ -1447,6 +1485,10 @@ class TestWritesAreExplicitlyUtf8:
     """
 
     def test_no_text_io_in_init_omits_an_explicit_encoding(self):
+        # SOURCE-INSPECTION coverage, not behavioural: on a UTF-8-default host
+        # dropping `encoding="utf-8"` changes nothing observable, so this guard
+        # is the only thing that can catch it. Do not mistake a green run here
+        # for proof that the write was exercised under a hostile locale.
         module = importlib.import_module("nthlayer_generate.cli.init")
         tree = ast.parse(pathlib.Path(module.__file__).read_text(encoding="utf-8"))
 
@@ -1682,10 +1724,16 @@ class TestTemplateResourceContainers:
             True,
         ],
     )
-    def test_a_container_stays_one_comment_line(self, value):
+    @pytest.mark.parametrize("field", ["name", "kind"])
+    def test_a_container_stays_one_comment_line(self, value, field):
+        # Parametrised over WHICH field carries the value. Every fixture here
+        # used to pin `kind = "SLO"` and vary only `name`, so an asymmetric
+        # regression -- unwrapping `kind` alone -- was caught by the AST guard
+        # and by nothing behavioural. Both fields come from the same
+        # unvalidated template file, so both need the same proof.
         resource = MagicMock()
-        resource.kind = "SLO"
-        resource.name = value
+        resource.kind = value if field == "kind" else "SLO"
+        resource.name = value if field == "name" else "availability"
         template = MagicMock()
         template.resources = [resource]
 
@@ -1708,35 +1756,47 @@ class TestTemplateResourceContainers:
 class TestNthlayerDirFalseSuccess:
     """opensrm-t4rd defect 3: success was reported for a directory not created."""
 
-    def test_a_file_named_nthlayer_does_not_produce_a_success_line(
-        self, tmp_path, monkeypatch, capsys
-    ):
+    def test_a_file_named_nthlayer_does_not_produce_a_success_line(self, tmp_path, monkeypatch):
         """`.nthlayer` as a regular FILE.
 
         mkdir raises FileExistsError and the config write raises
         NotADirectoryError; both are OSError, so both are downgraded to warnings.
         The old check was `nthlayer_dir.exists()`, True *because it is a file*, so
         init printed "Created .nthlayer/" for a directory it had not created.
+
+        The filesystem cannot show this: every structured assertion below holds
+        identically under `exists()`, because neither version creates anything.
+        The only observable difference is what the user is TOLD, so that is what
+        this asserts -- via the reporters patched at init's own lookup path,
+        not via captured text. Reading the console here would also be unsound:
+        `ux.warning` shells out to `gum` when installed and bypasses capsys
+        (measured: installed on this machine, and the warning was invisible).
+
+        Verified during the provenance pass: with these reporter assertions
+        removed, mutating `is_dir()` back to `exists()` goes GREEN.
         """
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".nthlayer").write_text("not a directory")
 
-        # ux.warning() shells out to `gum` when it is installed, which writes to
-        # the real file descriptor and so bypasses capsys entirely. Forced off,
-        # or this test would pass or fail depending on whether the machine has
-        # gum — measured: it is installed here, and the warning was invisible.
-        monkeypatch.setattr("nthlayer_generate.cli.ux.has_gum", lambda: False)
+        with (
+            patch("nthlayer_generate.cli.init.success") as reported_success,
+            patch("nthlayer_generate.cli.init.warning") as reported_warning,
+        ):
+            rc = init_command("svc", "ops", None, interactive=False)
 
-        rc = init_command("svc", "ops", None, interactive=False)
-        out = capsys.readouterr().out
+        announced = " ".join(str(c) for c in reported_success.call_args_list)
+        warned = " ".join(str(c) for c in reported_warning.call_args_list)
 
-        # Structured state first: this part cannot depend on how output is rendered.
+        assert ".nthlayer/" not in announced, (
+            f"claimed to create a directory it did not: {reported_success.call_args_list}"
+        )
+        assert "was not created" in warned, (
+            f"the failure must be stated, not merely implied: {reported_warning.call_args_list}"
+        )
+        assert "svc.yaml" in announced, "the manifest it DID write must still be reported"
+
         assert not (tmp_path / ".nthlayer").is_dir(), "no directory should exist"
         assert not (tmp_path / ".nthlayer" / "config.yaml").exists(), "no config written"
-
-        assert "Created .nthlayer/" not in out, "claimed to create a directory it did not"
-        assert "was not created" in out, "the failure must be stated, not merely implied"
-
         assert (tmp_path / ".nthlayer").is_file(), "the pre-existing file must be untouched"
         assert (tmp_path / "svc.yaml").exists(), "the manifest is the primary artifact"
         assert rc == 0, (

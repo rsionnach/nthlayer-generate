@@ -17,6 +17,7 @@ import argparse
 import os
 from pathlib import Path
 
+from nthlayer_generate.cli.init import _is_valid_team, _yaml_scalar
 from nthlayer_generate.cli.ux import (
     confirm,
     console,
@@ -42,6 +43,7 @@ from nthlayer_generate.config.loader import (
     save_config,
 )
 from nthlayer_generate.config.secrets import get_secret_resolver
+from nthlayer_generate.specs.manifest import is_valid_service_name
 
 
 def setup_command(
@@ -395,6 +397,19 @@ def _create_first_service() -> None:
 
     team = _prompt("Team name", default="platform")
 
+    # Gated and quoted for the same reason as init (opensrm-t4rd, opensrm-h9fq):
+    # `team` is free text and was interpolated raw, so a colon broke the document
+    # and a newline injected a sibling field that validated clean. `_yaml_scalar`
+    # makes the document safe; this check turns a newline into a clear error
+    # rather than a silently escaped one.
+    if not team or not team.strip():
+        error("Team name is required")
+        return
+    if not _is_valid_team(team):
+        error("Invalid team name")
+        console.print("Team name must not contain line breaks, tabs or NUL")
+        return
+
     # Service type selection using interactive menu
     type_choices = [
         "api - HTTP/REST API service",
@@ -453,8 +468,8 @@ def _generate_service_yaml(
 
 service:
   name: {name}
-  team: {team}
-  tier: {tier}
+  team: {_yaml_scalar(team)}
+  tier: {config["tier_name"]}
   type: {service_type}
 
 resources:
@@ -462,7 +477,7 @@ resources:
   - kind: SLO
     name: availability
     spec:
-      objective: {config['availability']}
+      objective: {config["availability"]}
       window: 30d
       indicator:
         type: availability
@@ -476,7 +491,7 @@ resources:
     spec:
       objective: 99.0
       window: 30d
-      threshold_ms: {config['latency_ms']}
+      threshold_ms: {config["latency_ms"]}
       indicator:
         type: latency
         percentile: 99
@@ -503,15 +518,15 @@ resources:
 
 
 def _is_valid_service_name(name: str) -> bool:
-    """Validate service name format."""
-    if not name:
-        return False
-    if name[0] == "-" or name[-1] == "-":
-        return False
-    for char in name:
-        if not (char.islower() or char.isdigit() or char == "-"):
-            return False
-    return True
+    """Delegates to the one service-name rule; see specs/manifest for why.
+
+    This was the THIRD private copy (opensrm-h9fq). It looped over
+    ``char.islower() or char.isdigit()``, which are UNICODE predicates, so
+    measured against the shared rule it accepted `123`, `café` and `1-svc`,
+    all of which `nthlayer validate` then refused. opensrm-t4rd removed the
+    same shape from cli/init.py.
+    """
+    return is_valid_service_name(name)
 
 
 def _print_next_steps() -> None:

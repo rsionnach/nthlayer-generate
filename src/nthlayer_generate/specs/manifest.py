@@ -55,10 +55,11 @@ VALID_TIERS = {
 # 0 having written a manifest its own validator refuses, and an exit code is
 # what a CI gate keys on.
 #
-# NOT exhaustive: cli/setup.py has a third, still-divergent copy that accepts
-# `123`, `café` and `1-svc` (it does reject both hyphen ends). Tracked in
-# opensrm-h9fq, and asserted by
-# test_init.py::TestSetupGuardStillDiverges so this note cannot rot quietly.
+# Now genuinely the only copy: cli/init.py and cli/setup.py both delegate here,
+# and specs/validator.py applies it (opensrm-h9fq retired the third copy). That
+# is a claim about three other files, so it is asserted rather than left as
+# prose: test_cli_setup.py::TestTheNameRuleHasExactlyOneHome drives all three
+# callers over the shared table.
 #
 # Same shape as the service-type divergence recorded below under opensrm-z3ab,
 # which is why the rule lives here with it rather than in either caller.

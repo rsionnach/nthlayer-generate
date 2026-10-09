@@ -23,9 +23,6 @@ from nthlayer_generate.cli.init import (
     _yaml_scalar,
     init_command,
 )
-from nthlayer_generate.cli.setup import (
-    _is_valid_service_name as _setup_is_valid_service_name,
-)
 from nthlayer_generate.specs.manifest import is_valid_service_name
 from nthlayer_generate.specs.template_loader import TemplateLoader
 from nthlayer_generate.specs.validator import validate_service_file
@@ -1355,42 +1352,6 @@ class TestNoFieldBypassesTheQuotingHelper:
             "_yaml_scalar(resource.name)",
         ):
             assert expr in live, f"{expr} is no longer wrapped anywhere"
-
-
-class TestSetupGuardStillDiverges:
-    """A tripwire, not an endorsement (opensrm-h9fq).
-
-    `specs/manifest.py` says its rule is not exhaustive because
-    `cli/setup.py` keeps a third copy. That is a claim about another file, so
-    it is asserted here rather than left as prose that can rot -- the
-    ecosystem convention after six such comments went stale.
-
-    When h9fq is fixed this test FAILS, which is the point: it forces the
-    comment and the bead to be closed together.
-    """
-
-    # Measured against the real function, not a reimplementation of it:
-    # setup.py DOES reject `svc-` (it checks both end characters), so that
-    # one belongs in the agreeing set, not here.
-    DIVERGENT = ["123", "caf\u00e9", "1-svc"]
-    AGREED_REJECTED = ["svc-", "-svc", ""]
-
-    def test_setup_accepts_names_the_shared_rule_rejects(self):
-        for name in self.DIVERGENT:
-            assert _setup_is_valid_service_name(name), (
-                f"setup.py no longer accepts {name!r} -- if its guard now "
-                f"delegates to the shared rule, close opensrm-h9fq and delete "
-                f"this test plus the caveat in specs/manifest.py"
-            )
-            assert not is_valid_service_name(name), (
-                f"the shared rule now accepts {name!r}; this table is stale"
-            )
-
-    def test_both_guards_already_agree_on_these(self):
-        """The divergence is partial, so pin where it is NOT."""
-        for name in self.AGREED_REJECTED:
-            assert not _setup_is_valid_service_name(name)
-            assert not is_valid_service_name(name)
 
 
 class TestTemplateNameIsQuoted:

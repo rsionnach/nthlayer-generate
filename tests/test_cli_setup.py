@@ -10,6 +10,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+import yaml as yaml_mod
 
 from nthlayer_generate.cli.setup import (
     _create_first_service,
@@ -725,7 +726,7 @@ class TestGenerateServiceYaml:
 
         assert "name: payment-api" in yaml
         assert "team: payments" in yaml
-        assert "tier: 1" in yaml
+        assert yaml_mod.safe_load(yaml)["service"]["tier"] == "critical"
         assert "type: api" in yaml
         assert "99.95" in yaml  # Critical availability
         assert "200" in yaml  # Critical latency threshold
@@ -736,7 +737,7 @@ class TestGenerateServiceYaml:
         yaml = _generate_service_yaml("user-service", "platform", "api", 2)
 
         assert "name: user-service" in yaml
-        assert "tier: 2" in yaml
+        assert yaml_mod.safe_load(yaml)["service"]["tier"] == "standard"
         assert "99.9" in yaml  # Standard availability
         assert "500" in yaml  # Standard latency threshold
         assert "urgency: low" in yaml
@@ -746,7 +747,7 @@ class TestGenerateServiceYaml:
         yaml = _generate_service_yaml("batch-job", "data", "worker", 3)
 
         assert "name: batch-job" in yaml
-        assert "tier: 3" in yaml
+        assert yaml_mod.safe_load(yaml)["service"]["tier"] == "low"
         assert "type: worker" in yaml
         assert "99.5" in yaml  # Low availability
         assert "1000" in yaml  # Low latency threshold
@@ -770,7 +771,17 @@ class TestIsValidServiceName:
         assert _is_valid_service_name("service1") is True
         assert _is_valid_service_name("a") is True
         assert _is_valid_service_name("my-service-123") is True
-        assert _is_valid_service_name("123") is True
+
+    def test_a_leading_digit_is_invalid(self):
+        """`123` was asserted VALID here, which defended the defect.
+
+        The old guard looped over `char.islower() or char.isdigit()`, so it
+        accepted a name made only of digits; `nthlayer validate` then refused
+        the manifest. The guard delegates to the shared rule now, which
+        requires a leading lowercase letter (opensrm-h9fq).
+        """
+        assert _is_valid_service_name("123") is False
+        assert _is_valid_service_name("1-svc") is False
 
     def test_invalid_empty(self):
         """Test empty name is invalid."""
@@ -942,3 +953,220 @@ class TestHandleSetupCommand:
 
         assert result == 0
         mock_setup.assert_called_once_with(quick=True, test_only=False, skip_service=True)
+
+
+class TestWizardOutputSurvivesItsOwnValidator:
+    """opensrm-h9fq: the wizard wrote a manifest `nthlayer validate` rejects.
+
+    Not an edge case. `tier: {tier}` interpolated the INT from `tier_map`, so
+    every one of the three menu choices emitted `tier: 1|2|3` and the validator
+    refused all three with "Invalid tier: '1'. Must be one of: critical, high,
+    low, standard". `nthlayer setup` is wired in demo.py and referenced from
+    docs-site/getting-started/quick-start.md, so the documented onboarding path
+    had never produced a valid manifest.
+
+    It survived because `tests/test_cli_setup.py` exercised
+    `_generate_service_yaml` in four places and never once loaded the result
+    through the real validator. That is the gap opensrm-t4rd's acceptance
+    criteria named for init, which init got and setup did not.
+
+    PROVENANCE: the accepted tier vocabulary comes from
+    `nthlayer_common.manifest.models.VALID_TIERS`, the shared library that
+    defines it, NOT from setup.py's own `tier_configs` and not from generate's
+    `TIER_NAMES`. A table read off either would agree with the bug.
+    """
+
+    # The wizard's own menu mapping, from cli/setup.py's `tier_map`.
+    MENU_TIERS = [1, 2, 3]
+
+    def test_the_menu_choices_are_not_vacuous(self):
+        assert self.MENU_TIERS
+
+    @pytest.mark.parametrize("tier", MENU_TIERS)
+    def test_every_tier_choice_produces_a_valid_manifest(self, tier, tmp_path):
+        from nthlayer_generate.specs.validator import validate_service_file
+
+        written = tmp_path / "payment-api.yaml"
+        written.write_text(
+            _generate_service_yaml("payment-api", "payments", "api", tier),
+            encoding="utf-8",
+        )
+
+        result = validate_service_file(written)
+
+        assert result.valid, (
+            f"the wizard exited having written a manifest its own validator "
+            f"rejects for tier={tier}: {result.errors}"
+        )
+
+    @pytest.mark.parametrize("tier", MENU_TIERS)
+    def test_the_emitted_tier_is_a_name_the_shared_vocabulary_admits(self, tier, tmp_path):
+        """The specific regression: an int was emitted where a name was required."""
+        import yaml
+        from nthlayer_common.manifest.models import VALID_TIERS
+
+        written = _generate_service_yaml("payment-api", "payments", "api", tier)
+        emitted = yaml.safe_load(written)["service"]["tier"]
+
+        assert isinstance(emitted, str), (
+            f"tier was emitted as {type(emitted).__name__} ({emitted!r}); the "
+            f"bug wrote the int from tier_map instead of the tier name"
+        )
+        assert emitted in VALID_TIERS, (
+            f"{emitted!r} is not in nthlayer-common's VALID_TIERS {VALID_TIERS}"
+        )
+
+
+class TestWizardQuotesUserSuppliedValues:
+    """opensrm-h9fq: `team` was interpolated raw and wholly unvalidated.
+
+    `team` comes from a free-text prompt with no guard at all, so a colon broke
+    the document and a newline injected a sibling field that then validated
+    clean. Same defect opensrm-t4rd closed for init, one command over.
+
+    HOSTILE is traced to YAML behaviour, not to `_yaml_scalar`: each value is
+    one pyyaml retypes, reshapes or chokes on. See
+    tests/test_init.py::TestQuotingMechanismRoundTrips for the full corpus and
+    its provenance guard.
+    """
+
+    HOSTILE = [
+        "Platform: Core",
+        "ops\ntier: critical",
+        "ops\nname: hijacked",
+        "null",
+        "yes",
+        "123",
+        "ops ",
+        "caf\u00e9 \U0001f389",
+    ]
+
+    def test_the_hostile_table_is_not_empty(self):
+        assert self.HOSTILE
+
+    @pytest.mark.parametrize("team", HOSTILE)
+    def test_a_hostile_team_round_trips_and_injects_nothing(self, team, tmp_path):
+        import yaml
+
+        written = _generate_service_yaml("payment-api", team, "api", 2)
+        loaded = yaml.safe_load(written)
+
+        assert loaded["service"]["team"] == team
+        assert set(loaded) == {"service", "resources"}, (
+            f"{team!r} added {sorted(set(loaded) - {'service', 'resources'})}"
+        )
+        assert loaded["service"]["name"] == "payment-api", "team reached name"
+        assert loaded["service"]["tier"] == "standard", "team reached tier"
+
+    @pytest.mark.parametrize("team", HOSTILE)
+    def test_a_hostile_team_still_passes_the_real_validator(self, team, tmp_path):
+        from nthlayer_generate.specs.validator import validate_service_file
+
+        written = tmp_path / "payment-api.yaml"
+        written.write_text(_generate_service_yaml("payment-api", team, "api", 2), encoding="utf-8")
+
+        result = validate_service_file(written)
+
+        assert result.valid, f"team {team!r} produced an invalid manifest: {result.errors}"
+
+
+class TestTheNameRuleHasExactlyOneHome:
+    """Asserts what `specs/manifest.py`'s comment claims (opensrm-h9fq).
+
+    That comment says the rule is "genuinely the only copy: cli/init.py and
+    cli/setup.py both delegate here". That is a checkable fact about three other
+    files, so by the ecosystem convention it is asserted rather than left as
+    prose. Five such claims went stale during opensrm-t4rd's gate.
+
+    This replaces `TestSetupGuardStillDiverges`, which asserted the opposite
+    while setup.py still had its own copy and which failed, by design, when this
+    bead landed.
+    """
+
+    def test_all_three_callers_agree_with_the_shared_rule(self):
+        from test_init import TestServiceNameRuleIsShared as Table
+
+        from nthlayer_generate.cli.init import (
+            _is_valid_service_name as init_guard,
+        )
+        from nthlayer_generate.cli.setup import (
+            _is_valid_service_name as setup_guard,
+        )
+        from nthlayer_generate.specs.manifest import is_valid_service_name
+
+        assert Table.NAMES, "the shared table is empty, so this proves nothing"
+        for name, expected in Table.NAMES:
+            assert is_valid_service_name(name) is expected, f"shared rule: {name!r}"
+            assert init_guard(name) is expected, f"init diverged on {name!r}"
+            assert setup_guard(name) is expected, f"setup diverged on {name!r}"
+
+
+class TestTeamIsGatedAtTheWizardBoundary:
+    """opensrm-h9fq: `team` reached the template with no validation at all.
+
+    `_yaml_scalar` already makes the document safe, so this gate is not what
+    prevents injection. It is what turns a newline in a typed team name into a
+    clear error rather than a silently escaped `\n` sitting in the manifest,
+    which is the same reasoning opensrm-t4rd recorded for init.
+
+    Added because the kill check showed the gate survived deletion: the guard
+    existed with nothing exercising it, which is the defect this ecosystem has
+    now produced five times.
+
+    Asserted on the filesystem rather than the console, because `ux.warning`
+    and `ux.error` shell out to `gum` when it is installed and bypass capsys.
+    """
+
+    @staticmethod
+    def _run_wizard(tmp_path, monkeypatch, name, team):
+        """Drive `_create_first_service` with the prompts answered."""
+        monkeypatch.chdir(tmp_path)
+        answers = iter([name, team])
+        monkeypatch.setattr(
+            "nthlayer_generate.cli.setup._prompt",
+            lambda *a, **k: next(answers, ""),
+        )
+        monkeypatch.setattr(
+            "nthlayer_generate.cli.setup.select",
+            lambda label, choices, **k: choices[0],
+        )
+        monkeypatch.setattr("nthlayer_generate.cli.setup._confirm", lambda *a, **k: False)
+        from nthlayer_generate.cli.setup import _create_first_service
+
+        _create_first_service()
+        # the wizard writes into `services/`, unlike `init` which writes to cwd
+        return tmp_path / "services" / f"{name}.yaml"
+
+    @pytest.mark.parametrize("team", ["ops\ntier: critical", "ops\there", "ops\x00"])
+    def test_a_control_character_in_team_writes_no_manifest(self, team, tmp_path, monkeypatch):
+        written = self._run_wizard(tmp_path, monkeypatch, "payment-api", team)
+        assert not written.exists(), f"team {team!r} was accepted and a manifest was written anyway"
+
+    @pytest.mark.parametrize("team", ["   ", ""])
+    def test_a_blank_team_writes_no_manifest(self, team, tmp_path, monkeypatch):
+        written = self._run_wizard(tmp_path, monkeypatch, "payment-api", team)
+        assert not written.exists()
+
+    def test_an_ordinary_team_is_accepted_and_the_manifest_validates(self, tmp_path, monkeypatch):
+        """Guards the three above against passing because the wizard never runs."""
+        from nthlayer_generate.specs.validator import validate_service_file
+
+        written = self._run_wizard(tmp_path, monkeypatch, "payment-api", "payments")
+
+        assert written.exists(), "the wizard wrote nothing for valid input"
+        result = validate_service_file(written)
+        assert result.valid, result.errors
+
+    def test_a_colon_in_team_is_accepted_not_rejected(self, tmp_path, monkeypatch):
+        """A colon is ordinary in a team name; quoting handles it.
+
+        The gate rejects control characters only. Rejecting a colon would be
+        the overcorrection opensrm-t4rd warned about.
+        """
+        import yaml as y
+
+        written = self._run_wizard(tmp_path, monkeypatch, "payment-api", "Platform: Core")
+
+        assert written.exists()
+        loaded = y.safe_load(written.read_text(encoding="utf-8"))
+        assert loaded["service"]["team"] == "Platform: Core"

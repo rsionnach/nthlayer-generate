@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.0.4](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.3...v2.0.4) (2026-10-09)
+
+
+### Bug Fixes
+
+* **setup:** an untested handler claiming a reachability I had disproved (opensrm-h9fq) ([f08a9bd](https://github.com/rsionnach/nthlayer-generate/commit/f08a9bd597daf0ed95fa74d66e386ea86c4fa27c))
+* **setup:** encode before opening, and never unlink a user symlink (opensrm-h9fq) ([07a3ccf](https://github.com/rsionnach/nthlayer-generate/commit/07a3ccf6c88e11fc0ffb0cb401f8d737e4a540ab))
+* **setup:** exit non-zero when the wizard fails (opensrm-h9fq) ([24c55de](https://github.com/rsionnach/nthlayer-generate/commit/24c55ded52a61769b5e378727c7f0974319ac8ba))
+* **setup:** harden the write, mkdir and target check (opensrm-h9fq) ([81bf295](https://github.com/rsionnach/nthlayer-generate/commit/81bf2959ecff8198b024a685c8929a33a5143188))
+* **setup:** quote the service name, which YAML retyped (opensrm-h9fq) ([00bb28f](https://github.com/rsionnach/nthlayer-generate/commit/00bb28fb636d9e9733617fcd228ca431dc8995a4))
+* **setup:** stop the wizard writing a manifest validate rejects (opensrm-h9fq) ([8b3894e](https://github.com/rsionnach/nthlayer-generate/commit/8b3894e19aedef9938a4f28b74313dcaafc8d1a0))
+* **setup:** the rollback I added was deleting user manifests (opensrm-h9fq) ([a1e5f6c](https://github.com/rsionnach/nthlayer-generate/commit/a1e5f6c2132f5afc702564312cc54d01df19d672))
+
+
+### Documentation
+
+* **setup:** correct two false claims and relocate the shared table (opensrm-h9fq) ([f5fc539](https://github.com/rsionnach/nthlayer-generate/commit/f5fc539973043b93f168a40c8b188fc029bcee16))
+* **setup:** drop a hand-maintained count and an orphaned comment (opensrm-h9fq) ([cbb7776](https://github.com/rsionnach/nthlayer-generate/commit/cbb7776d243d8a1f79d7c55e93a284c2f8127a8e))
+* **setup:** the stale count had moved, not vanished (opensrm-h9fq) ([7956a1b](https://github.com/rsionnach/nthlayer-generate/commit/7956a1b9d97e08e212bba3855df2f2365cd2caa9))
+
 ## [2.0.3](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.2...v2.0.3) (2026-10-09)
 
 

@@ -470,16 +470,30 @@ def _create_first_service() -> None:
     # encoding="utf-8" explicitly, and UnicodeError caught alongside OSError.
     # Without it `write_text` used the locale's encoding, so on a non-UTF-8 host
     # an ordinary accented team name raised UnicodeEncodeError -- a ValueError,
-    # NOT an OSError -- and left a ZERO-BYTE manifest behind. The unlink is the
-    # rollback half: a failed run must not leave a partial artifact.
+    # NOT an OSError -- and left a ZERO-BYTE manifest behind.
+    #
+    # The rollback removes ONLY a file this run created, which is where setup
+    # must diverge from init rather than copy it. init refuses on `exists()`, so
+    # anything it unlinks is always its own; setup PROMPTS and overwrites, so
+    # the target can pre-exist. Measured with a pre-existing manifest at mode
+    # 0444: `write_text` fails at open, leaving the file untruncated, and an
+    # unconditional `unlink(missing_ok=True)` then deleted intact user content
+    # while reporting only a write error. POSIX unlink needs write permission on
+    # the DIRECTORY, not the file, so a read-only manifest is no protection.
+    # That was a regression this bead introduced: before it, the bare write gave
+    # a traceback and the file survived.
+    pre_existing = service_file.is_file()
     try:
         service_file.write_text(service_content, encoding="utf-8")
     except (OSError, UnicodeError) as e:
         error(f"Error creating {service_file}: {e}")
-        try:
-            service_file.unlink(missing_ok=True)
-        except OSError:
-            pass
+        if pre_existing:
+            info(f"{service_file} was left unchanged.")
+        else:
+            try:
+                service_file.unlink(missing_ok=True)
+            except OSError:
+                pass
         return
     console.print()
     success(f"Created {service_file}")

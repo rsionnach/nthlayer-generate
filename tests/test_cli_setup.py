@@ -1377,10 +1377,11 @@ class TestWizardFileIoIsHardened:
             )
 
         said = " ".join(str(c) for c in reported.call_args_list)
-        assert "services" in said, (
+        assert "Could not create" in said, (
             f"a {label} at services/ raised instead of reporting; errors were "
             f"{reported.call_args_list}"
         )
+        assert not (tmp_path / "services" / "payment-api.yaml").is_file()
 
     def test_a_directory_at_the_target_is_refused_not_overwritten(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
@@ -1453,3 +1454,78 @@ class TestWizardOverwriteBranch:
         )
 
         assert first.read_bytes() == before, "a refused overwrite still wrote"
+
+
+class TestRollbackNeverDeletesWhatItDidNotCreate:
+    """opensrm-h9fq edge-case pass: the rollback I added caused data loss.
+
+    init's `unlink` is safe because init REFUSES on `exists()`, so anything it
+    removes is always a file it just created. setup PROMPTS and overwrites, so
+    the target can pre-exist — and copying init's unconditional
+    `unlink(missing_ok=True)` into that path meant a failed write deleted the
+    user's manifest.
+
+    Measured with a hand-edited manifest at mode 0444, overwrite confirmed:
+    `write_text` fails at OPEN, so the file is never truncated, and the unlink
+    then removed intact content while reporting only "Error creating ...".
+    POSIX unlink needs write permission on the DIRECTORY, not the file, so a
+    read-only manifest was no protection. Before the rollback existed the bare
+    write gave a traceback and the file survived — so the fix had traded a loud
+    failure with data preserved for a clean message with the data gone.
+
+    The existing rollback test could not catch it: it runs in an empty
+    `tmp_path`, so it only ever exercises a file the wizard created.
+    """
+
+    @staticmethod
+    def _fail_write_at_open(tmp_path, monkeypatch, content):
+        """Pre-create the target read-only, so write_text fails before truncating."""
+        services = tmp_path / "services"
+        services.mkdir()
+        target = services / "payment-api.yaml"
+        target.write_text(content, encoding="utf-8")
+        target.chmod(0o444)
+        return target
+
+    def test_a_pre_existing_manifest_survives_a_failed_overwrite(self, tmp_path, monkeypatch):
+        content = "# hand-edited by the user\nservice:\n  name: payment-api\n"
+        target = self._fail_write_at_open(tmp_path, monkeypatch, content)
+        before = target.read_bytes()
+
+        TestTeamIsGatedAtTheWizardBoundary._drive(
+            tmp_path, monkeypatch, "payment-api", "payments", confirm=True
+        )
+
+        assert target.exists(), "a failed overwrite DELETED the user's manifest"
+        assert target.read_bytes() == before, "the user's manifest was modified"
+
+    def test_the_user_is_told_the_file_was_left_alone(self, tmp_path, monkeypatch):
+        """Reporting only a write error would imply nothing had happened to it."""
+        self._fail_write_at_open(tmp_path, monkeypatch, "# mine\n")
+
+        with patch("nthlayer_generate.cli.setup.info") as told:
+            TestTeamIsGatedAtTheWizardBoundary._drive(
+                tmp_path, monkeypatch, "payment-api", "payments", confirm=True
+            )
+
+        said = " ".join(str(c) for c in told.call_args_list)
+        assert "left unchanged" in said, (
+            f"the user was not told the manifest survived; info calls were {told.call_args_list}"
+        )
+
+    def test_a_symlink_at_the_target_survives_a_failed_overwrite(self, tmp_path, monkeypatch):
+        """The opensrm-may6 shape: the unlink must not eat the user's symlink."""
+        services = tmp_path / "services"
+        services.mkdir()
+        victim = tmp_path / "elsewhere.yaml"
+        victim.write_text("# the real file\n", encoding="utf-8")
+        link = services / "payment-api.yaml"
+        link.symlink_to(victim)
+        victim.chmod(0o444)
+
+        TestTeamIsGatedAtTheWizardBoundary._drive(
+            tmp_path, monkeypatch, "payment-api", "payments", confirm=True
+        )
+
+        assert link.is_symlink(), "the failed write removed the user's symlink"
+        assert victim.exists(), "the symlink's target was orphaned or deleted"

@@ -435,20 +435,52 @@ def _create_first_service() -> None:
     tier_map = {"critical": 1, "standard": 2, "low": 3}
     tier = tier_map.get(tier_name, 2)
 
-    # Create services directory
+    # All three of the following mirror cli/init.py's hardening from
+    # opensrm-t4rd (opensrm-h9fq). This bead imported init's quoting HELPERS and
+    # left the file IO beside them unhardened, so t4rd's defects were still live
+    # here verbatim.
+    #
+    # `exist_ok=True` does not cover a non-directory last component, so a
+    # `services` FILE or dangling symlink raised FileExistsError, and a
+    # read-only cwd raised PermissionError -- a traceback where init gives a
+    # message. Not fatal, as in init: the wizard has nothing else to write.
     services_dir = Path("services")
-    services_dir.mkdir(exist_ok=True)
+    try:
+        services_dir.mkdir(exist_ok=True)
+    except OSError as e:
+        error(f"Could not create {services_dir}/: {e}")
+        console.print("   It may already exist as a file, or the parent is not writable.")
+        return
 
     # Generate service YAML
     service_content = _generate_service_yaml(service_name, team, service_type, tier)
 
+    # `is_file()`, NOT `exists()`. With a DIRECTORY at the target, `exists()` was
+    # True, so the user was asked to confirm an overwrite and then got
+    # IsADirectoryError. The same confusion t4rd corrected in init.
     service_file = services_dir / f"{service_name}.yaml"
-    if service_file.exists():
+    if service_file.is_file():
         if not _confirm(f"{service_file} exists. Overwrite?", default=False):
             info("Skipping service creation.")
             return
+    elif service_file.exists():
+        error(f"{service_file} exists but is not a regular file")
+        return
 
-    service_file.write_text(service_content)
+    # encoding="utf-8" explicitly, and UnicodeError caught alongside OSError.
+    # Without it `write_text` used the locale's encoding, so on a non-UTF-8 host
+    # an ordinary accented team name raised UnicodeEncodeError -- a ValueError,
+    # NOT an OSError -- and left a ZERO-BYTE manifest behind. The unlink is the
+    # rollback half: a failed run must not leave a partial artifact.
+    try:
+        service_file.write_text(service_content, encoding="utf-8")
+    except (OSError, UnicodeError) as e:
+        error(f"Error creating {service_file}: {e}")
+        try:
+            service_file.unlink(missing_ok=True)
+        except OSError:
+            pass
+        return
     console.print()
     success(f"Created {service_file}")
 

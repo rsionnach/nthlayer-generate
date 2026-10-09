@@ -5,6 +5,9 @@ service creation, and configuration flow.
 """
 
 import argparse
+import ast
+import importlib
+import pathlib
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -1118,8 +1121,13 @@ class TestTeamIsGatedAtTheWizardBoundary:
     """
 
     @staticmethod
-    def _run_wizard(tmp_path, monkeypatch, name, team):
-        """Drive `_create_first_service` with the prompts answered."""
+    def _drive(tmp_path, monkeypatch, name, team, confirm=False):
+        """Drive `_create_first_service` with the prompts answered.
+
+        `confirm` answers the overwrite prompt. The first version hardcoded it
+        to False, which left the accepted-overwrite path -- setup's whole
+        idempotency contract -- untested (opensrm-h9fq edge-case pass).
+        """
         monkeypatch.chdir(tmp_path)
         answers = iter([name, team])
         monkeypatch.setattr(
@@ -1130,14 +1138,16 @@ class TestTeamIsGatedAtTheWizardBoundary:
             "nthlayer_generate.cli.setup.select",
             lambda label, choices, **k: choices[0],
         )
-        monkeypatch.setattr("nthlayer_generate.cli.setup._confirm", lambda *a, **k: False)
+        monkeypatch.setattr("nthlayer_generate.cli.setup._confirm", lambda *a, **k: confirm)
         from nthlayer_generate.cli.setup import _create_first_service
 
         _create_first_service()
         # the wizard writes into `services/`, unlike `init` which writes to cwd
         return tmp_path / "services" / f"{name}.yaml"
 
-    @pytest.mark.parametrize("team", ["ops\ntier: critical", "ops\there", "ops\x00"])
+    _run_wizard = _drive  # the name the earlier tests in this class were written against
+
+    @pytest.mark.parametrize("team", ["ops\ntier: critical", "ops\there", "ops\x00", "ops\r more"])
     def test_a_control_character_in_team_writes_no_manifest(self, team, tmp_path, monkeypatch):
         written = self._run_wizard(tmp_path, monkeypatch, "payment-api", team)
         assert not written.exists(), f"team {team!r} was accepted and a manifest was written anyway"
@@ -1279,3 +1289,167 @@ class TestUnknownTierIsLoud:
     def test_anything_else_raises_rather_than_defaulting(self, tier):
         with pytest.raises(ValueError, match="Unknown tier"):
             _generate_service_yaml("svc", "ops", "api", tier)
+
+
+class TestWizardFileIoIsHardened:
+    """opensrm-h9fq edge-case pass: t4rd's defects, verbatim, one file over.
+
+    This bead imported `_yaml_scalar` and `_is_valid_team` from cli/init.py and
+    left the file IO beside them unhardened, so every defect opensrm-t4rd fixed
+    in init's write was still live in setup's. Measured before the fix:
+
+      write_text() with no encoding=  -> UnicodeEncodeError (a ValueError, NOT
+                                         an OSError) and a ZERO-BYTE manifest
+      services/ as a regular FILE     -> FileExistsError traceback
+      services/ as a dangling symlink -> FileExistsError traceback
+      a DIRECTORY at the target       -> exists() True, so the user was asked to
+                                         confirm an overwrite, then got
+                                         IsADirectoryError
+
+    The encoding half is an AST guard rather than a locale test, for the reason
+    init's equivalent gives: pytest cannot portably change the interpreter's
+    filesystem encoding mid-process, and a test that tried would skip on most
+    machines -- the silent-skip failure mode this project has been bitten by
+    twice.
+    """
+
+    def test_no_text_io_in_setup_omits_an_explicit_encoding(self):
+        # SOURCE-INSPECTION coverage, not behavioural: on a UTF-8 host dropping
+        # `encoding="utf-8"` changes nothing observable, so this is the only
+        # thing that can catch it.
+        module = importlib.import_module("nthlayer_generate.cli.setup")
+        tree = ast.parse(pathlib.Path(module.__file__).read_text(encoding="utf-8"))
+
+        offenders = []
+        checked = 0
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            if isinstance(node.func, ast.Attribute):
+                name = node.func.attr
+                if name == "open" and getattr(node.func.value, "id", None) == "os":
+                    continue
+            elif isinstance(node.func, ast.Name):
+                name = node.func.id
+            else:
+                continue
+            if name not in (
+                "write_text",
+                "read_text",
+                "open",
+                "fdopen",
+                "NamedTemporaryFile",
+                "TemporaryFile",
+                "SpooledTemporaryFile",
+            ):
+                continue
+            checked += 1
+            if not any(kw.arg == "encoding" for kw in node.keywords):
+                offenders.append(f"{name}() at line {node.lineno}")
+
+        assert checked >= 1, (
+            f"found only {checked} text-IO calls in cli/setup.py; this guard "
+            f"has stopped matching, so it is inspecting nothing"
+        )
+        assert not offenders, (
+            "text IO without an explicit encoding= in cli/setup.py: "
+            + ", ".join(offenders)
+            + ". The locale's encoding is not UTF-8 everywhere, and a failed "
+            "encode still leaves the file created but empty (opensrm-h9fq)."
+        )
+
+    @pytest.mark.parametrize(
+        ("label", "make"),
+        [
+            ("file", lambda p: (p / "services").write_text("x", encoding="utf-8")),
+            ("dangling-symlink", lambda p: (p / "services").symlink_to(p / "nope")),
+        ],
+    )
+    def test_an_unusable_services_path_reports_rather_than_raises(
+        self, label, make, tmp_path, monkeypatch
+    ):
+        monkeypatch.chdir(tmp_path)
+        make(tmp_path)
+
+        with patch("nthlayer_generate.cli.setup.error") as reported:
+            TestTeamIsGatedAtTheWizardBoundary._drive(
+                tmp_path, monkeypatch, "payment-api", "payments"
+            )
+
+        said = " ".join(str(c) for c in reported.call_args_list)
+        assert "services" in said, (
+            f"a {label} at services/ raised instead of reporting; errors were "
+            f"{reported.call_args_list}"
+        )
+
+    def test_a_directory_at_the_target_is_refused_not_overwritten(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "services").mkdir()
+        (tmp_path / "services" / "payment-api.yaml").mkdir()
+
+        with patch("nthlayer_generate.cli.setup.error") as reported:
+            TestTeamIsGatedAtTheWizardBoundary._drive(
+                tmp_path, monkeypatch, "payment-api", "payments"
+            )
+
+        said = " ".join(str(c) for c in reported.call_args_list)
+        assert "not a regular file" in said, (
+            f"a directory at the target was not refused; errors were {reported.call_args_list}"
+        )
+        assert (tmp_path / "services" / "payment-api.yaml").is_dir()
+
+    def test_a_failed_write_leaves_no_partial_manifest(self, tmp_path, monkeypatch):
+        """The rollback half, which setup had no handler for at all."""
+        monkeypatch.chdir(tmp_path)
+        real = pathlib.Path.write_text
+
+        def fake(self, *args, **kwargs):
+            if self.name == "payment-api.yaml":
+                self.touch()
+                raise UnicodeEncodeError("ascii", "x", 0, 1, "simulated")
+            return real(self, *args, **kwargs)
+
+        with patch.object(pathlib.Path, "write_text", fake):
+            TestTeamIsGatedAtTheWizardBoundary._drive(
+                tmp_path, monkeypatch, "payment-api", "payments"
+            )
+
+        assert not (tmp_path / "services" / "payment-api.yaml").exists(), (
+            "a failed write left a partial manifest behind"
+        )
+
+
+class TestWizardOverwriteBranch:
+    """The idempotency contract setup chose, which nothing exercised.
+
+    init refuses on `exists()`; setup prompts and overwrites. The wizard driver
+    hardcoded `_confirm -> False`, so no test had ever taken the accepted path
+    or checked the new content landed (opensrm-h9fq edge-case pass).
+    """
+
+    def test_an_accepted_overwrite_replaces_the_manifest(self, tmp_path, monkeypatch):
+        first = TestTeamIsGatedAtTheWizardBoundary._drive(
+            tmp_path, monkeypatch, "payment-api", "payments"
+        )
+        assert first.exists()
+        before = first.read_text(encoding="utf-8")
+
+        second = TestTeamIsGatedAtTheWizardBoundary._drive(
+            tmp_path, monkeypatch, "payment-api", "other-team", confirm=True
+        )
+
+        after = second.read_text(encoding="utf-8")
+        assert after != before, "the overwrite was accepted but nothing changed"
+        assert yaml_mod.safe_load(after)["service"]["team"] == "other-team"
+
+    def test_a_refused_overwrite_preserves_the_manifest(self, tmp_path, monkeypatch):
+        first = TestTeamIsGatedAtTheWizardBoundary._drive(
+            tmp_path, monkeypatch, "payment-api", "payments"
+        )
+        before = first.read_bytes()
+
+        TestTeamIsGatedAtTheWizardBoundary._drive(
+            tmp_path, monkeypatch, "payment-api", "other-team", confirm=False
+        )
+
+        assert first.read_bytes() == before, "a refused overwrite still wrote"

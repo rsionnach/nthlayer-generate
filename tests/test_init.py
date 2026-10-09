@@ -620,8 +620,7 @@ class TestServiceNameRuleIsShared:
     with the setup-wizard tests that assert the same rule.
     """
 
-    # (name, expected) — every rejection names the rule it breaks.
-    NAMES = SERVICE_NAME_CASES  # see tests/service_name_cases.py
+    NAMES = SERVICE_NAME_CASES
 
     @pytest.mark.parametrize(("name", "expected"), NAMES)
     def test_guard_matches_the_shared_rule(self, name, expected):

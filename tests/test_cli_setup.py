@@ -1074,9 +1074,7 @@ class TestTheNameRuleHasExactlyOneHome:
     That comment says the rule is "genuinely the only copy: cli/init.py and
     cli/setup.py both delegate here". That is a checkable fact about two other
     files, so by the ecosystem convention it is asserted rather than left as
-    prose. Thirteen such claims went stale across opensrm-t4rd and this bead,
-    including the count in this very docstring, which said "three" after the
-    comment it mirrors had already been corrected to two.
+    prose. Such claims went stale repeatedly across opensrm-t4rd and this bead.
 
     `specs/validator.py` is deliberately NOT driven here: it calls the shared
     function directly and keeps no copy of its own, so there is nothing for it

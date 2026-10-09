@@ -95,11 +95,23 @@ def setup_command(
     print()
     _test_connections()
 
-    # Offer to create first service
+    # Offer to create first service.
+    #
+    # The return value is PROPAGATED (opensrm-h9fq). It used to be discarded,
+    # so every failure inside printed `error(...)` and then this function
+    # printed "Setup Complete!" and returned 0. The configuration above IS
+    # saved by this point, so the message says what actually happened rather
+    # than claiming either total success or total failure.
+    service_rc = 0
     if not skip_service:
         print()
         if _confirm("Create your first service?", default=True):
-            _create_first_service()
+            service_rc = _create_first_service()
+
+    if service_rc != 0:
+        console.print()
+        warning("Configuration was saved, but the first service was not created.")
+        return service_rc
 
     _print_next_steps()
     return 0
@@ -399,8 +411,19 @@ TIER_CONFIGS_BY_INDEX = {
 }
 
 
-def _create_first_service() -> None:
-    """Guide user through creating their first service."""
+def _create_first_service() -> int:
+    """Guide user through creating their first service.
+
+    Returns 0 on success OR on a deliberate skip, and 1 on failure, so the
+    caller can key an exit code on it (opensrm-h9fq). It returned None while
+    every failure path printed `error(...)` and the command then printed
+    "Setup Complete!" and exited 0 -- which is this bead's own defect in its
+    exit-code half, and `specs/manifest.py` says plainly that an exit code is
+    what a CI gate keys on.
+
+    A user declining is NOT a failure: choosing not to create a service, or
+    declining an overwrite, returns 0.
+    """
     console.print()
     console.print("[bold]Create Your First Service[/bold]")
     console.print("[muted]─[/muted]" * 40)
@@ -409,13 +432,13 @@ def _create_first_service() -> None:
     service_name = _prompt("Service name (e.g., payment-api)")
     if not service_name:
         info("Skipping service creation.")
-        return
+        return 0
 
     # Validate name
     if not _is_valid_service_name(service_name):
         error(f"Invalid service name: {service_name}")
-        console.print("Use lowercase letters, numbers, and hyphens only.")
-        return
+        console.print("   [muted]Use lowercase letters, numbers and hyphens only[/muted]")
+        return 1
 
     team = _prompt("Team name", default="platform")
 
@@ -426,11 +449,11 @@ def _create_first_service() -> None:
     # rather than a silently escaped one.
     if not team or not team.strip():
         error("Team name is required")
-        return
+        return 1
     if not _is_valid_team(team):
         error("Invalid team name")
-        console.print("Team name must not contain line breaks, tabs or NUL")
-        return
+        console.print("   [muted]Team name must not contain line breaks, tabs or NUL[/muted]")
+        return 1
 
     # Service type selection using interactive menu
     type_choices = [
@@ -462,8 +485,11 @@ def _create_first_service() -> None:
         services_dir.mkdir(exist_ok=True)
     except OSError as e:
         error(f"Could not create {services_dir}/: {e}")
-        console.print("   It may already exist as a file, or the parent is not writable.")
-        return
+        console.print(
+            "   [muted]It may already exist as a file, or the parent may not be "
+            "writable. Remove or rename it and re-run.[/muted]"
+        )
+        return 1
 
     # Generate service YAML
     service_content = _generate_service_yaml(service_name, team, service_type, tier)
@@ -475,10 +501,11 @@ def _create_first_service() -> None:
     if service_file.is_file():
         if not _confirm(f"{service_file} exists. Overwrite?", default=False):
             info("Skipping service creation.")
-            return
+            return 0
     elif service_file.exists():
         error(f"{service_file} exists but is not a regular file")
-        return
+        console.print("   [muted]Remove it, or choose a different service name.[/muted]")
+        return 1
 
     # ENCODE BEFORE OPENING ANYTHING. `write_text` opens with "w", which
     # truncates immediately, so an encoding failure lands AFTER the file is
@@ -487,31 +514,21 @@ def _create_first_service() -> None:
     # UnicodeError class in front of any file descriptor, so on that path
     # nothing is touched and saying so is true.
     #
-    # DEFENSIVE ONLY: no wizard input is known to enter this handler, and the
-    # provenance pass confirmed it cannot be kill-checked -- replacing its body
-    # with `pass` leaves the suite green. An earlier version of this comment
-    # claimed a lone surrogate from `surrogateescape` on stdin reaches here.
-    # That is FALSE and was measured false in the same session it was written:
-    # `_quoted_yaml_scalar` escapes a surrogate to ASCII (`"\uDCE9"`), `name` is
-    # `[a-z0-9-]`, and `service_type` comes from a fixed menu, so the template
-    # is always encodable. It is kept because the encode-before-open ordering is
-    # the load-bearing part and a future field added without `_yaml_scalar`
-    # would make this reachable -- but it is insurance, not a tested path.
+    # DEFENSIVE ONLY: no known wizard input reaches this handler, and the
+    # provenance pass confirmed it cannot be kill-checked. Kept because a field
+    # added later without `_yaml_scalar` would make it reachable (opensrm-h9fq).
     try:
         payload = service_content.encode("utf-8")
     except UnicodeError as e:
         error(f"Could not encode the manifest: {e}")
         info(f"{service_file} was not touched.")
-        return
+        return 1
 
     # `is_symlink()` as well as `is_file()`. A symlink whose victim is missing
     # is neither a file nor `exists()`, so without this the rollback below
     # deleted a symlink this run did not create -- the same mistake as deleting
     # a pre-existing regular file, one shape over.
     #
-    # The rollback removes ONLY what this run created, which is where setup must
-    # diverge from init rather than copy it: init refuses on `exists()`, so
-    # anything it unlinks is its own, while setup prompts and overwrites.
     pre_existing = service_file.is_file() or service_file.is_symlink()
     try:
         service_file.write_bytes(payload)
@@ -522,15 +539,24 @@ def _create_first_service() -> None:
             # but one raised mid-write leaves it partial, and this cannot tell
             # them apart. Atomic replacement is opensrm-may6's scope; until then
             # the message must not promise more than it knows.
-            info(f"{service_file} was not removed, but may be incomplete.")
+            info(
+                f"{service_file} was not removed, but may be incomplete. "
+                f"Check it with `nthlayer validate {service_file}`, or re-run "
+                f"`nthlayer setup`."
+            )
         else:
             try:
                 service_file.unlink(missing_ok=True)
             except OSError:
+                # intentionally ignored: the write already failed and the
+                # manifest is the only artifact, so a failed cleanup has
+                # nothing left to report and must not mask the real error
+                # (hard rule 4).
                 pass
-        return
+        return 1
     console.print()
     success(f"Created {service_file}")
+    return 0
 
 
 def _generate_service_yaml(

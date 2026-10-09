@@ -50,6 +50,12 @@ MENTION_ONLY_PAGES = (
     DOCS_ROOT / "architecture.md",
     DOCS_ROOT / "commands" / "index.md",
     DOCS_ROOT / "getting-started" / "adoption-path.md",
+    # Added by opensrm-h9fq: the manifest reference now names `nthlayer init`
+    # and `nthlayer setup` when saying which tiers each offers. It documents the
+    # SCHEMA, not either command's flags, so it belongs here rather than in
+    # DOC_PAGES. This guard caught the edit the moment the mention appeared,
+    # which is the behaviour opensrm-noc6 built it for.
+    DOCS_ROOT / "reference" / "service-yaml.md",
 )
 
 # `$ ` prompts appear in ```bash fences on this site (concepts/shift-left.md),

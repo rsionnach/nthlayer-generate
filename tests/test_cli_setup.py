@@ -1679,3 +1679,104 @@ class TestTheThreeTierTablesAgree:
                 f"tier {index} emits {config['tier_name']!r}, which is not in "
                 f"nthlayer-common's VALID_TIERS {VALID_TIERS}"
             )
+
+
+class TestWizardExitCodeIsHonest:
+    """opensrm-h9fq, found by the ADVISORY excellence read after four blocking
+    passes had all missed it.
+
+    `_create_first_service` returned None, and `setup_command` discarded the
+    result, printed "Setup Complete!" and returned 0. So every failure path --
+    including the four this bead ADDED -- reported an error and then exited 0.
+    Measured before the fix: an unusable `services/` gave an error, wrote no
+    manifest, and `handle_setup_command` returned 0.
+
+    That is this bead's own defect in its exit-code half. The bead is "writes
+    invalid manifests AT EXIT 0", and `specs/manifest.py` says plainly that an
+    exit code is what a CI gate keys on. All four blocking lenses converged on
+    the write block; the signature sits above it.
+
+    A deliberate skip is NOT a failure: declining to create a service, or
+    declining an overwrite, returns 0.
+    """
+
+    @staticmethod
+    def _rc(tmp_path, monkeypatch, name="payment-api", team="payments", confirm=True):
+        monkeypatch.chdir(tmp_path)
+        answers = iter([name, team])
+        monkeypatch.setattr(
+            "nthlayer_generate.cli.setup._prompt", lambda *a, **k: next(answers, "")
+        )
+        monkeypatch.setattr(
+            "nthlayer_generate.cli.setup.select", lambda label, choices, **k: choices[0]
+        )
+        monkeypatch.setattr("nthlayer_generate.cli.setup._confirm", lambda *a, **k: confirm)
+        from nthlayer_generate.cli.setup import _create_first_service
+
+        return _create_first_service()
+
+    def test_a_successful_run_returns_zero(self, tmp_path, monkeypatch):
+        assert self._rc(tmp_path, monkeypatch) == 0
+        assert (tmp_path / "services" / "payment-api.yaml").is_file()
+
+    @pytest.mark.parametrize(
+        ("label", "kwargs", "make"),
+        [
+            ("invalid name", {"name": "Invalid_Name"}, None),
+            ("blank team", {"team": "   "}, None),
+            ("control char in team", {"team": "ops\ttab"}, None),
+            (
+                "unusable services/",
+                {},
+                lambda p: (p / "services").write_text("x", encoding="utf-8"),
+            ),
+            (
+                "directory at the target",
+                {},
+                lambda p: (
+                    (p / "services").mkdir(),
+                    (p / "services" / "payment-api.yaml").mkdir(),
+                ),
+            ),
+        ],
+    )
+    def test_every_failure_returns_one(self, label, kwargs, make, tmp_path, monkeypatch):
+        if make:
+            make(tmp_path)
+
+        assert self._rc(tmp_path, monkeypatch, **kwargs) == 1, (
+            f"{label} reported an error but returned 0, so a CI gate would pass"
+        )
+
+    @pytest.mark.parametrize(
+        ("label", "kwargs"),
+        [("no name given", {"name": ""}), ("overwrite declined", {"confirm": False})],
+    )
+    def test_a_deliberate_skip_returns_zero(self, label, kwargs, tmp_path, monkeypatch):
+        """Declining is a choice, not a failure."""
+        if kwargs.get("confirm") is False:
+            (tmp_path / "services").mkdir()
+            (tmp_path / "services" / "payment-api.yaml").write_text("# mine\n", encoding="utf-8")
+
+        assert self._rc(tmp_path, monkeypatch, **kwargs) == 0, f"{label} was treated as a failure"
+
+    def test_the_command_propagates_the_failure(self, tmp_path, monkeypatch):
+        """`setup_command` discarded the result and always returned 0."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "services").write_text("x", encoding="utf-8")
+
+        with (
+            patch("nthlayer_generate.cli.setup._create_first_service", return_value=1),
+            patch("nthlayer_generate.cli.setup._test_connections"),
+            patch("nthlayer_generate.cli.setup._print_welcome_banner"),
+            patch("nthlayer_generate.cli.setup._confirm", return_value=True),
+            patch("nthlayer_generate.cli.setup.get_config_path") as cfg,
+            patch("nthlayer_generate.cli.setup._print_next_steps") as next_steps,
+        ):
+            cfg.return_value = tmp_path / "config.yaml"
+            from nthlayer_generate.cli.setup import setup_command
+
+            rc = setup_command(quick=True, skip_service=False)
+
+        assert rc == 1, "a failed service creation still exited 0"
+        assert not next_steps.called, "'Setup Complete!' next-steps were printed after a failure"

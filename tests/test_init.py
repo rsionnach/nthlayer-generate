@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml
+from service_name_cases import SERVICE_NAME_CASES
 
 from nthlayer_generate.cli.init import (
     SERVICE_TYPES,
@@ -22,9 +23,6 @@ from nthlayer_generate.cli.init import (
     _quoted_yaml_scalar,
     _yaml_scalar,
     init_command,
-)
-from nthlayer_generate.cli.setup import (
-    _is_valid_service_name as _setup_is_valid_service_name,
 )
 from nthlayer_generate.specs.manifest import is_valid_service_name
 from nthlayer_generate.specs.template_loader import TemplateLoader
@@ -618,49 +616,11 @@ class TestServiceNameRuleIsShared:
     `nthlayer validate` then refused. The divergence itself is recorded once,
     at the rule in specs/manifest.py.
 
-    PROVENANCE OF THIS TABLE: derived from that shared rule, which is
-    generate's authority for names it GENERATES -- not from what either old
-    guard happened to accept, and not from opensrm's schema, which does not
-    constrain this field and is looser where it speaks at all. The bead's
-    acceptance asked for a schema-derived table; one is not available here, and
-    saying so is part of the finding. The spec gap is opensrm-fwnp.
+    The table and its provenance live in tests/service_name_cases.py, shared
+    with the setup-wizard tests that assert the same rule.
     """
 
-    # (name, expected) — every rejection names the rule it breaks.
-    NAMES = [
-        ("svc", True),
-        ("my-api", True),
-        ("service123", True),
-        ("my--api", True),  # a double hyphen INSIDE is fine
-        ("s", True),  # single character
-        ("1-svc", False),  # leading digit: validator rejected, old guard did not
-        ("-svc", False),  # leading hyphen
-        ("svc-", False),  # trailing hyphen: old guard rejected, validator did not
-        ("MyApi", False),  # uppercase
-        ("my_api", False),  # underscore
-        ("my api", False),  # space
-        ("my.api", False),  # period
-        ("", False),  # empty
-        ("café", False),  # non-ASCII lowercase: str.islower() is True for 'é'
-        ("ａbc", False),  # FULLWIDTH 'a': str.islower() is True for it too
-        ("٣svc", False),  # Arabic-Indic digit: str.isdigit() is True for it
-        ("svc\n", False),  # trailing newline: `re.match(..."$")` would ACCEPT this
-        # Accepted names that YAML resolves to a non-string. Absent from this
-        # table, `test_every_accepted_name_produces_a_valid_manifest` passed
-        # while `nthlayer init no` exited 0 writing a manifest whose name
-        # loaded as False -- and `init yes` made the validator raise TypeError.
-        # The predicate was right; the table had no fixture of the hostile
-        # shape, which is the ecosystem fixture-provenance rule in one line.
-        ("no", True),
-        ("yes", True),
-        ("on", True),
-        ("off", True),
-        ("true", True),
-        ("false", True),
-        ("null", True),
-        ("n", True),  # a plain string in pyyaml, unlike `no`
-        ("y", True),
-    ]
+    NAMES = SERVICE_NAME_CASES
 
     @pytest.mark.parametrize(("name", "expected"), NAMES)
     def test_guard_matches_the_shared_rule(self, name, expected):
@@ -669,7 +629,7 @@ class TestServiceNameRuleIsShared:
             "the CLI guard has diverged from the shared rule again"
         )
 
-    def test_the_table_is_not_vacuous(self):
+    def test_the_name_table_is_not_empty(self):
         """Both outcomes must be represented, or a broken rule could pass.
 
         A predicate that returns a constant satisfies an all-True or all-False
@@ -1355,42 +1315,6 @@ class TestNoFieldBypassesTheQuotingHelper:
             "_yaml_scalar(resource.name)",
         ):
             assert expr in live, f"{expr} is no longer wrapped anywhere"
-
-
-class TestSetupGuardStillDiverges:
-    """A tripwire, not an endorsement (opensrm-h9fq).
-
-    `specs/manifest.py` says its rule is not exhaustive because
-    `cli/setup.py` keeps a third copy. That is a claim about another file, so
-    it is asserted here rather than left as prose that can rot -- the
-    ecosystem convention after six such comments went stale.
-
-    When h9fq is fixed this test FAILS, which is the point: it forces the
-    comment and the bead to be closed together.
-    """
-
-    # Measured against the real function, not a reimplementation of it:
-    # setup.py DOES reject `svc-` (it checks both end characters), so that
-    # one belongs in the agreeing set, not here.
-    DIVERGENT = ["123", "caf\u00e9", "1-svc"]
-    AGREED_REJECTED = ["svc-", "-svc", ""]
-
-    def test_setup_accepts_names_the_shared_rule_rejects(self):
-        for name in self.DIVERGENT:
-            assert _setup_is_valid_service_name(name), (
-                f"setup.py no longer accepts {name!r} -- if its guard now "
-                f"delegates to the shared rule, close opensrm-h9fq and delete "
-                f"this test plus the caveat in specs/manifest.py"
-            )
-            assert not is_valid_service_name(name), (
-                f"the shared rule now accepts {name!r}; this table is stale"
-            )
-
-    def test_both_guards_already_agree_on_these(self):
-        """The divergence is partial, so pin where it is NOT."""
-        for name in self.AGREED_REJECTED:
-            assert not _setup_is_valid_service_name(name)
-            assert not is_valid_service_name(name)
 
 
 class TestTemplateNameIsQuoted:

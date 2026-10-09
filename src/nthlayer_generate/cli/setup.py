@@ -17,6 +17,12 @@ import argparse
 import os
 from pathlib import Path
 
+# Reused from init rather than copied, which is this bead's whole point
+# (opensrm-h9fq). It is the only private cross-module import in src/, and
+# relocating these helpers to a shared home is tracked in opensrm-d5ce --
+# deferred because opensrm-t4rd's AST guards match them by name in cli/init.py
+# and that move needs its own verification.
+from nthlayer_generate.cli.init import _is_valid_team, _yaml_scalar
 from nthlayer_generate.cli.ux import (
     confirm,
     console,
@@ -42,6 +48,7 @@ from nthlayer_generate.config.loader import (
     save_config,
 )
 from nthlayer_generate.config.secrets import get_secret_resolver
+from nthlayer_generate.specs.manifest import is_valid_service_name
 
 
 def setup_command(
@@ -88,11 +95,23 @@ def setup_command(
     print()
     _test_connections()
 
-    # Offer to create first service
+    # Offer to create first service.
+    #
+    # The return value is PROPAGATED (opensrm-h9fq). It used to be discarded,
+    # so every failure inside printed `error(...)` and then this function
+    # printed "Setup Complete!" and returned 0. The configuration above IS
+    # saved by this point, so the message says what actually happened rather
+    # than claiming either total success or total failure.
+    service_rc = 0
     if not skip_service:
         print()
         if _confirm("Create your first service?", default=True):
-            _create_first_service()
+            service_rc = _create_first_service()
+
+    if service_rc != 0:
+        console.print()
+        warning("Configuration was saved, but the first service was not created.")
+        return service_rc
 
     _print_next_steps()
     return 0
@@ -375,8 +394,36 @@ def _test_pagerduty(config: IntegrationConfig) -> tuple[bool, str]:
         return False, str(e)
 
 
-def _create_first_service() -> None:
-    """Guide user through creating their first service."""
+# The wizard's three tier tables, lifted to module level so a test can assert
+# they AGREE (opensrm-h9fq). While they were function-locals, adding a value to
+# `tier_map` with no matching config was an undetectable drift -- the provenance
+# pass mutated exactly that and the suite stayed green.
+TIER_CHOICES = [
+    "critical - 99.95% availability, 5min escalation",
+    "standard - 99.9% availability, 15min escalation",
+    "low - 99.5% availability, 30min escalation",
+]
+TIER_MAP = {"critical": 1, "standard": 2, "low": 3}
+TIER_CONFIGS_BY_INDEX = {
+    1: {"availability": 99.95, "latency_ms": 200, "tier_name": "critical"},
+    2: {"availability": 99.9, "latency_ms": 500, "tier_name": "standard"},
+    3: {"availability": 99.5, "latency_ms": 1000, "tier_name": "low"},
+}
+
+
+def _create_first_service() -> int:
+    """Guide user through creating their first service.
+
+    Returns 0 on success OR on a deliberate skip, and 1 on failure, so the
+    caller can key an exit code on it (opensrm-h9fq). It returned None while
+    every failure path printed `error(...)` and the command then printed
+    "Setup Complete!" and exited 0 -- which is this bead's own defect in its
+    exit-code half, and `specs/manifest.py` says plainly that an exit code is
+    what a CI gate keys on.
+
+    A user declining is NOT a failure: choosing not to create a service, or
+    declining an overwrite, returns 0.
+    """
     console.print()
     console.print("[bold]Create Your First Service[/bold]")
     console.print("[muted]─[/muted]" * 40)
@@ -385,15 +432,28 @@ def _create_first_service() -> None:
     service_name = _prompt("Service name (e.g., payment-api)")
     if not service_name:
         info("Skipping service creation.")
-        return
+        return 0
 
     # Validate name
     if not _is_valid_service_name(service_name):
         error(f"Invalid service name: {service_name}")
-        console.print("Use lowercase letters, numbers, and hyphens only.")
-        return
+        console.print("   [muted]Use lowercase letters, numbers and hyphens only[/muted]")
+        return 1
 
     team = _prompt("Team name", default="platform")
+
+    # Gated and quoted for the same reason as init (opensrm-t4rd, opensrm-h9fq):
+    # `team` is free text and was interpolated raw, so a colon broke the document
+    # and a newline injected a sibling field that validated clean. `_yaml_scalar`
+    # makes the document safe; this check turns a newline into a clear error
+    # rather than a silently escaped one.
+    if not team or not team.strip():
+        error("Team name is required")
+        return 1
+    if not _is_valid_team(team):
+        error("Invalid team name")
+        console.print("   [muted]Team name must not contain line breaks, tabs or NUL[/muted]")
+        return 1
 
     # Service type selection using interactive menu
     type_choices = [
@@ -405,32 +465,98 @@ def _create_first_service() -> None:
     service_type = selected_type.split(" - ")[0]
 
     # Service tier selection using interactive menu
-    tier_choices = [
-        "critical - 99.95% availability, 5min escalation",
-        "standard - 99.9% availability, 15min escalation",
-        "low - 99.5% availability, 30min escalation",
-    ]
+    tier_choices = list(TIER_CHOICES)
     selected_tier = select("Service tier", tier_choices, default=tier_choices[1])
     tier_name = selected_tier.split(" - ")[0]
-    tier_map = {"critical": 1, "standard": 2, "low": 3}
+    tier_map = dict(TIER_MAP)
     tier = tier_map.get(tier_name, 2)
 
-    # Create services directory
+    # All three of the following mirror cli/init.py's hardening from
+    # opensrm-t4rd (opensrm-h9fq). This bead imported init's quoting HELPERS and
+    # left the file IO beside them unhardened, so t4rd's defects were still live
+    # here verbatim.
+    #
+    # `exist_ok=True` does not cover a non-directory last component, so a
+    # `services` FILE or dangling symlink raised FileExistsError, and a
+    # read-only cwd raised PermissionError -- a traceback where init gives a
+    # message. Not fatal, as in init: the wizard has nothing else to write.
     services_dir = Path("services")
-    services_dir.mkdir(exist_ok=True)
+    try:
+        services_dir.mkdir(exist_ok=True)
+    except OSError as e:
+        error(f"Could not create {services_dir}/: {e}")
+        console.print(
+            "   [muted]It may already exist as a file, or the parent may not be "
+            "writable. Remove or rename it and re-run.[/muted]"
+        )
+        return 1
 
     # Generate service YAML
     service_content = _generate_service_yaml(service_name, team, service_type, tier)
 
+    # `is_file()`, NOT `exists()`. With a DIRECTORY at the target, `exists()` was
+    # True, so the user was asked to confirm an overwrite and then got
+    # IsADirectoryError. The same confusion t4rd corrected in init.
     service_file = services_dir / f"{service_name}.yaml"
-    if service_file.exists():
+    if service_file.is_file():
         if not _confirm(f"{service_file} exists. Overwrite?", default=False):
             info("Skipping service creation.")
-            return
+            return 0
+    elif service_file.exists():
+        error(f"{service_file} exists but is not a regular file")
+        console.print("   [muted]Remove it, or choose a different service name.[/muted]")
+        return 1
 
-    service_file.write_text(service_content)
+    # ENCODE BEFORE OPENING ANYTHING. `write_text` opens with "w", which
+    # truncates immediately, so an encoding failure lands AFTER the file is
+    # already empty. Measured: a 38-byte manifest went to 0 bytes and the user
+    # was told it had been left unchanged. Encoding first moves the whole
+    # UnicodeError class in front of any file descriptor, so on that path
+    # nothing is touched and saying so is true.
+    #
+    # DEFENSIVE ONLY: no known wizard input reaches this handler, and the
+    # provenance pass confirmed it cannot be kill-checked. Kept because a field
+    # added later without `_yaml_scalar` would make it reachable (opensrm-h9fq).
+    try:
+        payload = service_content.encode("utf-8")
+    except UnicodeError as e:
+        error(f"Could not encode the manifest: {e}")
+        info(f"{service_file} was not touched.")
+        return 1
+
+    # `is_symlink()` as well as `is_file()`. A symlink whose victim is missing
+    # is neither a file nor `exists()`, so without this the rollback below
+    # deleted a symlink this run did not create -- the same mistake as deleting
+    # a pre-existing regular file, one shape over.
+    #
+    pre_existing = service_file.is_file() or service_file.is_symlink()
+    try:
+        service_file.write_bytes(payload)
+    except OSError as e:
+        error(f"Error creating {service_file}: {e}")
+        if pre_existing:
+            # Deliberately not "unchanged": an OSError at open leaves it intact,
+            # but one raised mid-write leaves it partial, and this cannot tell
+            # them apart. Atomic replacement is opensrm-may6's scope; until then
+            # the message must not promise more than it knows.
+            info(
+                f"{service_file} was not removed, but may be incomplete. "
+                f"Check it with `nthlayer validate {service_file}`, or re-run "
+                f"`nthlayer setup`."
+            )
+        else:
+            try:
+                service_file.unlink(missing_ok=True)
+            except OSError:
+                # intentionally ignored: the write already failed and the
+                # manifest is the only artifact, so a failed cleanup has
+                # nothing left to report and must not mask the real error
+                # (hard rule 4).
+                pass
+        return 1
     console.print()
     success(f"Created {service_file}")
+    return 0
 
 
 def _generate_service_yaml(
@@ -441,20 +567,24 @@ def _generate_service_yaml(
 ) -> str:
     """Generate service YAML content."""
     # Tier-based defaults
-    tier_configs = {
-        1: {"availability": 99.95, "latency_ms": 200, "tier_name": "critical"},
-        2: {"availability": 99.9, "latency_ms": 500, "tier_name": "standard"},
-        3: {"availability": 99.5, "latency_ms": 1000, "tier_name": "low"},
-    }
-    config = tier_configs.get(tier, tier_configs[2])
+    tier_configs = TIER_CONFIGS_BY_INDEX
+    # Raise rather than defaulting (opensrm-h9fq). The hazard is a STRING tier:
+    # init's sibling `_generate_service_yaml_v2` takes `tier: str`, so now that
+    # the emitted field is a name, a caller passing the name would otherwise get
+    # a wrong-but-valid manifest. Unreachable today, since `tier_map` clamps the
+    # menu to 1-3, so this is a loud guard on a latent silent-wrong rather than
+    # a live fix. The cases are enumerated in TestUnknownTierIsLoud.
+    if tier not in tier_configs:
+        raise ValueError(f"Unknown tier {tier!r}; expected one of {sorted(tier_configs)}")
+    config = tier_configs[tier]
 
     return f"""# {name} Service Definition
 # Generated by NthLayer setup wizard
 
 service:
-  name: {name}
-  team: {team}
-  tier: {tier}
+  name: {_yaml_scalar(name)}
+  team: {_yaml_scalar(team)}
+  tier: {config["tier_name"]}
   type: {service_type}
 
 resources:
@@ -462,7 +592,7 @@ resources:
   - kind: SLO
     name: availability
     spec:
-      objective: {config['availability']}
+      objective: {config["availability"]}
       window: 30d
       indicator:
         type: availability
@@ -476,7 +606,7 @@ resources:
     spec:
       objective: 99.0
       window: 30d
-      threshold_ms: {config['latency_ms']}
+      threshold_ms: {config["latency_ms"]}
       indicator:
         type: latency
         percentile: 99
@@ -503,15 +633,11 @@ resources:
 
 
 def _is_valid_service_name(name: str) -> bool:
-    """Validate service name format."""
-    if not name:
-        return False
-    if name[0] == "-" or name[-1] == "-":
-        return False
-    for char in name:
-        if not (char.islower() or char.isdigit() or char == "-"):
-            return False
-    return True
+    """Delegates to the one service-name rule; see specs/manifest for why.
+
+    This was the third private copy (opensrm-h9fq).
+    """
+    return is_valid_service_name(name)
 
 
 def _print_next_steps() -> None:

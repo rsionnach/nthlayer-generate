@@ -5,13 +5,21 @@ service creation, and configuration flow.
 """
 
 import argparse
+import ast
+import importlib
+import pathlib
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+import yaml as yaml_mod
+from service_name_cases import SERVICE_NAME_CASES
 
 from nthlayer_generate.cli.setup import (
+    TIER_CHOICES,
+    TIER_CONFIGS_BY_INDEX,
+    TIER_MAP,
     _create_first_service,
     _generate_service_yaml,
     _is_valid_service_name,
@@ -706,14 +714,29 @@ class TestCreateFirstService:
         _create_first_service()
 
     @patch("nthlayer_generate.cli.setup._prompt")
-    def test_invalid_name_rejected(self, mock_prompt, capsys):
-        """Test invalid service name is rejected."""
+    def test_invalid_name_rejected(self, mock_prompt, tmp_path, monkeypatch):
+        """Test invalid service name is rejected.
+
+        `monkeypatch.chdir` added by opensrm-h9fq's provenance pass: this was
+        the only test in the file without it, so under a mutation of the name
+        guard it wrote `services/Invalid_Name.yaml` into the repo working tree.
+
+        The old assertion was `"Invalid" in captured.out`, which the SUCCESS
+        message also satisfies because it contains the name. Asserted on the
+        reporter and the filesystem now, which also dodges `gum` bypassing
+        capsys.
+        """
+        monkeypatch.chdir(tmp_path)
         mock_prompt.return_value = "Invalid_Name"
 
-        _create_first_service()
+        with patch("nthlayer_generate.cli.setup.error") as reported:
+            _create_first_service()
 
-        captured = capsys.readouterr()
-        assert "Invalid" in captured.out or "lowercase" in captured.out
+        said = " ".join(str(c) for c in reported.call_args_list)
+        assert "Invalid service name" in said, (
+            f"the name was not rejected; errors were {reported.call_args_list}"
+        )
+        assert not (tmp_path / "services").exists(), "a rejected name still created services/"
 
 
 class TestGenerateServiceYaml:
@@ -725,7 +748,7 @@ class TestGenerateServiceYaml:
 
         assert "name: payment-api" in yaml
         assert "team: payments" in yaml
-        assert "tier: 1" in yaml
+        assert yaml_mod.safe_load(yaml)["service"]["tier"] == "critical"
         assert "type: api" in yaml
         assert "99.95" in yaml  # Critical availability
         assert "200" in yaml  # Critical latency threshold
@@ -736,7 +759,7 @@ class TestGenerateServiceYaml:
         yaml = _generate_service_yaml("user-service", "platform", "api", 2)
 
         assert "name: user-service" in yaml
-        assert "tier: 2" in yaml
+        assert yaml_mod.safe_load(yaml)["service"]["tier"] == "standard"
         assert "99.9" in yaml  # Standard availability
         assert "500" in yaml  # Standard latency threshold
         assert "urgency: low" in yaml
@@ -746,7 +769,7 @@ class TestGenerateServiceYaml:
         yaml = _generate_service_yaml("batch-job", "data", "worker", 3)
 
         assert "name: batch-job" in yaml
-        assert "tier: 3" in yaml
+        assert yaml_mod.safe_load(yaml)["service"]["tier"] == "low"
         assert "type: worker" in yaml
         assert "99.5" in yaml  # Low availability
         assert "1000" in yaml  # Low latency threshold
@@ -770,7 +793,17 @@ class TestIsValidServiceName:
         assert _is_valid_service_name("service1") is True
         assert _is_valid_service_name("a") is True
         assert _is_valid_service_name("my-service-123") is True
-        assert _is_valid_service_name("123") is True
+
+    def test_invalid_leading_digit(self):
+        """`123` was asserted VALID here, which defended the defect.
+
+        The old guard looped over `char.islower() or char.isdigit()`, so it
+        accepted a name made only of digits; `nthlayer validate` then refused
+        the manifest. The guard delegates to the shared rule now, which
+        requires a leading lowercase letter (opensrm-h9fq).
+        """
+        assert _is_valid_service_name("123") is False
+        assert _is_valid_service_name("1-svc") is False
 
     def test_invalid_empty(self):
         """Test empty name is invalid."""
@@ -942,3 +975,814 @@ class TestHandleSetupCommand:
 
         assert result == 0
         mock_setup.assert_called_once_with(quick=True, test_only=False, skip_service=True)
+
+
+class TestWizardOutputSurvivesItsOwnValidator:
+    """opensrm-h9fq: the wizard wrote a manifest `nthlayer validate` rejects.
+
+    Not an edge case. `tier: {tier}` interpolated the INT from `tier_map`, so
+    every one of the three menu choices emitted `tier: 1|2|3` and the validator
+    refused all three with "Invalid tier: '1'. Must be one of: critical, high,
+    low, standard". `nthlayer setup` is wired in demo.py and referenced from
+    docs-site/getting-started/quick-start.md, so the documented onboarding path
+    had never produced a valid manifest.
+
+    It survived because `tests/test_cli_setup.py` exercised
+    `_generate_service_yaml` in four places and never once loaded the result
+    through the real validator. That is the gap opensrm-t4rd's acceptance
+    criteria named for init, which init got and setup did not.
+
+    PROVENANCE: the accepted tier vocabulary comes from
+    `nthlayer_common.manifest.models.VALID_TIERS`, the shared library that
+    defines it, NOT from setup.py's own `tier_configs` and not from generate's
+    `TIER_NAMES`. A table read off either would agree with the bug.
+    """
+
+    # The wizard's own menu mapping, from cli/setup.py's `tier_map`.
+    MENU_TIERS = [1, 2, 3]
+
+    def test_the_menu_tier_table_is_not_empty(self):
+        assert self.MENU_TIERS
+
+    @pytest.mark.parametrize("tier", MENU_TIERS)
+    def test_every_tier_choice_produces_a_valid_manifest(self, tier, tmp_path):
+        from nthlayer_generate.specs.validator import validate_service_file
+
+        written = tmp_path / "payment-api.yaml"
+        written.write_text(
+            _generate_service_yaml("payment-api", "payments", "api", tier),
+            encoding="utf-8",
+        )
+
+        result = validate_service_file(written)
+
+        assert result.valid, (
+            f"the wizard exited having written a manifest its own validator "
+            f"rejects for tier={tier}: {result.errors}"
+        )
+
+    @pytest.mark.parametrize("tier", MENU_TIERS)
+    def test_the_emitted_tier_is_a_name_the_shared_vocabulary_admits(self, tier, tmp_path):
+        """The specific regression: an int was emitted where a name was required."""
+        from nthlayer_common.manifest.models import VALID_TIERS
+
+        written = _generate_service_yaml("payment-api", "payments", "api", tier)
+        emitted = yaml_mod.safe_load(written)["service"]["tier"]
+
+        assert isinstance(emitted, str), (
+            f"tier was emitted as {type(emitted).__name__} ({emitted!r}); the "
+            f"bug wrote the int from tier_map instead of the tier name"
+        )
+        assert emitted in VALID_TIERS, (
+            f"{emitted!r} is not in nthlayer-common's VALID_TIERS {VALID_TIERS}"
+        )
+
+
+class TestWizardQuotesUserSuppliedValues:
+    """opensrm-h9fq: `team` was interpolated raw and wholly unvalidated.
+
+    `team` comes from a free-text prompt with no guard at all, so a colon broke
+    the document and a newline injected a sibling field that then validated
+    clean. Same defect opensrm-t4rd closed for init, one command over.
+
+    HOSTILE is traced to YAML behaviour, not to `_yaml_scalar`: each value is
+    one pyyaml retypes, reshapes or chokes on. See
+    tests/test_init.py::TestQuotingMechanismRoundTrips for the full corpus and
+    its provenance guard.
+    """
+
+    HOSTILE = [
+        "Platform: Core",
+        "ops\ntier: critical",
+        "ops\nname: hijacked",
+        "null",
+        "yes",
+        "123",
+        "ops ",
+        "caf\u00e9 \U0001f389",
+    ]
+
+    def test_the_hostile_table_is_not_empty(self):
+        assert self.HOSTILE
+
+    @pytest.mark.parametrize("team", HOSTILE)
+    def test_a_hostile_team_round_trips_and_injects_nothing(self, team):
+        written = _generate_service_yaml("payment-api", team, "api", 2)
+        loaded = yaml_mod.safe_load(written)
+
+        assert loaded["service"]["team"] == team
+        assert set(loaded) == {"service", "resources"}, (
+            f"{team!r} added {sorted(set(loaded) - {'service', 'resources'})}"
+        )
+        assert loaded["service"]["name"] == "payment-api", "team reached name"
+        assert loaded["service"]["tier"] == "standard", "team reached tier"
+
+    @pytest.mark.parametrize("team", HOSTILE)
+    def test_a_hostile_team_still_passes_the_real_validator(self, team, tmp_path):
+        from nthlayer_generate.specs.validator import validate_service_file
+
+        written = tmp_path / "payment-api.yaml"
+        written.write_text(_generate_service_yaml("payment-api", team, "api", 2), encoding="utf-8")
+
+        result = validate_service_file(written)
+
+        assert result.valid, f"team {team!r} produced an invalid manifest: {result.errors}"
+
+
+class TestTheNameRuleHasExactlyOneHome:
+    """Asserts what `specs/manifest.py`'s comment claims (opensrm-h9fq).
+
+    That comment says the rule is "genuinely the only copy: cli/init.py and
+    cli/setup.py both delegate here". That is a checkable fact about two other
+    files, so by the ecosystem convention it is asserted rather than left as
+    prose. Such claims went stale repeatedly across opensrm-t4rd and this bead.
+
+    `specs/validator.py` is deliberately NOT driven here: it calls the shared
+    function directly and keeps no copy of its own, so there is nothing for it
+    to diverge from.
+
+    This replaces `TestSetupGuardStillDiverges`, which asserted the opposite
+    while setup.py still had its own copy and which failed, by design, when this
+    bead landed.
+    """
+
+    def test_both_cli_guards_agree_with_the_shared_rule(self):
+        from nthlayer_generate.cli.init import (
+            _is_valid_service_name as init_guard,
+        )
+        from nthlayer_generate.cli.setup import (
+            _is_valid_service_name as setup_guard,
+        )
+        from nthlayer_generate.specs.manifest import is_valid_service_name
+
+        assert SERVICE_NAME_CASES, "the shared table is empty, so this proves nothing"
+        for name, expected in SERVICE_NAME_CASES:
+            assert is_valid_service_name(name) is expected, f"shared rule: {name!r}"
+            assert init_guard(name) is expected, f"init diverged on {name!r}"
+            assert setup_guard(name) is expected, f"setup diverged on {name!r}"
+
+
+class TestTeamIsGatedAtTheWizardBoundary:
+    """opensrm-h9fq: `team` reached the template with no validation at all.
+
+    `_yaml_scalar` already makes the document safe, so this gate is not what
+    prevents injection. It is what turns a newline in a typed team name into a
+    clear error rather than a silently escaped `\n` sitting in the manifest,
+    which is the same reasoning opensrm-t4rd recorded for init.
+
+    Added because the kill check showed the gate survived deletion: the guard
+    existed with nothing exercising it, which is the defect this ecosystem has
+    now produced five times.
+
+    Asserted on the filesystem rather than the console, because `ux.warning`
+    and `ux.error` shell out to `gum` when it is installed and bypass capsys.
+    """
+
+    @staticmethod
+    def _drive(tmp_path, monkeypatch, name, team, confirm=False):
+        """Drive `_create_first_service` with the prompts answered.
+
+        `confirm` answers the overwrite prompt. The first version hardcoded it
+        to False, which left the accepted-overwrite path -- setup's whole
+        idempotency contract -- untested (opensrm-h9fq edge-case pass).
+        """
+        monkeypatch.chdir(tmp_path)
+        answers = iter([name, team])
+        monkeypatch.setattr(
+            "nthlayer_generate.cli.setup._prompt",
+            lambda *a, **k: next(answers, ""),
+        )
+        monkeypatch.setattr(
+            "nthlayer_generate.cli.setup.select",
+            lambda label, choices, **k: choices[0],
+        )
+        monkeypatch.setattr("nthlayer_generate.cli.setup._confirm", lambda *a, **k: confirm)
+        from nthlayer_generate.cli.setup import _create_first_service
+
+        _create_first_service()
+        # the wizard writes into `services/`, unlike `init` which writes to cwd
+        return tmp_path / "services" / f"{name}.yaml"
+
+    _run_wizard = _drive  # the name the earlier tests in this class were written against
+
+    @pytest.mark.parametrize("team", ["ops\ntier: critical", "ops\there", "ops\x00", "ops\r more"])
+    def test_a_control_character_in_team_writes_no_manifest(self, team, tmp_path, monkeypatch):
+        written = self._run_wizard(tmp_path, monkeypatch, "payment-api", team)
+        assert not written.exists(), f"team {team!r} was accepted and a manifest was written anyway"
+
+    @pytest.mark.parametrize("team", ["   ", ""])
+    def test_a_blank_team_writes_no_manifest(self, team, tmp_path, monkeypatch):
+        written = self._run_wizard(tmp_path, monkeypatch, "payment-api", team)
+        assert not written.exists()
+
+    def test_an_ordinary_team_is_accepted_and_the_manifest_validates(self, tmp_path, monkeypatch):
+        """Guards the three above against passing because the wizard never runs."""
+        from nthlayer_generate.specs.validator import validate_service_file
+
+        written = self._run_wizard(tmp_path, monkeypatch, "payment-api", "payments")
+
+        assert written.exists(), "the wizard wrote nothing for valid input"
+        result = validate_service_file(written)
+        assert result.valid, result.errors
+
+    def test_a_colon_in_team_is_accepted_not_rejected(self, tmp_path, monkeypatch):
+        """A colon is ordinary in a team name; quoting handles it.
+
+        The gate rejects control characters only. Rejecting a colon would be
+        the overcorrection opensrm-t4rd warned about.
+        """
+
+        written = self._run_wizard(tmp_path, monkeypatch, "payment-api", "Platform: Core")
+
+        assert written.exists()
+        loaded = yaml_mod.safe_load(written.read_text(encoding="utf-8"))
+        assert loaded["service"]["team"] == "Platform: Core"
+
+
+class TestWizardNameIsNotImplicitlyRetyped:
+    """opensrm-h9fq correctness pass: the same defect as the field beside it.
+
+    The first fix quoted `team` but left `name: {name}` raw, on the argument
+    that the tightened rule `[a-z]([a-z0-9-]*[a-z0-9])?` admits only lowercase
+    letters, digits and hyphens, so nothing dangerous can appear. That argument
+    reasoned about CHARACTERS and forgot TYPE RESOLUTION, which is the exact
+    shape of opensrm-t4rd's first critical.
+
+    `no`, `yes`, `on`, `off`, `true`, `false` and `null` are pure lowercase
+    letters, all pass the rule, and pyyaml retypes every one. Measured through
+    the real wizard, at exit 0:
+
+      name=no    -> loads as False -> "Service name is required"
+      name=yes   -> loads as True  -> "Filename mismatch: expected 'True.yaml'"
+      name=null  -> loads as None  -> "Service name is required"
+
+    RESOLVABLE is traced to the loader and to the rule, not to the code under
+    test: the two guards below assert each value is accepted by the rule AND
+    retyped by pyyaml, so if either changes the table says so rather than
+    quietly proving nothing.
+    """
+
+    RESOLVABLE = ["no", "yes", "on", "off", "true", "false", "null"]
+
+    def test_the_resolvable_table_is_not_empty(self):
+        assert self.RESOLVABLE
+
+    def test_every_value_is_accepted_by_the_name_rule(self):
+        """They matter only because the rule admits them."""
+        from nthlayer_generate.specs.manifest import is_valid_service_name
+
+        for name in self.RESOLVABLE:
+            assert is_valid_service_name(name), (
+                f"{name!r} is no longer an accepted service name; this table "
+                f"exists because the rule accepts names YAML retypes"
+            )
+
+    def test_every_value_is_retyped_by_the_loader(self):
+        """And only because pyyaml retypes them."""
+        for name in self.RESOLVABLE:
+            loaded = yaml_mod.safe_load(name)
+            assert not (isinstance(loaded, str) and loaded == name), (
+                f"{name!r} is no longer retyped by pyyaml; it proves nothing"
+            )
+
+    @pytest.mark.parametrize("name", RESOLVABLE)
+    def test_the_written_name_reads_back_as_the_exact_string(self, name):
+        written = _generate_service_yaml(name, "payments", "api", 2)
+        got = yaml_mod.safe_load(written)["service"]["name"]
+
+        assert isinstance(got, str), f"name {name!r} was retyped to {type(got).__name__} ({got!r})"
+        assert got == name
+
+    @pytest.mark.parametrize("name", RESOLVABLE)
+    def test_the_manifest_passes_the_real_validator(self, name, tmp_path):
+        from nthlayer_generate.specs.validator import validate_service_file
+
+        written = tmp_path / f"{name}.yaml"
+        written.write_text(_generate_service_yaml(name, "payments", "api", 2), encoding="utf-8")
+
+        result = validate_service_file(written)
+
+        assert result.valid, (
+            f"the wizard wrote a manifest its own validator rejects for "
+            f"name {name!r}: {result.errors}"
+        )
+
+    @pytest.mark.parametrize("name", RESOLVABLE + ["payment-api"])
+    def test_the_promql_queries_are_not_double_quoted(self, name):
+        """The PromQL sites must NOT be routed through `_yaml_scalar`.
+
+        They sit inside a double-quoted PromQL matcher inside a YAML block
+        scalar, so wrapping them yields `service=""no""` and corrupts the
+        query. Only the `name:` field needs quoting, which is why the fix is
+        one line rather than five.
+        """
+        written = _generate_service_yaml(name, "payments", "api", 2)
+
+        assert f'service="{name}"' in written, (
+            f"the PromQL matcher for {name!r} is not a plain quoted string; "
+            f"it was probably wrapped in _yaml_scalar"
+        )
+        assert f'service=""{name}""' not in written
+
+
+class TestUnknownTierIsLoud:
+    """opensrm-h9fq correctness pass: a silent fallback masked a caller error.
+
+    `tier_configs.get(tier, tier_configs[2])` yielded `standard` for 0, 4, 99,
+    None and the STRING `'critical'`. That last one is the hazard: init's
+    sibling `_generate_service_yaml_v2` takes `tier: str`, so once the emitted
+    field became a NAME a caller passing the name would have got a
+    wrong-but-valid manifest with no error at all.
+
+    Unreachable today because `tier_map.get(tier_name, 2)` clamps the menu, so
+    this converts a latent silent-wrong into a loud failure rather than fixing
+    a live bug.
+    """
+
+    @pytest.mark.parametrize("tier", [1, 2, 3])
+    def test_the_three_menu_tiers_are_accepted(self, tier):
+        assert _generate_service_yaml("svc", "ops", "api", tier)
+
+    @pytest.mark.parametrize("tier", [0, 4, 99, -1, None, "critical", "2"])
+    def test_anything_else_raises_rather_than_defaulting(self, tier):
+        with pytest.raises(ValueError, match="Unknown tier"):
+            _generate_service_yaml("svc", "ops", "api", tier)
+
+
+class TestWizardFileIoIsHardened:
+    """opensrm-h9fq edge-case pass: t4rd's defects, verbatim, one file over.
+
+    This bead imported `_yaml_scalar` and `_is_valid_team` from cli/init.py and
+    left the file IO beside them unhardened, so every defect opensrm-t4rd fixed
+    in init's write was still live in setup's. Measured before the fix:
+
+      write_text() with no encoding=  -> UnicodeEncodeError (a ValueError, NOT
+                                         an OSError) and a ZERO-BYTE manifest
+      services/ as a regular FILE     -> FileExistsError traceback
+      services/ as a dangling symlink -> FileExistsError traceback
+      a DIRECTORY at the target       -> exists() True, so the user was asked to
+                                         confirm an overwrite, then got
+                                         IsADirectoryError
+
+    The encoding half is an AST guard rather than a locale test, for the reason
+    init's equivalent gives: pytest cannot portably change the interpreter's
+    filesystem encoding mid-process, and a test that tried would skip on most
+    machines -- the silent-skip failure mode this project has been bitten by
+    twice.
+    """
+
+    def test_no_text_io_in_setup_omits_an_explicit_encoding(self):
+        # SOURCE-INSPECTION coverage, not behavioural: on a UTF-8 host dropping
+        # `encoding="utf-8"` changes nothing observable, so this is the only
+        # thing that can catch it.
+        module = importlib.import_module("nthlayer_generate.cli.setup")
+        tree = ast.parse(pathlib.Path(module.__file__).read_text(encoding="utf-8"))
+
+        offenders = []
+        checked = 0
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            if isinstance(node.func, ast.Attribute):
+                name = node.func.attr
+                if name == "open" and getattr(node.func.value, "id", None) == "os":
+                    continue
+            elif isinstance(node.func, ast.Name):
+                name = node.func.id
+            else:
+                continue
+            if name not in (
+                "write_text",
+                "read_text",
+                "open",
+                "fdopen",
+                "NamedTemporaryFile",
+                "TemporaryFile",
+                "SpooledTemporaryFile",
+            ):
+                continue
+            checked += 1
+            if not any(kw.arg == "encoding" for kw in node.keywords):
+                offenders.append(f"{name}() at line {node.lineno}")
+
+        assert not offenders, (
+            "text IO without an explicit encoding= in cli/setup.py: "
+            + ", ".join(offenders)
+            + ". The locale's encoding is not UTF-8 everywhere (opensrm-h9fq)."
+        )
+
+        # `checked` is currently 0 and that is EXPECTED: the manifest write uses
+        # no text IO at all. Recorded rather than left silent, because an
+        # assertion over an empty set proves nothing and the provenance pass
+        # flagged exactly that. The load-bearing half is the encode check below;
+        # this assertion exists so the vacuity is visible to a reader and so the
+        # text-IO rule still applies to anything added later.
+        assert checked or encodes_utf8_explicitly(tree), (
+            "cli/setup.py has neither text IO nor an explicit encode; the "
+            "manifest write has changed shape and this guard no longer covers it"
+        )
+
+        # The manifest write deliberately uses no text IO at all now: it encodes
+        # first and calls `write_bytes`, because `write_text` opens with "w" and
+        # truncates before an encoding failure can be caught. So `offenders`
+        # being empty is partly vacuous, and the load-bearing assertion is that
+        # the encode names utf-8 explicitly rather than relying on the default.
+        encodes = [
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "encode"
+        ]
+        assert encodes, (
+            "cli/setup.py no longer encodes the manifest explicitly; if the "
+            "write went back to write_text it must declare encoding= instead"
+        )
+        for node in encodes:
+            named = [a for a in node.args if isinstance(a, ast.Constant)] + [
+                kw.value for kw in node.keywords if kw.arg == "encoding"
+            ]
+            assert any(isinstance(a, ast.Constant) and a.value == "utf-8" for a in named), (
+                f"encode() at line {node.lineno} does not name utf-8"
+            )
+
+    @pytest.mark.parametrize(
+        ("label", "make"),
+        [
+            ("file", lambda p: (p / "services").write_text("x", encoding="utf-8")),
+            ("dangling-symlink", lambda p: (p / "services").symlink_to(p / "nope")),
+        ],
+    )
+    def test_an_unusable_services_path_reports_rather_than_raises(
+        self, label, make, tmp_path, monkeypatch
+    ):
+        monkeypatch.chdir(tmp_path)
+        make(tmp_path)
+
+        with patch("nthlayer_generate.cli.setup.error") as reported:
+            TestTeamIsGatedAtTheWizardBoundary._drive(
+                tmp_path, monkeypatch, "payment-api", "payments"
+            )
+
+        said = " ".join(str(c) for c in reported.call_args_list)
+        assert "Could not create" in said, (
+            f"a {label} at services/ raised instead of reporting; errors were "
+            f"{reported.call_args_list}"
+        )
+        assert not (tmp_path / "services" / "payment-api.yaml").is_file()
+
+    def test_a_directory_at_the_target_is_refused_not_overwritten(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "services").mkdir()
+        (tmp_path / "services" / "payment-api.yaml").mkdir()
+
+        with patch("nthlayer_generate.cli.setup.error") as reported:
+            TestTeamIsGatedAtTheWizardBoundary._drive(
+                tmp_path, monkeypatch, "payment-api", "payments"
+            )
+
+        said = " ".join(str(c) for c in reported.call_args_list)
+        assert "not a regular file" in said, (
+            f"a directory at the target was not refused; errors were {reported.call_args_list}"
+        )
+        assert (tmp_path / "services" / "payment-api.yaml").is_dir()
+
+    def test_a_failed_write_leaves_no_partial_manifest(self, tmp_path, monkeypatch):
+        """The rollback half, which setup had no handler for at all."""
+        monkeypatch.chdir(tmp_path)
+        real = pathlib.Path.write_bytes
+
+        def fake(self, *args, **kwargs):
+            if self.name == "payment-api.yaml":
+                self.touch()
+                raise OSError(28, "No space left on device")
+            return real(self, *args, **kwargs)
+
+        with patch.object(pathlib.Path, "write_bytes", fake):
+            TestTeamIsGatedAtTheWizardBoundary._drive(
+                tmp_path, monkeypatch, "payment-api", "payments"
+            )
+
+        assert not (tmp_path / "services" / "payment-api.yaml").exists(), (
+            "a failed write left a partial manifest behind"
+        )
+
+
+class TestWizardOverwriteBranch:
+    """The idempotency contract setup chose, which nothing exercised.
+
+    init refuses on `exists()`; setup prompts and overwrites. The wizard driver
+    hardcoded `_confirm -> False`, so no test had ever taken the accepted path
+    or checked the new content landed (opensrm-h9fq edge-case pass).
+    """
+
+    def test_an_accepted_overwrite_replaces_the_manifest(self, tmp_path, monkeypatch):
+        first = TestTeamIsGatedAtTheWizardBoundary._drive(
+            tmp_path, monkeypatch, "payment-api", "payments"
+        )
+        assert first.exists()
+        before = first.read_text(encoding="utf-8")
+
+        second = TestTeamIsGatedAtTheWizardBoundary._drive(
+            tmp_path, monkeypatch, "payment-api", "other-team", confirm=True
+        )
+
+        after = second.read_text(encoding="utf-8")
+        assert after != before, "the overwrite was accepted but nothing changed"
+        assert yaml_mod.safe_load(after)["service"]["team"] == "other-team"
+
+    def test_a_refused_overwrite_preserves_the_manifest(self, tmp_path, monkeypatch):
+        first = TestTeamIsGatedAtTheWizardBoundary._drive(
+            tmp_path, monkeypatch, "payment-api", "payments"
+        )
+        before = first.read_bytes()
+
+        TestTeamIsGatedAtTheWizardBoundary._drive(
+            tmp_path, monkeypatch, "payment-api", "other-team", confirm=False
+        )
+
+        assert first.read_bytes() == before, "a refused overwrite still wrote"
+
+
+class TestRollbackNeverDeletesWhatItDidNotCreate:
+    """opensrm-h9fq edge-case pass: the rollback I added caused data loss.
+
+    init's `unlink` is safe because init REFUSES on `exists()`, so anything it
+    removes is always a file it just created. setup PROMPTS and overwrites, so
+    the target can pre-exist — and copying init's unconditional
+    `unlink(missing_ok=True)` into that path meant a failed write deleted the
+    user's manifest.
+
+    Measured with a hand-edited manifest at mode 0444, overwrite confirmed:
+    `write_text` fails at OPEN, so the file is never truncated, and the unlink
+    then removed intact content while reporting only "Error creating ...".
+    POSIX unlink needs write permission on the DIRECTORY, not the file, so a
+    read-only manifest was no protection. Before the rollback existed the bare
+    write gave a traceback and the file survived — so the fix had traded a loud
+    failure with data preserved for a clean message with the data gone.
+
+    The existing rollback test could not catch it: it runs in an empty
+    `tmp_path`, so it only ever exercises a file the wizard created.
+    """
+
+    @staticmethod
+    def _fail_write_at_open(tmp_path, monkeypatch, content):
+        """Pre-create the target read-only, so write_text fails before truncating."""
+        services = tmp_path / "services"
+        services.mkdir()
+        target = services / "payment-api.yaml"
+        target.write_text(content, encoding="utf-8")
+        target.chmod(0o444)
+        return target
+
+    def test_a_pre_existing_manifest_survives_a_failed_overwrite(self, tmp_path, monkeypatch):
+        content = "# hand-edited by the user\nservice:\n  name: payment-api\n"
+        target = self._fail_write_at_open(tmp_path, monkeypatch, content)
+        before = target.read_bytes()
+
+        TestTeamIsGatedAtTheWizardBoundary._drive(
+            tmp_path, monkeypatch, "payment-api", "payments", confirm=True
+        )
+
+        assert target.exists(), "a failed overwrite DELETED the user's manifest"
+        assert target.read_bytes() == before, "the user's manifest was modified"
+
+    def test_the_user_is_told_the_file_was_left_alone(self, tmp_path, monkeypatch):
+        """Reporting only a write error would imply nothing had happened to it."""
+        self._fail_write_at_open(tmp_path, monkeypatch, "# mine\n")
+
+        with patch("nthlayer_generate.cli.setup.info") as told:
+            TestTeamIsGatedAtTheWizardBoundary._drive(
+                tmp_path, monkeypatch, "payment-api", "payments", confirm=True
+            )
+
+        said = " ".join(str(c) for c in told.call_args_list)
+        assert "not removed" in said, (
+            f"the user was not told the manifest survived; info calls were {told.call_args_list}"
+        )
+        assert "unchanged" not in said, (
+            "the message promises the file is unchanged, which an OSError raised "
+            "mid-write cannot guarantee (opensrm-h9fq)"
+        )
+
+    @pytest.mark.parametrize("victim_exists", [True, False])
+    def test_a_symlink_at_the_target_is_never_unlinked(self, victim_exists, tmp_path, monkeypatch):
+        """The case `is_symlink()` is in `pre_existing` FOR.
+
+        A symlink whose victim is MISSING is neither `is_file()` nor
+        `exists()`, so with `pre_existing = is_file()` alone the rollback ran
+        and deleted a link this run did not create. The resolvable-victim case
+        cannot show that, because `is_file()` already covers it — which is why
+        dropping `is_symlink()` left the first version of this class green.
+        """
+        monkeypatch.chdir(tmp_path)
+        services = tmp_path / "services"
+        services.mkdir()
+        victim = tmp_path / "elsewhere.yaml"
+        if victim_exists:
+            victim.write_text("# the real file\n", encoding="utf-8")
+        link = services / "payment-api.yaml"
+        link.symlink_to(victim)
+
+        real = pathlib.Path.write_bytes
+
+        def fake(self, *args, **kwargs):
+            if self.name == "payment-api.yaml":
+                raise OSError(28, "No space left on device")
+            return real(self, *args, **kwargs)
+
+        with patch.object(pathlib.Path, "write_bytes", fake):
+            TestTeamIsGatedAtTheWizardBoundary._drive(
+                tmp_path, monkeypatch, "payment-api", "payments", confirm=True
+            )
+
+        assert link.is_symlink(), (
+            f"the rollback deleted the user's symlink (victim_exists={victim_exists})"
+        )
+
+    def test_a_symlink_at_the_target_survives_a_failed_overwrite(self, tmp_path, monkeypatch):
+        """The opensrm-may6 shape: the unlink must not eat the user's symlink."""
+        services = tmp_path / "services"
+        services.mkdir()
+        victim = tmp_path / "elsewhere.yaml"
+        victim.write_text("# the real file\n", encoding="utf-8")
+        link = services / "payment-api.yaml"
+        link.symlink_to(victim)
+        victim.chmod(0o444)
+
+        TestTeamIsGatedAtTheWizardBoundary._drive(
+            tmp_path, monkeypatch, "payment-api", "payments", confirm=True
+        )
+
+        assert link.is_symlink(), "the failed write removed the user's symlink"
+        assert victim.exists(), "the symlink's target was orphaned or deleted"
+        # Without this the test passes vacuously wherever chmod is a no-op (as
+        # root, or in a container): the write simply succeeds through the link
+        # and both assertions above still hold.
+        assert victim.read_bytes() == b"# the real file\n", (
+            "the write went through the symlink and overwrote its victim"
+        )
+
+
+def encodes_utf8_explicitly(tree) -> bool:
+    """True if any `.encode(...)` in *tree* names utf-8 (opensrm-h9fq)."""
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "encode"
+        ):
+            named = [a for a in node.args if isinstance(a, ast.Constant)] + [
+                kw.value for kw in node.keywords if kw.arg == "encoding"
+            ]
+            if any(isinstance(a, ast.Constant) and a.value == "utf-8" for a in named):
+                return True
+    return False
+
+
+class TestTheThreeTierTablesAgree:
+    """opensrm-h9fq provenance pass: a drift nothing could detect.
+
+    The wizard keeps three tier tables -- the menu `TIER_CHOICES`, the
+    name-to-index `TIER_MAP`, and the index-to-config `TIER_CONFIGS_BY_INDEX`.
+    While they were function-locals the provenance pass mutated `TIER_MAP` to
+    add a value with no matching config and the suite stayed GREEN, because
+    nothing could see them and the menu is a separate literal.
+
+    Lifted to module level so their agreement is assertable rather than
+    coincidental.
+    """
+
+    def test_the_tables_are_not_empty(self):
+        assert TIER_CHOICES and TIER_MAP and TIER_CONFIGS_BY_INDEX
+
+    def test_the_menu_offers_exactly_the_mapped_names(self):
+        offered = {choice.split(" - ")[0] for choice in TIER_CHOICES}
+        assert offered == set(TIER_MAP), (
+            f"the menu offers {sorted(offered)} but TIER_MAP knows "
+            f"{sorted(TIER_MAP)}; a choice with no mapping silently becomes the "
+            f"default"
+        )
+
+    def test_every_mapped_index_has_a_config(self):
+        assert set(TIER_MAP.values()) == set(TIER_CONFIGS_BY_INDEX), (
+            f"TIER_MAP yields {sorted(set(TIER_MAP.values()))} but configs exist "
+            f"for {sorted(TIER_CONFIGS_BY_INDEX)}; an index with no config now "
+            f"raises ValueError at generation time"
+        )
+
+    def test_every_config_names_a_tier_the_shared_vocabulary_admits(self):
+        from nthlayer_common.manifest.models import VALID_TIERS
+
+        for index, config in TIER_CONFIGS_BY_INDEX.items():
+            assert config["tier_name"] in VALID_TIERS, (
+                f"tier {index} emits {config['tier_name']!r}, which is not in "
+                f"nthlayer-common's VALID_TIERS {VALID_TIERS}"
+            )
+
+
+class TestWizardExitCodeIsHonest:
+    """opensrm-h9fq, found by the ADVISORY excellence read after four blocking
+    passes had all missed it.
+
+    `_create_first_service` returned None, and `setup_command` discarded the
+    result, printed "Setup Complete!" and returned 0. So every failure path --
+    including the four this bead ADDED -- reported an error and then exited 0.
+    Measured before the fix: an unusable `services/` gave an error, wrote no
+    manifest, and `handle_setup_command` returned 0.
+
+    That is this bead's own defect in its exit-code half. The bead is "writes
+    invalid manifests AT EXIT 0", and `specs/manifest.py` says plainly that an
+    exit code is what a CI gate keys on. All four blocking lenses converged on
+    the write block; the signature sits above it.
+
+    A deliberate skip is NOT a failure: declining to create a service, or
+    declining an overwrite, returns 0.
+    """
+
+    @staticmethod
+    def _rc(tmp_path, monkeypatch, name="payment-api", team="payments", confirm=True):
+        monkeypatch.chdir(tmp_path)
+        answers = iter([name, team])
+        monkeypatch.setattr(
+            "nthlayer_generate.cli.setup._prompt", lambda *a, **k: next(answers, "")
+        )
+        monkeypatch.setattr(
+            "nthlayer_generate.cli.setup.select", lambda label, choices, **k: choices[0]
+        )
+        monkeypatch.setattr("nthlayer_generate.cli.setup._confirm", lambda *a, **k: confirm)
+        from nthlayer_generate.cli.setup import _create_first_service
+
+        return _create_first_service()
+
+    def test_a_successful_run_returns_zero(self, tmp_path, monkeypatch):
+        assert self._rc(tmp_path, monkeypatch) == 0
+        assert (tmp_path / "services" / "payment-api.yaml").is_file()
+
+    @pytest.mark.parametrize(
+        ("label", "kwargs", "make"),
+        [
+            ("invalid name", {"name": "Invalid_Name"}, None),
+            ("blank team", {"team": "   "}, None),
+            ("control char in team", {"team": "ops\ttab"}, None),
+            (
+                "unusable services/",
+                {},
+                lambda p: (p / "services").write_text("x", encoding="utf-8"),
+            ),
+            (
+                "directory at the target",
+                {},
+                lambda p: (
+                    (p / "services").mkdir(),
+                    (p / "services" / "payment-api.yaml").mkdir(),
+                ),
+            ),
+        ],
+    )
+    def test_every_failure_returns_one(self, label, kwargs, make, tmp_path, monkeypatch):
+        if make:
+            make(tmp_path)
+
+        assert self._rc(tmp_path, monkeypatch, **kwargs) == 1, (
+            f"{label} reported an error but returned 0, so a CI gate would pass"
+        )
+
+    @pytest.mark.parametrize(
+        ("label", "kwargs"),
+        [("no name given", {"name": ""}), ("overwrite declined", {"confirm": False})],
+    )
+    def test_a_deliberate_skip_returns_zero(self, label, kwargs, tmp_path, monkeypatch):
+        """Declining is a choice, not a failure."""
+        if kwargs.get("confirm") is False:
+            (tmp_path / "services").mkdir()
+            (tmp_path / "services" / "payment-api.yaml").write_text("# mine\n", encoding="utf-8")
+
+        assert self._rc(tmp_path, monkeypatch, **kwargs) == 0, f"{label} was treated as a failure"
+
+    def test_the_command_propagates_the_failure(self, tmp_path, monkeypatch):
+        """`setup_command` discarded the result and always returned 0."""
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "services").write_text("x", encoding="utf-8")
+
+        with (
+            patch("nthlayer_generate.cli.setup._create_first_service", return_value=1),
+            # _quick_setup MUST be patched. Unpatched it runs the real wizard,
+            # which writes ~/.nthlayer/config.yaml and credentials.yaml in the
+            # developer's actual HOME -- it did exactly that when this test was
+            # first written, and it leaves _prompt live so `pytest -s` in a tty
+            # would block on input. Every sibling test here patches it.
+            patch("nthlayer_generate.cli.setup._quick_setup", return_value=0),
+            patch("nthlayer_generate.cli.setup._test_connections"),
+            patch("nthlayer_generate.cli.setup._print_welcome_banner"),
+            patch("nthlayer_generate.cli.setup._confirm", return_value=True),
+            patch("nthlayer_generate.cli.setup.get_config_path") as cfg,
+            patch("nthlayer_generate.cli.setup._print_next_steps") as next_steps,
+        ):
+            cfg.return_value = tmp_path / "config.yaml"
+            from nthlayer_generate.cli.setup import setup_command
+
+            rc = setup_command(quick=True, skip_service=False)
+
+        assert rc == 1, "a failed service creation still exited 0"
+        assert not next_steps.called, "'Setup Complete!' next-steps were printed after a failure"

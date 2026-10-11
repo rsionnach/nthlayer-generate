@@ -202,7 +202,7 @@ class TestAiGateJudgmentThresholds:
 
     @pytest.mark.parametrize("section", ["segments", "stability", "audit_backlog"])
     def test_removed_srm_v1_threshold_is_rejected_cleanly(self, tmp_path, section):
-        """"Cleanly" = returns exit code 1 (the command handles the error, so no
+        """Cleanly = returns exit code 1 (the command handles the error, so no
         exception/traceback escapes this direct call) and writes no output file.
 
         The 0.05 / 30d payload is a placeholder: the section type alone triggers

@@ -192,6 +192,11 @@ class TestAiGateJudgmentThresholds:
         assert thresholds["calibration"]["bounds"] == {
             "maximum_expected_calibration_error": cal_target
         }
+        # srm/v1 had no bins key and defaulted to 10; v2 calibration requires bins.
+        assert thresholds["calibration"]["measurement"] == {
+            "bins": 10,
+            "window": src["calibration"]["window"],
+        }
         assert thresholds["feedback_latency"]["bounds"] == {
             "maximum_p50": f"{int(lat_target)}s"
         }

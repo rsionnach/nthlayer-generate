@@ -193,7 +193,7 @@ class TestAiGateJudgmentThresholds:
             "maximum_expected_calibration_error": cal_target
         }
         assert thresholds["feedback_latency"]["bounds"] == {
-            "maximum_p50": f"{lat_target}s"
+            "maximum_p50": f"{int(lat_target)}s"
         }
         slo_types = {s["spec"]["judgment_type"] for s in spec["judgment_slo"]}
         # Non-vacuous: the other judgment SLOs are still there.

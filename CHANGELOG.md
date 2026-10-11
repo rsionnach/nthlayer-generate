@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.5](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.4...v2.0.5) (2026-10-11)
+
+
+### Bug Fixes
+
+* **migrate:** migrate ai-gate srm/v1 judgment magnitudes to judgment_threshold (opensrm-tnz3) ([571087a](https://github.com/rsionnach/nthlayer-generate/commit/571087a2a70c50c667fc3fbeb6d0e620d1fcf560))
+
+
+### Dependencies
+
+* require nthlayer-common 4.0.0 (opensrm-tnz3) ([a520e4a](https://github.com/rsionnach/nthlayer-generate/commit/a520e4a9b7155f3aed367ae86d4820872186c950))
+
 ## [2.0.4](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.3...v2.0.4) (2026-10-09)
 
 ### ⚠️ Behaviour changes in `nthlayer setup`

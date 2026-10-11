@@ -176,6 +176,7 @@ class TestAiGateJudgmentThresholds:
     """
 
     def test_example_calibration_and_feedback_latency_become_thresholds(self, tmp_path):
+        """Relies on `nthlayer_common.manifest.v1_compat.convert_v1_to_v2`."""
         from nthlayer_generate.cli.migrate_manifest import migrate_manifest_command
 
         src = yaml.safe_load(AI_GATE_EXAMPLE.read_text())["spec"]["slos"]
@@ -199,8 +200,14 @@ class TestAiGateJudgmentThresholds:
         assert {"reversal_rate", "high_confidence_failure"} <= slo_types
         assert not slo_types & {"calibration", "feedback_latency"}
 
-    @pytest.mark.parametrize("section", ["segments", "stability"])
+    @pytest.mark.parametrize("section", ["segments", "stability", "audit_backlog"])
     def test_removed_srm_v1_threshold_is_rejected_cleanly(self, tmp_path, section):
+        """"Cleanly" = returns exit code 1 (the command handles the error, so no
+        exception/traceback escapes this direct call) and writes no output file.
+
+        The 0.05 / 30d payload is a placeholder: the section type alone triggers
+        the rejection in nthlayer-common 4.0.0.
+        """
         from nthlayer_generate.cli.migrate_manifest import migrate_manifest_command
 
         payload = yaml.safe_load(AI_GATE_EXAMPLE.read_text())

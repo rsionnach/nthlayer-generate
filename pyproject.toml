@@ -10,14 +10,14 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     # WHY 4.0.0 (opensrm-tnz3, opensrm-l33e): nthlayer-common 4.0.0 moved
-    # judgment error magnitudes out of SLOs into JudgmentThreshold. This
-    # package is unaffected EXCEPT through `nthlayer migrate-manifest`, the one
-    # place it calls common's manifest parsers (convert_v1_to_v2 +
-    # parse_opensrm_v2): its output now carries spec.judgment_threshold for
+    # judgment error magnitudes out of SLOs into JudgmentThreshold. For
+    # `nthlayer migrate-manifest` (the one place this package calls common's
+    # manifest parsers) the output now carries spec.judgment_threshold for
     # srm/v1 calibration / feedback_latency, and srm/v1 segments / stability /
-    # audit_backlog are rejected. generate's own srm/v1 parser and model
-    # (specs/opensrm_parser.py, specs/manifest.py) are unchanged; consolidating
-    # them is opensrm-wo62. See nthlayer-common/docs/upgrading-4.0.md.
+    # audit_backlog are rejected. generate's own parser is deliberately left
+    # alone: see the JUDGMENT_SLO_TYPES comment in
+    # src/nthlayer_generate/specs/manifest.py. See
+    # nthlayer-common/docs/upgrading-4.0.md.
     #
     # WHY 3.0.0 (opensrm-ir5m): nthlayer-common 3.0.0 converts SLO targets at
     # the INBOUND manifest boundary (opensrm-ocvu), and this package owns the

@@ -118,8 +118,8 @@ SERVICE_TYPE_ALIASES = _COMMON_SERVICE_TYPE_ALIASES
 #
 # This is NOT nthlayer-common's vocabulary. In generate's srm/v1 parse,
 # calibration and feedback_latency are SLOs; in nthlayer-common 4.0 they are
-# JudgmentThresholds (V2_JUDGMENT_THRESHOLD_TYPES), and common's own
-# JUDGMENT_SLO_TYPES was removed (opensrm-l33e). Left as-is because generate's
+# JudgmentThresholds (V2_JUDGMENT_THRESHOLD_TYPES); nthlayer_common.manifest's
+# JUDGMENT_SLO_TYPES was removed in 4.0.0 (opensrm-l33e). Left as-is because generate's
 # manifest stack is not migrated to common's yet; consolidating the two
 # vocabularies is opensrm-wo62. Do not "fix" this set to match common here.
 JUDGMENT_SLO_TYPES = {

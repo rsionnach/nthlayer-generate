@@ -159,3 +159,68 @@ class TestDemoSpecsViaCLI:
         v2_data = yaml.safe_load(out.read_text())
         manifest = parse_opensrm_v2(v2_data)
         assert manifest.name == src.stem
+
+
+AI_GATE_EXAMPLE = (
+    Path(__file__).resolve().parents[1] / "examples" / "opensrm" / "ai-gate.reliability.yaml"
+)
+
+
+class TestAiGateJudgmentThresholds:
+    """srm/v1 judgment magnitudes migrate to spec.judgment_threshold (opensrm-tnz3).
+
+    Expected values are read from the example file, never hardcoded. The shapes
+    asserted follow nthlayer-common 4.0 (docs/upgrading-4.0.md): calibration's
+    target is `maximum_expected_calibration_error`; feedback_latency's is
+    `maximum_p50` as a "<n>s" Duration string.
+    """
+
+    def test_example_calibration_and_feedback_latency_become_thresholds(self, tmp_path):
+        """Relies on `nthlayer_common.manifest.v1_compat.convert_v1_to_v2`."""
+        from nthlayer_generate.cli.migrate_manifest import migrate_manifest_command
+
+        src = yaml.safe_load(AI_GATE_EXAMPLE.read_text())["spec"]["slos"]
+        cal_target = src["calibration"]["target"]
+        lat_target = src["feedback_latency"]["target"]
+
+        out = tmp_path / "ai-gate.v2.yaml"
+        rc = migrate_manifest_command(str(AI_GATE_EXAMPLE), output_path=str(out))
+        assert rc == 0
+        spec = yaml.safe_load(out.read_text())["spec"]
+
+        thresholds = {t["type"]: t for t in spec["judgment_threshold"]}
+        assert thresholds["calibration"]["bounds"] == {
+            "maximum_expected_calibration_error": cal_target
+        }
+        # srm/v1 had no bins key and defaulted to 10; v2 calibration requires bins.
+        assert thresholds["calibration"]["measurement"] == {
+            "bins": 10,
+            "window": src["calibration"]["window"],
+        }
+        assert thresholds["feedback_latency"]["bounds"] == {
+            "maximum_p50": f"{int(lat_target)}s"
+        }
+        slo_types = {s["spec"]["judgment_type"] for s in spec["judgment_slo"]}
+        # Non-vacuous: the other judgment SLOs are still there.
+        assert {"reversal_rate", "high_confidence_failure"} <= slo_types
+        assert not slo_types & {"calibration", "feedback_latency"}
+
+    @pytest.mark.parametrize("section", ["segments", "stability", "audit_backlog"])
+    def test_removed_srm_v1_threshold_is_rejected_cleanly(self, tmp_path, section):
+        """Cleanly = returns exit code 1 (the command handles the error, so no
+        exception/traceback escapes this direct call) and writes no output file.
+
+        The 0.05 / 30d payload is a placeholder: the section type alone triggers
+        the rejection in nthlayer-common 4.0.0.
+        """
+        from nthlayer_generate.cli.migrate_manifest import migrate_manifest_command
+
+        payload = yaml.safe_load(AI_GATE_EXAMPLE.read_text())
+        payload["spec"]["slos"][section] = {"target": 0.05, "window": "30d"}
+        in_file = tmp_path / "ai-gate.yaml"
+        in_file.write_text(yaml.safe_dump(payload))
+        out = tmp_path / "ai-gate.v2.yaml"
+
+        rc = migrate_manifest_command(str(in_file), output_path=str(out))
+        assert rc == 1
+        assert not out.exists()

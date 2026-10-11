@@ -114,7 +114,14 @@ SERVICE_TYPE_ALIASES = _COMMON_SERVICE_TYPE_ALIASES
 # predicate is what decides the rule, and the two sets alone do not reveal
 # that the x- extension branch exists.
 
-# Judgment SLO types for ai-gate services
+# Judgment SLO types for ai-gate services, in generate's OWN srm/v1 model.
+#
+# This is NOT nthlayer-common's vocabulary. In generate's srm/v1 parse,
+# calibration and feedback_latency are SLOs; in nthlayer-common 4.0 they are
+# JudgmentThresholds (V2_JUDGMENT_THRESHOLD_TYPES); nthlayer_common.manifest's
+# JUDGMENT_SLO_TYPES was removed in 4.0.0 (opensrm-l33e). Left as-is because generate's
+# manifest stack is not migrated to common's yet; consolidating the two
+# vocabularies is opensrm-wo62. Do not "fix" this set to match common here.
 JUDGMENT_SLO_TYPES = {
     "reversal_rate",  # Human override tracking
     "high_confidence_failure",  # High-confidence decision failures

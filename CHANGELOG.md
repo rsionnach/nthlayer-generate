@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.6](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.5...v2.0.6) (2026-10-12)
+
+
+### Dependencies
+
+* require nthlayer-common 5.0.0 (opensrm-7zpz) ([27240e3](https://github.com/rsionnach/nthlayer-generate/commit/27240e3677d3bcb378b8422b7d7b6bc0dbd1cf56))
+
 ## [2.0.5](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.4...v2.0.5) (2026-10-11)
 
 

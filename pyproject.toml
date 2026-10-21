@@ -49,8 +49,8 @@ dependencies = [
     # in 2.0.0 (opensrm-ih0v). The >=0.1.5 floor before it claimed a
     # compatibility that no longer existed.
     # WHY 5.2.0 (opensrm-g35i): the version this repo is now built and tested
-    # against (rule 10: the floor is the installed sibling). Nothing here uses
-    # an API new in 5.1/5.2.
+    # against (rule 10: the floor is the installed sibling). Bump it on
+    # every nthlayer-common minor release: the floor guard fails until you do.
     "nthlayer-common>=5.2.0,<6.0.0",
     "grafana-foundation-sdk>=0.0.11",
     "pydantic>=2.7.0,<3.0.0",

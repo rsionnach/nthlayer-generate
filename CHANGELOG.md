@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.7](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.6...v2.0.7) (2026-10-21)
+
+
+### Dependencies
+
+* require nthlayer-common 5.2.0 (opensrm-g35i) ([4b38cef](https://github.com/rsionnach/nthlayer-generate/commit/4b38cef24fbfacc26488d67962326dafe60891b9))
+
 ## [2.0.6](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.5...v2.0.6) (2026-10-12)
 
 

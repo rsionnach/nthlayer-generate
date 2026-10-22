@@ -135,6 +135,8 @@ def migrate_manifest_command(
         v2_data = result.manifest
     elif api_version == "srm/v1":
         source = "srm/v1"
+        if service_type is not None or allow_lossy:
+            warning("--service-type and --allow-lossy apply only to opensrm/v1 input; ignored for srm/v1")
         try:
             v2_data = convert_v1_to_v2(data)
         except ValueError as exc:
@@ -151,6 +153,11 @@ def migrate_manifest_command(
         parse_opensrm_v2(v2_data, base_dir=in_path.parent)
     except OpenSRMV2ParseError as exc:
         error(f"Converted manifest fails v2 parse: {exc}")
+        return 1
+    except (OSError, UnicodeDecodeError) as exc:
+        # An openslo path that is a directory, unreadable, or not UTF-8: the
+        # v1 schema only requires a string, so this is reachable from real input.
+        error(f"Cannot read a file referenced by {manifest_path}: {exc}")
         return 1
 
     yaml_text = (

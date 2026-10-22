@@ -358,6 +358,33 @@ class TestOpensrmV1:
         assert (tmp_path / "svc.v2.yaml").exists()
         assert not [c for c in calls if "extra-slo.yaml" in c]
 
+    def test_openslo_path_that_is_a_directory_returns_1(self, tmp_path):
+        (tmp_path / "sub").mkdir()
+        p = self._write(tmp_path, self._doc(slos={"openslo": [{"path": "sub"}]}))
+        assert self._run(str(p)) == 1
+        assert not (tmp_path / "svc.v2.yaml").exists()
+
+    def test_openslo_path_with_invalid_utf8_returns_1(self, tmp_path):
+        (tmp_path / "bad.yaml").write_bytes(b"\xff\xfe\x00")
+        p = self._write(tmp_path, self._doc(slos={"openslo": [{"path": "bad.yaml"}]}))
+        assert self._run(str(p)) == 1
+        assert not (tmp_path / "svc.v2.yaml").exists()
+
+    def test_openslo_path_to_missing_file_returns_1(self, tmp_path):
+        p = self._write(tmp_path, self._doc(slos={"openslo": [{"path": "nope.yaml"}]}))
+        assert self._run(str(p)) == 1
+        assert not (tmp_path / "svc.v2.yaml").exists()
+
+    def test_srm_v1_warns_that_opensrm_flags_are_ignored(self, tmp_path, monkeypatch):
+        src = tmp_path / "old.yaml"
+        src.write_text(yaml.safe_dump(_v1_payload()))
+        calls = self._capture_warnings(monkeypatch)
+        baseline = self._run(str(src), dry_run=True)
+        assert not [c for c in calls if "--service-type" in c]
+        rc = self._run(str(src), dry_run=True, service_type="api")
+        assert rc == baseline
+        assert [c for c in calls if "--service-type" in c]
+
     def test_flags_are_wired(self):
         from nthlayer_generate.demo import build_parser
 

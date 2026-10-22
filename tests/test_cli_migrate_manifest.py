@@ -224,3 +224,144 @@ class TestAiGateJudgmentThresholds:
         rc = migrate_manifest_command(str(in_file), output_path=str(out))
         assert rc == 1
         assert not out.exists()
+
+
+class TestOpensrmV1:
+    """opensrm/v1 -> v2 (opensrm-pnmv).
+
+    Fixtures follow opensrm/spec/v1/schema.json and the spec's
+    opensrm/examples/*.yaml (api-minimal, ai-gate-minimal), not the converter.
+    """
+
+    @staticmethod
+    def _doc(**spec) -> dict:
+        return {
+            "apiVersion": "opensrm/v1",
+            "kind": "ServiceReliabilityManifest",
+            "metadata": {"name": "my-service", "team": "platform", "tier": "standard"},
+            "spec": {
+                "type": "api",
+                "slos": {"availability": {"target": 0.999, "window": "30d"}},
+                **spec,
+            },
+        }
+
+    def _write(self, tmp_path, doc=None, **spec) -> Path:
+        p = tmp_path / "svc.yaml"
+        p.write_text(yaml.safe_dump(doc if doc is not None else self._doc(**spec)))
+        return p
+
+    @staticmethod
+    def _run(*args, **kwargs) -> int:
+        from nthlayer_generate.cli.migrate_manifest import migrate_manifest_command
+
+        return migrate_manifest_command(*args, **kwargs)
+
+    @staticmethod
+    def _capture_warnings(monkeypatch) -> list[str]:
+        from nthlayer_generate.cli import migrate_manifest
+
+        calls: list[str] = []
+        monkeypatch.setattr(migrate_manifest, "warning", calls.append)
+        return calls
+
+    def test_lossless_converts(self, tmp_path):
+        p = self._write(tmp_path)
+        assert self._run(str(p)) == 0
+        out = yaml.safe_load((tmp_path / "svc.v2.yaml").read_text())
+        assert out["apiVersion"] == "opensrm.nthlayer.io/v2"
+
+    def test_lossy_refuses_without_the_flag(self, tmp_path):
+        p = self._write(tmp_path, deployment={"gates": {}})
+        assert self._run(str(p)) == 1
+        assert not (tmp_path / "svc.v2.yaml").exists()
+
+    def test_lossy_writes_with_the_flag(self, tmp_path):
+        p = self._write(tmp_path, deployment={"gates": {}})
+        assert self._run(str(p), allow_lossy=True) == 0
+        out = yaml.safe_load((tmp_path / "svc.v2.yaml").read_text())
+        assert "deployment" not in out["spec"]
+
+    def test_dropped_field_is_warned_with_path(self, tmp_path, monkeypatch):
+        calls = self._capture_warnings(monkeypatch)
+        p = self._write(tmp_path, deployment={"gates": {}})
+        assert self._run(str(p), allow_lossy=True) == 0
+        assert any(c.startswith("Not migrated: spec.deployment") for c in calls)
+
+    def test_missing_type_needs_service_type(self, tmp_path):
+        doc = self._doc()
+        del doc["spec"]["type"]
+        p = self._write(tmp_path, doc)
+        assert self._run(str(p)) == 1
+        assert self._run(str(p), service_type="api") == 0
+
+    def test_unconvertible_document_returns_1(self, tmp_path):
+        doc = self._doc()
+        doc["metadata"]["tier"] = "gold"
+        p = self._write(tmp_path, doc)
+        assert self._run(str(p), allow_lossy=True) == 1
+        assert not (tmp_path / "svc.v2.yaml").exists()
+
+    def test_assumed_only_field_does_not_refuse(self, tmp_path, monkeypatch):
+        """ai-gate calibration declares no bins in v1; the assumption is
+        reported but is not loss, so no --allow-lossy is needed."""
+        calls = self._capture_warnings(monkeypatch)
+        doc = self._doc(
+            type="ai-gate",
+            slos={
+                "availability": {"target": 0.999, "window": "30d"},
+                "judgment": {"calibration": {"target": 0.10, "window": "30d"}},
+            },
+        )
+        p = self._write(tmp_path, doc)
+        assert self._run(str(p)) == 0
+        out = yaml.safe_load((tmp_path / "svc.v2.yaml").read_text())
+        assert out["spec"]["judgment_threshold"][0]["type"] == "calibration"
+        assumed = [c for c in calls if c.startswith("Converted with an assumption:")]
+        assert len(assumed) == 1
+        assert "spec.slos.judgment.calibration" in assumed[0]
+        assert not any(c.startswith("Not migrated:") for c in calls)
+
+    def _with_openslo_ref(self, tmp_path) -> Path:
+        # An OpenSLO document of the shape the converter's own v2 output uses
+        # for inline SLOs (apiVersion openslo/v1, kind SLO).
+        (tmp_path / "extra-slo.yaml").write_text(
+            yaml.safe_dump(
+                {
+                    "apiVersion": "openslo/v1",
+                    "kind": "SLO",
+                    "metadata": {"name": "my-service-availability"},
+                    "spec": {
+                        "service": "my-service",
+                        "timeWindow": [{"duration": "30d", "isRolling": True}],
+                        "objectives": [{"displayName": "99.9% availability", "target": 0.999}],
+                    },
+                }
+            )
+        )
+        doc = self._doc(slos={"openslo": [{"path": "extra-slo.yaml"}]})
+        return self._write(tmp_path, doc)
+
+    def test_relative_ref_warns_when_output_moves(self, tmp_path, monkeypatch):
+        calls = self._capture_warnings(monkeypatch)
+        p = self._with_openslo_ref(tmp_path)
+        out = tmp_path / "elsewhere" / "svc.v2.yaml"
+        assert self._run(str(p), output_path=str(out)) == 0
+        assert out.exists()
+        refs = [c for c in calls if "extra-slo.yaml" in c]
+        assert len(refs) == 1
+
+    def test_relative_ref_silent_when_output_beside_input(self, tmp_path, monkeypatch):
+        calls = self._capture_warnings(monkeypatch)
+        p = self._with_openslo_ref(tmp_path)
+        assert self._run(str(p)) == 0
+        assert (tmp_path / "svc.v2.yaml").exists()
+        assert not [c for c in calls if "extra-slo.yaml" in c]
+
+    def test_flags_are_wired(self):
+        from nthlayer_generate.demo import build_parser
+
+        args = build_parser().parse_args(
+            ["migrate-manifest", "x.yaml", "--allow-lossy", "--service-type", "api"]
+        )
+        assert (args.allow_lossy, args.service_type) == (True, "api")

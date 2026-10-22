@@ -199,7 +199,7 @@ def _warn_relative_refs(v2_data: dict[str, Any], in_path: Path, out_path: Path) 
     slos = (v2_data.get("spec") or {}).get("slo")
     for item in slos if isinstance(slos, list) else []:
         ref = item.get("$ref") if isinstance(item, dict) else None
-        if isinstance(ref, str) and "://" not in ref and not Path(ref).is_absolute():
+        if isinstance(ref, str) and not Path(ref).is_absolute():
             warning(
                 f"openslo $ref {ref!r} is relative and now resolves against {out_path.parent}, "
                 f"not {in_path.parent}; copy the file or fix the path"

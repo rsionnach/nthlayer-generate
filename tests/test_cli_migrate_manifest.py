@@ -38,6 +38,9 @@ class TestMigrateManifestCommand:
         assert out_file.exists()
         out_data = yaml.safe_load(out_file.read_text())
         assert out_data["apiVersion"] == "opensrm.nthlayer.io/v2"
+        assert out_file.read_text().splitlines()[0] == (
+            "# OpenSRM v2 manifest (migrated from srm/v1)"
+        )
 
     def test_explicit_output_path(self, tmp_path):
         from nthlayer_generate.cli.migrate_manifest import migrate_manifest_command
@@ -268,8 +271,9 @@ class TestOpensrmV1:
     def test_lossless_converts(self, tmp_path):
         p = self._write(tmp_path)
         assert self._run(str(p)) == 0
-        out = yaml.safe_load((tmp_path / "svc.v2.yaml").read_text())
-        assert out["apiVersion"] == "opensrm.nthlayer.io/v2"
+        text = (tmp_path / "svc.v2.yaml").read_text()
+        assert yaml.safe_load(text)["apiVersion"] == "opensrm.nthlayer.io/v2"
+        assert text.splitlines()[0] == "# OpenSRM v2 manifest (migrated from opensrm/v1)"
 
     def test_lossy_refuses_without_the_flag(self, tmp_path):
         p = self._write(tmp_path, deployment={"gates": {}})
@@ -322,9 +326,12 @@ class TestOpensrmV1:
         assert "spec.slos.judgment.calibration" in assumed[0]
         assert not any(c.startswith("Not migrated:") for c in calls)
 
-    def _with_openslo_ref(self, tmp_path) -> Path:
-        # An OpenSLO document of the shape the converter's own v2 output uses
-        # for inline SLOs (apiVersion openslo/v1, kind SLO).
+    def _with_openslo_ref(self, tmp_path, ref: str = "extra-slo.yaml") -> Path:
+        # A valid OpenSLO v1 SLO per the OpenSLO v1 spec (github.com/OpenSLO/OpenSLO,
+        # "SLO" kind): spec.service, an inline spec.indicator (SLI with a
+        # ratioMetric of good/total metricSources), spec.timeWindow,
+        # spec.budgetingMethod and spec.objectives. Written independently of the
+        # converter's own output, which omits indicator and budgetingMethod.
         (tmp_path / "extra-slo.yaml").write_text(
             yaml.safe_dump(
                 {
@@ -333,13 +340,34 @@ class TestOpensrmV1:
                     "metadata": {"name": "my-service-availability"},
                     "spec": {
                         "service": "my-service",
+                        "indicator": {
+                            "metadata": {"name": "my-service-good-requests"},
+                            "spec": {
+                                "ratioMetric": {
+                                    "counter": True,
+                                    "good": {
+                                        "metricSource": {
+                                            "type": "Prometheus",
+                                            "spec": {"query": 'sum(rate(http_requests_total{code!~"5.."}[5m]))'},
+                                        }
+                                    },
+                                    "total": {
+                                        "metricSource": {
+                                            "type": "Prometheus",
+                                            "spec": {"query": "sum(rate(http_requests_total[5m]))"},
+                                        }
+                                    },
+                                }
+                            },
+                        },
                         "timeWindow": [{"duration": "30d", "isRolling": True}],
+                        "budgetingMethod": "Occurrences",
                         "objectives": [{"displayName": "99.9% availability", "target": 0.999}],
                     },
                 }
             )
         )
-        doc = self._doc(slos={"openslo": [{"path": "extra-slo.yaml"}]})
+        doc = self._doc(slos={"openslo": [{"path": ref}]})
         return self._write(tmp_path, doc)
 
     def test_relative_ref_warns_when_output_moves(self, tmp_path, monkeypatch):
@@ -356,6 +384,17 @@ class TestOpensrmV1:
         p = self._with_openslo_ref(tmp_path)
         assert self._run(str(p)) == 0
         assert (tmp_path / "svc.v2.yaml").exists()
+        assert not [c for c in calls if "extra-slo.yaml" in c]
+
+    def test_absolute_ref_inside_input_dir_does_not_warn(self, tmp_path, monkeypatch):
+        """v1 openslo.path is only "Path to OpenSLO file"; an absolute path
+        inside the manifest directory resolves the same from any output."""
+        calls = self._capture_warnings(monkeypatch)
+        ref = str((tmp_path / "extra-slo.yaml").resolve())
+        p = self._with_openslo_ref(tmp_path, ref=ref)
+        out = tmp_path / "elsewhere" / "svc.v2.yaml"
+        assert self._run(str(p), output_path=str(out)) == 0
+        assert yaml.safe_load(out.read_text())["spec"]["slo"][0] == {"$ref": ref}
         assert not [c for c in calls if "extra-slo.yaml" in c]
 
     def test_openslo_path_that_is_a_directory_returns_1(self, tmp_path):
@@ -385,6 +424,13 @@ class TestOpensrmV1:
         assert rc == baseline
         assert [c for c in calls if "--service-type" in c]
 
+    def test_srm_v1_warns_once_when_only_allow_lossy_is_given(self, tmp_path, monkeypatch):
+        src = tmp_path / "old.yaml"
+        src.write_text(yaml.safe_dump(_v1_payload()))
+        calls = self._capture_warnings(monkeypatch)
+        assert self._run(str(src), dry_run=True, allow_lossy=True) == 0
+        assert len([c for c in calls if "--allow-lossy" in c]) == 1
+
     def test_flags_are_wired(self):
         from nthlayer_generate.demo import build_parser
 
@@ -392,3 +438,68 @@ class TestOpensrmV1:
             ["migrate-manifest", "x.yaml", "--allow-lossy", "--service-type", "api"]
         )
         assert (args.allow_lossy, args.service_type) == (True, "api")
+
+
+OPENSRM_EXAMPLES = Path(__file__).resolve().parents[2] / "opensrm" / "examples"
+
+# Expected CLI outcome per published opensrm/v1 example, derived from each
+# file's keys against the design spec's §4 field-mapping table
+# (nthlayer/docs/superpowers/specs/2026-10-22-pnmv-opensrm-v1-migration-design.md),
+# not from running the converter. Every example declares
+# spec.observability.metrics, which §4 marks unmapped ("v2 needs a type per
+# metric") and absent from the output, i.e. dropped => lossy => exit 1 without
+# --allow-lossy. An example without spec.type also needs --service-type
+# (§4 spec.type row). Tuple: (service_type needed, a dropped path §4 names).
+OPENSRM_EXAMPLE_EXPECTATIONS: dict[str, tuple[str | None, str]] = {
+    # §4 spec.observability.metrics; also judgment.reversal_rate/high_confidence_failure, contract.judgment
+    "ai-gate-full.yaml": (None, "spec.observability"),
+    # §4 spec.observability.metrics; also spec.slos.judgment.reversal_rate
+    "ai-gate-minimal.yaml": (None, "spec.observability"),
+    # §4 spec.observability.metrics; also judgment.reversal_rate/high_confidence_failure
+    "ai-gate-security-scanner.yaml": (None, "spec.observability"),
+    # §4 spec.type absent => --service-type; spec.deployment, notifications, slos.throughput unmapped
+    "api-full.yaml": ("api", "spec.deployment"),
+    # §4 spec.type absent (labels.type is metadata) => --service-type; spec.deployment unmapped
+    "api-internal.yaml": ("api", "spec.deployment"),
+    # §4 spec.observability.metrics unmapped
+    "api-minimal.yaml": (None, "spec.observability"),
+    # §4 spec.slos.success_rate / schedule_adherence / data_freshness / throughput unmapped
+    "batch-etl.yaml": (None, "spec.slos.success_rate"),
+    # §4 spec.slos.replication_lag / throughput unmapped; spec.deployment unmapped
+    "database-mysql.yaml": (None, "spec.slos.replication_lag"),
+}
+
+
+def test_opensrm_examples_are_all_covered():
+    found = sorted(p.name for p in OPENSRM_EXAMPLES.glob("*.yaml"))
+    assert len(found) >= 8, f"expected >=8 opensrm/v1 examples in {OPENSRM_EXAMPLES}"
+    assert set(found) == set(OPENSRM_EXAMPLE_EXPECTATIONS)
+
+
+@pytest.mark.parametrize("name", sorted(OPENSRM_EXAMPLE_EXPECTATIONS))
+def test_opensrm_example_migrates_per_field_map(tmp_path, monkeypatch, name):
+    from nthlayer_generate.cli import migrate_manifest
+
+    service_type, dropped_path = OPENSRM_EXAMPLE_EXPECTATIONS[name]
+    src = OPENSRM_EXAMPLES / name
+    out = tmp_path / "out.v2.yaml"
+
+    assert migrate_manifest.migrate_manifest_command(str(src), output_path=str(out)) == 1
+    assert not out.exists()
+    if service_type is not None:
+        # Lossy acknowledged but the type is still missing.
+        assert migrate_manifest.migrate_manifest_command(
+            str(src), output_path=str(out), allow_lossy=True
+        ) == 1
+        assert not out.exists()
+
+    calls: list[str] = []
+    monkeypatch.setattr(migrate_manifest, "warning", calls.append)
+    rc = migrate_manifest.migrate_manifest_command(
+        str(src), output_path=str(out), allow_lossy=True, service_type=service_type
+    )
+    assert rc == 0
+    written = yaml.safe_load(out.read_text())
+    assert written["apiVersion"] == "opensrm.nthlayer.io/v2"
+    assert written["metadata"]["name"] == yaml.safe_load(src.read_text())["metadata"]["name"]
+    assert any(c.startswith(f"Not migrated: {dropped_path}") for c in calls)

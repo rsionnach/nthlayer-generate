@@ -27,7 +27,9 @@ writes (default store: `assessments.db`). With no such assessments it prints
 `No slo_status assessments found. Run 'collect' first.` and exits 0.
 
 The score is the share of a service's SLOs whose status is `HEALTHY`, as
-0-100. A service with three SLOs, two healthy, scores 67. Services are listed
+0-100. A service with three SLOs, two healthy, scores 66.7 in JSON output
+(rounded to one decimal) and shows as 67 in table output (rounded to a whole
+number). Services are listed
 highest score first.
 
 ## Options

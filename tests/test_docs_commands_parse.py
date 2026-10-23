@@ -8,9 +8,10 @@ flags on real ones. This file generalises the guard to every page.
 
 Direction matters, as it did in noc6: the DOCS are the fixture and the PARSER
 is the authority. Nothing here lists command names expected from the docs —
-every shell line that runs the `nthlayer` (or `nthlayer-generate`) console
-script is handed to `build_parser().parse_args()`, and an argparse error on
-any of them fails the test named after its page and line.
+every line in any fenced block (shell, yaml CI steps, Jenkins `sh`,
+pre-commit `entry:`) that runs the `nthlayer` (or `nthlayer-generate`)
+console script is handed to `build_parser().parse_args()`, and an argparse
+error on any of them fails the test named after its page and line.
 
 Scope: every `docs-site/**/*.md` page plus `README.md`. Lines running other
 executables — `nthlayer-workers`, `nthlayer-core`, `python -m ...`,
@@ -30,23 +31,36 @@ from nthlayer_generate.demo import build_parser
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DOCS_ROOT = REPO_ROOT / "docs-site"
 
-# Measured on the opensrm-3ntg branch after the docs fix: 213 invocations
-# across 42 pages. The floor sits well under that so ordinary docs edits do
+# Measured on the opensrm-3ntg branch after widening collection to every
+# fence (yaml, groovy, unlabelled): 257 invocations across 42 pages. The floor sits well under that so ordinary docs edits do
 # not trip it, but far above zero so a broken extractor (a regex that matches
 # nothing, a moved docs dir) cannot leave this file green and vacuous.
-MIN_INVOCATIONS = 150
+MIN_INVOCATIONS = 200
 
 # Console scripts that reach `nthlayer_generate.demo:main` (pyproject
 # [project.scripts]). Both run the same parser, so both are checked.
 ENTRY_POINTS = frozenset({"nthlayer", "nthlayer-generate"})
 
-# A fenced shell block. Leading indent is allowed (this site nests fences in
+# Any fenced block, whatever its info string: invocations also sit in yaml
+# (GitHub Actions, GitLab, pre-commit, Tekton), groovy (Jenkins) and
+# unlabelled fences. Leading indent is allowed (this site nests fences in
 # lists), as is a trailing info string (```bash title="..."). The closing
 # marker is back-referenced so ``` is not closed by ~~~.
-_SHELL_FENCE = re.compile(
-    r"^[ \t]*(```|~~~)[ \t]*(?:bash|sh|shell|console)\b[^\n]*\n(.*?)^[ \t]*\1",
-    re.M | re.S,
-)
+_FENCE = re.compile(r"^[ \t]*(```|~~~)[^\n]*\n(.*?)^[ \t]*\1", re.M | re.S)
+
+# CI wrappers around a command line, stripped before lexing: a yaml list item
+# (`- nthlayer ...`), a yaml key whose value is a command (`run:`, `script:`,
+# `entry:`), and Jenkins `sh '...'` / `sh "..."`.
+_LIST_ITEM = re.compile(r"^-\s+")
+_COMMAND_KEY = re.compile(r"^(run|script|entry):\s*")
+_JENKINS_SH = re.compile(r"""^sh\s+(['"])(.*)\1$""")
+
+# CI templating that stands for one value: `${{ secrets.X }}` (GitHub Actions,
+# contains spaces) and `$(params.x)` (Tekton, would lex as a subshell).
+_CI_PLACEHOLDER = re.compile(r"\$\{\{.*?\}\}|\$\((?:params|inputs|context|workspaces)\.[^)]*\)")
+
+# Shell keywords that may lead a command without being its argv[0].
+_SHELL_KEYWORDS = frozenset({"if", "then", "elif", "else", "do", "!", "time", "exec", "while", "until"})
 
 # Characters that, in a punctuation token shlex emits (punctuation_chars=True),
 # end one command and start the next. shlex groups a run of them into one
@@ -74,7 +88,7 @@ DUMMY = "placeholder"
 
 
 def _runner_stripped(argv: list[str]) -> list[str]:
-    """argv with leading env assignments and a runner prefix removed.
+    """argv with leading shell keywords, env assignments and a runner prefix removed.
 
     Only the runners whose next token is the console script are recognised:
     `uv run nthlayer`, `uvx nthlayer`, `uvx --from <dist> nthlayer`,
@@ -82,7 +96,7 @@ def _runner_stripped(argv: list[str]) -> list[str]:
     `python -m nthlayer_workers.observe`) keeps its own argv[0] and is
     therefore not collected.
     """
-    while argv and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*=.*", argv[0]):
+    while argv and (argv[0] in _SHELL_KEYWORDS or re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*=.*", argv[0])):
         argv = argv[1:]
     for prefix_len, prefix in ((2, ["uv", "run"]), (2, ["pipx", "run"]), (1, ["uvx"])):
         if argv[:prefix_len] == prefix:
@@ -137,10 +151,24 @@ def _split_commands(line: str, line_no: int) -> list[list[str]]:
     return [argv for argv in commands if argv]
 
 
+def _unwrap(line: str) -> tuple[str, bool]:
+    """A CI line reduced to its shell command, and whether it is a pre-commit entry."""
+    line = _LIST_ITEM.sub("", line)
+    key = _COMMAND_KEY.match(line)
+    if key:
+        line = line[key.end() :]
+    jenkins = _JENKINS_SH.match(line)
+    if jenkins:
+        line = jenkins.group(2)
+    if len(line) >= 2 and line[0] == line[-1] and line[0] in "'\"":
+        line = line[1:-1]  # a quoted yaml scalar
+    return line, bool(key and key.group(1) == "entry")
+
+
 def extract_invocations(text: str) -> list[tuple[int, list[str]]]:
     """(1-based line number, argv after the entry point) for each invocation."""
     found: list[tuple[int, list[str]]] = []
-    for fence in _SHELL_FENCE.finditer(text):
+    for fence in _FENCE.finditer(text):
         body_start_line = text.count("\n", 0, fence.start(2)) + 1
         lines = fence.group(2).split("\n")
         index = 0
@@ -159,10 +187,14 @@ def extract_invocations(text: str) -> list[tuple[int, list[str]]]:
                 stripped = stripped[2:]
             if "nthlayer" not in stripped:
                 continue
-            for argv in _split_commands(_PLACEHOLDER.sub(DUMMY, stripped), line_no):
+            command, precommit_entry = _unwrap(stripped)
+            command = _CI_PLACEHOLDER.sub(DUMMY, _PLACEHOLDER.sub(DUMMY, command))
+            for argv in _split_commands(command, line_no):
                 argv = _runner_stripped(argv)
                 if argv and argv[0] in ENTRY_POINTS:
-                    found.append((line_no, _normalise(argv[1:])))
+                    # pre-commit appends the staged filenames to `entry`.
+                    tail = [DUMMY] if precommit_entry else []
+                    found.append((line_no, _normalise(argv[1:]) + tail))
     return found
 
 
@@ -255,9 +287,7 @@ class TestExtraction:
                 "  nthlayer-generate slo show [--format json] [options]",
                 "  ~~~",
                 "",
-                "```yaml",
-                "nthlayer apply ignored.yaml",
-                "```",
+                "Prose outside any fence: nthlayer apply ignored.yaml",
             ]
         )
         assert extract_invocations(markdown) == [
@@ -269,6 +299,67 @@ class TestExtraction:
             (15, ["migrate", "svc.yaml"]),
             (16, ["ownership", "svc.yaml", "--format", "json"]),
             (20, ["slo", "show", "--format", "json"]),
+        ]
+
+    # CI shapes from this site's yaml/groovy/unlabelled fences: GitHub Actions
+    # `run:` (index.md, validate/index.md), GitLab `script:` list items
+    # (integrations/cicd.md), Jenkins `sh '...'` (integrations/cicd.md),
+    # pre-commit `entry:` (validate/linting.md, commands/validate-spec.md),
+    # `${{ secrets.X }}` values (integrations/cicd.md) and Tekton
+    # `$(params.x)` (integrations/cicd.md).
+    def test_ci_wrappers_in_any_fence(self) -> None:
+        markdown = "\n".join(
+            [
+                "```yaml",
+                "      - name: Lint",
+                "        run: nthlayer apply svc.yaml --lint",
+                "  script:",
+                "    - nthlayer validate-spec services/",
+                "        entry: nthlayer validate-metadata --strict",
+                "        run: nthlayer validate-slo svc.yaml --prometheus-url ${{ secrets.PROM_URL }}",
+                "        nthlayer plan $(params.service-file) --env prod",
+                "```",
+                "",
+                "```groovy",
+                "                sh 'nthlayer lint svc.yaml'",
+                "```",
+                "",
+                "```",
+                "nthlayer migrate svc.yaml --dry-run",
+                "```",
+            ]
+        )
+        assert extract_invocations(markdown) == [
+            (3, ["apply", "svc.yaml", "--lint"]),
+            (5, ["validate-spec", "services/"]),
+            # pre-commit appends the staged filenames to `entry`.
+            (6, ["validate-metadata", "--strict", DUMMY]),
+            (7, ["validate-slo", "svc.yaml", "--prometheus-url", DUMMY]),
+            (8, ["plan", DUMMY, "--env", "prod"]),
+            (12, ["lint", "svc.yaml"]),
+            (16, ["migrate", "svc.yaml", "--dry-run"]),
+        ]
+
+    # Shell keywords leading a command (adoption-path.md and cicd.md use
+    # `if [ ... ]; then` around gate calls) must not hide the invocation.
+    def test_leading_shell_keywords(self) -> None:
+        markdown = "\n".join(
+            [
+                "```bash",
+                "if nthlayer validate svc.yaml; then echo ok; fi",
+                "! nthlayer lint svc.yaml",
+                "time nthlayer apply svc.yaml",
+                "while nthlayer plan svc.yaml; do sleep 1; done",
+                "until exec nthlayer migrate svc.yaml; do :; done",
+                "```",
+            ]
+        )
+        assert extract_invocations(markdown) == [
+            (2, ["validate", "svc.yaml"]),
+            (3, ["lint", "svc.yaml"]),
+            (4, ["apply", "svc.yaml"]),
+            (5, ["plan", "svc.yaml"]),
+            (6, ["migrate", "svc.yaml"]),
         ]
 
 

@@ -62,9 +62,9 @@ Default thresholds vary by service tier:
 
 | Tier | Warning | Blocking |
 |------|---------|----------|
-| Critical | <20% remaining | <10% remaining |
-| Standard | <20% remaining | None (advisory) |
-| Low | <30% remaining | None (advisory) |
+| Critical | ≤20% remaining | ≤10% remaining |
+| Standard | ≤20% remaining | None (advisory) |
+| Low | ≤30% remaining | None (advisory) |
 
 Critical services block deploys at 10% remaining budget. Lower tiers only warn.
 

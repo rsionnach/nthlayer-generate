@@ -32,8 +32,8 @@ The question is: *What happens to the business if this service fails?*
 | Aspect | Critical | Standard | Low |
 |--------|----------|----------|-----|
 | Monthly error budget | 21.6 min | 3.6 hrs | 7.2 hrs |
-| Deployment gate blocks at | < 10% remaining | < 5% remaining | Advisory only |
-| Deployment gate warns at | < 20% remaining | < 10% remaining | < 20% remaining |
+| Deployment gate blocks at | ≤ 10% remaining | Advisory only | Advisory only |
+| Deployment gate warns at | ≤ 20% remaining | ≤ 20% remaining | ≤ 30% remaining |
 
 ### Alerting Thresholds
 

@@ -184,5 +184,4 @@ jobs:
 
 - [Deployment Gates](check-deploy.md) — Error budget gates
 - [Drift Detection](drift.md) — Trend analysis
-- [Reliability Scorecard](scorecard.md) — Quantitative reliability scoring
 - [Protection Overview](../protect/index.md) — Full protection stack

@@ -84,7 +84,6 @@ nav:
     - Technology Templates: integrations/technologies.md
   - Validate:
     - Overview: validate/index.md
-    - Contract Verification: commands/verify.md
     - Policy Validation: commands/validate-spec.md
     - Metadata Validation: commands/validate-metadata.md
     - PromQL Linting: validate/linting.md
@@ -93,12 +92,10 @@ nav:
     - Deployment Gates: commands/check-deploy.md
     - Drift Detection: commands/drift.md
     - SLO Simulation: commands/simulate.md
-    - SLO Portfolio: commands/portfolio.md
-    - Reliability Scorecard: commands/scorecard.md
     - Intelligent Alerts: commands/alerts.md
     - Metric Recommendations: commands/recommend-metrics.md
   - Dependencies:
-    - nthlayer deps: commands/deps.md
+    - Dependency Discovery: commands/deps.md
     - Blast Radius: commands/blast-radius.md
     - Ownership: commands/ownership.md
     - Identity: commands/identity.md

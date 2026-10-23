@@ -17,7 +17,6 @@ NthLayer provides a comprehensive CLI for managing your reliability stack.
 
 | Command | Description |
 |---------|-------------|
-| [`nthlayer verify`](verify.md) | Verify declared metrics exist (contract verification) |
 | [`nthlayer validate-spec`](validate-spec.md) | Validate service.yaml against OPA policies |
 | [`nthlayer validate-metadata`](validate-metadata.md) | Validate rule metadata (labels, annotations, URLs) |
 | [`nthlayer validate-slo`](validate-slo.md) | Validate SLO metrics exist in Prometheus |
@@ -28,8 +27,6 @@ NthLayer provides a comprehensive CLI for managing your reliability stack.
 
 | Command | Description |
 |---------|-------------|
-| [`nthlayer deps`](deps.md) | Show service dependencies |
-| [`nthlayer blast-radius`](blast-radius.md) | Calculate deployment blast radius |
 | [`nthlayer ownership`](ownership.md) | Show service ownership attribution |
 | [`nthlayer identity`](identity.md) | Service identity resolution and management |
 
@@ -38,10 +35,6 @@ NthLayer provides a comprehensive CLI for managing your reliability stack.
 | Command | Description |
 |---------|-------------|
 | [`nthlayer slo`](slo.md) | SLO and error budget commands |
-| [`nthlayer portfolio`](portfolio.md) | View org-wide SLO health |
-| [`nthlayer check-deploy`](check-deploy.md) | Check deployment gate (error budget validation) |
-| [`nthlayer drift`](drift.md) | Analyze reliability drift for a service |
-| [`nthlayer scorecard`](scorecard.md) | Calculate per-service reliability scores |
 
 ## Alerts & Monitoring
 
@@ -53,9 +46,24 @@ NthLayer provides a comprehensive CLI for managing your reliability stack.
 
 | Command | Description |
 |---------|-------------|
-| [`nthlayer environments`](environments.md) | List available environments |
+| [`nthlayer list-environments`](environments.md) | List available environments |
 | `nthlayer diff-envs` | Compare configurations between environments |
 | `nthlayer validate-env` | Validate an environment configuration |
+
+## Runtime Commands (nthlayer-workers)
+
+These read live system state, so they ship in the `nthlayer-workers` package
+rather than in the `nthlayer` CLI documented on the rest of this page. The
+gate is a subcommand of the `nthlayer-workers` console script; the observe
+commands have no console script and run as
+`python -m nthlayer_workers.observe <command>`.
+
+| Command | Description |
+|---------|-------------|
+| [`nthlayer-workers gate`](check-deploy.md) | Deployment gate (error budget validation) |
+| [observe `drift`](drift.md) | Analyze error-budget drift for a service |
+| [observe `dependencies`](deps.md) | Discover service dependencies |
+| [observe `blast-radius`](blast-radius.md) | Estimate deployment blast radius |
 
 ## Setup & Configuration
 
@@ -74,18 +82,7 @@ NthLayer provides a comprehensive CLI for managing your reliability stack.
 nthlayer apply service.yaml
 
 # Validate before deployment
-nthlayer verify service.yaml --prometheus-url http://prometheus:9090
 nthlayer validate-slo service.yaml
-
-# View dependencies
-nthlayer deps service.yaml
-nthlayer blast-radius service.yaml
-
-# Check deployment readiness
-nthlayer check-deploy service.yaml
-
-# View portfolio health
-nthlayer portfolio
 
 # Check SLO status
 nthlayer slo show service.yaml

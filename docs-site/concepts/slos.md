@@ -49,15 +49,7 @@ Generated dashboards show:
 - Error budget remaining
 - Burn rate trends
 
-### 3. Portfolio View
-
-See all services at once:
-
-```bash
-nthlayer portfolio
-```
-
-### 4. Live Queries
+### 3. Live Queries
 
 Query Prometheus for real-time status:
 
@@ -186,14 +178,6 @@ resources:
     spec:
       objective: 99.9
       threshold_ms: 50
-```
-
-### 4. Review Regularly
-
-Use the portfolio view for weekly reviews:
-
-```bash
-nthlayer portfolio --format json > slo-review-$(date +%Y%m%d).json
 ```
 
 ## Further Reading

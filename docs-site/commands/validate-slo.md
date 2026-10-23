@@ -172,15 +172,6 @@ Checks that label selectors match existing label values:
 total_query: sum(rate(http_requests_total{service="checkout"}[5m]))
 ```
 
-## Validation vs Verification
-
-| Command | Purpose | When to Use |
-|---------|---------|-------------|
-| `validate-slo` | Check SLO metric existence | Before deploying SLO configs |
-| `verify` | Full contract verification | Before promoting to production |
-
-Use `validate-slo` as a quick check during development. Use `verify` in CI/CD pipelines for comprehensive validation.
-
 ## CI/CD Integration
 
 ### Pre-Deployment Check
@@ -238,6 +229,5 @@ curl "$PROMETHEUS_URL/api/v1/rules" | jq '.data.groups[].rules[] | select(.name 
 
 ## See Also
 
-- [nthlayer verify](./verify.md) - Full contract verification
 - [nthlayer apply](./apply.md) - Generate SLO configs
 - [SLO Concepts](../concepts/slos.md) - Understanding SLOs

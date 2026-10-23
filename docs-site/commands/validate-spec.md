@@ -183,5 +183,5 @@ repos:
 ## See Also
 
 - [Validation Overview](../validate/index.md)
-- [Contract Verification](./verify.md)
+- [Contract Verification](./validate-slo.md)
 - [conftest Documentation](https://www.conftest.dev/)

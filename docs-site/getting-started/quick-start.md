@@ -76,23 +76,6 @@ Generated: generated/payment-api/
 └── recording-rules.yaml # Prometheus rules
 ```
 
-## 5. View Your SLO Portfolio
-
-```bash
-nthlayer portfolio
-```
-
-```
-================================================================================
-  NthLayer SLO Portfolio
-================================================================================
-
-Organization Health: 100% (1/1 services meeting SLOs)
-
-By Tier:
-  Critical:  100%  ████████████████████  1/1 services
-```
-
 ## Next Steps
 
 - [Your First Service](first-service.md) - Detailed service spec guide

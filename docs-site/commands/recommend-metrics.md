@@ -201,6 +201,6 @@ fi
 
 ## See Also
 
-- [nthlayer verify](verify.md) - Contract verification
+- [nthlayer validate-slo](validate-slo.md) - Contract verification
 - [Technology Templates](../integrations/technologies.md) - Template reference
 - [Service Specs](../concepts/service-specs.md) - Service YAML schema

@@ -134,43 +134,6 @@ See auto-generated dashboards for 6 production services. Each dashboard includes
 
 ---
 
-## SLO Portfolio
-
-Track org-wide reliability with tier-based health scoring:
-
-```
-================================================================================
-  NthLayer SLO Portfolio
-================================================================================
-
-Organization Health: 78% (14/18 services meeting SLOs)
-
-By Tier:
-  Critical:  ████████░░  83% (5/6 services)
-  Standard:  ███████░░░  75% (6/8 services)
-  Low:       ███████░░░  75% (3/4 services)
-
---------------------------------------------------------------------------------
-Services Needing Attention:
---------------------------------------------------------------------------------
-
-  payment-api (Tier 1)
-    availability: 156% budget burned - EXHAUSTED
-    Remaining: -12.5 hours
-
-  search-api (Tier 2)
-    latency-p99: 95% budget burned - WARNING
-    Remaining: 1.2 hours
-
---------------------------------------------------------------------------------
-Total: 18 services, 16 with SLOs, 45 SLOs
-```
-
-!!! tip "Cross-Vendor Aggregation"
-    **Why this matters:** NthLayer aggregates SLOs across any backend (Prometheus, Datadog, etc.) in a single, vendor-neutral portfolio.
-
----
-
 ## What Gets Generated
 
 From a single `service.yaml`, NthLayer generates:
@@ -195,9 +158,6 @@ nthlayer setup
 
 # Generate configs for your service
 nthlayer apply payment-api.yaml
-
-# View org-wide SLO health
-nthlayer portfolio
 ```
 
 <div class="grid cards" markdown>

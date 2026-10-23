@@ -50,7 +50,7 @@ Pushing alerts to Mimir Ruler...
 
 ```bash
 # Push dashboards to Grafana AND alerts to Mimir
-nthlayer apply service.yaml --push --push-ruler
+nthlayer apply service.yaml --push-grafana --push-ruler
 ```
 
 ## API Details

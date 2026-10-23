@@ -1,6 +1,6 @@
 # Contracts & Assumptions
 
-NthLayer's verification commands (`nthlayer verify`, `nthlayer check-deploy`) depend on specific contracts between your services and your observability stack. This page documents what NthLayer expects and how to ensure your services meet these requirements.
+NthLayer's verification commands (`nthlayer validate-slo`, and the runtime deployment gate `nthlayer-workers gate`) depend on specific contracts between your services and your observability stack. This page documents what NthLayer expects and how to ensure your services meet these requirements.
 
 ## Metric Naming Conventions
 
@@ -55,7 +55,7 @@ http_requests_total{service="checkout-api", code="200"}
 
 ## What "Metric Exists" Means
 
-When `nthlayer verify` checks if a metric exists, it queries Prometheus for any time series matching the metric name and service label within the last 5 minutes.
+When NthLayer checks if a metric exists, it queries Prometheus for any time series matching the metric name and service label within the last 5 minutes.
 
 ### Verification Query
 
@@ -129,7 +129,7 @@ Set the tenant header via environment variable:
 
 ```bash
 export MIMIR_TENANT_ID=your-tenant
-nthlayer verify services/checkout-api.yaml
+nthlayer validate-slo services/checkout-api.yaml
 ```
 
 Or in your service.yaml:
@@ -155,29 +155,6 @@ If your SLO metrics are computed via recording rules:
 NthLayer can verify these, but there's a delay:
 - Recording rules evaluate on interval (typically 1-5 minutes)
 - New services may not have recorded metrics immediately
-- Use `--no-fail` flag during initial rollout
-
-## Verification Modes
-
-### Strict Mode (Default)
-
-```bash
-nthlayer verify services/checkout-api.yaml
-```
-
-- Exit code 0: All metrics found
-- Exit code 1: Optional metrics missing (warning)
-- Exit code 2: Required SLO metrics missing (block)
-
-### Lenient Mode
-
-```bash
-nthlayer verify services/checkout-api.yaml --no-fail
-```
-
-- Always exit code 0
-- Prints warnings for missing metrics
-- Use during initial adoption or new service rollout
 
 ## Troubleshooting Verification Failures
 
@@ -204,7 +181,6 @@ nthlayer verify services/checkout-api.yaml --no-fail
 
 1. **Wait for scrape interval**: Prometheus scrapes every 15-60 seconds
 2. **Generate some traffic**: Metrics may not exist until first request
-3. **Use --no-fail**: For new services, verify in warning mode first
 
 ### Recording rule metrics not found
 

@@ -15,10 +15,9 @@ Shift reliability left into your CI/CD pipeline. Validate before deploy, not aft
 ┌───────────┐     ┌───────────┐     ┌───────────┐
 │  Generate │ ──▶ │  Validate │ ──▶ │  Protect  │ ──▶ Deploy
 └───────────┘     └───────────┘     └───────────┘
-   apply            verify           check-deploy
-   init             validate-spec    scorecard
-   migrate          --lint           alerts
-                                     portfolio
+   apply            validate-slo     alerts
+   init             validate-spec    gate (nthlayer-workers)
+   migrate          --lint
 ```
 
 | Stage | What Happens | Exit Code |
@@ -78,8 +77,8 @@ Both formats are supported. Use `nthlayer migrate` to convert legacy files.
 ```bash
 # Generate → Validate → Protect → Deploy
 nthlayer apply service.yaml --lint
-nthlayer verify service.yaml --prometheus-url $PROM_URL
-nthlayer check-deploy service.yaml --prometheus-url $PROM_URL
+nthlayer validate-slo service.yaml --prometheus-url $PROM_URL
+nthlayer-workers gate --service payment-api --core-url $NTHLAYER_CORE_URL
 kubectl apply -f generated/
 ```
 
@@ -96,43 +95,20 @@ kubectl apply -f generated/
 
 ### Deployment Gates
 
-Block deploys when error budget is exhausted:
-
-![check-deploy demo](assets/check-deploy-demo.gif)
-
-```bash
-nthlayer check-deploy service.yaml --prometheus-url $PROM_URL
-# Exit code: 0=approved, 1=warning, 2=blocked
-```
-
-### SLO Portfolio
-
-Track reliability across your entire organization:
-
-![portfolio demo](assets/portfolio-demo.gif)
+Block deploys when error budget is exhausted. The gate ships in the
+`nthlayer-workers` package and reads SLO state from nthlayer-core:
 
 ```bash
-nthlayer portfolio --path services/
+nthlayer-workers gate --service payment-api --core-url $NTHLAYER_CORE_URL
+# Exit code: 0=approved (or warning), 1=could not evaluate, 2=blocked
 ```
 
 ### Contract Verification
 
-Verify declared metrics exist before deploy:
-
-![verify demo](assets/verify-demo.gif)
+Verify that the metrics your SLOs query exist before deploy:
 
 ```bash
-nthlayer verify service.yaml --prometheus-url $PROM_URL
-```
-
-### Reliability Scorecard
-
-Quantify reliability across your organization:
-
-```bash
-nthlayer scorecard --prometheus-url $PROM_URL
-# 0-100 score per service: SLO compliance, incidents, deploys, budget
-# Exit codes: 0=good, 1=fair, 2=poor — use in CI/CD gates
+nthlayer validate-slo service.yaml --prometheus-url $PROM_URL
 ```
 
 ### Intelligent Alerts
@@ -166,10 +142,10 @@ jobs:
         run: nthlayer apply services/*.yaml --lint
 
       - name: Verify Metrics
-        run: nthlayer verify services/*.yaml --prometheus-url $PROM_URL
+        run: nthlayer validate-slo services/payment-api.yaml --prometheus-url $PROM_URL
 
       - name: Check Deploy Gate
-        run: nthlayer check-deploy services/*.yaml --prometheus-url $PROM_URL
+        run: nthlayer-workers gate --service payment-api --core-url $NTHLAYER_CORE_URL
 
       - name: Deploy
         if: success()
@@ -222,7 +198,7 @@ NthLayer automates concepts from the [Google SRE Book](https://sre.google/sre-bo
 
 | SRE Concept | Manual Process | NthLayer Automation |
 |-------------|----------------|---------------------|
-| Production Readiness Review | Multi-week checklist | `nthlayer verify` in CI |
-| Error Budget Policy | Spreadsheet tracking | `nthlayer check-deploy` gates |
+| Production Readiness Review | Multi-week checklist | `nthlayer validate-slo` in CI |
+| Error Budget Policy | Spreadsheet tracking | `nthlayer-workers gate` |
 | Release Engineering | Manual runbooks | Generated artifacts + GitOps |
 | Monitoring Standards | Wiki pages | `service.yaml` spec |

@@ -103,15 +103,6 @@ avg_over_time(
 )
 ```
 
-## Metric Discovery
-
-NthLayer discovers available metrics to customize dashboards:
-
-```bash
-# Discovers metrics matching service label
-nthlayer plan payment-api.yaml --discover
-```
-
 ## Testing Connection
 
 ```bash

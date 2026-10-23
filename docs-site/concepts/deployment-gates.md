@@ -14,8 +14,8 @@ Traditional monitoring tells you **after** a deployment causes problems. Deploym
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   CI/CD     │────▶│  NthLayer   │────▶│ Prometheus  │
-│  Pipeline   │     │ check-deploy │     │   Query     │
+│   CI/CD     │────▶│  nthlayer-  │────▶│  nthlayer-  │
+│  Pipeline   │     │workers gate │     │    core     │
 └─────────────┘     └─────────────┘     └─────────────┘
                            │
                            ▼
@@ -27,10 +27,10 @@ Traditional monitoring tells you **after** a deployment causes problems. Deploym
                     └─────────────┘
 ```
 
-1. **Pipeline triggers**: Your CI/CD pipeline calls `nthlayer check-deploy`
-2. **Query SLOs**: NthLayer queries Prometheus for current SLI values
+1. **Pipeline triggers**: Your CI/CD pipeline calls `nthlayer-workers gate` (from the `nthlayer-workers` package)
+2. **Read SLO state**: The gate fetches the service's `slo_status` assessments from nthlayer-core
 3. **Calculate budget**: Error budget consumption is calculated
-4. **Return decision**: Exit code determines if deploy proceeds
+4. **Return decision**: Exit code determines if deploy proceeds (0 = approved or warning, 1 = could not evaluate, 2 = blocked)
 
 ## Default Thresholds
 
@@ -112,8 +112,7 @@ See [examples/cicd/](https://github.com/nthlayer/nthlayer/tree/main/examples/cic
 Test locally before integrating:
 
 ```bash
-nthlayer check-deploy services/api.yaml \
-  --prometheus-url http://prometheus:9090
+nthlayer-workers gate --service api --core-url http://nthlayer-core:8000
 
 echo "Exit code: $?"
 ```
@@ -184,16 +183,8 @@ Gates need working SLO queries to calculate budget:
         sum(rate(http_requests_total[5m]))
 ```
 
-### 4. Test Before Production
-
-Use the demo mode to see gate behavior:
-
-```bash
-nthlayer check-deploy services/api.yaml --demo
-```
-
 ## See Also
 
-- [check-deploy Command](../commands/check-deploy.md)
+- [Deployment Gate Command](../commands/check-deploy.md)
 - [SLO Concepts](./slos.md)
 - [Shift Left Philosophy](./shift-left.md)

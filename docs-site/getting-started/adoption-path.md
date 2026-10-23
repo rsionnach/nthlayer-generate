@@ -88,7 +88,7 @@ NthLayer can be adopted incrementally. You don't need to enable all features on 
    ```yaml
    - name: Verify metrics exist (warnings only)
      run: |
-       nthlayer verify services/${{ matrix.service }}.yaml --no-fail
+       nthlayer validate-slo services/${{ matrix.service }}.yaml || echo "Missing metrics (not blocking)"
      env:
        PROMETHEUS_URL: ${{ secrets.PROMETHEUS_URL }}
    ```
@@ -138,15 +138,18 @@ NthLayer can be adopted incrementally. You don't need to enable all features on 
    tier: standard  # Start here, not critical
    ```
 
-2. **Enable check-deploy in warning mode**
+2. **Enable the deployment gate in warning mode**
+
+   The gate is `nthlayer-workers gate` from the `nthlayer-workers` package. It
+   reads SLO state from a running nthlayer-core.
 
    ```yaml
    # CD pipeline
    - name: Check deployment gate
      run: |
-       nthlayer check-deploy services/${{ matrix.service }}.yaml || echo "Gate warning (not blocking)"
+       nthlayer-workers gate --service ${{ matrix.service }} --core-url "$NTHLAYER_CORE_URL" || echo "Gate warning (not blocking)"
      env:
-       PROMETHEUS_URL: ${{ secrets.PROMETHEUS_URL }}
+       NTHLAYER_CORE_URL: ${{ secrets.NTHLAYER_CORE_URL }}
    ```
 
 3. **Monitor for false positives**
@@ -161,7 +164,7 @@ NthLayer can be adopted incrementally. You don't need to enable all features on 
    ```yaml
    - name: Check deployment gate
      run: |
-       nthlayer check-deploy services/${{ matrix.service }}.yaml
+       nthlayer-workers gate --service ${{ matrix.service }} --core-url "$NTHLAYER_CORE_URL"
      # Now exit code 2 will fail the pipeline
    ```
 
@@ -233,8 +236,8 @@ NthLayer can be adopted incrementally. You don't need to enable all features on 
 If adoption isn't working:
 
 ### Phase 3 → Phase 2
-- Remove `check-deploy` from CD
-- Keep `verify --no-fail` in CI
+- Remove `nthlayer-workers gate` from CD
+- Keep `validate-slo` in CI as non-blocking
 - Investigate why gates were problematic
 
 ### Phase 2 → Phase 1

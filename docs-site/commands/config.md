@@ -136,9 +136,6 @@ Use different configurations for different environments:
 # Use production profile
 export NTHLAYER_PROFILE=production
 nthlayer apply service.yaml
-
-# Or specify inline
-nthlayer apply service.yaml --profile production
 ```
 
 ## See Also

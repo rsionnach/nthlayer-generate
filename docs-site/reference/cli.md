@@ -25,7 +25,7 @@ nthlayer apply <service.yaml> [options]
 
 | Option | Description |
 |--------|-------------|
-| `--push` | Push dashboard to Grafana |
+| `--push-grafana` | Push dashboard to Grafana |
 | `--push-ruler` | Push alerts to Mimir/Cortex Ruler API |
 | `--output-dir DIR` | Custom output directory |
 | `--dry-run` | Preview without writing |
@@ -45,19 +45,6 @@ nthlayer setup [options]
 | `--advanced` | Full configuration wizard |
 | `--test` | Test connections only |
 | `--skip-service` | Skip first service creation |
-
-### portfolio
-
-View org-wide SLO health.
-
-```bash
-nthlayer portfolio [options]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--format FORMAT` | Output: text, json, csv |
-| `--services-dir DIR` | Directory to scan |
 
 ### slo
 
@@ -152,25 +139,6 @@ Generate recording rules only.
 nthlayer generate-recording-rules <service.yaml>
 ```
 
-### verify
-
-Verify declared metrics exist in Prometheus (contract verification).
-
-```bash
-nthlayer verify <service.yaml> [options]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--prometheus-url, -p URL` | Target Prometheus URL |
-| `--env ENVIRONMENT` | Environment name |
-| `--no-fail` | Don't fail on missing metrics |
-
-Exit codes:
-- `0` = All metrics verified
-- `1` = Optional metrics missing (warning)
-- `2` = Critical SLO metrics missing (block)
-
 ### validate-slo
 
 Validate that SLO metrics exist in Prometheus.
@@ -190,42 +158,6 @@ Exit codes:
 - `0` = All SLO metrics exist
 - `1` = Some metrics missing
 - `2` = Critical metrics missing
-
-### deps
-
-Show service dependencies from multiple sources.
-
-```bash
-nthlayer deps <service.yaml> [options]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--env ENVIRONMENT` | Environment name |
-| `--format FORMAT` | Output: table, json, dot |
-| `--depth N` | Traversal depth (default: 1) |
-| `--providers LIST` | Providers: backstage, k8s, prometheus |
-| `--demo` | Show demo output |
-
-### blast-radius
-
-Calculate deployment blast radius and affected services.
-
-```bash
-nthlayer blast-radius <service.yaml> [options]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--env ENVIRONMENT` | Environment name |
-| `--format FORMAT` | Output: table, json |
-| `--depth N` | Traversal depth (default: 2) |
-| `--demo` | Show demo output |
-
-Exit codes:
-- `0` = Low risk (< 5 affected)
-- `1` = Medium risk (5-15 affected)
-- `2` = High risk (> 15 affected)
 
 ### ownership
 
@@ -257,40 +189,18 @@ nthlayer identity <subcommand> [options]
 | `normalize NAME` | Show normalization steps |
 | `add-mapping ALIAS CANONICAL` | Add identity mapping |
 
-### drift
+### Runtime commands (nthlayer-workers)
 
-Analyze reliability drift for a service.
+Commands that read live system state ship in the `nthlayer-workers` package,
+not in this CLI. There is no `nthlayer check-deploy`, `nthlayer drift`,
+`nthlayer deps` or `nthlayer blast-radius`; use:
 
-```bash
-nthlayer drift <service.yaml> [options]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--env ENVIRONMENT` | Environment name |
-| `--format FORMAT` | Output: table, json |
-| `--prometheus-url URL` | Prometheus server URL |
-| `--baseline PERIOD` | Baseline period (default: 30d) |
-| `--demo` | Show demo output |
-
-### check-deploy
-
-Check deployment gate based on error budget.
-
-```bash
-nthlayer check-deploy <service.yaml> [options]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--prometheus-url, -p URL` | Target Prometheus URL |
-| `--env ENVIRONMENT` | Environment name |
-| `--auto-env` | Auto-detect environment |
-
-Exit codes:
-- `0` = Approved (budget healthy)
-- `1` = Warning (budget 10-20% remaining)
-- `2` = Blocked (budget < 10% for critical tier)
+| Command | Reference |
+|---------|-----------|
+| `nthlayer-workers gate --service SERVICE` | [Deployment Gates](../commands/check-deploy.md) |
+| `python -m nthlayer_workers.observe drift --service SERVICE --prometheus-url URL` | [drift](../commands/drift.md) |
+| `python -m nthlayer_workers.observe dependencies --service SERVICE` | [dependencies](../commands/deps.md) |
+| `python -m nthlayer_workers.observe blast-radius --service SERVICE` | [blast-radius](../commands/blast-radius.md) |
 
 ### lint
 
@@ -445,7 +355,7 @@ nthlayer secrets <subcommand>
 
 | Variable | Description |
 |----------|-------------|
-| `PROMETHEUS_URL` | Prometheus server URL (for verify command) |
+| `PROMETHEUS_URL` | Prometheus server URL |
 | `PROMETHEUS_USERNAME` | Prometheus basic auth username |
 | `PROMETHEUS_PASSWORD` | Prometheus basic auth password |
 | `NTHLAYER_PROMETHEUS_URL` | Prometheus server URL (legacy) |

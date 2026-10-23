@@ -112,14 +112,13 @@ NthLayer is organized into these modules:
 |---------|---------|------------|
 | `nthlayer apply --lint` | Validate PromQL syntax using pint | 0=valid, 1=errors |
 | `nthlayer validate <service.yaml>` | Validate service.yaml schema | 0=valid, 1=invalid |
-| `nthlayer verify <service.yaml>` | Verify declared metrics exist in Prometheus | 0=all exist, 1=missing |
+| `nthlayer validate-slo <service.yaml>` | Verify SLO metrics exist in Prometheus | 0=all exist, 1/2=missing |
 
 ### Enforcement Commands
 
 | Command | Purpose | Exit Codes |
 |---------|---------|------------|
-| `nthlayer check-deploy <service.yaml>` | Check error budget before deploy | 0=safe, 1=budget exhausted |
-| `nthlayer portfolio [--format json]` | Aggregate SLO health across all services | 0=healthy, 1=warning, 2=critical |
+| `nthlayer-workers gate --service <name>` | Check error budget before deploy (ships in `nthlayer-workers`) | 0=approved/warning, 1=could not evaluate, 2=blocked |
 
 ### SLO Commands
 
@@ -147,10 +146,9 @@ architecture-beta
    service plan(mdi:file-search) [nthlayer plan] in generate
 
    service lint(mdi:code-tags-check) [apply with lint] in validate
-   service verify(mdi:check-decagram) [nthlayer verify] in validate
+   service verify(mdi:check-decagram) [nthlayer validate slo] in validate
 
-   service checkdeploy(mdi:gate) [check deploy] in enforce
-   service portfolio(mdi:chart-box) [nthlayer portfolio] in enforce
+   service checkdeploy(mdi:gate) [workers gate] in enforce
 
    plan:R --> L:apply
    apply:R --> L:lint
@@ -202,20 +200,11 @@ architecture-beta
 
 ### Verification Flow
 
-When you run `nthlayer verify`:
+When you run `nthlayer validate-slo`:
 
 1. **Extract**: Parse service.yaml for declared metrics
 2. **Query**: Check each metric against Prometheus API
 3. **Report**: Show which metrics exist vs missing
-
-### Portfolio Flow
-
-When you run `nthlayer portfolio`:
-
-1. **Scan**: Find all service.yaml files in directory
-2. **Collect**: Query Prometheus for each SLO's current value
-3. **Aggregate**: Calculate health scores by tier
-4. **Output**: Terminal table, JSON, or CSV
 
 ---
 
@@ -333,5 +322,5 @@ architecture-beta
 | Stage | Command | Blocks Deploy If |
 |-------|---------|------------------|
 | **Lint** | `nthlayer apply --lint` | PromQL syntax errors |
-| **Verify** | `nthlayer verify` | Declared metrics don't exist |
-| **Budget** | `nthlayer check-deploy` | Error budget < 10% remaining |
+| **Verify** | `nthlayer validate-slo` | Declared metrics don't exist |
+| **Budget** | `nthlayer-workers gate` | Error budget below the tier's blocking threshold |

@@ -6,7 +6,7 @@ Query and manage SLOs for individual services.
 
 ```bash
 nthlayer slo show <service.yaml>     # Show SLO definitions
-nthlayer slo list <service.yaml>     # List SLOs briefly
+nthlayer slo list                    # List SLOs across all services
 nthlayer slo collect <service.yaml>  # Query live metrics from Prometheus
 ```
 
@@ -38,16 +38,11 @@ latency-p99
 
 ## nthlayer slo list
 
-Brief listing:
+List every SLO found in the service files under `services/` and
+`examples/services/` in the current directory. It takes no arguments.
 
 ```bash
-nthlayer slo list payment-api.yaml
-```
-
-```
-payment-api SLOs:
-  - availability: 99.95% (30d)
-  - latency-p99: 99.0% < 200ms (30d)
+nthlayer slo list
 ```
 
 ## nthlayer slo collect
@@ -112,5 +107,4 @@ Error Budget = (1 - 0.9995) × 30 days × 24 hours × 60 minutes
 
 ## See Also
 
-- [nthlayer portfolio](portfolio.md) - Org-wide SLO view
 - [SLOs & Error Budgets](../concepts/slos.md) - Concepts

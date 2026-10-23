@@ -20,55 +20,34 @@ Code → Validate → Verify → Gate → Deploy → Monitor
 
 ## How NthLayer Shifts Reliability Left
 
-### 1. Contract Verification (`nthlayer verify`)
+### 1. Contract Verification (`nthlayer validate-slo`)
 
 Before deploying, verify that the metrics your SLOs depend on actually exist in Prometheus:
 
 ```bash
-$ nthlayer verify service.yaml --prometheus-url $PROM_URL
-
-Verifying metrics for payment-api...
-
-  ✓ http_requests_total{service="payment-api"}
-  ✓ http_request_duration_seconds_bucket{service="payment-api"}
-  ✗ http_requests_total{service="payment-api",status=~"5.."}  NOT FOUND
-
-Contract verification failed: 1 metric(s) not found
+nthlayer validate-slo service.yaml --prometheus-url $PROM_URL
 ```
 
 **Pipeline integration:**
 ```yaml
 # GitHub Actions
 - name: Verify SLO Metrics
-  run: nthlayer verify service.yaml --prometheus-url $PROM_URL
+  run: nthlayer validate-slo service.yaml --prometheus-url $PROM_URL
   # Fails pipeline if metrics don't exist
 ```
 
-### 2. Deployment Gates (`nthlayer check-deploy`)
+### 2. Deployment Gates (`nthlayer-workers gate`)
 
-Block deployments when error budget is exhausted:
+Block deployments when error budget is exhausted. The gate ships in the
+`nthlayer-workers` package and reads SLO state from a running nthlayer-core:
 
 ```bash
-$ nthlayer check-deploy service.yaml --prometheus-url $PROM_URL
-
-╭──────────────────────────────────────────────────────────────╮
-│  Deployment Gate Check                                       │
-╰──────────────────────────────────────────────────────────────╯
-
-  Service:       payment-api
-  Tier:          critical
-  Window:        30d
-
-  SLO Results:
-    availability   99.87%  (target: 99.95%)   budget: 42% remaining   ⚠ WARNING
-    latency_p99    187ms   (target: 200ms)    budget: 78% remaining   ✓ OK
-
-  Decision:  ⚠ PROCEED WITH CAUTION
+nthlayer-workers gate --service payment-api --core-url $NTHLAYER_CORE_URL
 ```
 
 **Exit codes:**
-- `0` - Deploy approved
-- `1` - Warning (budget low, but allowed)
+- `0` - Deploy approved (or approved with a warning)
+- `1` - Gate could not be evaluated
 - `2` - Blocked (budget exhausted)
 
 ### 3. PromQL Validation (`nthlayer apply --lint`)
@@ -92,8 +71,8 @@ NthLayer automates concepts from the [Google SRE Book](https://sre.google/sre-bo
 
 | SRE Concept | Manual Process | NthLayer Automation |
 |-------------|----------------|---------------------|
-| **Production Readiness Review** | Multi-week checklist | `nthlayer verify` in CI |
-| **Error Budget Policy** | Spreadsheet tracking | `nthlayer check-deploy` gates |
+| **Production Readiness Review** | Multi-week checklist | `nthlayer validate-slo` in CI |
+| **Error Budget Policy** | Spreadsheet tracking | `nthlayer-workers gate` |
 | **Release Engineering** | Manual runbooks | Generated artifacts + GitOps |
 | **Monitoring Standards** | Wiki pages | `service.yaml` spec |
 
@@ -117,12 +96,12 @@ spec:
 
     - name: verify-metrics
       taskRef:
-        name: nthlayer-verify
+        name: nthlayer-validate-slo
       runAfter: [generate]
 
     - name: check-budget
       taskRef:
-        name: nthlayer-check-deploy
+        name: nthlayer-gate
       runAfter: [verify-metrics]
 
     - name: deploy
@@ -142,20 +121,20 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install NthLayer
-        run: pip install nthlayer
+        run: pip install nthlayer nthlayer-workers
 
       - name: Generate & Lint
         run: nthlayer apply service.yaml --lint
 
       - name: Verify Metrics Exist
-        run: nthlayer verify service.yaml --prometheus-url $PROM_URL
+        run: nthlayer validate-slo service.yaml --prometheus-url $PROM_URL
         env:
           PROM_URL: ${{ secrets.PROMETHEUS_URL }}
 
       - name: Check Deployment Gate
-        run: nthlayer check-deploy service.yaml --prometheus-url $PROM_URL
+        run: nthlayer-workers gate --service payment-api --commit-sha $GITHUB_SHA --core-url $NTHLAYER_CORE_URL
         env:
-          PROM_URL: ${{ secrets.PROMETHEUS_URL }}
+          NTHLAYER_CORE_URL: ${{ secrets.NTHLAYER_CORE_URL }}
 
       - name: Deploy
         if: success()
@@ -184,6 +163,6 @@ Teams using reliability shift left typically see:
 
 ## See Also
 
-- [Contract Verification](../commands/verify.md) - Full `verify` command reference
-- [Deployment Gates](../commands/check-deploy.md) - Full `check-deploy` reference
+- [validate-slo](../commands/validate-slo.md) - SLO metric verification reference
+- [Deployment Gates](../commands/check-deploy.md) - Full `nthlayer-workers gate` reference
 - [SLO Concepts](./slos.md) - Understanding SLOs and error budgets

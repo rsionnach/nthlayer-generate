@@ -8,8 +8,8 @@ Integrate NthLayer into your deployment pipeline for automated reliability valid
 ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
 │ Generate │ → │ Validate │ → │  Protect │ → │  Deploy  │
 └──────────┘    └──────────┘    └──────────┘    └──────────┘
-  apply          validate-spec   check-deploy    kubectl
-                 verify                          argocd
+  apply          validate-spec   workers gate    kubectl
+                 validate-slo                    argocd
                  --lint
 ```
 
@@ -51,7 +51,7 @@ Push mode is useful for initial setup or demos:
 
 ```bash
 # Push dashboards directly to Grafana
-nthlayer apply services/*.yaml --push
+nthlayer apply services/*.yaml --push-grafana
 
 # Push alert rules to Prometheus ruler API
 nthlayer apply services/*.yaml --push-ruler
@@ -108,7 +108,7 @@ jobs:
 
       - name: Verify Metrics Exist
         run: |
-          nthlayer verify services/*.yaml \
+          nthlayer validate-slo services/payment-api.yaml \
             --prometheus-url ${{ secrets.STAGING_PROMETHEUS_URL }}
         env:
           PROMETHEUS_USERNAME: ${{ secrets.PROMETHEUS_USERNAME }}
@@ -120,14 +120,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install NthLayer
-        run: pip install nthlayer
+      - name: Install NthLayer workers
+        run: pip install nthlayer-workers
 
       - name: Check Deployment Gate
         id: gate
         run: |
-          nthlayer check-deploy services/*.yaml \
-            --prometheus-url ${{ secrets.PROD_PROMETHEUS_URL }}
+          nthlayer-workers gate --service payment-api \
+            --commit-sha ${{ github.sha }} \
+            --core-url ${{ secrets.NTHLAYER_CORE_URL }}
           echo "exit_code=$?" >> $GITHUB_OUTPUT
         continue-on-error: true
 
@@ -151,16 +152,6 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: kubectl apply -f generated/
-```
-
-### Reusable Action (Coming Soon)
-
-```yaml
-- uses: nthlayer/action@v1
-  with:
-    command: check-deploy
-    service-file: services/api.yaml
-    prometheus-url: ${{ secrets.PROMETHEUS_URL }}
 ```
 
 ## GitLab CI
@@ -194,15 +185,15 @@ verify:
   extends: .nthlayer
   stage: verify
   script:
-    - nthlayer verify services/*.yaml --prometheus-url $STAGING_PROMETHEUS_URL
+    - nthlayer validate-slo services/payment-api.yaml --prometheus-url $STAGING_PROMETHEUS_URL
 
 gate:
   extends: .nthlayer
   stage: gate
   script:
     - |
-      nthlayer check-deploy services/*.yaml \
-        --prometheus-url $PROD_PROMETHEUS_URL
+      nthlayer-workers gate --service payment-api \
+        --core-url $NTHLAYER_CORE_URL
       EXIT_CODE=$?
       if [ $EXIT_CODE -eq 2 ]; then
         echo "Deployment blocked - error budget exhausted"
@@ -238,24 +229,15 @@ spec:
   template:
     spec:
       containers:
-        - name: check-deploy
-          image: ghcr.io/nthlayer/nthlayer:latest
-          command:
-            - nthlayer
-            - check-deploy
-            - /config/service.yaml
-            - --prometheus-url
-            - $(PROMETHEUS_URL)
-          envFrom:
-            - secretRef:
-                name: prometheus-credentials
-          volumeMounts:
-            - name: service-config
-              mountPath: /config
-      volumes:
-        - name: service-config
-          configMap:
-            name: service-yaml
+        - name: gate
+          image: python:3.12-slim
+          command: ["sh", "-c"]
+          args:
+            - pip install nthlayer-workers &&
+              nthlayer-workers gate --service payment-api --core-url "$NTHLAYER_CORE_URL"
+          env:
+            - name: NTHLAYER_CORE_URL
+              value: http://nthlayer-core:8000
       restartPolicy: Never
   backoffLimit: 0
 ```
@@ -289,19 +271,20 @@ When the PreSync hook fails (exit code 2), ArgoCD blocks the sync.
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:
-  name: nthlayer-check-deploy
+  name: nthlayer-gate
 spec:
   params:
-    - name: service-file
+    - name: service
       type: string
-    - name: prometheus-url
+    - name: core-url
       type: string
   steps:
     - name: check
-      image: ghcr.io/nthlayer/nthlayer:latest
+      image: python:3.12-slim
       script: |
-        nthlayer check-deploy $(params.service-file) \
-          --prometheus-url $(params.prometheus-url)
+        pip install nthlayer-workers
+        nthlayer-workers gate --service $(params.service) \
+          --core-url $(params.core-url)
 
         EXIT_CODE=$?
         if [ $EXIT_CODE -eq 2 ]; then
@@ -336,12 +319,12 @@ spec:
 
     - name: verify
       taskRef:
-        name: nthlayer-verify
+        name: nthlayer-validate-slo
       runAfter: [generate]
 
     - name: gate
       taskRef:
-        name: nthlayer-check-deploy
+        name: nthlayer-gate
       runAfter: [verify]
       params:
         - name: service-file
@@ -377,7 +360,7 @@ pipeline {
         stage('Verify') {
             steps {
                 sh """
-                    nthlayer verify services/*.yaml \
+                    nthlayer validate-slo services/payment-api.yaml \
                         --prometheus-url ${PROMETHEUS_URL}
                 """
             }
@@ -388,8 +371,8 @@ pipeline {
                 script {
                     def exitCode = sh(
                         script: """
-                            nthlayer check-deploy services/*.yaml \
-                                --prometheus-url ${PROMETHEUS_URL}
+                            nthlayer-workers gate --service payment-api \
+                                --core-url ${NTHLAYER_CORE_URL}
                         """,
                         returnStatus: true
                     )
@@ -426,9 +409,9 @@ All CI/CD integrations support these environment variables:
 ### 1. Validate Early, Protect Late
 
 ```
-commit → validate-spec → apply --lint → verify → check-deploy → deploy
-           ↑                               ↑           ↑
-       No Prometheus              Staging Prom   Prod Prom
+commit → validate-spec → apply --lint → validate-slo → gate → deploy
+           ↑                                     ↑           ↑
+       No Prometheus                    Staging Prom   nthlayer-core
 ```
 
 ### 2. Use Staging for Verification
@@ -437,10 +420,10 @@ Verify metrics exist in staging before checking production gates:
 
 ```yaml
 - name: Verify in Staging
-  run: nthlayer verify services/*.yaml --prometheus-url $STAGING_URL
+  run: nthlayer validate-slo services/payment-api.yaml --prometheus-url $STAGING_URL
 
 - name: Gate in Production
-  run: nthlayer check-deploy services/*.yaml --prometheus-url $PROD_URL
+  run: nthlayer-workers gate --service payment-api --core-url $NTHLAYER_CORE_URL
 ```
 
 ### 3. Cache NthLayer Installation
@@ -459,5 +442,5 @@ Put validation early in your pipeline to catch issues quickly.
 ## See Also
 
 - [Deployment Gates](../commands/check-deploy.md)
-- [Contract Verification](../commands/verify.md)
+- [Contract Verification](../commands/validate-slo.md)
 - [Validation Overview](../validate/index.md)

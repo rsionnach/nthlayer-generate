@@ -36,7 +36,7 @@ Generated: generated/payment-api/
 ### Push to Grafana
 
 ```bash
-nthlayer apply payment-api.yaml --push
+nthlayer apply payment-api.yaml --push-grafana
 ```
 
 Requires `NTHLAYER_GRAFANA_URL` and `NTHLAYER_GRAFANA_API_KEY` to be configured.

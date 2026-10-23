@@ -1,4 +1,4 @@
-# dependencies
+# Dependencies (observe `dependencies`)
 
 Discover a service's upstream and downstream dependencies.
 

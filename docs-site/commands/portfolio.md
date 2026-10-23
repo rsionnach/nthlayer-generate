@@ -21,7 +21,7 @@ python -m nthlayer_workers.observe portfolio [--store PATH] [--format {table,jso
 
 ## Description
 
-It reads `slo_status` assessments from a local assessment store, which
+`portfolio` reads `slo_status` assessments from a local assessment store, which
 `python -m nthlayer_workers.observe collect --specs-dir DIR --prometheus-url URL`
 writes (default store: `assessments.db`). With no such assessments it prints
 `No slo_status assessments found. Run 'collect' first.` and exits 0.

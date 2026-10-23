@@ -60,7 +60,8 @@ subcommand of the `nthlayer-workers` console script.
 
 | Command | Description |
 |---------|-------------|
-| [observe `check-deploy`](check-deploy.md) | Deployment gate (error budget validation); also `nthlayer-workers gate` |
+| [observe `check-deploy`](check-deploy.md) | Deployment gate (error budget validation) from a local assessment store |
+| [`nthlayer-workers gate`](check-deploy.md#nthlayer-workers-gate) | Deployment gate backed by nthlayer-core |
 | [observe `verify`](verify.md) | Verify declared metrics exist (contract verification) |
 | [observe `portfolio`](portfolio.md) | View org-wide SLO health |
 | [observe `scorecard`](scorecard.md) | Per-service reliability scores |

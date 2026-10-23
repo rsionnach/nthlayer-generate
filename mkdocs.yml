@@ -98,7 +98,7 @@ nav:
     - Intelligent Alerts: commands/alerts.md
     - Metric Recommendations: commands/recommend-metrics.md
   - Dependencies:
-    - Dependency Discovery: commands/deps.md
+    - Dependencies (observe dependencies): commands/deps.md
     - Blast Radius: commands/blast-radius.md
     - Ownership: commands/ownership.md
     - Identity: commands/identity.md

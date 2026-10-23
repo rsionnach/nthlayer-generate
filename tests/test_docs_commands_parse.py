@@ -16,6 +16,17 @@ error on any of them fails the test named after its page and line.
 Scope: every `docs-site/**/*.md` page plus `README.md`. Lines running other
 executables — `nthlayer-workers`, `nthlayer-core`, `python -m ...`,
 `pip install nthlayer` — are not this parser's to judge and are not collected.
+
+Pipeline, per page: each fenced block (`_FENCE`) is split into logical lines
+(backslash continuations joined, comments and a `$ ` prompt dropped); `_unwrap`
+strips CI wrappers (`run:`, `script:`, `entry:`, `- `, Jenkins `sh '...'`);
+metavariables and CI templating become `PLACEHOLDER_ARG`; `_split_commands`
+lexes the line into simple commands, dropping pipes, separators and
+redirections; `_runner_stripped` removes shell keywords, env assignments and
+runner prefixes; `_strip_synopsis_markup` removes `[options]` and bracket
+syntax; and a pre-commit `entry:` gets the filenames pre-commit would append
+(`_precommit_tail`). What survives, minus the entry point, is the argv the
+parser checks.
 """
 
 from __future__ import annotations
@@ -32,9 +43,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DOCS_ROOT = REPO_ROOT / "docs-site"
 
 # Measured on the opensrm-3ntg branch after widening collection to every
-# fence (yaml, groovy, unlabelled): 257 invocations across 42 pages. The floor sits well under that so ordinary docs edits do
-# not trip it, but far above zero so a broken extractor (a regex that matches
-# nothing, a moved docs dir) cannot leave this file green and vacuous.
+# fence (yaml, groovy, unlabelled): about 250 invocations across 42 pages.
+# The floor sits well under that so ordinary docs edits do not trip it, but
+# far above zero so a broken extractor (a regex that matches nothing, a moved
+# docs dir) cannot leave this file green and vacuous.
 MIN_INVOCATIONS = 200
 
 # Console scripts that reach `nthlayer_generate.demo:main` (pyproject
@@ -84,7 +96,9 @@ _PLACEHOLDER = re.compile(r"<[A-Za-z][^<>\s]*>|\{[^{}\s]+\}")
 # Synopsis words that stand for "any options follow" rather than an argument.
 _OPTIONS_MARKERS = frozenset({"[options]", "[OPTIONS]", "[flags]", "..."})
 
-DUMMY = "placeholder"
+# Stands in for a metavariable (`<service.yaml>`, `${{ secrets.X }}`) or a
+# filename pre-commit would pass: one argument whose value the docs leave open.
+PLACEHOLDER_ARG = "placeholder"
 
 
 def _runner_stripped(argv: list[str]) -> list[str]:
@@ -107,8 +121,12 @@ def _runner_stripped(argv: list[str]) -> list[str]:
     return argv
 
 
-def _normalise(argv: list[str]) -> list[str]:
-    """Drop synopsis option markers and optional-group brackets."""
+def _strip_synopsis_markup(argv: list[str]) -> list[str]:
+    """Drop synopsis option markers and optional-group brackets.
+
+    Strips every leading and trailing `[`/`]` from a token, so nested groups
+    (`[--depth [N]]`) unwrap too; a token that was only brackets is dropped.
+    """
     out: list[str] = []
     for token in argv:
         if token in _OPTIONS_MARKERS:
@@ -165,10 +183,15 @@ def _unwrap(line: str) -> tuple[str, bool]:
     return line, bool(key and key.group(1) == "entry")
 
 
+# --- pre-commit `entry:` handling -------------------------------------------
+#
 # pre-commit passes every matching staged file to `entry` in one call, so a
 # hook is checked with two filenames appended: a subcommand taking a single
-# positional must fail that check, because it fails in real use.
-_PRECOMMIT_FILES = [DUMMY, DUMMY]
+# positional must fail that check, because it fails in real use. A hook that
+# sets `pass_filenames: false` gets none, and a command inside a `bash -c`
+# entry gets none (the filenames go to bash, as "$@").
+
+_PRECOMMIT_FILES = [PLACEHOLDER_ARG, PLACEHOLDER_ARG]
 
 _PASS_FILENAMES_FALSE = re.compile(r"^\s*pass_filenames:\s*false\s*$")
 
@@ -197,6 +220,16 @@ def _hook_passes_filenames(lines: list[str], entry_index: int) -> bool:
     return not any(_PASS_FILENAMES_FALSE.match(line) for line in lines[start:end])
 
 
+def _precommit_tail(lines: list[str], entry_index: int, is_entry: bool, direct: bool) -> list[str]:
+    """The filenames pre-commit appends to this command, if any."""
+    if is_entry and direct and _hook_passes_filenames(lines, entry_index):
+        return _PRECOMMIT_FILES
+    return []
+
+
+# --- end pre-commit handling -------------------------------------------------
+
+
 def _entry_point_argvs(command: str, line_no: int) -> list[tuple[list[str], bool]]:
     """(argv after the entry point, ran directly) for each nthlayer command.
 
@@ -209,7 +242,7 @@ def _entry_point_argvs(command: str, line_no: int) -> list[tuple[list[str], bool
         if argv[:1] in (["bash"], ["sh"]) and argv[1:2] == ["-c"] and len(argv) > 2:
             found.extend((inner, False) for inner, _ in _entry_point_argvs(argv[2], line_no))
         elif argv and argv[0] in ENTRY_POINTS:
-            found.append((_normalise(argv[1:]), True))
+            found.append((_strip_synopsis_markup(argv[1:]), True))
     return found
 
 
@@ -222,6 +255,7 @@ def extract_invocations(text: str) -> list[tuple[int, list[str]]]:
         index = 0
         while index < len(lines):
             line_no = body_start_line + index
+            entry_index = index  # the logical line's first physical line
             logical = lines[index]
             # Join backslash continuations into one logical command line.
             while logical.rstrip().endswith("\\") and index + 1 < len(lines):
@@ -236,10 +270,9 @@ def extract_invocations(text: str) -> list[tuple[int, list[str]]]:
             if "nthlayer" not in stripped:
                 continue
             command, precommit_entry = _unwrap(stripped)
-            command = _CI_PLACEHOLDER.sub(DUMMY, _PLACEHOLDER.sub(DUMMY, command))
-            appends_files = precommit_entry and _hook_passes_filenames(lines, index - 1)
+            command = _CI_PLACEHOLDER.sub(PLACEHOLDER_ARG, _PLACEHOLDER.sub(PLACEHOLDER_ARG, command))
             for argv, direct in _entry_point_argvs(command, line_no):
-                tail = _PRECOMMIT_FILES if appends_files and direct else []
+                tail = _precommit_tail(lines, entry_index, precommit_entry, direct)
                 found.append((line_no, argv + tail))
     return found
 
@@ -282,7 +315,7 @@ def parse_error(argv: list[str], capsys: pytest.CaptureFixture[str]) -> str | No
         # `nthlayer <command> --help`, `nthlayer slo <subcommand>`: a placeholder
         # standing for "any choice" cannot itself be a valid choice. argparse
         # has already validated every token before it to get this far.
-        if f"invalid choice: '{DUMMY}'" in stderr:
+        if f"invalid choice: '{PLACEHOLDER_ARG}'" in stderr:
             return None
         lines = stderr.strip().splitlines()
         return lines[-1] if lines else f"exit {exc.code}"
@@ -304,7 +337,7 @@ class TestExtraction:
     # Shapes taken from pages on this site, not invented to suit the extractor:
     # `$ ` prompts (concepts/shift-left.md), `\` continuations and `<...>`
     # synopses (commands/*.md), a `|` inside a quoted jq filter and a
-    # `$(date ...)` redirect target (the deleted commands/portfolio.md), a
+    # `$(date ...)` redirect target (the pre-3ntg commands/portfolio.md), a
     # `$(nthlayer ...)` substitution (commands/ownership.md, commands/identity.md),
     # `[--flag VALUE] [options]` synopses (reference/cli.md), an indented
     # fence (getting-started/adoption-path.md).
@@ -338,7 +371,7 @@ class TestExtraction:
         )
         assert extract_invocations(markdown) == [
             (2, ["apply", "svc.yaml"]),
-            (4, ["plan", DUMMY, "--env", "prod"]),
+            (4, ["plan", PLACEHOLDER_ARG, "--env", "prod"]),
             (6, ["lint", "svc.yaml"]),
             (7, ["validate", "svc.yaml"]),
             (14, ["migrate", "svc.yaml", "--format", "json"]),
@@ -379,9 +412,9 @@ class TestExtraction:
             (3, ["apply", "svc.yaml", "--lint"]),
             (5, ["validate-spec", "services/"]),
             # pre-commit appends ALL matching staged filenames to `entry`.
-            (6, ["validate-metadata", "--strict", DUMMY, DUMMY]),
-            (7, ["validate-slo", "svc.yaml", "--prometheus-url", DUMMY]),
-            (8, ["plan", DUMMY, "--env", "prod"]),
+            (6, ["validate-metadata", "--strict", PLACEHOLDER_ARG, PLACEHOLDER_ARG]),
+            (7, ["validate-slo", "svc.yaml", "--prometheus-url", PLACEHOLDER_ARG]),
+            (8, ["plan", PLACEHOLDER_ARG, "--env", "prod"]),
             (12, ["lint", "svc.yaml"]),
             (16, ["migrate", "svc.yaml", "--dry-run"]),
         ]
@@ -410,7 +443,7 @@ class TestExtraction:
             ]
         )
         assert extract_invocations(markdown) == [
-            (6, ["validate-spec", DUMMY, DUMMY]),
+            (6, ["validate-spec", PLACEHOLDER_ARG, PLACEHOLDER_ARG]),
             (9, ["validate-spec", "services/"]),
             (12, ["apply", "$f", "--lint"]),
         ]
@@ -456,8 +489,8 @@ class TestParseCheck:
     @pytest.mark.parametrize(
         "argv",
         [
-            [DUMMY, "--help"],  # `nthlayer <command> --help`
-            ["slo", DUMMY, DUMMY],  # `nthlayer slo <subcommand> <service.yaml>`
+            [PLACEHOLDER_ARG, "--help"],  # `nthlayer <command> --help`
+            ["slo", PLACEHOLDER_ARG, PLACEHOLDER_ARG],  # `nthlayer slo <subcommand> <service.yaml>`
             ["--version"],
         ],
     )
@@ -466,4 +499,4 @@ class TestParseCheck:
 
     def test_placeholder_does_not_excuse_a_bad_command(self, capsys: pytest.CaptureFixture[str]) -> None:
         # The placeholder exemption covers only the choice the placeholder sits in.
-        assert parse_error(["drift", DUMMY], capsys) is not None
+        assert parse_error(["drift", PLACEHOLDER_ARG], capsys) is not None

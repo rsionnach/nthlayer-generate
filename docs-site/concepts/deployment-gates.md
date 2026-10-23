@@ -194,6 +194,6 @@ Gates need working SLO queries to calculate budget:
 
 ## See Also
 
-- [Deployment Gate Command](../commands/check-deploy.md)
+- [Deployment Gate Command](../commands/check-deploy.md) (nthlayer-workers)
 - [SLO Concepts](./slos.md)
 - [Shift Left Philosophy](./shift-left.md)

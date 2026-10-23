@@ -186,5 +186,5 @@ repos:
 ## See Also
 
 - [Validation Overview](../validate/index.md)
-- [Contract Verification](./verify.md)
+- [Contract Verification](./verify.md) (nthlayer-workers)
 - [conftest Documentation](https://www.conftest.dev/)

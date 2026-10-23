@@ -190,6 +190,8 @@ verify:
 gate:
   extends: .nthlayer
   stage: gate
+  before_script:
+    - pip install nthlayer-workers
   script:
     - |
       nthlayer-workers gate --service payment-api \
@@ -368,6 +370,7 @@ pipeline {
 
         stage('Gate') {
             steps {
+                sh 'pip install nthlayer-workers'
                 script {
                     def exitCode = sh(
                         script: """
@@ -441,6 +444,6 @@ Put validation early in your pipeline to catch issues quickly.
 
 ## See Also
 
-- [Deployment Gates](../commands/check-deploy.md)
-- [Contract Verification](../commands/verify.md)
+- [Deployment Gates](../commands/check-deploy.md) (nthlayer-workers)
+- [Contract Verification](../commands/verify.md) (nthlayer-workers)
 - [Validation Overview](../validate/index.md)

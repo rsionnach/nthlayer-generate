@@ -132,14 +132,16 @@ spec:
     spec:
       containers:
         - name: check
-          image: ghcr.io/nthlayer/nthlayer:latest
-          command:
-            - nthlayer-workers
-            - gate
-            - --service
-            - payment-api
-            - --core-url
-            - $(NTHLAYER_CORE_URL)
+          # The published nthlayer image ships the generate CLI only; the
+          # gate needs the nthlayer-workers package.
+          image: python:3.12-slim
+          command: ["sh", "-c"]
+          args:
+            - pip install nthlayer-workers &&
+              nthlayer-workers gate --service payment-api --core-url "$NTHLAYER_CORE_URL"
+          env:
+            - name: NTHLAYER_CORE_URL
+              value: http://nthlayer-core:8000
 ```
 
 ## Drift Detection
@@ -203,10 +205,10 @@ See [nthlayer alerts](../commands/alerts.md) for full reference.
 
 ## Next Steps
 
-- [Deployment Gates](../commands/check-deploy.md) - Full command reference
-- [Drift Detection](../commands/drift.md) - Trend analysis command
-- [SLO Portfolio](../commands/portfolio.md) - Organization-wide view
-- [Reliability Scorecard](../commands/scorecard.md) - Per-service scoring
+- [Deployment Gates](../commands/check-deploy.md) - Full command reference (nthlayer-workers)
+- [Drift Detection](../commands/drift.md) - Trend analysis command (nthlayer-workers)
+- [SLO Portfolio](../commands/portfolio.md) - Organization-wide view (nthlayer-workers)
+- [Reliability Scorecard](../commands/scorecard.md) - Per-service scoring (nthlayer-workers)
 - [Intelligent Alerts](../commands/alerts.md) - Alert evaluation and simulation
 - [Error Budgets](../concepts/slos.md) - Understanding SLOs
 - [CI/CD Integration](../integrations/cicd.md) - Pipeline examples

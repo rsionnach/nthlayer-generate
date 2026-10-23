@@ -447,6 +447,18 @@ def _all_option_strings() -> set[str]:
     return known
 
 
+def test_pages_with_invocations_matches_the_docs() -> None:
+    # The per-page test below cannot notice its own list shrinking (an empty
+    # tuple is a silent skip) or a new page joining; this equality can.
+    actual = sorted({label for label, _, _ in INVOCATIONS})
+    assert actual == list(PAGES_WITH_INVOCATIONS), (
+        "the pages yielding `nthlayer` invocations changed; if deliberate, replace "
+        "PAGES_WITH_INVOCATIONS with sorted({page for page, _, _ in INVOCATIONS}) "
+        f"— missing: {sorted(set(PAGES_WITH_INVOCATIONS) - set(actual))}, "
+        f"new: {sorted(set(actual) - set(PAGES_WITH_INVOCATIONS))}"
+    )
+
+
 @pytest.mark.parametrize("page", PAGES_WITH_INVOCATIONS)
 def test_page_still_yields_invocations(page: str) -> None:
     assert any(label == page for label, _, _ in INVOCATIONS), (

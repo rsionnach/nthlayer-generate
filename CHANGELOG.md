@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.1.0](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.7...v2.1.0) (2026-10-23)
+
+
+### Features
+
+* **cli:** migrate-manifest converts opensrm/v1 manifests (opensrm-pnmv) ([7991214](https://github.com/rsionnach/nthlayer-generate/commit/7991214d54dc948c44eac6995222431d6630de42))
+
+
+### Dependencies
+
+* require nthlayer-common 5.3.0 (opensrm-pnmv) ([0be7ab9](https://github.com/rsionnach/nthlayer-generate/commit/0be7ab9f664ed22bfd2f12402d98623cc734d081))
+
 ## [2.0.7](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.6...v2.0.7) (2026-10-21)
 
 

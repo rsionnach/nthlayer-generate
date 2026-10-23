@@ -146,7 +146,7 @@ architecture-beta
    service plan(mdi:file-search) [nthlayer plan] in generate
 
    service lint(mdi:code-tags-check) [apply with lint] in validate
-   service verify(mdi:check-decagram) [nthlayer validate slo] in validate
+   service verify(mdi:check-decagram) [validate slo metrics] in validate
 
    service checkdeploy(mdi:gate) [workers gate] in enforce
 

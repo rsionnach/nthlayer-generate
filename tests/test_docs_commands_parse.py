@@ -58,6 +58,57 @@ DOCS_ROOT = REPO_ROOT / "docs-site"
 # docs dir) cannot leave this file green and vacuous.
 MIN_INVOCATIONS = 200
 
+# Every page that yields at least one invocation, measured on the opensrm-3ntg
+# branch. The total floor above has slack (a page's worth of invocations can
+# vanish under it); this does not: a page dropping out — moved, emptied, or
+# its fences no longer recognised — fails by name. To update after a
+# deliberate docs change, print
+# `sorted({page for page, _, _ in INVOCATIONS})` and paste it here.
+PAGES_WITH_INVOCATIONS = (
+    "README.md",
+    "docs-site/commands/alerts.md",
+    "docs-site/commands/apply.md",
+    "docs-site/commands/config.md",
+    "docs-site/commands/environments.md",
+    "docs-site/commands/generate-alerts.md",
+    "docs-site/commands/generate-dashboard.md",
+    "docs-site/commands/generate-loki-alerts.md",
+    "docs-site/commands/generate-recording-rules.md",
+    "docs-site/commands/generate-slo.md",
+    "docs-site/commands/identity.md",
+    "docs-site/commands/index.md",
+    "docs-site/commands/init.md",
+    "docs-site/commands/migrate.md",
+    "docs-site/commands/ownership.md",
+    "docs-site/commands/recommend-metrics.md",
+    "docs-site/commands/setup.md",
+    "docs-site/commands/simulate.md",
+    "docs-site/commands/slo.md",
+    "docs-site/commands/validate-metadata.md",
+    "docs-site/commands/validate-slo.md",
+    "docs-site/commands/validate-spec.md",
+    "docs-site/concepts/contracts.md",
+    "docs-site/concepts/opensrm.md",
+    "docs-site/concepts/service-specs.md",
+    "docs-site/concepts/shift-left.md",
+    "docs-site/concepts/slos.md",
+    "docs-site/demo.md",
+    "docs-site/getting-started/adoption-path.md",
+    "docs-site/getting-started/first-service.md",
+    "docs-site/getting-started/installation.md",
+    "docs-site/getting-started/quick-start.md",
+    "docs-site/index.md",
+    "docs-site/integrations/cicd.md",
+    "docs-site/integrations/grafana.md",
+    "docs-site/integrations/mimir.md",
+    "docs-site/integrations/prometheus.md",
+    "docs-site/protect/index.md",
+    "docs-site/reference/cli.md",
+    "docs-site/reference/service-yaml.md",
+    "docs-site/validate/index.md",
+    "docs-site/validate/linting.md",
+)
+
 # Console scripts that reach `nthlayer_generate.demo:main` (pyproject
 # [project.scripts]). Both run the same parser, so both are checked.
 ENTRY_POINTS = frozenset({"nthlayer", "nthlayer-generate"})
@@ -355,8 +406,8 @@ def extract_invocations(
 def _doc_pages() -> list[Path]:
     pages = sorted(DOCS_ROOT.rglob("*.md"))
     readme = REPO_ROOT / "README.md"
-    if readme.is_file():
-        pages.append(readme)
+    assert readme.is_file(), f"{readme} is missing; the README is part of this guard's scope"
+    pages.append(readme)
     return pages
 
 
@@ -394,6 +445,14 @@ def _all_option_strings() -> set[str]:
             if isinstance(action, argparse._SubParsersAction):  # noqa: SLF001
                 pending.extend(action.choices.values())
     return known
+
+
+@pytest.mark.parametrize("page", PAGES_WITH_INVOCATIONS)
+def test_page_still_yields_invocations(page: str) -> None:
+    assert any(label == page for label, _, _ in INVOCATIONS), (
+        f"{page} no longer yields any `nthlayer` invocation; if that is deliberate, "
+        "update PAGES_WITH_INVOCATIONS"
+    )
 
 
 def parse_error(argv: list[str], capsys: pytest.CaptureFixture[str]) -> str | None:
@@ -509,6 +568,11 @@ class TestExtraction:
                 "```",
                 "nthlayer migrate svc.yaml --dry-run",
                 "```",
+                "",
+                "```yaml",
+                '        run: "nthlayer apply double.yaml"',
+                "        run: 'nthlayer apply single.yaml'",
+                "```",
             ]
         )
         assert extract_invocations(markdown) == [
@@ -520,6 +584,9 @@ class TestExtraction:
             (8, ["plan", PLACEHOLDER_ARG, "--env", "prod"]),
             (12, ["lint", "svc.yaml"]),
             (16, ["migrate", "svc.yaml", "--dry-run"]),
+            # A quoted yaml scalar is unquoted before lexing.
+            (20, ["apply", "double.yaml"]),
+            (21, ["apply", "single.yaml"]),
         ]
 
     # pre-commit hook shapes (validate/linting.md, commands/validate-spec.md,
@@ -584,6 +651,8 @@ class TestExtraction:
                 "```bash",
                 "nthlayer apply quoted.yaml",
                 "```",
+                # Still inside the outer fence: only a run of four or more closes it.
+                "nthlayer lint between.yaml",
                 "````",
                 "",
                 "```bash",
@@ -597,9 +666,24 @@ class TestExtraction:
         )
         assert extract_invocations(markdown) == [
             (3, ["apply", "quoted.yaml"]),
-            (8, ["bogus-one", "svc.yaml"]),
-            (12, ["bogus-two", "svc.yaml"]),
+            (5, ["lint", "between.yaml"]),
+            (9, ["bogus-one", "svc.yaml"]),
+            (13, ["bogus-two", "svc.yaml"]),
         ]
+
+    # CommonMark: a backtick fence's info string cannot contain a backtick, so
+    # a line like this is inline code in prose, not a fence opening.
+    def test_backtick_in_info_string_does_not_open_a_fence(self) -> None:
+        markdown = "\n".join(
+            [
+                "```nthlayer `x` is inline code",
+                "nthlayer prose-line not-in-a-fence",
+                "```bash",
+                "nthlayer lint a.yaml",
+                "```",
+            ]
+        )
+        assert extract_invocations(markdown) == [(4, ["lint", "a.yaml"])]
 
     # Current behaviour, pinned: CRLF pages extract exactly like LF pages.
     def test_crlf_matches_lf(self) -> None:

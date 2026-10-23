@@ -164,7 +164,8 @@ python -m nthlayer_workers.observe drift \
 ```
 
 The result is printed as JSON with the severity, pattern, trend, and projected
-days to exhaustion. Exit code 0 = none/info, 1 = warn, 2 = critical.
+days to exhaustion. Exit code 0 = severity none/info, 1 = severity warn or
+the analysis failed (message on stderr), 2 = severity critical.
 
 ### Drift Patterns
 

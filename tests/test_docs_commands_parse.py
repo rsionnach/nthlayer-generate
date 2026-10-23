@@ -27,10 +27,19 @@ runner prefixes; `_strip_synopsis_markup` removes `[options]` and bracket
 syntax; and a pre-commit `entry:` gets the filenames pre-commit would append
 (`_precommit_tail`). What survives, minus the entry point, is the argv the
 parser checks.
+
+Known residual — shapes NOT recognised, so an `nthlayer` call written this
+way is silently not collected: `docker run IMAGE nthlayer ...`, `xargs
+nthlayer ...`, backtick substitution, `"$(nthlayer ...)"` inside double
+quotes (lexed as one word), `{ nthlayer ...; }` groups, Dockerfile `RUN`,
+Jenkins `sh("...")` call syntax, prompts other than `$ ` (`% `, `> `, `PS>`),
+non-breaking spaces between tokens, and indented (non-fenced) code blocks.
+A cmd.exe `^` continuation is not joined (pinned by a test; it fails loudly).
 """
 
 from __future__ import annotations
 
+import argparse
 import re
 import shlex
 from pathlib import Path
@@ -56,9 +65,11 @@ ENTRY_POINTS = frozenset({"nthlayer", "nthlayer-generate"})
 # Any fenced block, whatever its info string: invocations also sit in yaml
 # (GitHub Actions, GitLab, pre-commit, Tekton), groovy (Jenkins) and
 # unlabelled fences. Leading indent is allowed (this site nests fences in
-# lists), as is a trailing info string (```bash title="..."). The closing
-# marker is back-referenced so ``` is not closed by ~~~.
-_FENCE = re.compile(r"^[ \t]*(```|~~~)[^\n]*\n(.*?)^[ \t]*\1", re.M | re.S)
+# lists), as is a trailing info string (```bash title="..."). Closing follows
+# CommonMark: a bare run of the SAME character at least as long as the opening
+# one, so a ````markdown block quoting a ```bash example is not closed by it.
+_FENCE_OPEN = re.compile(r"^[ \t]*(`{3,}|~{3,})(.*)$")
+_FENCE_CLOSE = re.compile(r"^[ \t]*(`{3,}|~{3,})[ \t]*$")
 
 # CI wrappers around a command line, stripped before lexing: a yaml list item
 # (`- nthlayer ...`), a yaml key whose value is a command (`run:`, `script:`,
@@ -101,22 +112,71 @@ _OPTIONS_MARKERS = frozenset({"[options]", "[OPTIONS]", "[flags]", "..."})
 PLACEHOLDER_ARG = "placeholder"
 
 
-def _runner_stripped(argv: list[str]) -> list[str]:
-    """argv with leading shell keywords, env assignments and a runner prefix removed.
+_ENV_ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=.*")
 
-    Only the runners whose next token is the console script are recognised:
-    `uv run nthlayer`, `uvx nthlayer`, `uvx --from <dist> nthlayer`,
-    `pipx run nthlayer`. Anything else (`pip install nthlayer`,
+# Runner options that take a separate value (`uvx --from DIST`); any runner
+# option in `--opt=value` form is skipped too.
+_RUNNER_VALUE_OPTIONS = frozenset({"--from", "--with", "--python", "--spec"})
+
+
+def _fenced_blocks(text: str) -> list[tuple[int, list[str]]]:
+    """(1-based line number of the first body line, body lines) per fence.
+
+    An unclosed fence runs to the end of the page, as in CommonMark.
+    """
+    blocks: list[tuple[int, list[str]]] = []
+    lines = text.split("\n")
+    index = 0
+    while index < len(lines):
+        opening = _FENCE_OPEN.match(lines[index].rstrip("\r"))
+        index += 1
+        if not opening:
+            continue
+        marker = opening.group(1)
+        if marker[0] == "`" and "`" in opening.group(2):
+            continue  # not a fence: CommonMark forbids backticks in its info string
+        start = index
+        while index < len(lines):
+            closing = _FENCE_CLOSE.match(lines[index].rstrip("\r"))
+            if closing and closing.group(1)[0] == marker[0] and len(closing.group(1)) >= len(marker):
+                break
+            index += 1
+        blocks.append((start + 1, lines[start:index]))
+        index += 1  # past the closing line
+    return blocks
+
+
+def _runner_stripped(argv: list[str]) -> list[str]:
+    """argv with leading shell keywords, env, sudo and a runner prefix removed.
+
+    Recognised: shell keywords (`if`, `!`, `time`, ...), `VAR=value`
+    assignments, `sudo`, `env [-flags] [VAR=value ...]`, and the runners whose
+    next token is the console script: `uv run`, `uvx`, `pipx run`, each with
+    `--opt value` (for the options in _RUNNER_VALUE_OPTIONS) or `--opt=value`
+    options. Anything else (`pip install nthlayer`,
     `python -m nthlayer_workers.observe`) keeps its own argv[0] and is
     therefore not collected.
     """
-    while argv and (argv[0] in _SHELL_KEYWORDS or re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*=.*", argv[0])):
-        argv = argv[1:]
+    while argv:
+        head = argv[0]
+        if head in _SHELL_KEYWORDS or head == "sudo" or _ENV_ASSIGNMENT.fullmatch(head):
+            argv = argv[1:]
+        elif head == "env":
+            argv = argv[1:]
+            while argv and argv[0].startswith("-"):
+                argv = argv[1:]
+        else:
+            break
     for prefix_len, prefix in ((2, ["uv", "run"]), (2, ["pipx", "run"]), (1, ["uvx"])):
         if argv[:prefix_len] == prefix:
             argv = argv[prefix_len:]
-            if argv[:1] == ["--from"]:
-                argv = argv[2:]
+            while argv and argv[0].startswith("--"):
+                if "=" in argv[0]:
+                    argv = argv[1:]
+                elif argv[0] in _RUNNER_VALUE_OPTIONS:
+                    argv = argv[2:]
+                else:
+                    break
             break
     return argv
 
@@ -140,6 +200,10 @@ def _strip_synopsis_markup(argv: list[str]) -> list[str]:
     return out
 
 
+class _LexError(ValueError):
+    """A documented shell line shlex cannot tokenise (e.g. an unbalanced quote)."""
+
+
 def _split_commands(line: str, line_no: int) -> list[list[str]]:
     """One shell line as a list of simple commands' argv, redirections removed."""
     lexer = shlex.shlex(line, posix=True, punctuation_chars=True)
@@ -150,7 +214,7 @@ def _split_commands(line: str, line_no: int) -> list[list[str]]:
     try:
         tokens = list(lexer)
     except ValueError as exc:
-        raise AssertionError(f"line {line_no}: unparseable shell {line!r}: {exc}") from exc
+        raise _LexError(f"line {line_no}: unparseable shell {line!r}: {exc}") from exc
     commands: list[list[str]] = [[]]
     redirected = False
     for token in tokens:
@@ -246,12 +310,16 @@ def _entry_point_argvs(command: str, line_no: int) -> list[tuple[list[str], bool
     return found
 
 
-def extract_invocations(text: str) -> list[tuple[int, list[str]]]:
-    """(1-based line number, argv after the entry point) for each invocation."""
+def extract_invocations(
+    text: str, errors: list[tuple[int, str]] | None = None
+) -> list[tuple[int, list[str]]]:
+    """(1-based line number, argv after the entry point) for each invocation.
+
+    A line shlex cannot tokenise is appended to `errors` as (line, message)
+    and skipped; with no `errors` list it raises AssertionError instead.
+    """
     found: list[tuple[int, list[str]]] = []
-    for fence in _FENCE.finditer(text):
-        body_start_line = text.count("\n", 0, fence.start(2)) + 1
-        lines = fence.group(2).split("\n")
+    for body_start_line, lines in _fenced_blocks(text):
         index = 0
         while index < len(lines):
             line_no = body_start_line + index
@@ -271,7 +339,14 @@ def extract_invocations(text: str) -> list[tuple[int, list[str]]]:
                 continue
             command, precommit_entry = _unwrap(stripped)
             command = _CI_PLACEHOLDER.sub(PLACEHOLDER_ARG, _PLACEHOLDER.sub(PLACEHOLDER_ARG, command))
-            for argv, direct in _entry_point_argvs(command, line_no):
+            try:
+                argvs = _entry_point_argvs(command, line_no)
+            except _LexError as exc:
+                if errors is None:
+                    raise AssertionError(str(exc)) from exc
+                errors.append((line_no, str(exc)))
+                continue
+            for argv, direct in argvs:
                 tail = _precommit_tail(lines, entry_index, precommit_entry, direct)
                 found.append((line_no, argv + tail))
     return found
@@ -285,15 +360,20 @@ def _doc_pages() -> list[Path]:
     return pages
 
 
-def _all_invocations() -> list[tuple[str, int, list[str]]]:
-    return [
-        (page.relative_to(REPO_ROOT).as_posix(), line_no, argv)
-        for page in _doc_pages()
-        for line_no, argv in extract_invocations(page.read_text())
-    ]
+def _all_invocations() -> tuple[list[tuple[str, int, list[str]]], list[tuple[str, int, str]]]:
+    """(invocations, unlexable lines) across every page, each tagged page:line."""
+    invocations: list[tuple[str, int, list[str]]] = []
+    unlexable: list[tuple[str, int, str]] = []
+    for page in _doc_pages():
+        label = page.relative_to(REPO_ROOT).as_posix()
+        errors: list[tuple[int, str]] = []
+        for line_no, argv in extract_invocations(page.read_text(encoding="utf-8"), errors):
+            invocations.append((label, line_no, argv))
+        unlexable.extend((label, line_no, message) for line_no, message in errors)
+    return invocations, unlexable
 
 
-INVOCATIONS = _all_invocations()
+INVOCATIONS, UNLEXABLE = _all_invocations()
 
 
 def test_collection_is_not_vacuous() -> None:
@@ -301,6 +381,19 @@ def test_collection_is_not_vacuous() -> None:
         f"only {len(INVOCATIONS)} documented invocations collected; the extractor "
         "or the docs location has probably broken"
     )
+
+
+def _all_option_strings() -> set[str]:
+    """Every option string the parser or any (nested) subparser accepts."""
+    known: set[str] = set()
+    pending = [build_parser()]
+    while pending:
+        parser = pending.pop()
+        for action in parser._actions:  # noqa: SLF001
+            known.update(action.option_strings)
+            if isinstance(action, argparse._SubParsersAction):  # noqa: SLF001
+                pending.extend(action.choices.values())
+    return known
 
 
 def parse_error(argv: list[str], capsys: pytest.CaptureFixture[str]) -> str | None:
@@ -314,8 +407,14 @@ def parse_error(argv: list[str], capsys: pytest.CaptureFixture[str]) -> str | No
         stderr = capsys.readouterr().err
         # `nthlayer <command> --help`, `nthlayer slo <subcommand>`: a placeholder
         # standing for "any choice" cannot itself be a valid choice. argparse
-        # has already validated every token before it to get this far.
+        # has validated every token before it, but stops there — so flags after
+        # it are checked against every flag any subcommand accepts.
         if f"invalid choice: '{PLACEHOLDER_ARG}'" in stderr:
+            known = _all_option_strings()
+            for token in argv:
+                flag = token.split("=", 1)[0]
+                if flag.startswith("-") and len(flag) > 1 and not flag[1:].isdigit() and flag not in known:
+                    return f"{flag}: no subcommand accepts this option"
             return None
         lines = stderr.strip().splitlines()
         return lines[-1] if lines else f"exit {exc.code}"
@@ -324,9 +423,13 @@ def parse_error(argv: list[str], capsys: pytest.CaptureFixture[str]) -> str | No
 
 @pytest.mark.parametrize(
     "argv",
-    [pytest.param(argv, id=f"{page}:{line_no}") for page, line_no, argv in INVOCATIONS],
+    [pytest.param(argv, id=f"{page}:{line_no}") for page, line_no, argv in INVOCATIONS]
+    # A line shlex cannot tokenise fails as its own case, named by page:line,
+    # instead of erroring every test in this module at import.
+    + [pytest.param(message, id=f"{page}:{line_no}") for page, line_no, message in UNLEXABLE],
 )
-def test_documented_invocation_parses(argv: list[str], capsys: pytest.CaptureFixture[str]) -> None:
+def test_documented_invocation_parses(argv: list[str] | str, capsys: pytest.CaptureFixture[str]) -> None:
+    assert not isinstance(argv, str), argv
     error = parse_error(argv, capsys)
     assert error is None, f"`nthlayer {shlex.join(argv)}` is rejected by the parser: {error}"
 
@@ -470,6 +573,77 @@ class TestExtraction:
             (6, ["migrate", "svc.yaml"]),
         ]
 
+    # A four-backtick fence quoting a ```bash example (CommonMark nesting, as
+    # pymdownx.superfences allows) must not be closed by the inner fence; if
+    # it were, everything after it would invert and the two ordinary fences
+    # below would be read as prose.
+    def test_longer_fence_is_not_closed_by_shorter(self) -> None:
+        markdown = "\n".join(
+            [
+                "````markdown",
+                "```bash",
+                "nthlayer apply quoted.yaml",
+                "```",
+                "````",
+                "",
+                "```bash",
+                "nthlayer bogus-one svc.yaml",
+                "```",
+                "",
+                "```bash",
+                "nthlayer bogus-two svc.yaml",
+                "```",
+            ]
+        )
+        assert extract_invocations(markdown) == [
+            (3, ["apply", "quoted.yaml"]),
+            (8, ["bogus-one", "svc.yaml"]),
+            (12, ["bogus-two", "svc.yaml"]),
+        ]
+
+    # Current behaviour, pinned: CRLF pages extract exactly like LF pages.
+    def test_crlf_matches_lf(self) -> None:
+        lf = "```bash\nnthlayer plan svc.yaml \\\n  --env prod\n```\n"
+        assert extract_invocations(lf.replace("\n", "\r\n")) == extract_invocations(lf) == [
+            (2, ["plan", "svc.yaml", "--env", "prod"])
+        ]
+
+    # Current behaviour, pinned: a cmd.exe `^` continuation is NOT joined. The
+    # `^` reaches argparse as an argument, so such a line fails loudly rather
+    # than being checked with its tail missing.
+    def test_caret_continuation_is_not_joined(self) -> None:
+        markdown = "```bat\nnthlayer apply svc.yaml ^\n  --lint\n```"
+        assert extract_invocations(markdown) == [(2, ["apply", "svc.yaml", "^"])]
+
+    # Runner prefixes this site's readers plausibly paste.
+    def test_more_runner_prefixes(self) -> None:
+        markdown = "\n".join(
+            [
+                "```bash",
+                "sudo nthlayer apply a.yaml",
+                "env NTHLAYER_PROFILE=prod nthlayer apply b.yaml",
+                "sudo env -i A=1 nthlayer apply c.yaml",
+                "uvx --from=nthlayer-generate nthlayer apply d.yaml",
+                "uv run --with=rich nthlayer apply e.yaml",
+                "```",
+            ]
+        )
+        assert extract_invocations(markdown) == [
+            (2, ["apply", "a.yaml"]),
+            (3, ["apply", "b.yaml"]),
+            (4, ["apply", "c.yaml"]),
+            (5, ["apply", "d.yaml"]),
+            (6, ["apply", "e.yaml"]),
+        ]
+
+    # An unbalanced quote is a broken example on one line, not a reason to
+    # error every test in the module at import.
+    def test_unlexable_line_is_recorded_not_raised(self) -> None:
+        markdown = "```bash\nnthlayer apply 'oops.yaml\nnthlayer lint ok.yaml\n```"
+        errors: list[tuple[int, str]] = []
+        assert extract_invocations(markdown, errors) == [(3, ["lint", "ok.yaml"])]
+        assert [line for line, _ in errors] == [2]
+
 
 class TestParseCheck:
     """Controls for parse_error: it must reject what this bead removed."""
@@ -496,6 +670,12 @@ class TestParseCheck:
     )
     def test_accepts_placeholder_choices_and_help(self, argv: list[str], capsys: pytest.CaptureFixture[str]) -> None:
         assert parse_error(argv, capsys) is None
+
+    def test_placeholder_does_not_excuse_an_unknown_flag(self, capsys: pytest.CaptureFixture[str]) -> None:
+        # `nthlayer <command> --bogus-flag`: argparse stops at the placeholder
+        # choice, so the flag must be checked separately.
+        assert parse_error([PLACEHOLDER_ARG, "--bogus-flag"], capsys) is not None
+        assert parse_error(["slo", PLACEHOLDER_ARG, "--bogus-flag=1"], capsys) is not None
 
     def test_placeholder_does_not_excuse_a_bad_command(self, capsys: pytest.CaptureFixture[str]) -> None:
         # The placeholder exemption covers only the choice the placeholder sits in.

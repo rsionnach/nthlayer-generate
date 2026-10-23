@@ -14,8 +14,8 @@ Traditional monitoring tells you **after** a deployment causes problems. Deploym
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   CI/CD     │────▶│  nthlayer-  │────▶│  nthlayer-  │
-│  Pipeline   │     │workers gate │     │    core     │
+│   CI/CD     │────▶│check-deploy │────▶│     SLO     │
+│  Pipeline   │     │   / gate    │     │ assessments │
 └─────────────┘     └─────────────┘     └─────────────┘
                            │
                            ▼
@@ -27,10 +27,10 @@ Traditional monitoring tells you **after** a deployment causes problems. Deploym
                     └─────────────┘
 ```
 
-1. **Pipeline triggers**: Your CI/CD pipeline calls `nthlayer-workers gate` (from the `nthlayer-workers` package)
-2. **Read SLO state**: The gate fetches the service's `slo_status` assessments from nthlayer-core
+1. **Pipeline triggers**: Your CI/CD pipeline calls `python -m nthlayer_workers.observe check-deploy` (reads a local assessment store) or `nthlayer-workers gate` (reads nthlayer-core), both from the `nthlayer-workers` package
+2. **Read SLO state**: The gate reads the service's `slo_status` assessments
 3. **Calculate budget**: Error budget consumption is calculated
-4. **Return decision**: Exit code determines if deploy proceeds (0 = approved or warning, 1 = could not evaluate, 2 = blocked)
+4. **Return decision**: Exit code determines if deploy proceeds — see [the command reference](../commands/check-deploy.md) for each form's codes
 
 ## Default Thresholds
 
@@ -45,6 +45,12 @@ Thresholds are based on service tier:
 Critical services block deploys at 10% remaining budget. Standard and low tiers only warn.
 
 ## Custom Policies
+
+!!! warning "Not applied by the gate commands"
+    Neither `python -m nthlayer_workers.observe check-deploy` nor
+    `nthlayer-workers gate` reads `DeploymentGate` resources today: both
+    evaluate with the tier default thresholds above. The settings below are
+    accepted in a manifest but do not change a gate decision.
 
 Override defaults with a `DeploymentGate` resource in your `service.yaml`:
 
@@ -136,6 +142,9 @@ resources:
 High-criticality downstream services increase the gate's caution level.
 
 ## Best Practices
+
+The threshold snippets in practices 1 and 2 are `DeploymentGate` settings,
+which the gate commands do not apply yet (see [Custom Policies](#custom-policies)).
 
 ### 1. Start with Advisory Mode
 

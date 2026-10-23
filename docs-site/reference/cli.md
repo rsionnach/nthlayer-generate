@@ -192,12 +192,17 @@ nthlayer identity <subcommand> [options]
 ### Runtime commands (nthlayer-workers)
 
 Commands that read live system state ship in the `nthlayer-workers` package,
-not in this CLI. There is no `nthlayer check-deploy`, `nthlayer drift`,
-`nthlayer deps` or `nthlayer blast-radius`; use:
+not in this CLI. There is no `nthlayer check-deploy`, `nthlayer verify`,
+`nthlayer portfolio`, `nthlayer scorecard`, `nthlayer drift`, `nthlayer deps`
+or `nthlayer blast-radius`; use:
 
 | Command | Reference |
 |---------|-----------|
-| `nthlayer-workers gate --service SERVICE` | [Deployment Gates](../commands/check-deploy.md) |
+| `python -m nthlayer_workers.observe check-deploy --service SERVICE` | [Deployment Gates](../commands/check-deploy.md) |
+| `nthlayer-workers gate --service SERVICE` | [Deployment Gates](../commands/check-deploy.md#nthlayer-workers-gate) |
+| `python -m nthlayer_workers.observe verify --specs-dir DIR --prometheus-url URL` | [verify](../commands/verify.md) |
+| `python -m nthlayer_workers.observe portfolio` | [portfolio](../commands/portfolio.md) |
+| `python -m nthlayer_workers.observe scorecard` | [scorecard](../commands/scorecard.md) |
 | `python -m nthlayer_workers.observe drift --service SERVICE --prometheus-url URL` | [drift](../commands/drift.md) |
 | `python -m nthlayer_workers.observe dependencies --service SERVICE` | [dependencies](../commands/deps.md) |
 | `python -m nthlayer_workers.observe blast-radius --service SERVICE` | [blast-radius](../commands/blast-radius.md) |

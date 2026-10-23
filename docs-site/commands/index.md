@@ -54,13 +54,16 @@ NthLayer provides a comprehensive CLI for managing your reliability stack.
 
 These read live system state, so they ship in the `nthlayer-workers` package
 rather than in the `nthlayer` CLI documented on the rest of this page. The
-gate is a subcommand of the `nthlayer-workers` console script; the observe
-commands have no console script and run as
-`python -m nthlayer_workers.observe <command>`.
+observe commands have no console script and run as
+`python -m nthlayer_workers.observe <command>`; the core-backed gate is a
+subcommand of the `nthlayer-workers` console script.
 
 | Command | Description |
 |---------|-------------|
-| [`nthlayer-workers gate`](check-deploy.md) | Deployment gate (error budget validation) |
+| [observe `check-deploy`](check-deploy.md) | Deployment gate (error budget validation); also `nthlayer-workers gate` |
+| [observe `verify`](verify.md) | Verify declared metrics exist (contract verification) |
+| [observe `portfolio`](portfolio.md) | View org-wide SLO health |
+| [observe `scorecard`](scorecard.md) | Per-service reliability scores |
 | [observe `drift`](drift.md) | Analyze error-budget drift for a service |
 | [observe `dependencies`](deps.md) | Discover service dependencies |
 | [observe `blast-radius`](blast-radius.md) | Estimate deployment blast radius |

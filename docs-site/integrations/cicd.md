@@ -442,5 +442,5 @@ Put validation early in your pipeline to catch issues quickly.
 ## See Also
 
 - [Deployment Gates](../commands/check-deploy.md)
-- [Contract Verification](../commands/validate-slo.md)
+- [Contract Verification](../commands/verify.md)
 - [Validation Overview](../validate/index.md)

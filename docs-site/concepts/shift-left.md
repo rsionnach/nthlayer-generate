@@ -164,5 +164,6 @@ Teams using reliability shift left typically see:
 ## See Also
 
 - [validate-slo](../commands/validate-slo.md) - SLO metric verification reference
+- [Contract Verification](../commands/verify.md) - Workers `verify` across a specs directory
 - [Deployment Gates](../commands/check-deploy.md) - Full `nthlayer-workers gate` reference
 - [SLO Concepts](./slos.md) - Understanding SLOs and error budgets

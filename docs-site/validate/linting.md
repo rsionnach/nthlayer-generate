@@ -188,4 +188,4 @@ checks {
 
 - [pint Documentation](https://cloudflare.github.io/pint/)
 - [nthlayer apply](../commands/apply.md)
-- [Contract Verification](../commands/validate-slo.md)
+- [Contract Verification](../commands/verify.md)

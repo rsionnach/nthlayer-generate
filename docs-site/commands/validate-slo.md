@@ -230,4 +230,5 @@ curl "$PROMETHEUS_URL/api/v1/rules" | jq '.data.groups[].rules[] | select(.name 
 ## See Also
 
 - [nthlayer apply](./apply.md) - Generate SLO configs
+- [verify](./verify.md) - Contract verification across a specs directory (nthlayer-workers)
 - [SLO Concepts](../concepts/slos.md) - Understanding SLOs

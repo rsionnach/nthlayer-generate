@@ -106,6 +106,7 @@ All validation commands use consistent exit codes:
 
 ## Next Steps
 
-- [Contract Verification](../commands/validate-slo.md) - Verify SLO metrics exist
+- [Contract Verification](../commands/verify.md) - Verify declared metrics exist across a specs directory (nthlayer-workers)
+- [validate-slo](../commands/validate-slo.md) - Verify one service's SLO metrics exist
 - [Policy Validation](../commands/validate-spec.md) - OPA/Rego policy checks
 - [PromQL Linting](./linting.md) - Syntax and best practices

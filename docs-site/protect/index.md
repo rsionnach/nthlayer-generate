@@ -70,6 +70,12 @@ Critical services block deploys at 10% remaining budget. Lower tiers only warn.
 
 ## Custom Policies
 
+!!! warning "Not applied by the gate commands"
+    Neither `python -m nthlayer_workers.observe check-deploy` nor
+    `nthlayer-workers gate` reads `DeploymentGate` resources today: both
+    evaluate with the tier-based thresholds above. The settings below are
+    accepted in a manifest but do not change a gate decision.
+
 Override defaults with a `DeploymentGate` resource:
 
 ```yaml
@@ -199,6 +205,8 @@ See [nthlayer alerts](../commands/alerts.md) for full reference.
 
 - [Deployment Gates](../commands/check-deploy.md) - Full command reference
 - [Drift Detection](../commands/drift.md) - Trend analysis command
+- [SLO Portfolio](../commands/portfolio.md) - Organization-wide view
+- [Reliability Scorecard](../commands/scorecard.md) - Per-service scoring
 - [Intelligent Alerts](../commands/alerts.md) - Alert evaluation and simulation
 - [Error Budgets](../concepts/slos.md) - Understanding SLOs
 - [CI/CD Integration](../integrations/cicd.md) - Pipeline examples

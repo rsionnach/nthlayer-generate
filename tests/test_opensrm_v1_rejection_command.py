@@ -4,7 +4,7 @@ nthlayer-common's loader rejects opensrm/v1 manifests with a message that ends
 in a copy-pasteable ``nthlayer-generate migrate-manifest <path>``. Generate is
 the authority for whether that command works, so this derives the command from
 the real error and checks it against generate's real entry points and parser
-(opensrm-dww5). Nothing here hardcodes the message.
+(opensrm-dww5). Only the delimiter before the command is hardcoded (COMMAND_FOLLOWS).
 """
 
 from __future__ import annotations
@@ -21,7 +21,9 @@ from nthlayer_generate.demo import build_parser
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SPEC_EXAMPLE = REPO_ROOT.parent / "opensrm" / "examples" / "api-minimal.yaml"
-MARKER = "package: "
+# Text that precedes the command in nthlayer-common's rejection message
+# (src/nthlayer_common/manifest/opensrm_v1.py: "...package: <command>").
+COMMAND_FOLLOWS = "package: "
 ENTRY_TARGET = "nthlayer_generate.demo:main"
 
 
@@ -47,8 +49,8 @@ def rejection(tmp_path: Path) -> tuple[Path, str]:
 @pytest.fixture
 def argv(rejection: tuple[Path, str]) -> list[str]:
     _, text = rejection
-    assert text.count(MARKER) == 1, text
-    return shlex.split(text.split(MARKER)[1])
+    assert text.count(COMMAND_FOLLOWS) == 1, text
+    return shlex.split(text.split(COMMAND_FOLLOWS)[1])
 
 
 def test_command_script_is_declared_and_points_at_generate(argv, scripts):

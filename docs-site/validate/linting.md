@@ -150,7 +150,9 @@ repos:
     hooks:
       - id: nthlayer-lint
         name: NthLayer PromQL Lint
-        entry: nthlayer apply --lint
+        # apply takes one service file; pre-commit passes all staged
+        # matches at once, so loop over them.
+        entry: bash -c 'for f in "$@"; do nthlayer apply "$f" --lint || exit 1; done' --
         language: system
         files: services/.*\.yaml$
 ```

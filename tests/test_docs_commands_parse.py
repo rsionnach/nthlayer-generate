@@ -165,6 +165,54 @@ def _unwrap(line: str) -> tuple[str, bool]:
     return line, bool(key and key.group(1) == "entry")
 
 
+# pre-commit passes every matching staged file to `entry` in one call, so a
+# hook is checked with two filenames appended: a subcommand taking a single
+# positional must fail that check, because it fails in real use.
+_PRECOMMIT_FILES = [DUMMY, DUMMY]
+
+_PASS_FILENAMES_FALSE = re.compile(r"^\s*pass_filenames:\s*false\s*$")
+
+
+def _hook_passes_filenames(lines: list[str], entry_index: int) -> bool:
+    """False if the yaml list item holding `entry:` sets `pass_filenames: false`.
+
+    The hook's item is the nearest preceding `- ` line indented less than the
+    `entry:` key; it ends at the next line indented no deeper than that `- `.
+    """
+    entry_indent = len(lines[entry_index]) - len(lines[entry_index].lstrip())
+    start = entry_index
+    while start > 0:
+        start -= 1
+        candidate = lines[start]
+        indent = len(candidate) - len(candidate.lstrip())
+        if candidate.lstrip().startswith("- ") and indent < entry_indent:
+            break
+    item_indent = len(lines[start]) - len(lines[start].lstrip())
+    end = start + 1
+    while end < len(lines):
+        line = lines[end]
+        if line.strip() and len(line) - len(line.lstrip()) <= item_indent:
+            break
+        end += 1
+    return not any(_PASS_FILENAMES_FALSE.match(line) for line in lines[start:end])
+
+
+def _entry_point_argvs(command: str, line_no: int) -> list[tuple[list[str], bool]]:
+    """(argv after the entry point, ran directly) for each nthlayer command.
+
+    Recurses into `bash -c '...'` / `sh -c '...'` scripts; a command found
+    there is not run directly, so pre-commit's filenames do not reach it.
+    """
+    found: list[tuple[list[str], bool]] = []
+    for argv in _split_commands(command, line_no):
+        argv = _runner_stripped(argv)
+        if argv[:1] in (["bash"], ["sh"]) and argv[1:2] == ["-c"] and len(argv) > 2:
+            found.extend((inner, False) for inner, _ in _entry_point_argvs(argv[2], line_no))
+        elif argv and argv[0] in ENTRY_POINTS:
+            found.append((_normalise(argv[1:]), True))
+    return found
+
+
 def extract_invocations(text: str) -> list[tuple[int, list[str]]]:
     """(1-based line number, argv after the entry point) for each invocation."""
     found: list[tuple[int, list[str]]] = []
@@ -189,12 +237,10 @@ def extract_invocations(text: str) -> list[tuple[int, list[str]]]:
                 continue
             command, precommit_entry = _unwrap(stripped)
             command = _CI_PLACEHOLDER.sub(DUMMY, _PLACEHOLDER.sub(DUMMY, command))
-            for argv in _split_commands(command, line_no):
-                argv = _runner_stripped(argv)
-                if argv and argv[0] in ENTRY_POINTS:
-                    # pre-commit appends the staged filenames to `entry`.
-                    tail = [DUMMY] if precommit_entry else []
-                    found.append((line_no, _normalise(argv[1:]) + tail))
+            appends_files = precommit_entry and _hook_passes_filenames(lines, index - 1)
+            for argv, direct in _entry_point_argvs(command, line_no):
+                tail = _PRECOMMIT_FILES if appends_files and direct else []
+                found.append((line_no, argv + tail))
     return found
 
 
@@ -332,12 +378,41 @@ class TestExtraction:
         assert extract_invocations(markdown) == [
             (3, ["apply", "svc.yaml", "--lint"]),
             (5, ["validate-spec", "services/"]),
-            # pre-commit appends the staged filenames to `entry`.
-            (6, ["validate-metadata", "--strict", DUMMY]),
+            # pre-commit appends ALL matching staged filenames to `entry`.
+            (6, ["validate-metadata", "--strict", DUMMY, DUMMY]),
             (7, ["validate-slo", "svc.yaml", "--prometheus-url", DUMMY]),
             (8, ["plan", DUMMY, "--env", "prod"]),
             (12, ["lint", "svc.yaml"]),
             (16, ["migrate", "svc.yaml", "--dry-run"]),
+        ]
+
+    # pre-commit hook shapes (validate/linting.md, commands/validate-spec.md,
+    # commands/validate-metadata.md): `entry:` gets every staged filename
+    # unless its hook sets `pass_filenames: false`; a `bash -c` loop entry is
+    # checked on the nthlayer command inside it.
+    def test_precommit_entries(self) -> None:
+        markdown = "\n".join(
+            [
+                "```yaml",
+                "repos:",
+                "  - repo: local",
+                "    hooks:",
+                "      - id: passes-files",
+                "        entry: nthlayer validate-spec",
+                "        language: system",
+                "      - id: no-files",
+                "        entry: nthlayer validate-spec services/",
+                "        pass_filenames: false",
+                "      - id: loop",
+                "        entry: bash -c 'for f in \"$@\"; do nthlayer apply \"$f\" --lint || exit 1; done' --",
+                "        language: system",
+                "```",
+            ]
+        )
+        assert extract_invocations(markdown) == [
+            (6, ["validate-spec", DUMMY, DUMMY]),
+            (9, ["validate-spec", "services/"]),
+            (12, ["apply", "$f", "--lint"]),
         ]
 
     # Shell keywords leading a command (adoption-path.md and cicd.md use

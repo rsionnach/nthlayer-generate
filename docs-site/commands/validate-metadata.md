@@ -118,8 +118,11 @@ repos:
     hooks:
       - id: validate-metadata
         name: Validate alert metadata
-        entry: nthlayer validate-metadata --strict
+        # validate-metadata takes one path; give it the directory and run
+        # once instead of passing every staged file.
+        entry: nthlayer validate-metadata generated/ --strict
         language: system
+        pass_filenames: false
         files: alerts\.yaml$
 ```
 

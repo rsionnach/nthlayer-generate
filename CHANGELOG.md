@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/rsionnach/nthlayer-generate/compare/v2.1.0...v2.1.1) (2026-10-23)
+
+
+### Dependencies
+
+* require nthlayer-common 5.3.1 (opensrm-dww5) ([6468d90](https://github.com/rsionnach/nthlayer-generate/commit/6468d9078e6e8ccd6f3fb9fed2c5920057c1a22a))
+
 ## [2.1.0](https://github.com/rsionnach/nthlayer-generate/compare/v2.0.7...v2.1.0) (2026-10-23)
 
 

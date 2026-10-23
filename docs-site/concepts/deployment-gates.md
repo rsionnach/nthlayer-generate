@@ -14,8 +14,8 @@ Traditional monitoring tells you **after** a deployment causes problems. Deploym
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   CI/CD     │────▶│  NthLayer   │────▶│ Prometheus  │
-│  Pipeline   │     │ check-deploy │     │   Query     │
+│   CI/CD     │────▶│check-deploy │────▶│     SLO     │
+│  Pipeline   │     │   / gate    │     │ assessments │
 └─────────────┘     └─────────────┘     └─────────────┘
                            │
                            ▼
@@ -27,10 +27,10 @@ Traditional monitoring tells you **after** a deployment causes problems. Deploym
                     └─────────────┘
 ```
 
-1. **Pipeline triggers**: Your CI/CD pipeline calls `nthlayer check-deploy`
-2. **Query SLOs**: NthLayer queries Prometheus for current SLI values
+1. **Pipeline triggers**: Your CI/CD pipeline calls `python -m nthlayer_workers.observe check-deploy` (reads a local assessment store) or `nthlayer-workers gate` (reads nthlayer-core), both from the `nthlayer-workers` package
+2. **Read SLO state**: The gate reads the service's `slo_status` assessments
 3. **Calculate budget**: Error budget consumption is calculated
-4. **Return decision**: Exit code determines if deploy proceeds
+4. **Return decision**: Exit code determines if deploy proceeds — see [the command reference](../commands/check-deploy.md) for each form's codes
 
 ## Default Thresholds
 
@@ -38,13 +38,19 @@ Thresholds are based on service tier:
 
 | Tier | Warning | Blocking |
 |------|---------|----------|
-| Critical | <20% remaining | <10% remaining |
-| Standard | <20% remaining | None (advisory) |
-| Low | <30% remaining | None (advisory) |
+| Critical | ≤20% remaining | ≤10% remaining |
+| Standard | ≤20% remaining | None (advisory) |
+| Low | ≤30% remaining | None (advisory) |
 
 Critical services block deploys at 10% remaining budget. Standard and low tiers only warn.
 
 ## Custom Policies
+
+!!! warning "Not applied by the gate commands"
+    Neither `python -m nthlayer_workers.observe check-deploy` nor
+    `nthlayer-workers gate` reads `DeploymentGate` resources today: both
+    evaluate with the tier default thresholds above. The settings below are
+    accepted in a manifest but do not change a gate decision.
 
 Override defaults with a `DeploymentGate` resource in your `service.yaml`:
 
@@ -112,8 +118,7 @@ See [examples/cicd/](https://github.com/nthlayer/nthlayer/tree/main/examples/cic
 Test locally before integrating:
 
 ```bash
-nthlayer check-deploy services/api.yaml \
-  --prometheus-url http://prometheus:9090
+nthlayer-workers gate --service api --core-url http://nthlayer-core:8000
 
 echo "Exit code: $?"
 ```
@@ -137,6 +142,9 @@ resources:
 High-criticality downstream services increase the gate's caution level.
 
 ## Best Practices
+
+The threshold snippets in practices 1 and 2 are `DeploymentGate` settings,
+which the gate commands do not apply yet (see [Custom Policies](#custom-policies)).
 
 ### 1. Start with Advisory Mode
 
@@ -184,16 +192,8 @@ Gates need working SLO queries to calculate budget:
         sum(rate(http_requests_total[5m]))
 ```
 
-### 4. Test Before Production
-
-Use the demo mode to see gate behavior:
-
-```bash
-nthlayer check-deploy services/api.yaml --demo
-```
-
 ## See Also
 
-- [check-deploy Command](../commands/check-deploy.md)
+- [Deployment Gate Command](../commands/check-deploy.md) (nthlayer-workers)
 - [SLO Concepts](./slos.md)
 - [Shift Left Philosophy](./shift-left.md)

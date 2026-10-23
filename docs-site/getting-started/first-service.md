@@ -104,7 +104,7 @@ nthlayer plan payment-api.yaml
 nthlayer apply payment-api.yaml
 
 # Push dashboard to Grafana (if configured)
-nthlayer apply payment-api.yaml --push
+nthlayer apply payment-api.yaml --push-grafana
 ```
 
 ## Next Steps

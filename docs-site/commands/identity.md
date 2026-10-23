@@ -181,14 +181,6 @@ canonical=$(nthlayer identity resolve "$ALERT_SERVICE" | grep "Canonical" | awk 
 echo "Looking for $canonical in all systems..."
 ```
 
-### Metric Queries
-
-```bash
-# Get the Prometheus-style name for queries
-prom_name=$(nthlayer identity normalize "$SERVICE" --style prometheus)
-curl "$PROMETHEUS_URL/api/v1/query?query=up{service=\"$prom_name\"}"
-```
-
 ### Service Discovery
 
 ```bash
@@ -200,5 +192,5 @@ canonical=$(nthlayer identity resolve "$k8s_name")
 ## See Also
 
 - [nthlayer ownership](./ownership.md) - Find service owners
-- [nthlayer deps](./deps.md) - View service dependencies
+- [dependencies](./deps.md) - View service dependencies (nthlayer-workers)
 - [Service YAML Schema](../reference/service-yaml.md)

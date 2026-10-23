@@ -104,7 +104,7 @@ Run with --show-code for instrumentation examples.
 Model failure scenarios before they happen.
 
 ```bash
-$ nthlayer simulate service.yaml --scenarios 10000
+$ nthlayer simulate service.yaml --runs 10000
 
 Monte Carlo Simulation (10,000 runs)
   SLO: availability ≥ 99.9%

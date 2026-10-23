@@ -193,18 +193,8 @@ nthlayer plan services/payment-api.yaml --env production
 ### With Validation Commands
 
 ```bash
-# Verify metrics exist in production Prometheus
-nthlayer verify services/payment-api.yaml --env production
-
-# Check deployment gate against production SLOs
-nthlayer check-deploy services/payment-api.yaml --env production
-```
-
-### With SLO Commands
-
-```bash
-# Collect SLO metrics from production
-nthlayer slo collect services/payment-api.yaml --env production
+# Validate that SLO metrics exist, using production config
+nthlayer validate-slo services/payment-api.yaml --env production
 ```
 
 ## Best Practices

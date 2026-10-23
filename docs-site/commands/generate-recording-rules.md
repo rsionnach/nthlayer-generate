@@ -164,8 +164,8 @@ curl -X POST http://prometheus:9090/-/reload
 ### Mimir/Cortex Ruler API
 
 ```bash
-nthlayer apply services/api.yaml --push-ruler \
-  --ruler-url http://mimir:8080
+export MIMIR_RULER_URL=http://mimir:8080
+nthlayer apply services/api.yaml --push-ruler
 ```
 
 ## CI/CD Integration

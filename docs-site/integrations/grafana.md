@@ -59,7 +59,7 @@ Creates `generated/payment-api/dashboard.json` - import manually to Grafana.
 ### Auto-Push to Grafana
 
 ```bash
-nthlayer apply payment-api.yaml --push
+nthlayer apply payment-api.yaml --push-grafana
 ```
 
 Pushes directly to Grafana API.

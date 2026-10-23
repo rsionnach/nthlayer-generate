@@ -182,7 +182,7 @@ jobs:
 
 ## See Also
 
-- [Deployment Gates](check-deploy.md) — Error budget gates
-- [Drift Detection](drift.md) — Trend analysis
-- [Reliability Scorecard](scorecard.md) — Quantitative reliability scoring
+- [Deployment Gates](check-deploy.md) — Error budget gates (nthlayer-workers)
+- [Reliability Scorecard](scorecard.md) — Quantitative reliability scoring (nthlayer-workers)
+- [Drift Detection](drift.md) — Trend analysis (nthlayer-workers)
 - [Protection Overview](../protect/index.md) — Full protection stack

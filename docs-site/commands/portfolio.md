@@ -1,159 +1,70 @@
-# nthlayer portfolio
+# portfolio
 
-View SLO health across your entire organization.
+Aggregate SLO health across every service in the assessment store.
 
-## Usage
+!!! note "Ships in nthlayer-workers, not nthlayer-generate"
+    This command reads live or collected state, so it lives in the runtime tier.
+    It is part of the `nthlayer-workers` package (observe module), not the
+    `nthlayer` CLI that this site otherwise documents, and has no console script
+    of its own. Run it as a Python module:
+
+    ```bash
+    pip install nthlayer-workers
+    python -m nthlayer_workers.observe portfolio --help
+    ```
+
+## Synopsis
 
 ```bash
-nthlayer portfolio [options]
+python -m nthlayer_workers.observe portfolio [--store PATH] [--format {table,json}]
 ```
+
+## Description
+
+`portfolio` reads `slo_status` assessments from a local assessment store, which
+`python -m nthlayer_workers.observe collect --specs-dir DIR --prometheus-url URL`
+writes (default store: `assessments.db`). With no such assessments it prints
+`No slo_status assessments found. Run 'collect' first.` and exits 0.
+
+Each service gets an overall status, the worst of its SLOs' statuses
+(`HEALTHY`, `WARNING`, `CRITICAL`, `EXHAUSTED`). Services whose status is
+unknown or has no data are listed but not counted in any bucket.
 
 ## Options
 
-| Option | Description |
-|--------|-------------|
-| `--format FORMAT` | Output format: `text` (default), `json`, `csv` |
-| `--services-dir DIR` | Directory to scan for services |
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--store PATH` | no | Assessment store path (default: `assessments.db`) |
+| `--format {table,json}` | no | Output format (default: `table`) |
 
-## Example Output
+## Exit Codes
 
-```bash
-nthlayer portfolio
-```
+Always 0. `portfolio` reports; it does not gate.
 
-```
-================================================================================
-  NthLayer SLO Portfolio
-================================================================================
-
-Organization Health: 78% (14/18 services meeting SLOs)
-
-By Tier:
-  Tier 1 (Critical):     83%  ████████░░░░░░░░░░░░  5/6 services
-  Tier 2 (Standard):     75%  ███████░░░░░░░░░░░░░  6/8 services
-  Tier 3 (Low):          75%  ███████░░░░░░░░░░░░░  3/4 services
-
---------------------------------------------------------------------------------
-Services Needing Attention:
---------------------------------------------------------------------------------
-
-  payment-api (Tier 1)
-    availability: 156% budget burned - EXHAUSTED
-    Remaining: -12.5 hours
-
-  search-api (Tier 2)
-    latency-p99: 95% budget burned - WARNING
-    Remaining: 1.2 hours
-
---------------------------------------------------------------------------------
-Insights:
---------------------------------------------------------------------------------
-  - 2 services have no SLOs defined: legacy-api, internal-tools
-  - payment-api has aggressive targets (99.99%) - consider 99.95%
-
---------------------------------------------------------------------------------
-Total: 18 services, 16 with SLOs, 45 SLOs
-```
-
-## JSON Export
-
-For integration with other tools:
+## Examples
 
 ```bash
-nthlayer portfolio --format json
+# Collect first, then aggregate
+python -m nthlayer_workers.observe collect \
+  --specs-dir services/ \
+  --prometheus-url http://prometheus:9090
+python -m nthlayer_workers.observe portfolio
+
+# JSON for dashboards or scripts
+python -m nthlayer_workers.observe portfolio --format json
 ```
 
-```json
-{
-  "timestamp": "2024-12-06T10:30:00Z",
-  "total_services": 18,
-  "services_with_slos": 16,
-  "total_slos": 45,
-  "healthy_services": 14,
-  "org_health_percent": 77.78,
-  "by_tier": [
-    {
-      "tier": 1,
-      "tier_name": "Critical",
-      "total_services": 6,
-      "healthy_services": 5,
-      "health_percent": 83.33
-    }
-  ],
-  "services": [
-    {
-      "name": "payment-api",
-      "tier": 1,
-      "overall_status": "exhausted",
-      "slos": [
-        {
-          "name": "availability",
-          "status": "exhausted",
-          "budget_consumed_percent": 156.0
-        }
-      ]
-    }
-  ]
-}
-```
+## Output
 
-## CSV Export
+Table output prints the service count, the healthy/warning/critical/exhausted
+counts, and each service with its SLOs' status and current SLI.
 
-For spreadsheet analysis:
-
-```bash
-nthlayer portfolio --format csv
-```
-
-```csv
-service,tier,slo,status,budget_consumed,budget_remaining_hours
-payment-api,1,availability,exhausted,156.0,-12.5
-payment-api,1,latency-p99,healthy,45.0,18.2
-search-api,2,availability,healthy,32.0,22.1
-search-api,2,latency-p99,warning,95.0,1.2
-```
-
-## Health Status Levels
-
-| Status | Budget Consumed | Description |
-|--------|-----------------|-------------|
-| **Healthy** | < 80% | On track |
-| **Warning** | 80-100% | Approaching limit |
-| **Critical** | 100-150% | Over budget |
-| **Exhausted** | > 150% | Severely over budget |
-
-## Scanning Multiple Directories
-
-```bash
-nthlayer portfolio --services-dir ./services --services-dir ./legacy
-```
-
-Default search paths:
-- `./services`
-- `./examples/services`
-
-## Use Cases
-
-### Weekly SLO Review
-
-```bash
-nthlayer portfolio --format json > slo-report-$(date +%Y%m%d).json
-```
-
-### CI/CD Gate
-
-```bash
-# Fail if any critical service is exhausted
-nthlayer portfolio --format json | jq -e '.services[] | select(.tier == 1 and .overall_status == "exhausted") | empty'
-```
-
-### Stakeholder Reports
-
-```bash
-nthlayer portfolio --format csv > monthly-slo-report.csv
-```
+JSON output has `total_services`, `healthy`, `warning`, `critical`,
+`exhausted`, and a `services` list; each entry has `service`,
+`overall_status`, and `slos` (`name`, `status`, `current_sli`,
+`percent_consumed`).
 
 ## See Also
 
-- [SLOs & Error Budgets](../concepts/slos.md) - Understanding SLOs
-- [nthlayer slo](slo.md) - Per-service SLO commands
+- [scorecard](./scorecard.md) - Per-service score from the same data
+- [Deployment Gates](./check-deploy.md) - Gate on the same assessments

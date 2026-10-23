@@ -1,147 +1,72 @@
-# nthlayer deps
+# Dependencies (observe `dependencies`)
 
-Discover and display service dependencies from multiple sources.
+Discover a service's upstream and downstream dependencies.
 
-This command queries various dependency providers (Kubernetes, Backstage, Prometheus) to build a comprehensive view of what services depend on what.
+!!! note "Ships in nthlayer-workers, not nthlayer-generate"
+    Dependency discovery queries live systems, so it lives in the runtime tier.
+    It is part of the `nthlayer-workers` package (observe module), not the
+    `nthlayer` CLI that this site otherwise documents, and has no console script
+    of its own. The subcommand is named `dependencies`. Run it as a Python module:
 
-## Usage
+    ```bash
+    pip install nthlayer-workers
+    python -m nthlayer_workers.observe dependencies --help
+    ```
+
+## Synopsis
 
 ```bash
-nthlayer deps <service.yaml> [options]
+python -m nthlayer_workers.observe dependencies --service SERVICE --prometheus-url URL [options]
 ```
+
+## Description
+
+`dependencies` asks the configured providers for the service's dependency
+edges, prints the result as JSON, and stores it as a `dependency_graph`
+assessment in the local assessment store (see `--store`).
+
+Prometheus is the only provider this command configures. `--prometheus-url` is
+optional to the argument parser, but without it no provider is configured and
+the command exits 1 with `No providers configured. Use --prometheus-url.`
 
 ## Options
 
-| Option | Description |
-|--------|-------------|
-| `--prometheus-url, -p URL` | Prometheus server URL |
-| `--env ENVIRONMENT` | Environment name (dev, staging, prod) |
-| `--provider {prometheus,kubernetes,backstage,all}` | Dependency provider to use (default: all) |
-| `--k8s-namespace NAMESPACE` | Kubernetes namespace to search (default: all) |
-| `--backstage-url URL` | Backstage catalog URL |
-| `--upstream, -u` | Show only upstream dependencies (what this service calls) |
-| `--downstream, -d` | Show only downstream dependencies (what calls this service) |
-| `--format {table,json}` | Output format (default: table) |
-| `--demo` | Show demo output with sample data |
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--service SERVICE` | yes | Service name |
+| `--prometheus-url URL` | in practice | Prometheus server URL (the only dependency provider) |
+| `--store PATH` | no | Assessment store path (default: `assessments.db`) |
+| `--decision-store PATH` | no | Also write a content-addressed decision record to this SQLite DB |
+| `--legacy-store` / `--no-legacy-store` | no | Write to the assessment store (default: enabled) |
 
-## Environment Variables
+## Exit Codes
 
-| Variable | Description |
-|----------|-------------|
-| `NTHLAYER_PROMETHEUS_URL` | Default Prometheus URL |
-| `NTHLAYER_BACKSTAGE_URL` | Default Backstage catalog URL |
-| `KUBECONFIG` | Kubernetes configuration file |
+| Code | Meaning |
+|------|---------|
+| 0 | Discovery ran and the result was printed |
+| 1 | No provider configured (`--prometheus-url` missing) |
 
-## Examples
-
-### Basic Dependency Discovery
+## Example
 
 ```bash
-nthlayer deps checkout-service.yaml
+python -m nthlayer_workers.observe dependencies \
+  --service checkout-service \
+  --prometheus-url http://prometheus:9090
 ```
 
-Output:
-```
-╭──────────────────────────────────────────────────────────────────────────────╮
-│ Dependencies: checkout-service                                                │
-╰──────────────────────────────────────────────────────────────────────────────╯
+## Output
 
-Upstream Dependencies (what checkout-service calls):
-┌─────────────────┬──────────────┬────────────┬───────────┐
-│ Service         │ Type         │ Provider   │ Confidence│
-├─────────────────┼──────────────┼────────────┼───────────┤
-│ payment-api     │ service      │ kubernetes │ 0.95      │
-│ user-service    │ service      │ backstage  │ 0.90      │
-│ postgres-main   │ datastore    │ kubernetes │ 0.95      │
-│ redis-cache     │ datastore    │ prometheus │ 0.85      │
-│ stripe          │ external     │ backstage  │ 0.90      │
-└─────────────────┴──────────────┴────────────┴───────────┘
+A JSON object with:
 
-Downstream Dependencies (what calls checkout-service):
-┌─────────────────┬──────────────┬────────────┬───────────┐
-│ Service         │ Type         │ Provider   │ Confidence│
-├─────────────────┼──────────────┼────────────┼───────────┤
-│ mobile-app      │ service      │ prometheus │ 0.80      │
-│ web-frontend    │ service      │ kubernetes │ 0.95      │
-└─────────────────┴──────────────┴────────────┴───────────┘
-
-Summary: 5 upstream, 2 downstream dependencies
-```
-
-### Filter by Provider
-
-```bash
-# Only discover from Kubernetes
-nthlayer deps service.yaml --provider kubernetes
-
-# Only discover from Backstage catalog
-nthlayer deps service.yaml --provider backstage --backstage-url https://backstage.company.com
-```
-
-### JSON Output for CI/CD
-
-```bash
-nthlayer deps service.yaml --format json > dependencies.json
-```
-
-### Show Demo Data
-
-```bash
-nthlayer deps service.yaml --demo
-```
-
-## Dependency Providers
-
-### Kubernetes Provider
-
-Discovers dependencies from:
-- Service selectors and labels
-- ConfigMap references
-- Environment variables pointing to other services
-- Ingress/egress network policies
-
-**Confidence:** 0.95 (high - explicit configuration)
-
-### Backstage Provider
-
-Discovers dependencies from:
-- `spec.dependsOn` in catalog entities
-- API relationships
-- System membership
-
-**Confidence:** 0.90 (high - curated catalog)
-
-### Prometheus Provider
-
-Discovers dependencies from:
-- Metric labels showing service-to-service calls
-- Request rate patterns between services
-
-**Confidence:** 0.80-0.85 (medium - inferred from metrics)
-
-## Dependency Types
-
-| Type | Description |
-|------|-------------|
-| `service` | Another microservice |
-| `datastore` | Database, cache, or storage |
-| `queue` | Message queue or event bus |
-| `external` | External API or third-party service |
-| `infrastructure` | Infrastructure component (e.g., Vault, Consul) |
-
-## Confidence Scores
-
-Dependencies are assigned confidence scores (0.0-1.0):
-
-| Range | Meaning |
-|-------|---------|
-| 0.90-1.0 | High confidence (explicit configuration) |
-| 0.75-0.89 | Medium confidence (strong inference) |
-| 0.50-0.74 | Low confidence (weak inference) |
-| <0.50 | Very low (may be false positive) |
+| Field | Description |
+|-------|-------------|
+| `dependencies_discovered` | Total number of dependency edges found |
+| `upstream` | What this service calls: `service`, `type`, `provider` per entry |
+| `downstream` | What calls this service: `service`, `type`, `provider` per entry |
+| `providers_queried` | Providers that were asked |
+| `errors` | Provider errors, if any |
 
 ## See Also
 
-- [nthlayer blast-radius](./blast-radius.md) - Calculate deployment impact
-- [nthlayer ownership](./ownership.md) - Find service owners
-- [Architecture Overview](../architecture.md) - System architecture
+- [blast-radius](./blast-radius.md) - Impact of a change, computed over the dependency graph
+- [ownership](./ownership.md) - Who owns a service

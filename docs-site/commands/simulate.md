@@ -237,7 +237,7 @@ nthlayer simulate services/checkout-service.yaml \
 
 ## See Also
 
-- [Deployment Gates](./check-deploy.md) — Error budget gates
-- [Drift Detection](./drift.md) — Detect degradation trends
+- [Deployment Gates](./check-deploy.md) — Error budget gates (nthlayer-workers)
+- [Drift Detection](./drift.md) — Detect degradation trends (nthlayer-workers)
 - [Validate SLO](./validate-slo.md) — Static SLO feasibility check
-- [Blast Radius](./blast-radius.md) — Dependency impact analysis
+- [Blast Radius](./blast-radius.md) — Dependency impact analysis (nthlayer-workers)

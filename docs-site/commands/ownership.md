@@ -166,16 +166,6 @@ When multiple sources provide ownership information:
 nthlayer ownership failing-service.yaml --format json | jq '.on_call'
 ```
 
-### Dependency Notification
-
-```bash
-# Notify owners of affected services before deployment
-for dep in $(nthlayer blast-radius service.yaml --format json | jq -r '.affected_services[].name'); do
-  owner=$(nthlayer ownership $dep.yaml --format json | jq -r '.primary_owner.team')
-  echo "Notifying $owner about $dep"
-done
-```
-
 ### Ownership Audit
 
 ```bash
@@ -185,6 +175,6 @@ nthlayer ownership service.yaml --format json | jq 'select(.primary_owner.confid
 
 ## See Also
 
-- [nthlayer deps](./deps.md) - View service dependencies
-- [nthlayer blast-radius](./blast-radius.md) - Calculate deployment impact
+- [dependencies](./deps.md) - View service dependencies (nthlayer-workers)
+- [blast-radius](./blast-radius.md) - Calculate deployment impact (nthlayer-workers)
 - [nthlayer identity](./identity.md) - Service identity resolution

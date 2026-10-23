@@ -175,13 +175,16 @@ repos:
     hooks:
       - id: validate-specs
         name: Validate Service Specs
-        entry: nthlayer validate-spec
+        # validate-spec takes one path; give it the directory and run once
+        # instead of passing every staged file.
+        entry: nthlayer validate-spec services/
         language: system
+        pass_filenames: false
         files: services/.*\.yaml$
 ```
 
 ## See Also
 
 - [Validation Overview](../validate/index.md)
-- [Contract Verification](./verify.md)
+- [Contract Verification](./verify.md) (nthlayer-workers)
 - [conftest Documentation](https://www.conftest.dev/)

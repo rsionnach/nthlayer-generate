@@ -150,7 +150,9 @@ repos:
     hooks:
       - id: nthlayer-lint
         name: NthLayer PromQL Lint
-        entry: nthlayer apply --lint
+        # apply takes one service file; pre-commit passes all staged
+        # matches at once, so loop over them.
+        entry: bash -c 'for f in "$@"; do nthlayer apply "$f" --lint || exit 1; done' --
         language: system
         files: services/.*\.yaml$
 ```
@@ -188,4 +190,4 @@ checks {
 
 - [pint Documentation](https://cloudflare.github.io/pint/)
 - [nthlayer apply](../commands/apply.md)
-- [Contract Verification](../commands/verify.md)
+- [Contract Verification](../commands/verify.md) (nthlayer-workers)

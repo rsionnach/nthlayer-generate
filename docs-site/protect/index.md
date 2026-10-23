@@ -8,13 +8,14 @@ NthLayer's protection layer enforces reliability policies in production. When er
 
 | Feature | Command | What It Does |
 |---------|---------|--------------|
-| **Deployment Gates** | `nthlayer check-deploy` | Block deploys when budget exhausted |
-| **Drift Detection** | `nthlayer drift` | Detect reliability degradation trends |
-| **SLO Portfolio** | `nthlayer portfolio` | Org-wide reliability visibility |
-| **Reliability Scorecard** | `nthlayer scorecard` | Quantitative per-service reliability scores (0-100) |
+| **Deployment Gates** | `nthlayer-workers gate` | Block deploys when budget exhausted |
+| **Drift Detection** | `python -m nthlayer_workers.observe drift` | Detect reliability degradation trends |
 | **Intelligent Alerts** | `nthlayer alerts` | Context-aware alert evaluation and budget explanations |
 | **Metric Recommendations** | `nthlayer recommend-metrics` | Validate instrumentation coverage |
 | **Error Budgets** | `nthlayer slo collect` | Real-time budget consumption |
+
+Deployment gates and drift detection read live state, so they ship in the
+`nthlayer-workers` package rather than the `nthlayer` CLI.
 
 ## Why Deployment Gates?
 
@@ -36,53 +37,14 @@ Check Budget → Block/Allow → Deploy
 
 ## Quick Start
 
-### 1. Check Before Deploy
+### Check Before Deploy
 
 ```bash
-nthlayer check-deploy services/payment-api.yaml \
-  --prometheus-url http://prometheus:9090
+nthlayer-workers gate --service payment-api --core-url http://nthlayer-core:8000
 ```
 
-Output:
-```
-╭──────────────────────────────────────────────────────────────╮
-│  Deployment Gate: payment-api                                │
-╰──────────────────────────────────────────────────────────────╯
-
-  Tier:          critical
-  Window:        30d
-
-  SLO Status:
-    availability   99.87%  (target: 99.95%)   42% remaining   ⚠ WARNING
-    latency_p99    187ms   (target: 200ms)    78% remaining   ✓ OK
-
-  Decision: ⚠ PROCEED WITH CAUTION
-  Exit code: 1
-```
-
-### 2. View Portfolio Health
-
-```bash
-nthlayer portfolio --path services/
-```
-
-Output:
-```
-╭──────────────────────────────────────────────────────────────╮
-│  NthLayer SLO Portfolio                                      │
-╰──────────────────────────────────────────────────────────────╯
-
-  Organization Health: 78% (14/18 services meeting SLOs)
-
-  By Tier:
-    Critical:  ████████░░  83% (5/6 services)
-    Standard:  ███████░░░  75% (6/8 services)
-    Low:       ███████░░░  75% (3/4 services)
-
-  ⚠ Services Needing Attention:
-    payment-api    availability  156% burned  EXHAUSTED
-    search-api     latency       95% burned   WARNING
-```
+The gate reads the service's SLO assessments from nthlayer-core, prints its
+decision as JSON, and records a `deploy_gate` assessment.
 
 ## Exit Codes
 
@@ -90,8 +52,8 @@ Deployment gates use exit codes for CI/CD integration:
 
 | Code | Decision | Pipeline Action |
 |------|----------|-----------------|
-| `0` | Approved | Deploy proceeds |
-| `1` | Warning | Deploy with caution |
+| `0` | Approved or Warning | Deploy proceeds (a warning is printed on stderr) |
+| `1` | Not evaluated | Gate could not reach core or read state — your pipeline decides |
 | `2` | Blocked | Fail pipeline |
 
 ## Tier-Based Thresholds
@@ -100,13 +62,19 @@ Default thresholds vary by service tier:
 
 | Tier | Warning | Blocking |
 |------|---------|----------|
-| Critical | <20% remaining | <10% remaining |
-| Standard | <20% remaining | None (advisory) |
-| Low | <30% remaining | None (advisory) |
+| Critical | ≤20% remaining | ≤10% remaining |
+| Standard | ≤20% remaining | None (advisory) |
+| Low | ≤30% remaining | None (advisory) |
 
 Critical services block deploys at 10% remaining budget. Lower tiers only warn.
 
 ## Custom Policies
+
+!!! warning "Not applied by the gate commands"
+    Neither `python -m nthlayer_workers.observe check-deploy` nor
+    `nthlayer-workers gate` reads `DeploymentGate` resources today: both
+    evaluate with the tier-based thresholds above. The settings below are
+    accepted in a manifest but do not change a gate decision.
 
 Override defaults with a `DeploymentGate` resource:
 
@@ -141,8 +109,9 @@ jobs:
     steps:
       - name: Check Deployment Gate
         run: |
-          nthlayer check-deploy services/api.yaml \
-            --prometheus-url ${{ secrets.PROMETHEUS_URL }}
+          nthlayer-workers gate --service api \
+            --commit-sha ${{ github.sha }} \
+            --core-url ${{ secrets.NTHLAYER_CORE_URL }}
 
       - name: Deploy
         if: success()  # Only if gate passed
@@ -163,13 +132,16 @@ spec:
     spec:
       containers:
         - name: check
-          image: ghcr.io/nthlayer/nthlayer:latest
-          command:
-            - nthlayer
-            - check-deploy
-            - /config/service.yaml
-            - --prometheus-url
-            - $(PROMETHEUS_URL)
+          # The published nthlayer image ships the generate CLI only; the
+          # gate needs the nthlayer-workers package.
+          image: python:3.12-slim
+          command: ["sh", "-c"]
+          args:
+            - pip install nthlayer-workers &&
+              nthlayer-workers gate --service payment-api --core-url "$NTHLAYER_CORE_URL"
+          env:
+            - name: NTHLAYER_CORE_URL
+              value: http://nthlayer-core:8000
 ```
 
 ## Drift Detection
@@ -186,24 +158,14 @@ Deployment gates check the **current** budget state. Drift detection looks at **
 ### Analyze Drift
 
 ```bash
-nthlayer drift services/payment-api.yaml \
+python -m nthlayer_workers.observe drift \
+  --service payment-api \
   --prometheus-url http://prometheus:9090
 ```
 
-Output:
-```
-╭──────────────────────────────────────────────────────────────╮
-│  Drift Analysis: payment-api                                 │
-╰──────────────────────────────────────────────────────────────╯
-
-  Current Budget:     72.34%
-  Trend:              -0.52%/week
-  Pattern:            Gradual Decline
-  Days to Exhaustion: 138 days
-
-  ⚠ Severity: WARN
-  Recommendation: Investigate recent changes.
-```
+The result is printed as JSON with the severity, pattern, trend, and projected
+days to exhaustion. Exit code 0 = severity none/info, 1 = severity warn or
+the analysis failed (message on stderr), 2 = severity critical.
 
 ### Drift Patterns
 
@@ -214,22 +176,6 @@ Output:
 | Volatile | High variance, no trend | Check for intermittent issues |
 | Stable | No significant trend | Continue monitoring |
 
-### Integrate with Deployment Gates
-
-Add drift analysis to your deployment gate check:
-
-```bash
-nthlayer check-deploy services/api.yaml \
-  --prometheus-url http://prometheus:9090 \
-  --include-drift
-```
-
-### Org-Wide Drift View
-
-```bash
-nthlayer portfolio --drift --prometheus-url http://prometheus:9090
-```
-
 ## The Google SRE Connection
 
 NthLayer automates the [Error Budget Policy](https://sre.google/sre-book/embracing-risk/) from the Google SRE Book:
@@ -238,21 +184,8 @@ NthLayer automates the [Error Budget Policy](https://sre.google/sre-book/embraci
 
 | SRE Concept | Manual Process | NthLayer Automation |
 |-------------|----------------|---------------------|
-| Error Budget Policy | Spreadsheet tracking | `nthlayer check-deploy` |
+| Error Budget Policy | Spreadsheet tracking | `nthlayer-workers gate` |
 | Release Freeze | Calendar reminders | Automatic blocking |
-| Budget Visibility | Monthly reports | `nthlayer portfolio` |
-
-## Reliability Scorecard
-
-Quantify reliability across your organization with weighted scores:
-
-```bash
-nthlayer scorecard --prometheus-url http://prometheus:9090
-```
-
-Scores combine SLO compliance (40%), incident score (30%), deploy success (20%), and error budget (10%) into a 0-100 score per service. Use `--by-team` for team-level aggregation. Exit codes enable CI/CD gating: 0=good, 1=fair, 2=poor.
-
-See [nthlayer scorecard](../commands/scorecard.md) for full reference.
 
 ## Intelligent Alerts
 
@@ -273,10 +206,10 @@ See [nthlayer alerts](../commands/alerts.md) for full reference.
 
 ## Next Steps
 
-- [Deployment Gates](../commands/check-deploy.md) - Full command reference
-- [Drift Detection](../commands/drift.md) - Trend analysis command
-- [SLO Portfolio](../commands/portfolio.md) - Organization-wide view
-- [Reliability Scorecard](../commands/scorecard.md) - Quantitative scoring
+- [Deployment Gates](../commands/check-deploy.md) - Full command reference (nthlayer-workers)
+- [Drift Detection](../commands/drift.md) - Trend analysis command (nthlayer-workers)
+- [SLO Portfolio](../commands/portfolio.md) - Organization-wide view (nthlayer-workers)
+- [Reliability Scorecard](../commands/scorecard.md) - Per-service scoring (nthlayer-workers)
 - [Intelligent Alerts](../commands/alerts.md) - Alert evaluation and simulation
 - [Error Budgets](../concepts/slos.md) - Understanding SLOs
 - [CI/CD Integration](../integrations/cicd.md) - Pipeline examples

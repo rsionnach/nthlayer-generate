@@ -10,7 +10,7 @@ NthLayer's validation layer ensures your reliability configuration is correct *b
 |-------|---------|----------------|-------------|
 | **Syntax** | `nthlayer apply --lint` | PromQL query validity | Every commit |
 | **Policy** | `nthlayer validate-spec` | Service spec compliance | Every commit |
-| **Contract** | `nthlayer verify` | Metrics exist in Prometheus | Before promotion |
+| **Contract** | `nthlayer validate-slo` | SLO metrics exist in Prometheus | Before promotion |
 
 ## Validation Flow
 
@@ -31,7 +31,7 @@ service.yaml
          │
          ▼
 ┌─────────────────┐
-│  Contract       │  nthlayer verify
+│  Contract       │  nthlayer validate-slo
 │  Verification   │  "Do metrics exist?"
 └────────┬────────┘
          │
@@ -69,13 +69,8 @@ nthlayer apply services/payment-api.yaml --lint
 
 ```bash
 # Verify against staging Prometheus
-nthlayer verify services/payment-api.yaml \
+nthlayer validate-slo services/payment-api.yaml \
   --prometheus-url http://prometheus:9090
-
-# Output:
-# ✓ http_requests_total
-# ✓ http_request_duration_seconds_bucket
-# Contract verification passed
 ```
 
 ## CI/CD Integration
@@ -95,7 +90,7 @@ jobs:
 
       - name: Verify Contracts
         run: |
-          nthlayer verify services/*.yaml \
+          nthlayer validate-slo services/payment-api.yaml \
             --prometheus-url ${{ secrets.STAGING_PROMETHEUS }}
 ```
 
@@ -111,6 +106,7 @@ All validation commands use consistent exit codes:
 
 ## Next Steps
 
-- [Contract Verification](../commands/verify.md) - Verify metrics exist
+- [Contract Verification](../commands/verify.md) - Verify declared metrics exist across a specs directory (nthlayer-workers)
+- [validate-slo](../commands/validate-slo.md) - Verify one service's SLO metrics exist
 - [Policy Validation](../commands/validate-spec.md) - OPA/Rego policy checks
 - [PromQL Linting](./linting.md) - Syntax and best practices

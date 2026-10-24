@@ -1,0 +1,31 @@
+{
+  "exit": 1,
+  "json": {
+    "error_budget_forecast": {
+      "p50": 0.031417,
+      "p75": 0.211866,
+      "p95": 0.535063
+    },
+    "exit_code": 1,
+    "horizon_days": 90,
+    "num_runs": 200,
+    "p_meeting_sla": 0.53,
+    "services": {
+      "payment-api": {
+        "availability_p50": 0.995157,
+        "availability_p95": 0.997675,
+        "availability_p99": 0.998146,
+        "downtime_contribution": 1.0,
+        "is_weakest_link": true,
+        "name": "payment-api",
+        "p_meeting_sla": 0.53,
+        "target": 0.995
+      }
+    },
+    "target_service": "payment-api",
+    "target_sla": 0.995,
+    "weakest_link": "payment-api",
+    "weakest_link_contribution": 1.0,
+    "what_if_results": []
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "exit": 0,
+  "files": {
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": null,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/daily-report-generator/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": "https://wiki/runbooks/daily-report-generator",
+        "serviceManifest": "examples/opensrm/batch.reliability.yaml",
+        "slothSpec": "generated/daily-report-generator/sloth/daily-report-generator.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": "Generates daily business reports and exports to S3",
+        "name": "daily-report-generator",
+        "supportModel": "self",
+        "team": "analytics",
+        "tier": "standard",
+        "type": "batch"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": "Job execution success rate",
+          "name": "availability",
+          "sloType": null,
+          "status": null,
+          "target": 99.0,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": "Job failure rate (allow some retries)",
+          "name": "error_rate",
+          "sloType": null,
+          "status": null,
+          "target": 1.0,
+          "window": "7d"
+        }
+      ]
+    }
+  }
+}

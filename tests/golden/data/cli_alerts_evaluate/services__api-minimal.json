@@ -1,0 +1,19 @@
+{
+  "json": [
+    {
+      "alerts_triggered": 0,
+      "budgets": [],
+      "budgets_evaluated": 0,
+      "errors": [
+        "No SLOs defined in manifest"
+      ],
+      "events": [],
+      "explanations": [],
+      "notifications_sent": 0,
+      "rules_evaluated": 0,
+      "service": "api-minimal"
+    }
+  ],
+  "json_exit": 0,
+  "table_exit": 0
+}

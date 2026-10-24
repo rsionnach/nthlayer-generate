@@ -1,0 +1,72 @@
+{
+  "exit": 0,
+  "files": {
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": null,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/user-api/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": null,
+        "serviceManifest": "examples/opensrm/api-basic.reliability.yaml",
+        "slothSpec": "generated/user-api/sloth/user-api.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": "User management API",
+        "name": "user-api",
+        "supportModel": "self",
+        "team": "platform",
+        "tier": "standard",
+        "type": "api"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "availability",
+          "sloType": null,
+          "status": null,
+          "target": 99.9,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "latency",
+          "sloType": null,
+          "status": null,
+          "target": 200.0,
+          "window": "30d"
+        }
+      ]
+    }
+  }
+}

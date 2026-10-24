@@ -1,0 +1,31 @@
+{
+  "exit": 1,
+  "json": {
+    "error_budget_forecast": {
+      "p50": 0.2807,
+      "p75": 1.0,
+      "p95": 1.0
+    },
+    "exit_code": 1,
+    "horizon_days": 90,
+    "num_runs": 200,
+    "p_meeting_sla": 0.605,
+    "services": {
+      "checkout-service": {
+        "availability_p50": 0.99964,
+        "availability_p95": 1.0,
+        "availability_p99": 1.0,
+        "downtime_contribution": 1.0,
+        "is_weakest_link": true,
+        "name": "checkout-service",
+        "p_meeting_sla": 0.605,
+        "target": 0.9995
+      }
+    },
+    "target_service": "checkout-service",
+    "target_sla": 0.9995,
+    "weakest_link": "checkout-service",
+    "weakest_link_contribution": 1.0,
+    "what_if_results": []
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "exit": 0,
+  "files": {
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": 10.0,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/fraud-detector/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": "https://wiki/runbooks/fraud-detector",
+        "serviceManifest": "examples/opensrm/ai-gate.reliability.yaml",
+        "slothSpec": "generated/fraud-detector/sloth/fraud-detector.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": "Real-time fraud detection service using ML models",
+        "name": "fraud-detector",
+        "supportModel": "self",
+        "team": "risk",
+        "tier": "critical",
+        "type": "ai-gate"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": "Service availability for decision requests",
+          "name": "availability",
+          "sloType": null,
+          "status": null,
+          "target": 99.9,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": "Decision latency - critical for checkout flow",
+          "name": "latency",
+          "sloType": null,
+          "status": null,
+          "target": 100.0,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": "Human override rate - indicates trust in AI decisions",
+          "name": "reversal_rate",
+          "sloType": null,
+          "status": null,
+          "target": 0.05,
+          "window": "7d"
+        },
+        {
+          "currentValue": null,
+          "description": "Failures where model was highly confident",
+          "name": "high_confidence_failure",
+          "sloType": null,
+          "status": null,
+          "target": 0.01,
+          "window": "7d"
+        },
+        {
+          "currentValue": null,
+          "description": "How well confidence scores match actual accuracy",
+          "name": "calibration",
+          "sloType": null,
+          "status": null,
+          "target": 0.05,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": "Time until we know if decision was correct",
+          "name": "feedback_latency",
+          "sloType": null,
+          "status": null,
+          "target": 3600.0,
+          "window": "30d"
+        }
+      ]
+    }
+  }
+}

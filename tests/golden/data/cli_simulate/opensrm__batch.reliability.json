@@ -1,0 +1,31 @@
+{
+  "exit": 1,
+  "json": {
+    "error_budget_forecast": {
+      "p50": 0.01045,
+      "p75": 0.177059,
+      "p95": 0.378323
+    },
+    "exit_code": 1,
+    "horizon_days": 90,
+    "num_runs": 200,
+    "p_meeting_sla": 0.515,
+    "services": {
+      "daily-report-generator": {
+        "availability_p50": 0.990105,
+        "availability_p95": 0.993783,
+        "availability_p99": 0.994334,
+        "downtime_contribution": 1.0,
+        "is_weakest_link": true,
+        "name": "daily-report-generator",
+        "p_meeting_sla": 0.515,
+        "target": 0.99
+      }
+    },
+    "target_service": "daily-report-generator",
+    "target_sla": 0.99,
+    "weakest_link": "daily-report-generator",
+    "weakest_link_contribution": 1.0,
+    "what_if_results": []
+  }
+}

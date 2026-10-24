@@ -1,0 +1,6 @@
+{
+  "exit": 0,
+  "files": {
+    "payment-api.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: payment-api-with-envs.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: payment-api\n  team: payments\n  tier: critical\nspec:\n  type: api\n  ownership:\n    team: payments\n"
+  }
+}

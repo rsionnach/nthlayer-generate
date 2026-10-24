@@ -1,0 +1,14 @@
+{
+  "json": [
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
+      "slo": "report-success-rate",
+      "threshold": 0.95,
+      "type": "budget_threshold"
+    }
+  ],
+  "json_exit": 0,
+  "table_exit": 0
+}

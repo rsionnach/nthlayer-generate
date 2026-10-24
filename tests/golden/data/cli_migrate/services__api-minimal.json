@@ -1,0 +1,6 @@
+{
+  "exit": 0,
+  "files": {
+    "api-minimal.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: api-minimal.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: api-minimal\n  team: platform\n  tier: critical\nspec:\n  type: api\n  ownership:\n    team: platform\n"
+  }
+}

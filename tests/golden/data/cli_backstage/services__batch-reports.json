@@ -1,0 +1,63 @@
+{
+  "exit": 0,
+  "files": {
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": null,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 30.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/batch-reports/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": null,
+        "serviceManifest": "examples/services/batch-reports.yaml",
+        "slothSpec": "generated/batch-reports/sloth/batch-reports.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": null,
+        "name": "batch-reports",
+        "supportModel": "self",
+        "team": "data",
+        "tier": "low",
+        "type": "api"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "report-success-rate",
+          "sloType": "availability",
+          "status": null,
+          "target": 95.0,
+          "window": "30d"
+        }
+      ]
+    }
+  }
+}

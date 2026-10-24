@@ -1,0 +1,102 @@
+{
+  "json": [
+    {
+      "enabled": true,
+      "name": "budget-warning",
+      "severity": "warning",
+      "slo": "search-availability",
+      "threshold": 0.65,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-warning",
+      "severity": "warning",
+      "slo": "search-latency-p95",
+      "threshold": 0.65,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-warning",
+      "severity": "warning",
+      "slo": "search-quality",
+      "threshold": 0.65,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
+      "slo": "search-availability",
+      "threshold": 0.85,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
+      "slo": "search-latency-p95",
+      "threshold": 0.85,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
+      "slo": "search-quality",
+      "threshold": 0.85,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "burn-rate-warning",
+      "severity": "warning",
+      "slo": "search-availability",
+      "threshold": 3.0,
+      "type": "burn_rate"
+    },
+    {
+      "enabled": true,
+      "name": "burn-rate-warning",
+      "severity": "warning",
+      "slo": "search-latency-p95",
+      "threshold": 3.0,
+      "type": "burn_rate"
+    },
+    {
+      "enabled": true,
+      "name": "burn-rate-warning",
+      "severity": "warning",
+      "slo": "search-quality",
+      "threshold": 3.0,
+      "type": "burn_rate"
+    },
+    {
+      "enabled": true,
+      "name": "budget-exhaustion",
+      "severity": "critical",
+      "slo": "search-availability",
+      "threshold": 6.0,
+      "type": "budget_exhaustion"
+    },
+    {
+      "enabled": true,
+      "name": "budget-exhaustion",
+      "severity": "critical",
+      "slo": "search-latency-p95",
+      "threshold": 6.0,
+      "type": "budget_exhaustion"
+    },
+    {
+      "enabled": true,
+      "name": "budget-exhaustion",
+      "severity": "critical",
+      "slo": "search-quality",
+      "threshold": 6.0,
+      "type": "budget_exhaustion"
+    }
+  ],
+  "json_exit": 0,
+  "table_exit": 0
+}

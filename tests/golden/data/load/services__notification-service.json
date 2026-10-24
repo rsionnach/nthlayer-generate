@@ -1,0 +1,30 @@
+{
+  "dependencies": [
+    [
+      "notification-queue",
+      "queue",
+      true
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "job-success-rate",
+      "availability",
+      99.5,
+      "30d",
+      true
+    ],
+    [
+      "processing-time-p95",
+      "latency",
+      95.0,
+      "30d",
+      true
+    ]
+  ],
+  "source_format": "legacy",
+  "type": "worker",
+  "warnings": []
+}

@@ -1,0 +1,37 @@
+{
+  "dependencies": [
+    [
+      "payments-db",
+      "database",
+      true
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "availability",
+      "availability",
+      99.95,
+      "30d",
+      true
+    ],
+    [
+      "latency-p95",
+      "latency",
+      99.0,
+      "30d",
+      true
+    ],
+    [
+      "latency-p99",
+      "latency",
+      95.0,
+      "30d",
+      false
+    ]
+  ],
+  "source_format": "legacy",
+  "type": "api",
+  "warnings": []
+}

@@ -1,0 +1,30 @@
+{
+  "dependencies": [
+    [
+      "auth-db",
+      "database",
+      true
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "latency-p95",
+      null,
+      99.5,
+      "30d",
+      false
+    ],
+    [
+      "token-generation-latency",
+      "latency",
+      99.0,
+      "30d",
+      true
+    ]
+  ],
+  "source_format": "legacy",
+  "type": "api",
+  "warnings": []
+}

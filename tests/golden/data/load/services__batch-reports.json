@@ -1,0 +1,28 @@
+{
+  "dependencies": [
+    [
+      "analytics-db",
+      "database",
+      false
+    ],
+    [
+      "reports-storage",
+      "database",
+      false
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "report-success-rate",
+      "availability",
+      95.0,
+      "30d",
+      true
+    ]
+  ],
+  "source_format": "legacy",
+  "type": "api",
+  "warnings": []
+}

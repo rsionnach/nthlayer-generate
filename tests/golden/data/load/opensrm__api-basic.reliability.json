@@ -1,0 +1,24 @@
+{
+  "dependencies": [],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "availability",
+      null,
+      99.9,
+      "30d",
+      false
+    ],
+    [
+      "latency",
+      null,
+      200.0,
+      "30d",
+      false
+    ]
+  ],
+  "source_format": "opensrm",
+  "type": "api",
+  "warnings": []
+}

@@ -1,0 +1,47 @@
+{
+  "dependencies": [
+    [
+      "kafka-cluster",
+      "queue",
+      true
+    ],
+    [
+      "clickhouse",
+      "database",
+      true
+    ],
+    [
+      "fulfillment-api",
+      "api",
+      true
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "availability",
+      null,
+      99.95,
+      "30d",
+      false
+    ],
+    [
+      "throughput",
+      null,
+      5000.0,
+      "30d",
+      false
+    ],
+    [
+      "error_rate",
+      null,
+      0.01,
+      "7d",
+      false
+    ]
+  ],
+  "source_format": "opensrm",
+  "type": "stream",
+  "warnings": []
+}

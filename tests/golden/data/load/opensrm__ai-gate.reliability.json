@@ -1,0 +1,63 @@
+{
+  "dependencies": [
+    [
+      "feature-store",
+      "database",
+      true
+    ],
+    [
+      "model-registry",
+      "api",
+      false
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "availability",
+      null,
+      99.9,
+      "30d",
+      false
+    ],
+    [
+      "latency",
+      null,
+      100.0,
+      "30d",
+      false
+    ],
+    [
+      "reversal_rate",
+      null,
+      0.05,
+      "7d",
+      false
+    ],
+    [
+      "high_confidence_failure",
+      null,
+      0.01,
+      "7d",
+      false
+    ],
+    [
+      "calibration",
+      null,
+      0.05,
+      "30d",
+      false
+    ],
+    [
+      "feedback_latency",
+      null,
+      3600.0,
+      "30d",
+      false
+    ]
+  ],
+  "source_format": "opensrm",
+  "type": "ai-gate",
+  "warnings": []
+}

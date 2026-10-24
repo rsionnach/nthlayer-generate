@@ -1,0 +1,20 @@
+{
+  "dependencies": [
+    [
+      "email-templates-db",
+      "database",
+      false
+    ],
+    [
+      "email-queue",
+      "queue",
+      true
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [],
+  "source_format": "legacy",
+  "type": "worker",
+  "warnings": []
+}

@@ -1,0 +1,20 @@
+{
+  "dependencies": [
+    [
+      "postgres-main",
+      "database",
+      true
+    ],
+    [
+      "redis-cache",
+      "database",
+      false
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [],
+  "source_format": "legacy",
+  "type": "api",
+  "warnings": []
+}

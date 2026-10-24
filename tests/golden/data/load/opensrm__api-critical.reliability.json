@@ -1,0 +1,47 @@
+{
+  "dependencies": [
+    [
+      "postgres-primary",
+      "database",
+      true
+    ],
+    [
+      "redis-cache",
+      "cache",
+      false
+    ],
+    [
+      "stripe-api",
+      "api",
+      true
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "availability",
+      null,
+      99.95,
+      "30d",
+      false
+    ],
+    [
+      "latency",
+      null,
+      200.0,
+      "30d",
+      false
+    ],
+    [
+      "error_rate",
+      null,
+      0.1,
+      "7d",
+      false
+    ]
+  ],
+  "source_format": "opensrm",
+  "type": "api",
+  "warnings": []
+}

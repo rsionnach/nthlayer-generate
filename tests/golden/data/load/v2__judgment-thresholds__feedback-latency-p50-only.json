@@ -1,0 +1,12 @@
+{
+  "dependencies": null,
+  "error": [
+    "ManifestLoadError",
+    "service.name is required"
+  ],
+  "ok": false,
+  "slos": null,
+  "source_format": null,
+  "type": null,
+  "warnings": []
+}

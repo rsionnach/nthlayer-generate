@@ -1,0 +1,42 @@
+{
+  "dependencies": [
+    [
+      "checkout_db",
+      "database",
+      false
+    ],
+    [
+      "checkout_cache",
+      "database",
+      false
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "availability",
+      null,
+      99.95,
+      "30d",
+      false
+    ],
+    [
+      "latency-p95",
+      null,
+      99.0,
+      "30d",
+      false
+    ],
+    [
+      "latency-p99",
+      null,
+      95.0,
+      "30d",
+      false
+    ]
+  ],
+  "source_format": "legacy",
+  "type": "api",
+  "warnings": []
+}

@@ -1,0 +1,28 @@
+{
+  "dependencies": [
+    [
+      "postgresql",
+      "database",
+      false
+    ],
+    [
+      "redis-cache",
+      "database",
+      false
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "availability",
+      "availability",
+      99.5,
+      "30d",
+      true
+    ]
+  ],
+  "source_format": "legacy",
+  "type": "api",
+  "warnings": []
+}

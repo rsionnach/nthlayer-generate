@@ -1,0 +1,37 @@
+{
+  "dependencies": [
+    [
+      "mobile-cache",
+      "database",
+      true
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "latency-p95",
+      null,
+      95.0,
+      "30d",
+      false
+    ],
+    [
+      "latency-p99",
+      "latency",
+      90.0,
+      "30d",
+      true
+    ],
+    [
+      "auth-success-rate",
+      "availability",
+      99.9,
+      "30d",
+      true
+    ]
+  ],
+  "source_format": "legacy",
+  "type": "api",
+  "warnings": []
+}

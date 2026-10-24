@@ -1,0 +1,42 @@
+{
+  "dependencies": [
+    [
+      "sqs-queue",
+      "queue",
+      true
+    ],
+    [
+      "sendgrid-api",
+      "api",
+      true
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "availability",
+      null,
+      99.9,
+      "30d",
+      false
+    ],
+    [
+      "throughput",
+      null,
+      100.0,
+      "30d",
+      false
+    ],
+    [
+      "error_rate",
+      null,
+      0.5,
+      "7d",
+      false
+    ]
+  ],
+  "source_format": "opensrm",
+  "type": "worker",
+  "warnings": []
+}

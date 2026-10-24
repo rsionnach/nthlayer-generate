@@ -1,0 +1,12 @@
+{
+  "dependencies": null,
+  "error": [
+    "ValueError",
+    "Invalid type 'stream-processor'. Must be one of: ai-gate, api, batch, database, stream, worker; or an extension type matching 'x-<lowercase-name>'."
+  ],
+  "ok": false,
+  "slos": null,
+  "source_format": null,
+  "type": null,
+  "warnings": []
+}

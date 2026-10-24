@@ -1,0 +1,40 @@
+{
+  "dependencies": [
+    [
+      "postgresql",
+      "database",
+      true
+    ],
+    [
+      "redis-cache",
+      "cache",
+      false
+    ],
+    [
+      "redpanda",
+      "queue",
+      false
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "availability",
+      "availability",
+      99.9,
+      "30d",
+      true
+    ],
+    [
+      "latency-p95",
+      "latency",
+      99.0,
+      "30d",
+      true
+    ]
+  ],
+  "source_format": "opensrm",
+  "type": "api",
+  "warnings": []
+}

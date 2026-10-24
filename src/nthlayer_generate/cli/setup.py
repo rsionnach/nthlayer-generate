@@ -48,7 +48,7 @@ from nthlayer_generate.config.loader import (
     save_config,
 )
 from nthlayer_generate.config.secrets import get_secret_resolver
-from nthlayer_generate.specs.manifest import is_valid_service_name
+from nthlayer_generate.specs.names import is_valid_service_name
 
 
 def setup_command(
@@ -418,7 +418,7 @@ def _create_first_service() -> int:
     caller can key an exit code on it (opensrm-h9fq). It returned None while
     every failure path printed `error(...)` and the command then printed
     "Setup Complete!" and exited 0 -- which is this bead's own defect in its
-    exit-code half, and `specs/manifest.py` says plainly that an exit code is
+    exit-code half, and `specs/names.py` says plainly that an exit code is
     what a CI gate keys on.
 
     A user declining is NOT a failure: choosing not to create a service, or
@@ -633,7 +633,7 @@ resources:
 
 
 def _is_valid_service_name(name: str) -> bool:
-    """Delegates to the one service-name rule; see specs/manifest for why.
+    """Delegates to the one service-name rule; see specs/names for why.
 
     This was the third private copy (opensrm-h9fq).
     """

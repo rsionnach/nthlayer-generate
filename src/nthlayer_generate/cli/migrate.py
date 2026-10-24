@@ -11,13 +11,89 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
 
 from nthlayer_generate.cli.ux import console, error, header, success, warning
 from nthlayer_generate.specs.loader import load_manifest
 from nthlayer_generate.specs.manifest import SourceFormat
+
+if TYPE_CHECKING:
+    from nthlayer_common.manifest import ReliabilityManifest as CommonReliabilityManifest
+
+
+def _legacy_to_srm_v1(manifest: CommonReliabilityManifest) -> dict[str, Any]:
+    """Serialise a legacy-loaded manifest as an srm/v1 document.
+
+    A port of generate's ``ReliabilityManifest.to_dict`` (opensrm-wo62.1, D7)
+    over nthlayer-common's model, for the fields common's legacy parser
+    populates: name, team, tier, type, description, labels, annotations,
+    SLOs, dependencies and ownership. ``contract`` and ``instrumentation``
+    are not ported: a legacy ``service:`` file has neither, and migrate only
+    serialises legacy input.
+
+    ``type`` is the RESOLVED spelling, deliberately: this writes a FILE, and a
+    file carries the canonical spelling the spec accepts (``x-web``, not
+    ``web``). The authored spelling is for ``${type}`` substitution into
+    queries, which is not this destination (opensrm-z3ab).
+    """
+    result: dict[str, Any] = {
+        "apiVersion": "srm/v1",
+        "kind": "ServiceReliabilityManifest",
+        "metadata": {
+            "name": manifest.name,
+            "team": manifest.team,
+            "tier": manifest.tier,
+        },
+        "spec": {
+            "type": manifest.type,
+        },
+    }
+
+    if manifest.description:
+        result["metadata"]["description"] = manifest.description
+    if manifest.labels:
+        result["metadata"]["labels"] = manifest.labels
+    if manifest.annotations:
+        result["metadata"]["annotations"] = manifest.annotations
+
+    if manifest.slos:
+        result["spec"]["slos"] = {}
+        for slo in manifest.slos:
+            slo_data: dict[str, Any] = {
+                "target": slo.target,
+                "window": slo.window,
+            }
+            if slo.unit:
+                slo_data["unit"] = slo.unit
+            if slo.percentile:
+                slo_data["percentile"] = slo.percentile
+            if slo.description:
+                slo_data["description"] = slo.description
+            result["spec"]["slos"][slo.name] = slo_data
+
+    if manifest.dependencies:
+        result["spec"]["dependencies"] = [
+            {
+                "name": dep.name,
+                "type": dep.type,
+                "critical": dep.critical,
+            }
+            for dep in manifest.dependencies
+        ]
+
+    if manifest.ownership:
+        ownership: dict[str, Any] = {"team": manifest.ownership.team}
+        if manifest.ownership.slack:
+            ownership["slack"] = manifest.ownership.slack
+        if manifest.ownership.email:
+            ownership["email"] = manifest.ownership.email
+        if manifest.ownership.runbook:
+            ownership["runbook"] = manifest.ownership.runbook
+        result["spec"]["ownership"] = ownership
+
+    return result
 
 
 def register_migrate_parser(subparsers: argparse._SubParsersAction[Any]) -> None:

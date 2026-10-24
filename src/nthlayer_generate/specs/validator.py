@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from nthlayer_common.manifest import VALID_TIERS
 from nthlayer_common.manifest.models import (
     resolve_service_type,
     valid_service_types_phrase,
@@ -26,8 +27,8 @@ from nthlayer_generate.specs.loader import (
     ManifestLoadError,
     load_manifest,
 )
-from nthlayer_generate.specs.manifest import VALID_TIERS, is_valid_service_name
 from nthlayer_generate.specs.models import VALID_RESOURCE_KINDS
+from nthlayer_generate.specs.names import is_valid_service_name
 from nthlayer_generate.specs.parser import ServiceParseError, parse_service_file
 from nthlayer_generate.specs.template import validate_template_variables
 
@@ -198,7 +199,7 @@ def validate_service_file(
                 )
 
     # Validate service name format
-    # Shared with cli/init.py's guard via specs/manifest (opensrm-t4rd). Two
+    # Shared with cli/init.py's guard via specs/names (opensrm-t4rd). Two
     # copies disagreed, so init exited 0 writing names this rejected.
     if not is_valid_service_name(service_context.name):
         errors.append(

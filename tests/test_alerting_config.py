@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import os
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 import pytest
+import yaml
 
 from nthlayer_generate.specs.alerting import (
     TIER_DEFAULT_RULES,
@@ -406,3 +411,74 @@ class TestLegacyParsing:
 
         resources = [{"kind": "SLO", "name": "avail", "spec": {}}]
         assert _extract_alerting_from_resources(resources) is None
+
+
+# -------------------------------------------------------------------------
+# manifest_alerting over nthlayer-common's model (opensrm-wo62.1, D3)
+# -------------------------------------------------------------------------
+
+_EX = Path(__file__).resolve().parents[1] / "examples"
+# The one shipped example with an alerting block: a legacy `kind: Alerts`
+# resource (examples/uat/payment-api.yaml @6e71305).
+_UAT_LEGACY = _EX / "uat" / "payment-api.yaml"
+_API_BASIC = _EX / "opensrm" / "api-basic.reliability.yaml"  # f252974
+
+
+def _alerts_block(path: Path) -> dict[str, Any]:
+    resources = yaml.safe_load(path.read_text(encoding="utf-8"))["resources"]
+    (block,) = [r["spec"] for r in resources if r["kind"] == "Alerts"]
+    return block  # type: ignore[no-any-return]
+
+
+class TestManifestAlerting:
+    def test_parses_the_raw_block_common_keeps(self) -> None:
+        from nthlayer_common.manifest import load_manifest
+
+        from nthlayer_generate.specs.alerting import manifest_alerting
+
+        manifest = load_manifest(_UAT_LEGACY, suppress_deprecation_warning=True)
+        expected = parse_alerting_config(_alerts_block(_UAT_LEGACY))
+
+        parsed = manifest_alerting(manifest)
+
+        assert expected is not None
+        assert parsed is not None
+        assert parsed.channels == expected.channels
+        assert parsed == expected
+
+    def test_none_without_a_block(self) -> None:
+        from nthlayer_common.manifest import load_manifest
+
+        from nthlayer_generate.specs.alerting import manifest_alerting
+
+        assert manifest_alerting(load_manifest(_API_BASIC)) is None
+
+
+def test_malformed_block_fails_nthlayer_alerts_evaluate(tmp_path: Path) -> None:
+    """Review Focus 6: ``alerts evaluate`` fails on a malformed block, before
+    the switch (at load) and after it (at use). Run as the console script
+    runs, so the exit code is the process's.
+
+    Fixture: examples/opensrm/api-basic.reliability.yaml @f252974 plus
+    ``spec.alerting: [1]`` (a list where the block's mapping belongs).
+    """
+    data = yaml.safe_load(_API_BASIC.read_text(encoding="utf-8"))
+    data["spec"]["alerting"] = [1]
+    path = tmp_path / "user-api.reliability.yaml"
+    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from nthlayer_generate.demo import main; main()",
+            "alerts",
+            "evaluate",
+            str(path),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+
+    assert proc.returncode == 1

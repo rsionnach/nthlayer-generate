@@ -19,7 +19,7 @@ from nthlayer_generate.cli.ux import (
 )
 from nthlayer_generate.core.tiers import TIER_CONFIGS
 from nthlayer_generate.specs.custom_templates import CustomTemplateLoader
-from nthlayer_generate.specs.manifest import is_valid_service_name
+from nthlayer_generate.specs.names import is_valid_service_name
 
 # The service-type menu. INVARIANT: every key is a value a manifest can
 # store verbatim — nothing here is translated on the way out (opensrm-8qpd).
@@ -428,7 +428,7 @@ def _is_valid_team(team: str) -> bool:
 
 
 def _is_valid_service_name(name: str) -> bool:
-    """Delegates to the one service-name rule; see specs/manifest for why."""
+    """Delegates to the one service-name rule; see specs/names for why."""
     return is_valid_service_name(name)
 
 

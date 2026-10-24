@@ -80,7 +80,7 @@ def test_port_matches_the_to_dict_golden(mid: str, path: Path, golden: Any) -> N
 def test_port_writes_the_resolved_type(tmp_path: Path) -> None:
     """A written file carries the canonical spelling the spec accepts
     (README "Upgrading": "manifests rewritten by `nthlayer migrate`" carry
-    x-web). Fixture: examples/services/api-minimal.yaml with ``service.type``
+    x-web). Fixture: examples/services/api-minimal.yaml @0331eff with ``service.type``
     rewritten to the alias ``web``."""
     source = REPO / "examples" / "services" / "api-minimal.yaml"
     data = yaml.safe_load(source.read_text(encoding="utf-8"))

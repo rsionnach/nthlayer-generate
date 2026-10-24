@@ -281,6 +281,12 @@ def _expected_effective_rules(case: str) -> Counter[tuple[str, str, float, str]]
     auto-generated defaults for every SLO (docs-site/commands/alerts.md:
     "auto-generated rules based on service tier"; TIER_DEFAULT_RULES is
     their single definition).
+
+    PROVENANCE LIMIT: the tier-default table is not documented anywhere a
+    test could cite (alerts.md's example table shows rule names the code has
+    never used), so the missing-block expectation is read from
+    TIER_DEFAULT_RULES. It detects a change in what a missing block MEANS
+    across the switch, not a change to the defaults themselves.
     """
     _fixture, tier, slos, config = ALERTING_CASES[case]
     if config is None:
@@ -340,11 +346,25 @@ def test_alerts_evaluate_counts_the_rules_the_block_puts_in_force(
     assert result["rules_evaluated"] == sum(_expected_effective_rules(case).values())
 
 
+# Exit codes (docs-site/commands/alerts.md): 0 healthy, 1 warning, 2 critical.
+# At 80% of the budget consumed:
+#   valid blocks  budget-warning (0.75, warning) fires, budget-critical (0.90)
+#                 does not, and high-burn (burn rate 3.0) does not, because the
+#                 simulated burn rate is 80/50 = 1.6 (slos/pipeline.py
+#                 _calculate_budget, ">50% -> >1x"). Worst is warning, so 1.
+#   missing block the critical tier's defaults include a critical
+#                 budget_threshold at 0.75 (TIER_DEFAULT_RULES), which fires,
+#                 so 2.
+# Matches the Checkpoint B goldens cli_alerts_test uat__payment-api (1) and
+# opensrm__api-critical.reliability (2).
+ALERTS_TEST_EXIT = {"srm-valid": 1, "legacy-valid": 1, "srm-missing": 2}
+
+
 @pytest.mark.parametrize("case", sorted(ALERTING_CASES))
-def test_alerts_test_runs_on_a_valid_or_missing_block(case: str, tmp_path: Path) -> None:
-    # Exit codes are documented as 0/1/2 (docs-site/commands/alerts.md).
+def test_alerts_test_exit_code_follows_the_block(case: str, tmp_path: Path) -> None:
     path = ALERTING_CASES[case][0](tmp_path)
-    assert alerts_test_command(str(path), no_notify=True) in (0, 1, 2)
+    exit_code = alerts_test_command(str(path), simulate_burn=80.0, no_notify=True)
+    assert exit_code == ALERTS_TEST_EXIT[case]
 
 
 @pytest.mark.parametrize("case", sorted(ALERTING_CASES))
@@ -353,7 +373,12 @@ def test_generated_alert_for_durations_follow_the_block(case: str, tmp_path: Pat
     critical, ticket otherwise (docs/plans/2026-03-10-alert-for-budget-policy.md:
     "overrides AlertRule.duration by severity"). With no block, each alert
     keeps its template's own duration — except a template ``for: 0m``, which
-    AlertRule.validate_and_fix documents raising to the 1m minimum."""
+    AlertRule.validate_and_fix documents raising to the 1m minimum.
+
+    PROVENANCE LIMIT (no-block case): the template durations and the 0m->1m
+    rule are read from AlertTemplateLoader and a src docstring; neither is in
+    user documentation. This detects the block's effect changing across the
+    switch, not a change to the templates or to that rule."""
     config = ALERTING_CASES[case][3]
     alerts = generate_alerts_from_manifest(load(ALERTING_CASES[case][0](tmp_path)), quiet=True)
     assert alerts, "no alerts generated; the check below would be vacuous"
@@ -496,6 +521,10 @@ def _dep(name: str, availability_pct: float | None = None) -> dict[str, Any]:
     return dep
 
 
+# PROVENANCE LIMIT: warnings are plain strings, so the two predicates below
+# match substrings of contracts.py's messages. They detect a warning appearing
+# or disappearing across the switch; a reworded message turns them red, which
+# is a signal to re-check, not a behaviour change.
 def _exceeds(warnings: list[str], dep: str) -> list[str]:
     return [w for w in warnings if f"'{dep}'" in w and "exceeds provider contract" in w]
 
@@ -561,7 +590,7 @@ def _two_contract_provider(directory: Path) -> Path:
 @pytest.mark.xfail(
     strict=True,
     raises=AttributeError,
-    reason="multi-contract arrives with common's model (Task 9)",
+    reason="multi-contract arrives with common's model (Task 11; folded from Task 9)",
 )
 def test_multi_contract_provider_is_bounded_by_its_weakest_promise(tmp_path: Path) -> None:
     """Spec §5.2: provider availability is the minimum promise over the
@@ -570,7 +599,8 @@ def test_multi_contract_provider_is_bounded_by_its_weakest_promise(tmp_path: Pat
 
     Loaded with nthlayer-common directly: generate's model has a single
     ``contract`` and cannot represent this, so it fails until the registry
-    reads ``contracts`` (plan Task 9), and then the marker must go.
+    reads ``contracts`` (plan Task 11, which absorbed Task 9). Removing this
+    marker when it XPASSes is the one edit Task 11 may make to this file.
     """
     from nthlayer_common.manifest import load_manifest
 
@@ -617,7 +647,16 @@ def test_validate_never_runs_contract_checks_on_a_legacy_file() -> None:
     contract check on either side of the switch — so G5's "validate
     ('critical dependency has no contract')" entry in spec §6.3 cannot show
     at ``validate``; it shows only where the check runs (test above)."""
-    result = validate_service_file(LEGACY_WITH_DEPS, contract_registry=ContractRegistry())
+    result = validate_service_file(
+        LEGACY_WITH_DEPS, contract_registry=ContractRegistry(), validate_filename=False
+    )
+    # validate really parsed the file. Without this, an early failure would
+    # trivially satisfy "no contract warning".
+    assert result.valid, result.errors
+    assert result.service == "payment-api"
+    # At least the file's own resources; its `template: critical-api` adds
+    # the template's resources on top.
+    assert result.resource_count >= len(_read(LEGACY_WITH_DEPS)["resources"])
     assert not [w for w in result.warnings + result.errors if "contract" in w]
 
 

@@ -1,0 +1,8 @@
+{
+  "errors": [],
+  "valid": true,
+  "warnings": [
+    "Critical dependency 'redshift' has no contract in registry",
+    "Critical dependency 's3-bucket' has no contract in registry"
+  ]
+}

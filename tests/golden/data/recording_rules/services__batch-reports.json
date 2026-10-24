@@ -1,0 +1,78 @@
+{
+  "groups": [
+    {
+      "interval": "30s",
+      "name": "batch-reports_slo_metrics",
+      "rules": [
+        {
+          "expr": "sum(increase(http_requests_total{service=\"batch-reports\"}[30d]))",
+          "labels": {
+            "service": "batch-reports",
+            "slo": "report-success-rate"
+          },
+          "record": "slo:requests_total:30d"
+        },
+        {
+          "expr": "sum(increase(http_requests_total{service=\"batch-reports\",status!~\"5..\"}[30d]))",
+          "labels": {
+            "service": "batch-reports",
+            "slo": "report-success-rate"
+          },
+          "record": "slo:requests_success:30d"
+        },
+        {
+          "expr": "slo:requests_success:30d{service=\"batch-reports\",slo=\"report-success-rate\"} / slo:requests_total:30d{service=\"batch-reports\",slo=\"report-success-rate\"}",
+          "labels": {
+            "objective": "95.0",
+            "service": "batch-reports",
+            "slo": "report-success-rate"
+          },
+          "record": "slo:availability:ratio"
+        },
+        {
+          "expr": "1 - ((1 - slo:availability:ratio{service=\"batch-reports\",slo=\"report-success-rate\"}) / (1 - 0.95))",
+          "labels": {
+            "objective": "95.0",
+            "service": "batch-reports",
+            "slo": "report-success-rate"
+          },
+          "record": "slo:error_budget_remaining:ratio"
+        }
+      ]
+    },
+    {
+      "interval": "30s",
+      "name": "batch-reports_health_metrics",
+      "rules": [
+        {
+          "expr": "sum(rate(http_requests_total{service=\"batch-reports\"}[5m]))",
+          "labels": {
+            "service": "batch-reports"
+          },
+          "record": "service:http_requests:rate5m"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{service=\"batch-reports\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"batch-reports\"}[5m]))",
+          "labels": {
+            "service": "batch-reports"
+          },
+          "record": "service:http_errors:rate5m"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"batch-reports\"}[5m]))",
+          "labels": {
+            "service": "batch-reports"
+          },
+          "record": "service:http_request_duration_seconds:p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"batch-reports\"}[5m]))",
+          "labels": {
+            "service": "batch-reports"
+          },
+          "record": "service:http_request_duration_seconds:p99"
+        }
+      ]
+    }
+  ]
+}

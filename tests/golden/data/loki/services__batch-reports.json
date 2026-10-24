@@ -1,0 +1,240 @@
+{
+  "groups": [
+    {
+      "name": "batch-reports",
+      "rules": [
+        {
+          "alert": "batch-reports_ApplicationError",
+          "annotations": {
+            "description": "Error-level log entries detected in application logs.",
+            "summary": "[batch-reports] Application errors detected"
+          },
+          "expr": "sum(count_over_time({app=\"batch-reports\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+          "for": "5m",
+          "labels": {
+            "service": "batch-reports",
+            "severity": "warning",
+            "source": "service",
+            "team": "data",
+            "technology": "api",
+            "tier": "low"
+          }
+        },
+        {
+          "alert": "batch-reports_ApplicationHighErrorRate",
+          "annotations": {
+            "description": "Application is experiencing a high rate of errors.",
+            "summary": "[batch-reports] High error rate in application"
+          },
+          "expr": "sum(count_over_time({app=\"batch-reports\"} |~ \"(?i)error|exception\" [5m])) > 100",
+          "for": "5m",
+          "labels": {
+            "service": "batch-reports",
+            "severity": "warning",
+            "source": "service",
+            "team": "data",
+            "technology": "api",
+            "tier": "low"
+          }
+        },
+        {
+          "alert": "batch-reports_ApplicationPanic",
+          "annotations": {
+            "description": "Application appears to have crashed or panicked.",
+            "summary": "[batch-reports] Application panic/crash detected"
+          },
+          "expr": "count_over_time({app=\"batch-reports\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+          "for": "0m",
+          "labels": {
+            "service": "batch-reports",
+            "severity": "warning",
+            "source": "service",
+            "team": "data",
+            "technology": "api",
+            "tier": "low"
+          }
+        },
+        {
+          "alert": "batch-reports_postgresql_PostgresqlConnectionRefused",
+          "annotations": {
+            "description": "Applications are unable to connect to PostgreSQL. Check if the database ...",
+            "summary": "[batch-reports/postgresql] PostgreSQL connection refused"
+          },
+          "expr": "count_over_time({app=\"postgresql\", service=\"batch-reports\"} |~ \"connection refused|could not connect\" [1m]) > 0",
+          "for": "1m",
+          "labels": {
+            "dependency": "postgresql",
+            "service": "batch-reports",
+            "severity": "warning",
+            "source": "dependency",
+            "team": "data",
+            "technology": "postgresql",
+            "tier": "low"
+          }
+        },
+        {
+          "alert": "batch-reports_postgresql_PostgresqlDeadlock",
+          "annotations": {
+            "description": "A deadlock was detected in PostgreSQL. This may indicate application log...",
+            "summary": "[batch-reports/postgresql] PostgreSQL deadlock detected"
+          },
+          "expr": "count_over_time({app=\"postgresql\", service=\"batch-reports\"} |= \"deadlock detected\" [1m]) > 0",
+          "for": "0m",
+          "labels": {
+            "dependency": "postgresql",
+            "service": "batch-reports",
+            "severity": "warning",
+            "source": "dependency",
+            "team": "data",
+            "technology": "postgresql",
+            "tier": "low"
+          }
+        },
+        {
+          "alert": "batch-reports_postgresql_PostgresqlFatalError",
+          "annotations": {
+            "description": "PostgreSQL logged a FATAL error which typically indicates a serious issu...",
+            "summary": "[batch-reports/postgresql] PostgreSQL FATAL error detected"
+          },
+          "expr": "count_over_time({app=\"postgresql\", service=\"batch-reports\"} |= \"FATAL\" [1m]) > 0",
+          "for": "0m",
+          "labels": {
+            "dependency": "postgresql",
+            "service": "batch-reports",
+            "severity": "warning",
+            "source": "dependency",
+            "team": "data",
+            "technology": "postgresql",
+            "tier": "low"
+          }
+        },
+        {
+          "alert": "batch-reports_postgresql_PostgresqlOutOfConnections",
+          "annotations": {
+            "description": "PostgreSQL has reached its maximum connection limit. Consider increasing...",
+            "summary": "[batch-reports/postgresql] PostgreSQL out of connections"
+          },
+          "expr": "count_over_time({app=\"postgresql\", service=\"batch-reports\"} |= \"too many connections\" [1m]) > 0",
+          "for": "0m",
+          "labels": {
+            "dependency": "postgresql",
+            "service": "batch-reports",
+            "severity": "warning",
+            "source": "dependency",
+            "team": "data",
+            "technology": "postgresql",
+            "tier": "low"
+          }
+        },
+        {
+          "alert": "batch-reports_postgresql_PostgresqlPanicError",
+          "annotations": {
+            "description": "PostgreSQL logged a PANIC error - the database may have crashed or be in...",
+            "summary": "[batch-reports/postgresql] PostgreSQL PANIC error detected"
+          },
+          "expr": "count_over_time({app=\"postgresql\", service=\"batch-reports\"} |= \"PANIC\" [1m]) > 0",
+          "for": "0m",
+          "labels": {
+            "dependency": "postgresql",
+            "service": "batch-reports",
+            "severity": "warning",
+            "source": "dependency",
+            "team": "data",
+            "technology": "postgresql",
+            "tier": "low"
+          }
+        },
+        {
+          "alert": "batch-reports_postgresql_PostgresqlReplicationLag",
+          "annotations": {
+            "description": "Replication lag detected between primary and replica. Check network and ...",
+            "summary": "[batch-reports/postgresql] PostgreSQL replication lag detected"
+          },
+          "expr": "count_over_time({app=\"postgresql\", service=\"batch-reports\"} |~ \"replication.*lag|recovery.*behind\" [1m]) > 0",
+          "for": "5m",
+          "labels": {
+            "dependency": "postgresql",
+            "service": "batch-reports",
+            "severity": "warning",
+            "source": "dependency",
+            "team": "data",
+            "technology": "postgresql",
+            "tier": "low"
+          }
+        },
+        {
+          "alert": "batch-reports_postgresql_PostgresqlSlowQuery",
+          "annotations": {
+            "description": "Slow queries (>1s) are being logged. Review query performance and consid...",
+            "summary": "[batch-reports/postgresql] PostgreSQL slow queries detected"
+          },
+          "expr": "sum(count_over_time({app=\"postgresql\", service=\"batch-reports\"} |= \"duration:\" |~ \"duration: [0-9]{4,}\" [5m])) > 5",
+          "for": "5m",
+          "labels": {
+            "dependency": "postgresql",
+            "service": "batch-reports",
+            "severity": "warning",
+            "source": "dependency",
+            "team": "data",
+            "technology": "postgresql",
+            "tier": "low"
+          }
+        },
+        {
+          "alert": "batch-reports_s3_ApplicationError",
+          "annotations": {
+            "description": "Error-level log entries detected in application logs.",
+            "summary": "[batch-reports/s3] Application errors detected"
+          },
+          "expr": "sum(count_over_time({app=\"s3\", service=\"batch-reports\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+          "for": "5m",
+          "labels": {
+            "dependency": "s3",
+            "service": "batch-reports",
+            "severity": "warning",
+            "source": "dependency",
+            "team": "data",
+            "technology": "s3",
+            "tier": "low"
+          }
+        },
+        {
+          "alert": "batch-reports_s3_ApplicationHighErrorRate",
+          "annotations": {
+            "description": "Application is experiencing a high rate of errors.",
+            "summary": "[batch-reports/s3] High error rate in application"
+          },
+          "expr": "sum(count_over_time({app=\"s3\", service=\"batch-reports\"} |~ \"(?i)error|exception\" [5m])) > 100",
+          "for": "5m",
+          "labels": {
+            "dependency": "s3",
+            "service": "batch-reports",
+            "severity": "warning",
+            "source": "dependency",
+            "team": "data",
+            "technology": "s3",
+            "tier": "low"
+          }
+        },
+        {
+          "alert": "batch-reports_s3_ApplicationPanic",
+          "annotations": {
+            "description": "Application appears to have crashed or panicked.",
+            "summary": "[batch-reports/s3] Application panic/crash detected"
+          },
+          "expr": "count_over_time({app=\"s3\", service=\"batch-reports\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+          "for": "0m",
+          "labels": {
+            "dependency": "s3",
+            "service": "batch-reports",
+            "severity": "warning",
+            "source": "dependency",
+            "team": "data",
+            "technology": "s3",
+            "tier": "low"
+          }
+        }
+      ]
+    }
+  ]
+}

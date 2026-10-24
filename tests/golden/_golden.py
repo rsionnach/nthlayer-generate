@@ -39,7 +39,28 @@ MASKED = "<masked>"
 # differs) and must occur in at least one stored golden — the harness
 # asserts that, so the mask cannot silently cover nothing. Each entry names
 # the cell it was found in.
-MASK: frozenset[str] = frozenset()
+MASK: frozenset[str] = frozenset(
+    {
+        # backstage: entity timestamp, datetime.now (generators/backstage.py:194).
+        "generatedAt",
+        # pipeline: AlertEvent.triggered_at, datetime.now.
+        "triggered_at",
+        # pipeline: AlertEvent.id is f"alert-<service>-<epoch seconds>"
+        # (slos/alerts.py:142,191,258). The key is also the dashboard cell's
+        # panel id, a deterministic sequence that this masks too: the mask
+        # is by key name only, and "id" is the only stable name the alert
+        # id has. Panel titles, targets and order stay pinned.
+        "id",
+        # pipeline: ErrorBudget.period start/end, now minus/at now
+        # (slos/pipeline.py:212).
+        "start",
+        "end",
+        # pipeline: ErrorBudget.updated_at, datetime.now.
+        "updated_at",
+        # topology: TopologyGraph.exported_at, datetime.now.
+        "exported_at",
+    }
+)
 
 
 class GoldenPathError(ValueError):

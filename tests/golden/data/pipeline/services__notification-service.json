@@ -1,0 +1,58 @@
+{
+  "alerts_triggered": 0,
+  "budgets": [
+    {
+      "budget": {
+        "burned_minutes": 108.0000000000001,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 108.0000000000001,
+        "total_minutes": 216.0000000000002
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "notification-service",
+      "slo_id": "notification-service-job-success-rate",
+      "status": "warning",
+      "updated_at": "<masked>"
+    },
+    {
+      "budget": {
+        "burned_minutes": 1080.000000000001,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 1080.000000000001,
+        "total_minutes": 2160.000000000002
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "notification-service",
+      "slo_id": "notification-service-processing-time-p95",
+      "status": "warning",
+      "updated_at": "<masked>"
+    }
+  ],
+  "budgets_evaluated": 2,
+  "errors": [],
+  "events": [],
+  "explanations": [],
+  "notifications_sent": 0,
+  "rules_evaluated": 6,
+  "service": "notification-service"
+}

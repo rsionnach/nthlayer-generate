@@ -1,0 +1,34 @@
+{
+  "edges": [
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "auth-api",
+      "target": "auth-db"
+    }
+  ],
+  "exported_at": "<masked>",
+  "metadata": {
+    "providers_used": []
+  },
+  "nodes": [
+    {
+      "name": "auth-api",
+      "team": "platform",
+      "tier": "critical",
+      "type": "api"
+    },
+    {
+      "name": "auth-db"
+    }
+  ],
+  "stats": {
+    "edge_count": 1,
+    "node_count": 2
+  },
+  "version": "1.0"
+}

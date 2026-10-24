@@ -1,0 +1,69 @@
+{
+  "labels": {
+    "team": "platform",
+    "tier": "standard",
+    "type": "api"
+  },
+  "service": "user-api",
+  "slos": [
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO availability for user-api"
+        },
+        "labels": {
+          "service": "user-api",
+          "tier": "standard"
+        },
+        "name": "UserApiAvailability",
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on user-api"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "99.9% availability",
+      "name": "availability",
+      "objective": 99.9,
+      "sli": {
+        "events": {
+          "error_query": "",
+          "total_query": ""
+        }
+      }
+    },
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO latency for user-api"
+        },
+        "labels": {
+          "service": "user-api",
+          "tier": "standard"
+        },
+        "name": "UserApiLatency",
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on user-api"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "200.0% latency",
+      "name": "latency",
+      "objective": 200.0,
+      "sli": {
+        "events": {
+          "error_query": " > 0.2",
+          "total_query": ")"
+        }
+      }
+    }
+  ],
+  "version": "prometheus/v1"
+}

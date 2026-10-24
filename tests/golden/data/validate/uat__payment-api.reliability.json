@@ -1,0 +1,7 @@
+{
+  "errors": [],
+  "valid": true,
+  "warnings": [
+    "Critical dependency 'postgresql' has no contract in registry"
+  ]
+}

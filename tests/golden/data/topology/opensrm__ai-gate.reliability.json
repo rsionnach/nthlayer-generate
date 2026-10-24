@@ -1,0 +1,51 @@
+{
+  "edges": [
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "slo_contract": {
+        "availability": 99.99,
+        "latency_p99": "50ms"
+      },
+      "source": "fraud-detector",
+      "target": "feature-store"
+    },
+    {
+      "confidence": 1.0,
+      "critical": false,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "fraud-detector",
+      "target": "model-registry"
+    }
+  ],
+  "exported_at": "<masked>",
+  "metadata": {
+    "providers_used": []
+  },
+  "nodes": [
+    {
+      "name": "fraud-detector",
+      "team": "risk",
+      "tier": "critical",
+      "type": "ai-gate"
+    },
+    {
+      "name": "feature-store"
+    },
+    {
+      "name": "model-registry"
+    }
+  ],
+  "stats": {
+    "edge_count": 2,
+    "node_count": 3
+  },
+  "version": "1.0"
+}

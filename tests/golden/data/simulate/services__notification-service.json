@@ -1,0 +1,6 @@
+{
+  "error": [
+    "ValueError",
+    "Service 'notification-service' has no availability SLO — required for simulation"
+  ]
+}

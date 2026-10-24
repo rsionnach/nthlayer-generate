@@ -1,0 +1,56 @@
+{
+  "dependency_models": [
+    {
+      "critical": false,
+      "degradation_factor": 0.99,
+      "from_service": "identity-service",
+      "to_service": "users_db"
+    },
+    {
+      "critical": false,
+      "degradation_factor": 0.99,
+      "from_service": "identity-service",
+      "to_service": "session_cache"
+    }
+  ],
+  "failure_models": [
+    {
+      "availability_target": 0.9998999999999999,
+      "mtbf_distribution": "exponential",
+      "mtbf_hours": 9998.99999999,
+      "mtbf_shape": 1.0,
+      "mttr_distribution": "lognormal",
+      "mttr_hours": 1.0,
+      "mttr_shape": 0.5,
+      "name": "identity-service"
+    }
+  ],
+  "result": {
+    "error_budget_forecast": {
+      "p50": 1.0,
+      "p75": 1.0,
+      "p95": 1.0
+    },
+    "exit_code": 0,
+    "horizon_days": 90,
+    "num_runs": 200,
+    "p_meeting_sla": 0.805,
+    "services": {
+      "identity-service": {
+        "availability_p50": 1.0,
+        "availability_p95": 1.0,
+        "availability_p99": 1.0,
+        "downtime_contribution": 1.0,
+        "is_weakest_link": true,
+        "name": "identity-service",
+        "p_meeting_sla": 0.805,
+        "target": 0.9999
+      }
+    },
+    "target_service": "identity-service",
+    "target_sla": 0.9999,
+    "weakest_link": "identity-service",
+    "weakest_link_contribution": 1.0,
+    "what_if_results": []
+  }
+}

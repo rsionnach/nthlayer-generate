@@ -1,0 +1,236 @@
+{
+  "alerts_triggered": 5,
+  "budgets": [
+    {
+      "budget": {
+        "burned_minutes": 21.59999999999762,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 21.59999999999762,
+        "total_minutes": 43.19999999999524
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "fraud-detector",
+      "slo_id": "fraud-detector-availability",
+      "status": "warning",
+      "updated_at": "<masked>"
+    },
+    {
+      "budget": {
+        "burned_minutes": 0.0,
+        "percent_consumed": 0.0,
+        "percent_remaining": 100.0,
+        "remaining_minutes": 0.0,
+        "total_minutes": 0.0
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "fraud-detector",
+      "slo_id": "fraud-detector-latency",
+      "status": "healthy",
+      "updated_at": "<masked>"
+    },
+    {
+      "budget": {
+        "burned_minutes": 5037.4800000000005,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 5037.4800000000005,
+        "total_minutes": 10074.960000000001
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "fraud-detector",
+      "slo_id": "fraud-detector-reversal_rate",
+      "status": "warning",
+      "updated_at": "<masked>"
+    },
+    {
+      "budget": {
+        "burned_minutes": 5039.496,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 5039.496,
+        "total_minutes": 10078.992
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "fraud-detector",
+      "slo_id": "fraud-detector-high_confidence_failure",
+      "status": "warning",
+      "updated_at": "<masked>"
+    },
+    {
+      "budget": {
+        "burned_minutes": 21589.2,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 21589.2,
+        "total_minutes": 43178.4
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "fraud-detector",
+      "slo_id": "fraud-detector-calibration",
+      "status": "warning",
+      "updated_at": "<masked>"
+    },
+    {
+      "budget": {
+        "burned_minutes": -756000.0,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 0.0,
+        "total_minutes": -1512000.0
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "fraud-detector",
+      "slo_id": "fraud-detector-feedback_latency",
+      "status": "warning",
+      "updated_at": "<masked>"
+    }
+  ],
+  "budgets_evaluated": 6,
+  "errors": [],
+  "events": [
+    {
+      "details": {
+        "budget_consumed_percent": 50.0,
+        "burned_minutes": 21.59999999999762,
+        "remaining_minutes": 21.59999999999762,
+        "status": "warning",
+        "threshold_percent": 50.0
+      },
+      "id": "<masked>",
+      "message": "⚠️ *Error Budget Alert*\n\n*Service:* `fraud-detector`\n*SLO:* `fraud-detector-availability`\n*Consumed:* 50.0% (threshold: 50%)\n*Remaining:* 21.6 minutes\n*Status:* WARNING\n\nℹ️ Budget threshold exceeded. Monitor closely.\n",
+      "rule_id": "fraud-detector-availability-budget-warning",
+      "service": "fraud-detector",
+      "severity": "warning",
+      "slo_id": "fraud-detector-availability",
+      "title": "Error Budget Alert: fraud-detector",
+      "triggered_at": "<masked>"
+    },
+    {
+      "details": {
+        "budget_consumed_percent": 50.0,
+        "burned_minutes": 5037.4800000000005,
+        "remaining_minutes": 5037.4800000000005,
+        "status": "warning",
+        "threshold_percent": 50.0
+      },
+      "id": "<masked>",
+      "message": "⚠️ *Error Budget Alert*\n\n*Service:* `fraud-detector`\n*SLO:* `fraud-detector-reversal_rate`\n*Consumed:* 50.0% (threshold: 50%)\n*Remaining:* 5037.5 minutes\n*Status:* WARNING\n\nℹ️ Budget threshold exceeded. Monitor closely.\n",
+      "rule_id": "fraud-detector-reversal_rate-budget-warning",
+      "service": "fraud-detector",
+      "severity": "warning",
+      "slo_id": "fraud-detector-reversal_rate",
+      "title": "Error Budget Alert: fraud-detector",
+      "triggered_at": "<masked>"
+    },
+    {
+      "details": {
+        "budget_consumed_percent": 50.0,
+        "burned_minutes": 5039.496,
+        "remaining_minutes": 5039.496,
+        "status": "warning",
+        "threshold_percent": 50.0
+      },
+      "id": "<masked>",
+      "message": "⚠️ *Error Budget Alert*\n\n*Service:* `fraud-detector`\n*SLO:* `fraud-detector-high_confidence_failure`\n*Consumed:* 50.0% (threshold: 50%)\n*Remaining:* 5039.5 minutes\n*Status:* WARNING\n\nℹ️ Budget threshold exceeded. Monitor closely.\n",
+      "rule_id": "fraud-detector-high_confidence_failure-budget-warning",
+      "service": "fraud-detector",
+      "severity": "warning",
+      "slo_id": "fraud-detector-high_confidence_failure",
+      "title": "Error Budget Alert: fraud-detector",
+      "triggered_at": "<masked>"
+    },
+    {
+      "details": {
+        "budget_consumed_percent": 50.0,
+        "burned_minutes": 21589.2,
+        "remaining_minutes": 21589.2,
+        "status": "warning",
+        "threshold_percent": 50.0
+      },
+      "id": "<masked>",
+      "message": "⚠️ *Error Budget Alert*\n\n*Service:* `fraud-detector`\n*SLO:* `fraud-detector-calibration`\n*Consumed:* 50.0% (threshold: 50%)\n*Remaining:* 21589.2 minutes\n*Status:* WARNING\n\nℹ️ Budget threshold exceeded. Monitor closely.\n",
+      "rule_id": "fraud-detector-calibration-budget-warning",
+      "service": "fraud-detector",
+      "severity": "warning",
+      "slo_id": "fraud-detector-calibration",
+      "title": "Error Budget Alert: fraud-detector",
+      "triggered_at": "<masked>"
+    },
+    {
+      "details": {
+        "budget_consumed_percent": 50.0,
+        "burned_minutes": -756000.0,
+        "remaining_minutes": 0.0,
+        "status": "warning",
+        "threshold_percent": 50.0
+      },
+      "id": "<masked>",
+      "message": "⚠️ *Error Budget Alert*\n\n*Service:* `fraud-detector`\n*SLO:* `fraud-detector-feedback_latency`\n*Consumed:* 50.0% (threshold: 50%)\n*Remaining:* 0.0 minutes\n*Status:* WARNING\n\nℹ️ Budget threshold exceeded. Monitor closely.\n",
+      "rule_id": "fraud-detector-feedback_latency-budget-warning",
+      "service": "fraud-detector",
+      "severity": "warning",
+      "slo_id": "fraud-detector-feedback_latency",
+      "title": "Error Budget Alert: fraud-detector",
+      "triggered_at": "<masked>"
+    }
+  ],
+  "explanations": [],
+  "notifications_sent": 0,
+  "rules_evaluated": 24,
+  "service": "fraud-detector"
+}

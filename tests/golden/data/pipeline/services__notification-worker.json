@@ -1,0 +1,81 @@
+{
+  "alerts_triggered": 0,
+  "budgets": [
+    {
+      "budget": {
+        "burned_minutes": 108.0000000000001,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 108.0000000000001,
+        "total_minutes": 216.0000000000002
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "notification-worker",
+      "slo_id": "notification-worker-delivery-success",
+      "status": "warning",
+      "updated_at": "<masked>"
+    },
+    {
+      "budget": {
+        "burned_minutes": 432.0000000000004,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 432.0000000000004,
+        "total_minutes": 864.0000000000008
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "notification-worker",
+      "slo_id": "notification-worker-processing-latency-p95",
+      "status": "warning",
+      "updated_at": "<masked>"
+    },
+    {
+      "budget": {
+        "burned_minutes": 216.0000000000002,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 216.0000000000002,
+        "total_minutes": 432.0000000000004
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "notification-worker",
+      "slo_id": "notification-worker-queue-lag",
+      "status": "warning",
+      "updated_at": "<masked>"
+    }
+  ],
+  "budgets_evaluated": 3,
+  "errors": [],
+  "events": [],
+  "explanations": [],
+  "notifications_sent": 0,
+  "rules_evaluated": 12,
+  "service": "notification-worker"
+}

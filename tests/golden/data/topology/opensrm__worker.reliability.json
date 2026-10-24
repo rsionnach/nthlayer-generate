@@ -1,0 +1,50 @@
+{
+  "edges": [
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "email-sender",
+      "target": "sqs-queue"
+    },
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "slo_contract": {
+        "availability": 99.95
+      },
+      "source": "email-sender",
+      "target": "sendgrid-api"
+    }
+  ],
+  "exported_at": "<masked>",
+  "metadata": {
+    "providers_used": []
+  },
+  "nodes": [
+    {
+      "name": "email-sender",
+      "team": "notifications",
+      "tier": "standard",
+      "type": "worker"
+    },
+    {
+      "name": "sqs-queue"
+    },
+    {
+      "name": "sendgrid-api"
+    }
+  ],
+  "stats": {
+    "edge_count": 2,
+    "node_count": 3
+  },
+  "version": "1.0"
+}

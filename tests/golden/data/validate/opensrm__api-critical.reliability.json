@@ -1,0 +1,9 @@
+{
+  "errors": [],
+  "valid": true,
+  "warnings": [
+    "Critical dependency 'postgres-primary' has no contract in registry",
+    "Critical dependency 'stripe-api' has no contract in registry",
+    "Critical dependency 'stripe-api' has unknown availability (cannot verify transitive feasibility)"
+  ]
+}

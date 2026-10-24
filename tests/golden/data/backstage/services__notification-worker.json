@@ -1,0 +1,76 @@
+{
+  "deploymentGate": {
+    "blockingThreshold": null,
+    "budgetRemainingPercent": null,
+    "message": null,
+    "recommendations": [],
+    "status": "APPROVED",
+    "warningThreshold": 20.0
+  },
+  "errorBudget": {
+    "burnRate": null,
+    "consumedMinutes": null,
+    "remainingMinutes": null,
+    "remainingPercent": null,
+    "status": null,
+    "totalMinutes": null
+  },
+  "generatedAt": "<masked>",
+  "links": {
+    "alertsYaml": "generated/notification-worker/alerts.yaml",
+    "grafanaDashboard": null,
+    "runbook": null,
+    "serviceManifest": "examples/services/notification-worker.yaml",
+    "slothSpec": "generated/notification-worker/sloth/notification-worker.yaml"
+  },
+  "schemaVersion": "v1",
+  "score": {
+    "band": null,
+    "components": {
+      "deploySuccessRate": null,
+      "errorBudgetRemaining": null,
+      "incidentScore": null,
+      "sloCompliance": null
+    },
+    "grade": null,
+    "score": null,
+    "trend": null
+  },
+  "service": {
+    "description": "Background worker for email, SMS, and push notifications",
+    "name": "notification-worker",
+    "supportModel": "self",
+    "team": "platform",
+    "tier": "high",
+    "type": "worker"
+  },
+  "slos": [
+    {
+      "currentValue": null,
+      "description": null,
+      "name": "delivery-success",
+      "sloType": null,
+      "status": null,
+      "target": 99.5,
+      "window": "30d"
+    },
+    {
+      "currentValue": null,
+      "description": null,
+      "name": "processing-latency-p95",
+      "sloType": null,
+      "status": null,
+      "target": 98.0,
+      "window": "30d"
+    },
+    {
+      "currentValue": null,
+      "description": null,
+      "name": "queue-lag",
+      "sloType": null,
+      "status": null,
+      "target": 99.0,
+      "window": "30d"
+    }
+  ]
+}

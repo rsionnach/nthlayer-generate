@@ -1,0 +1,69 @@
+{
+  "labels": {
+    "team": "platform",
+    "tier": "standard",
+    "type": "worker"
+  },
+  "service": "notification-service",
+  "slos": [
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO job-success-rate for notification-service"
+        },
+        "labels": {
+          "service": "notification-service",
+          "tier": "standard"
+        },
+        "name": "NotificationServiceJobSuccessRate",
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on notification-service"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "99.5% job success rate",
+      "name": "job-success-rate",
+      "objective": 99.5,
+      "sli": {
+        "events": {
+          "error_query": "sum(rate(job_runs{service=\"notification-service\",status=\"success\"}[5m]))",
+          "total_query": "sum(rate(job_runs{service=\"notification-service\"}[5m]))"
+        }
+      }
+    },
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO processing-time-p95 for notification-service"
+        },
+        "labels": {
+          "service": "notification-service",
+          "tier": "standard"
+        },
+        "name": "NotificationServiceProcessingTimeP95",
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on notification-service"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "95.0% processing time p95",
+      "name": "processing-time-p95",
+      "objective": 95.0,
+      "sli": {
+        "events": {
+          "error_query": "histogram_quantile(0.95,\n  rate(job_duration_seconds_bucket{service=\"notification-service\"}[5m])\n)\n > 0.095",
+          "total_query": "sum(rate(0.95,\n  rate(job_duration_seconds_bucket{service=\"notification-service\"}[5m])\n)\n)"
+        }
+      }
+    }
+  ],
+  "version": "prometheus/v1"
+}

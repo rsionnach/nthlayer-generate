@@ -1,0 +1,7 @@
+{
+  "errors": [],
+  "valid": true,
+  "warnings": [
+    "Critical dependency 'feature-store' has no contract in registry"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "rules_evaluated": 4,
+  "service": "daily-report-generator",
+  "violations": [
+    {
+      "field_path": "dependencies.s3-bucket.slo",
+      "message": "Critical dependency 's3-bucket' has no SLO expectations declared",
+      "rule_name": "critical-deps-need-slos",
+      "rule_type": "dependency_rule",
+      "severity": "warning"
+    }
+  ]
+}

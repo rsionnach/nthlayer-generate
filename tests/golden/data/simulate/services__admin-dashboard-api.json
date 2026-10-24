@@ -1,0 +1,6 @@
+{
+  "error": [
+    "ValueError",
+    "Service 'admin-dashboard-api' has no availability SLO — required for simulation"
+  ]
+}

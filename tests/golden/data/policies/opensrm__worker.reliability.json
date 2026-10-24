@@ -1,0 +1,13 @@
+{
+  "rules_evaluated": 4,
+  "service": "email-sender",
+  "violations": [
+    {
+      "field_path": "dependencies.sqs-queue.slo",
+      "message": "Critical dependency 'sqs-queue' has no SLO expectations declared",
+      "rule_name": "critical-deps-need-slos",
+      "rule_type": "dependency_rule",
+      "severity": "warning"
+    }
+  ]
+}

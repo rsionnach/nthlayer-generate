@@ -1,0 +1,34 @@
+{
+  "edges": [
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "payment-api",
+      "target": "payments-db"
+    }
+  ],
+  "exported_at": "<masked>",
+  "metadata": {
+    "providers_used": []
+  },
+  "nodes": [
+    {
+      "name": "payment-api",
+      "team": "payments",
+      "tier": "critical",
+      "type": "api"
+    },
+    {
+      "name": "payments-db"
+    }
+  ],
+  "stats": {
+    "edge_count": 1,
+    "node_count": 2
+  },
+  "version": "1.0"
+}

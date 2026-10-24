@@ -1,0 +1,7 @@
+{
+  "errors": [],
+  "valid": true,
+  "warnings": [
+    "Service uses template 'low-api'. Ensure template exists and is valid."
+  ]
+}

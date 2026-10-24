@@ -1,0 +1,9 @@
+{
+  "errors": [],
+  "valid": true,
+  "warnings": [
+    "Critical dependency 'kafka-cluster' has no contract in registry",
+    "Critical dependency 'clickhouse' has no contract in registry",
+    "Critical dependency 'fulfillment-api' has no contract in registry"
+  ]
+}

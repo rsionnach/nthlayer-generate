@@ -1,0 +1,67 @@
+{
+  "deploymentGate": {
+    "blockingThreshold": null,
+    "budgetRemainingPercent": null,
+    "message": null,
+    "recommendations": [],
+    "status": "APPROVED",
+    "warningThreshold": 20.0
+  },
+  "errorBudget": {
+    "burnRate": null,
+    "consumedMinutes": null,
+    "remainingMinutes": null,
+    "remainingPercent": null,
+    "status": null,
+    "totalMinutes": null
+  },
+  "generatedAt": "<masked>",
+  "links": {
+    "alertsYaml": "generated/analytics-pipeline/alerts.yaml",
+    "grafanaDashboard": null,
+    "runbook": null,
+    "serviceManifest": "examples/services/analytics-pipeline.yaml",
+    "slothSpec": "generated/analytics-pipeline/sloth/analytics-pipeline.yaml"
+  },
+  "schemaVersion": "v1",
+  "score": {
+    "band": null,
+    "components": {
+      "deploySuccessRate": null,
+      "errorBudgetRemaining": null,
+      "incidentScore": null,
+      "sloCompliance": null
+    },
+    "grade": null,
+    "score": null,
+    "trend": null
+  },
+  "service": {
+    "description": null,
+    "name": "analytics-pipeline",
+    "supportModel": "self",
+    "team": "data",
+    "tier": "standard",
+    "type": "batch"
+  },
+  "slos": [
+    {
+      "currentValue": null,
+      "description": null,
+      "name": "freshness-p95",
+      "sloType": null,
+      "status": null,
+      "target": 90.0,
+      "window": "30d"
+    },
+    {
+      "currentValue": null,
+      "description": null,
+      "name": "data-quality",
+      "sloType": "availability",
+      "status": null,
+      "target": 99.0,
+      "window": "30d"
+    }
+  ]
+}

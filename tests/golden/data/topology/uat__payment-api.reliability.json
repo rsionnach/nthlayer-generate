@@ -1,0 +1,60 @@
+{
+  "edges": [
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "payment-api",
+      "target": "postgresql"
+    },
+    {
+      "confidence": 1.0,
+      "critical": false,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "payment-api",
+      "target": "redis-cache"
+    },
+    {
+      "confidence": 1.0,
+      "critical": false,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "payment-api",
+      "target": "redpanda"
+    }
+  ],
+  "exported_at": "<masked>",
+  "metadata": {
+    "providers_used": []
+  },
+  "nodes": [
+    {
+      "name": "payment-api",
+      "team": "payments-team",
+      "tier": "critical",
+      "type": "api"
+    },
+    {
+      "name": "postgresql"
+    },
+    {
+      "name": "redis-cache"
+    },
+    {
+      "name": "redpanda"
+    }
+  ],
+  "stats": {
+    "edge_count": 3,
+    "node_count": 4
+  },
+  "version": "1.0"
+}

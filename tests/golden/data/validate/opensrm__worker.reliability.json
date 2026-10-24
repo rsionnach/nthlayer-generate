@@ -1,0 +1,8 @@
+{
+  "errors": [],
+  "valid": true,
+  "warnings": [
+    "Critical dependency 'sqs-queue' has no contract in registry",
+    "Critical dependency 'sendgrid-api' has no contract in registry"
+  ]
+}

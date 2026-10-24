@@ -12,6 +12,8 @@ import os
 from collections import Counter
 from pathlib import Path
 
+import pytest
+
 from ._corpus import (
     ALL,
     EX,
@@ -19,11 +21,21 @@ from ._corpus import (
     NON_MANIFESTS,
     NOT_MANIFESTS_BY_DESIGN,
     OPENSRM,
+    REPO,
     SRM_V1,
     V2,
     manifest_id,
 )
-from ._golden import DATA, MASK, MASKED, UPDATE_ENV, expected_goldens, stored_files
+from ._golden import (
+    DATA,
+    MASK,
+    MASKED,
+    UPDATE_ENV,
+    GoldenPathError,
+    expected_goldens,
+    normalise,
+    stored_files,
+)
 
 
 def _example_yaml() -> list[Path]:
@@ -104,3 +116,46 @@ def test_no_orphaned_goldens() -> None:
         if len(rel.parts) != 2 or rel.suffix != ".json" or (rel.parts[0], rel.stem) not in expected:
             orphans.append(rel.as_posix())
     assert orphans == []
+
+
+# Path rewriting: a root is rewritten only at a path-component boundary.
+_ECO = OPENSRM.parent
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        (f"in {REPO}/examples/x.yaml", "in examples/x.yaml"),
+        (f"in {REPO}", "in ."),
+        (f"in {REPO}: bad", "in .: bad"),
+        (f"in {REPO}.", "in .."),
+        (f"in {OPENSRM}/spec/v2", "in <opensrm>/spec/v2"),
+        (f"in {OPENSRM}", "in <opensrm>"),
+        (f"'{OPENSRM}'", "'<opensrm>'"),
+        (f"in {_ECO}/opensrm-x/spec", f"in {_ECO}/opensrm-x/spec"),
+        (f"in {_ECO}/opensrm.bak", f"in {_ECO}/opensrm.bak"),
+        (f"in {REPO}-old/x", f"in {REPO}-old/x"),
+    ],
+)
+def test_string_paths_are_rewritten_at_component_boundaries(raw: str, expected: str) -> None:
+    assert json.loads(normalise([raw])) == [expected]
+
+
+def test_path_objects_are_rewritten_at_component_boundaries() -> None:
+    assert json.loads(normalise([REPO, REPO / "examples", OPENSRM, OPENSRM / "spec"])) == [
+        ".",
+        "examples",
+        "<opensrm>",
+        "<opensrm>/spec",
+    ]
+    with pytest.raises(GoldenPathError):
+        normalise(_ECO / "opensrm-x")
+
+
+def test_tmp_paths_are_rewritten(tmp_path: Path) -> None:
+    value = [tmp_path / "a.yaml", f"wrote {tmp_path}/a.yaml", str(tmp_path)]
+    assert json.loads(normalise(value, tmp=tmp_path)) == [
+        "<tmp>/a.yaml",
+        "wrote <tmp>/a.yaml",
+        "<tmp>",
+    ]

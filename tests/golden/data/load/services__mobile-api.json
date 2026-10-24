@@ -1,4 +1,5 @@
 {
+  "authored_type": "api",
   "dependencies": [
     [
       "mobile-cache",

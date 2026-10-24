@@ -1,4 +1,5 @@
 {
+  "authored_type": "pipeline",
   "dependencies": [
     [
       "analytics-warehouse",

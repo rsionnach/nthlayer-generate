@@ -1,4 +1,5 @@
 {
+  "authored_type": "worker",
   "dependencies": [
     [
       "notification_cache",

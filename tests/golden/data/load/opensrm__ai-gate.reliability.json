@@ -1,4 +1,5 @@
 {
+  "authored_type": "ai-gate",
   "dependencies": [
     [
       "feature-store",

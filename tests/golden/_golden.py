@@ -46,15 +46,19 @@ class GoldenPathError(ValueError):
     """A path in a golden value would make the golden checkout-specific."""
 
 
-def _roots(tmp: Path | None) -> list[tuple[str, str]]:
-    """(absolute prefix, replacement) pairs, most specific first."""
-    pairs: list[tuple[str, str]] = []
+# (absolute root, replacement for the bare root, replacement for root + sep).
+Root = tuple[str, str, str]
+
+
+def _roots(tmp: Path | None) -> list[Root]:
+    """Absolute roots to rewrite inside strings, longest first."""
+    roots: list[Root] = []
     if tmp is not None:
         for t in {str(tmp), str(tmp.resolve())}:
-            pairs.append((t, "<tmp>"))
-    pairs.append((str(REPO) + os.sep, ""))
-    pairs.append((str(OPENSRM), "<opensrm>"))
-    return sorted(pairs, key=lambda p: len(p[0]), reverse=True)
+            roots.append((t, "<tmp>", "<tmp>/"))
+    roots.append((str(REPO), ".", ""))
+    roots.append((str(OPENSRM), "<opensrm>", "<opensrm>/"))
+    return sorted(roots, key=lambda r: len(r[0]), reverse=True)
 
 
 def _path(value: Path, tmp: Path | None) -> str:
@@ -65,15 +69,45 @@ def _path(value: Path, tmp: Path | None) -> str:
     if resolved.is_relative_to(REPO):
         return resolved.relative_to(REPO).as_posix()
     if resolved.is_relative_to(OPENSRM):
-        return f"<opensrm>/{resolved.relative_to(OPENSRM).as_posix()}"
+        rel = resolved.relative_to(OPENSRM).as_posix()
+        return "<opensrm>" if rel == "." else f"<opensrm>/{rel}"
     if resolved.is_relative_to(Path(tempfile.gettempdir()).resolve()):
         raise GoldenPathError(f"temporary path {value} found; pass tmp= to check()")
     raise GoldenPathError(f"path {value} is outside the repo, opensrm and tmp")
 
 
-def _string(value: str, roots: list[tuple[str, str]]) -> str:
-    for prefix, replacement in roots:
-        value = value.replace(prefix, replacement)
+def _continues_component(value: str, i: int) -> bool:
+    """Whether ``value[i:]`` continues the path component before ``i``.
+
+    ``<eco>/opensrm-x`` must not match the root ``<eco>/opensrm``. A ``.``
+    continues a component (``opensrm.bak``) unless it ends the sentence.
+    """
+    if i >= len(value):
+        return False
+    c = value[i]
+    if c.isalnum() or c in "-_":
+        return True
+    return c == "." and _continues_component(value, i + 1)
+
+
+def _string(value: str, roots: list[Root]) -> str:
+    """Rewrite each absolute root in ``value`` at a path-component boundary."""
+    for root, bare, prefix in roots:
+        out: list[str] = []
+        start = 0
+        while (i := value.find(root, start)) != -1:
+            end = i + len(root)
+            out.append(value[start:i])
+            if value.startswith(os.sep, end):
+                out.append(prefix)
+                end += len(os.sep)
+            elif _continues_component(value, end):
+                out.append(root)
+            else:
+                out.append(bare)
+            start = end
+        out.append(value[start:])
+        value = "".join(out)
     return value
 
 
@@ -83,7 +117,7 @@ def _key(key: Any) -> str:
     return key if isinstance(key, str) else str(key)
 
 
-def _plain(value: Any, roots: list[tuple[str, str]], tmp: Path | None) -> Any:
+def _plain(value: Any, roots: list[Root], tmp: Path | None) -> Any:
     if dataclasses.is_dataclass(value) and not isinstance(value, type):
         value = dataclasses.asdict(value)
     if isinstance(value, enum.Enum):

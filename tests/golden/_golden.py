@@ -47,9 +47,11 @@ MASK: frozenset[str] = frozenset(
         "triggered_at",
         # pipeline: AlertEvent.id is f"alert-<service>-<epoch seconds>"
         # (slos/alerts.py:142,191,258). The key is also the dashboard cell's
-        # panel id, a deterministic sequence that this masks too: the mask
-        # is by key name only, and "id" is the only stable name the alert
-        # id has. Panel titles, targets and order stay pinned.
+        # panels[].id, which this masks too: the mask is by key name only,
+        # and "id" is the only stable name the alert id has. Every panel id
+        # is the integer 0 today, so nothing is lost now; if panel ids ever
+        # become meaningful, a per-cell mask is needed. Panel titles,
+        # targets and order stay pinned.
         "id",
         # pipeline: ErrorBudget.period start/end, now minus/at now
         # (slos/pipeline.py:212).

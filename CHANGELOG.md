@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.1.2](https://github.com/rsionnach/nthlayer-generate/compare/v2.1.1...v2.1.2) (2026-10-24)
+
+
+### Dependencies
+
+* require nthlayer-common 5.4.0 (opensrm-wo62.1) ([6b3b64d](https://github.com/rsionnach/nthlayer-generate/commit/6b3b64d699180d4476a039e19226867e4de3e5ef))
+
+
+### Documentation
+
+* document workers observe verify/portfolio/scorecard/check-deploy (opensrm-3ntg) ([4330fab](https://github.com/rsionnach/nthlayer-generate/commit/4330fabce5f1a17c47b3498f23b9c1180f994642))
+* drop seven nonexistent commands and eleven undefined flags (opensrm-3ntg) ([c0d3872](https://github.com/rsionnach/nthlayer-generate/commit/c0d3872b916a4dfa64f008019c58148a53da6b5f))
+
 ## [2.1.1](https://github.com/rsionnach/nthlayer-generate/compare/v2.1.0...v2.1.1) (2026-10-23)
 
 

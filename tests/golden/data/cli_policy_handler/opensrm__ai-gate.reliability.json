@@ -1,3 +1,10 @@
 {
+  "reports": [
+    {
+      "rules_evaluated": 4,
+      "service": "fraud-detector",
+      "violations": []
+    }
+  ],
   "rules_evaluated": 4
 }

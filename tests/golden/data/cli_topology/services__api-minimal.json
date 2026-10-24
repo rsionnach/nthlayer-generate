@@ -1,3 +1,23 @@
 {
-  "exit": 2
+  "exit": 0,
+  "topology": {
+    "edges": [],
+    "exported_at": "<masked>",
+    "metadata": {
+      "providers_used": []
+    },
+    "nodes": [
+      {
+        "name": "api-minimal",
+        "team": "platform",
+        "tier": "critical",
+        "type": "api"
+      }
+    ],
+    "stats": {
+      "edge_count": 0,
+      "node_count": 1
+    },
+    "version": "1.0"
+  }
 }

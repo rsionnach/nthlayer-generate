@@ -1,3 +1,50 @@
 {
-  "exit": 2
+  "exit": 0,
+  "topology": {
+    "edges": [
+      {
+        "confidence": 1.0,
+        "critical": true,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "search-api",
+        "target": "search-index"
+      },
+      {
+        "confidence": 1.0,
+        "critical": false,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "search-api",
+        "target": "query-cache"
+      }
+    ],
+    "exported_at": "<masked>",
+    "metadata": {
+      "providers_used": []
+    },
+    "nodes": [
+      {
+        "name": "search-api",
+        "team": "search",
+        "tier": "high",
+        "type": "api"
+      },
+      {
+        "name": "search-index"
+      },
+      {
+        "name": "query-cache"
+      }
+    ],
+    "stats": {
+      "edge_count": 2,
+      "node_count": 3
+    },
+    "version": "1.0"
+  }
 }

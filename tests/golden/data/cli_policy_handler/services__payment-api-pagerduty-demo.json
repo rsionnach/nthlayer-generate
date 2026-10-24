@@ -1,3 +1,32 @@
 {
+  "reports": [
+    {
+      "rules_evaluated": 4,
+      "service": "payment-api",
+      "violations": [
+        {
+          "field_path": "ownership.runbook",
+          "message": "Required field 'ownership.runbook' is missing or empty",
+          "rule_name": "require-ownership",
+          "rule_type": "required_fields",
+          "severity": "error"
+        },
+        {
+          "field_path": null,
+          "message": "Tier 'critical' requires deployment gates",
+          "rule_name": "critical-tier-requirements",
+          "rule_type": "tier_constraint",
+          "severity": "error"
+        },
+        {
+          "field_path": "dependencies.payments-db.slo",
+          "message": "Critical dependency 'payments-db' has no SLO expectations declared",
+          "rule_name": "critical-deps-need-slos",
+          "rule_type": "dependency_rule",
+          "severity": "warning"
+        }
+      ]
+    }
+  ],
   "rules_evaluated": 4
 }

@@ -1,3 +1,37 @@
 {
-  "exit": 2
+  "exit": 0,
+  "topology": {
+    "edges": [
+      {
+        "confidence": 1.0,
+        "critical": true,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "notification-service",
+        "target": "notification-queue"
+      }
+    ],
+    "exported_at": "<masked>",
+    "metadata": {
+      "providers_used": []
+    },
+    "nodes": [
+      {
+        "name": "notification-service",
+        "team": "platform",
+        "tier": "standard",
+        "type": "worker"
+      },
+      {
+        "name": "notification-queue"
+      }
+    ],
+    "stats": {
+      "edge_count": 1,
+      "node_count": 2
+    },
+    "version": "1.0"
+  }
 }

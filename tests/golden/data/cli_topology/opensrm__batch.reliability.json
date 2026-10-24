@@ -1,3 +1,53 @@
 {
-  "exit": 2
+  "exit": 0,
+  "topology": {
+    "edges": [
+      {
+        "confidence": 1.0,
+        "critical": true,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "slo_contract": {
+          "availability": 99.9
+        },
+        "source": "daily-report-generator",
+        "target": "redshift"
+      },
+      {
+        "confidence": 1.0,
+        "critical": true,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "daily-report-generator",
+        "target": "s3-bucket"
+      }
+    ],
+    "exported_at": "<masked>",
+    "metadata": {
+      "providers_used": []
+    },
+    "nodes": [
+      {
+        "name": "daily-report-generator",
+        "team": "analytics",
+        "tier": "standard",
+        "type": "batch"
+      },
+      {
+        "name": "redshift"
+      },
+      {
+        "name": "s3-bucket"
+      }
+    ],
+    "stats": {
+      "edge_count": 2,
+      "node_count": 3
+    },
+    "version": "1.0"
+  }
 }

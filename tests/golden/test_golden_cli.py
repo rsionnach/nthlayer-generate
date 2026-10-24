@@ -37,12 +37,15 @@ from nthlayer_generate.cli.migrate import migrate_command
 from nthlayer_generate.cli.simulate import simulate_command
 from nthlayer_generate.cli.topology import topology_export_command
 from nthlayer_generate.cli.validate import validate_command
+from nthlayer_generate.dependencies import DependencyDiscovery
 from nthlayer_generate.orchestration.handlers import PolicyHandler
 from nthlayer_generate.orchestration.registry import OrchestratorContext
+from nthlayer_generate.policies.engine import PolicyEngine
+from nthlayer_generate.policies.models import PolicyReport
 
 from ._corpus import EX
 from ._golden import check
-from .test_golden_generators import CASES, IDS, _error
+from .test_golden_generators import CASES, IDS, _error, _graph_from_declared_dependencies, _load
 
 POLICIES = EX / "policies.yaml"
 
@@ -50,17 +53,23 @@ POLICIES = EX / "policies.yaml"
 class Env:
     """What a cell may use: the temp dir and captured stdout."""
 
-    def __init__(self, tmp: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    def __init__(
+        self,
+        tmp: Path,
+        capsys: pytest.CaptureFixture[str],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         self.tmp = tmp
         self.capsys = capsys
+        self.monkeypatch = monkeypatch
 
     def stdout_json(self) -> Any:
-        """The JSON a command printed to stdout since the last call; None if none."""
-        out = self.capsys.readouterr().out
-        try:
-            return json.loads(out)
-        except ValueError:
-            return None
+        """The JSON a command printed to stdout since the last call.
+
+        Raises if stdout is not exactly one JSON document, so noise can never
+        be pinned as a value.
+        """
+        return json.loads(self.capsys.readouterr().out)
 
     def discard_output(self) -> None:
         self.capsys.readouterr()
@@ -100,6 +109,8 @@ def validate(path: Path, env: Env) -> Any:
 
 
 def alerts_evaluate(path: Path, env: Env) -> Any:
+    # no_notify is a no-op today: AlertPipeline hard-codes notify=False
+    # (slos/pipeline.py:94). It is passed anyway so a notifier can never be hit.
     table = alerts_evaluate_command(str(path), no_notify=True)
     env.discard_output()  # drop the table so stdout holds only the JSON below
     as_json = alerts_evaluate_command(str(path), no_notify=True, output_format="json")
@@ -132,11 +143,25 @@ def backstage(path: Path, env: Env) -> Any:
 def simulate(path: Path, env: Env) -> Any:
     env.discard_output()
     code = simulate_command(str(path), seed=42, num_runs=200, output_format="json")
-    return {"exit": code, "json": env.stdout_json()}
+    # Exit 2 is an error (no JSON printed); only 0 and 1 carry a result.
+    return {"exit": code, "json": env.stdout_json() if code in (0, 1) else None}
 
 
 def topology(path: Path, env: Env) -> Any:
-    return {"exit": topology_export_command(str(path))}
+    # The command gates on a provider (a Prometheus URL) and then asks it for
+    # the graph. Satisfy the gate with a URL and replace build_graph, so the
+    # command runs load_manifest -> build_topology -> serialise with no
+    # network. The graph is constructed input derived only from the
+    # manifest's declared dependencies (as in the generator topology cell).
+    # A manifest that stops loading changes the exit code to 2 and the file to null.
+    async def build_graph(self: Any, names: Any) -> Any:
+        return _graph_from_declared_dependencies(_load(path))
+
+    env.monkeypatch.setenv("NTHLAYER_PROMETHEUS_URL", "http://prometheus.invalid")
+    env.monkeypatch.setattr(DependencyDiscovery, "build_graph", build_graph)
+    out = env.tmp / "topology.json"
+    code = topology_export_command(str(path), output_file=str(out))
+    return {"exit": code, "topology": json.loads(out.read_text()) if out.is_file() else None}
 
 
 class _Detector:
@@ -150,6 +175,17 @@ class _Detector:
 
 
 def policy_handler(path: Path, env: Env) -> Any:
+    # The handler returns only a count; record the report it evaluates so the
+    # violations are pinned too.
+    reports: list[PolicyReport] = []
+    real_evaluate = PolicyEngine.evaluate
+
+    def recording_evaluate(self: PolicyEngine, manifest: Any) -> PolicyReport:
+        report = real_evaluate(self, manifest)
+        reports.append(report)
+        return report
+
+    env.monkeypatch.setattr(PolicyEngine, "evaluate", recording_evaluate)
     ctx = OrchestratorContext(
         service_yaml=path,
         service_def={},
@@ -158,7 +194,9 @@ def policy_handler(path: Path, env: Env) -> Any:
         env=None,
         detector=_Detector(),
     )
-    return {"rules_evaluated": PolicyHandler().generate(ctx)}
+    count = PolicyHandler().generate(ctx)
+    env.discard_output()
+    return {"rules_evaluated": count, "reports": reports}
 
 
 CELLS: dict[str, Callable[[Path, Env], Any]] = {
@@ -189,7 +227,7 @@ def test_cli(
     # No provider and no live Prometheus: the environment must not change a cell.
     for var in ("NTHLAYER_PROMETHEUS_URL", "NTHLAYER_METRICS_USER", "NTHLAYER_METRICS_PASSWORD"):
         monkeypatch.delenv(var, raising=False)
-    env = Env(tmp_path, capsys)
+    env = Env(tmp_path, capsys, monkeypatch)
     try:
         value = CELLS[cell](path, env)
     except Exception as e:  # noqa: BLE001 — today's failure is the golden

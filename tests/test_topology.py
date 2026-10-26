@@ -6,13 +6,14 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from nthlayer_common.manifest import Dependency, DependencySLO, ReliabilityManifest
+
 from nthlayer_generate.dependencies.models import (
     DependencyGraph,
     DependencyType,
     ResolvedDependency,
 )
 from nthlayer_generate.identity import ServiceIdentity
-from nthlayer_generate.specs.manifest import Dependency, DependencySLO, ReliabilityManifest
 from nthlayer_generate.topology.enrichment import build_topology
 from nthlayer_generate.topology.models import (
     SLOContract,

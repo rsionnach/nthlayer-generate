@@ -24,7 +24,7 @@ from nthlayer_generate.cli.init import (
     _yaml_scalar,
     init_command,
 )
-from nthlayer_generate.specs.manifest import is_valid_service_name
+from nthlayer_generate.specs.names import is_valid_service_name
 from nthlayer_generate.specs.template_loader import TemplateLoader
 from nthlayer_generate.specs.validator import validate_service_file
 
@@ -647,7 +647,7 @@ class TestServiceNameRuleIsShared:
         schema documents a deliberate `not: {pattern: "\\n"}` guard against
         exactly this for ServiceType.
         """
-        from nthlayer_generate.specs.manifest import SERVICE_NAME_PATTERN
+        from nthlayer_generate.specs.names import SERVICE_NAME_PATTERN
 
         assert re.match(SERVICE_NAME_PATTERN + "$", "svc\n") is not None, (
             "if this fails, Python changed and the fullmatch rationale needs revisiting"

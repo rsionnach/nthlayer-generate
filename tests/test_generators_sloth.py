@@ -1,6 +1,7 @@
 """Tests for nthlayer.generators.sloth — Sloth SLO spec generation."""
 
 import yaml
+from nthlayer_common.manifest import ReliabilityManifest, SLODefinition
 
 from nthlayer_generate.generators.sloth import (
     SlothGenerationResult,
@@ -11,7 +12,6 @@ from nthlayer_generate.generators.sloth import (
     generate_alerting_config,
     generate_sloth_from_manifest,
 )
-from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
 from nthlayer_generate.specs.models import ServiceContext
 
 
@@ -168,6 +168,9 @@ class TestGenerateSlothFromManifest:
                     name="avail",
                     target=99.9,
                     window="30d",
+                    # srm/v1 infers "avail" -> availability (common
+                    # parser/v1.py _infer_slo_type, name keyword)
+                    slo_type="availability",
                     indicator_query="http_requests{service='${service}',team='${team}'}",
                 ),
             ],

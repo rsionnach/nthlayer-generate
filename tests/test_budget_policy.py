@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import pytest
-
-from nthlayer_generate.specs.manifest import BudgetPolicy, BudgetThresholds, ErrorBudgetGate
+from nthlayer_common.manifest import BudgetPolicy, BudgetThresholds, ErrorBudgetGate
 
 
 class TestBudgetPolicy:
@@ -61,7 +60,7 @@ class TestErrorBudgetGateWithPolicy:
 
 class TestBudgetPolicyParsing:
     def test_parse_opensrm_with_budget_policy(self) -> None:
-        from nthlayer_generate.specs.opensrm_parser import parse_opensrm
+        from nthlayer_common.manifest.parser.v1 import parse_srm_v1
 
         data = {
             "apiVersion": "srm/v1",
@@ -86,7 +85,7 @@ class TestBudgetPolicyParsing:
                 },
             },
         }
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert manifest.deployment is not None
         assert manifest.deployment.gates is not None
         assert manifest.deployment.gates.error_budget is not None
@@ -98,7 +97,7 @@ class TestBudgetPolicyParsing:
         assert policy.on_exhausted == ["freeze_deploys", "notify"]
 
     def test_parse_opensrm_without_budget_policy(self) -> None:
-        from nthlayer_generate.specs.opensrm_parser import parse_opensrm
+        from nthlayer_common.manifest.parser.v1 import parse_srm_v1
 
         data = {
             "apiVersion": "srm/v1",
@@ -113,14 +112,14 @@ class TestBudgetPolicyParsing:
                 },
             },
         }
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert manifest.deployment is not None
         assert manifest.deployment.gates is not None
         assert manifest.deployment.gates.error_budget is not None
         assert manifest.deployment.gates.error_budget.policy is None
 
     def test_parse_budget_policy_partial_thresholds(self) -> None:
-        from nthlayer_generate.specs.opensrm_parser import parse_opensrm
+        from nthlayer_common.manifest.parser.v1 import parse_srm_v1
 
         data = {
             "apiVersion": "srm/v1",
@@ -140,7 +139,7 @@ class TestBudgetPolicyParsing:
                 },
             },
         }
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         policy = manifest.deployment.gates.error_budget.policy
         assert policy is not None
         assert policy.thresholds.warning == 0.30
@@ -152,7 +151,8 @@ class TestBudgetPolicyParsing:
 # The BudgetPolicy → GatePolicy conversion tests belonged to the runtime
 # gate layer (slos/gates.py, cli/deploy.py) which was moved to
 # nthlayer-observe in B3. The BudgetPolicy model itself (dataclass +
-# validation) still lives in nthlayer.specs.manifest and is exercised by
+# validation) now lives in nthlayer_common.manifest (opensrm-wo62.1) and
+# nthlayer-common has no test of it, so it is still exercised by
 # the TestBudgetPolicy / TestBudgetPolicyValidation / TestErrorBudgetGate
 # / TestBudgetPolicyFromYAML classes in this file.
 

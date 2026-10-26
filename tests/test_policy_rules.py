@@ -2,6 +2,15 @@
 
 from __future__ import annotations
 
+from nthlayer_common.manifest import (
+    Dependency,
+    DependencySLO,
+    DeploymentConfig,
+    Ownership,
+    ReliabilityManifest,
+    SLODefinition,
+)
+
 from nthlayer_generate.policies.models import PolicyRule, PolicySeverity, RuleType
 from nthlayer_generate.policies.rules import (
     RULE_EVALUATORS,
@@ -9,14 +18,6 @@ from nthlayer_generate.policies.rules import (
     evaluate_dependency_rule,
     evaluate_required_fields,
     evaluate_tier_constraint,
-)
-from nthlayer_generate.specs.manifest import (
-    Dependency,
-    DependencySLO,
-    DeploymentConfig,
-    Ownership,
-    ReliabilityManifest,
-    SLODefinition,
 )
 
 
@@ -158,8 +159,10 @@ class TestTierConstraint:
         manifest = _make_manifest(
             tier="critical",
             slos=[
-                SLODefinition(name="avail", target=99.9),
-                SLODefinition(name="latency", target=200),
+                # slo_type: srm/v1 name inference (common parser/v1.py
+                # _infer_slo_type): "avail" keyword, "latency" exact name
+                SLODefinition(name="avail", target=99.9, slo_type="availability"),
+                SLODefinition(name="latency", target=200, slo_type="latency"),
             ],
         )
         rule = PolicyRule(

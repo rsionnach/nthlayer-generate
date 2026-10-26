@@ -1,35 +1,46 @@
-"""Tests for OpenSRM format parsing and the unified manifest model."""
+"""Tests for srm/v1 and legacy parsing through nthlayer-common's manifest model.
+
+Ported from generate's retired manifest stack (opensrm-wo62.1): what remains
+here is not covered by nthlayer-common's own suite, plus generate's consumers
+of the model (migrate's _legacy_to_srm_v1, service_context_from_manifest,
+the manifest recording-rule builder)."""
 
 import warnings
 
 import pytest
-
-from nthlayer_generate.specs import (
-    ManifestLoadError,
-    ReliabilityManifest,
-    SLODefinition,
-    load_manifest,
-)
-from nthlayer_generate.specs.loader import LegacyFormatWarning
-from nthlayer_generate.specs.manifest import (
-    SERVICE_TYPE_ALIASES,
+from nthlayer_common.manifest import (
     VALID_SERVICE_TYPES,
     VALID_TIERS,
     Dependency,
+    LegacyFormatWarning,
     ManifestEscalationStep,
+    ManifestLoadError,
     OnCallConfig,
     Override,
+    ReliabilityManifest,
     RosterMember,
     RotationConfig,
+    SLODefinition,
     SourceFormat,
     is_valid_service_type,
+    load_manifest,
 )
-from nthlayer_generate.specs.opensrm_parser import (
+from nthlayer_common.manifest.parser.v1 import (
     OpenSRMParseError,
-    is_opensrm_format,
-    parse_opensrm,
-    parse_opensrm_file,
+    is_srm_v1_format,
+    parse_srm_v1,
+    parse_srm_v1_file,
 )
+
+from nthlayer_generate.cli.migrate import _legacy_to_srm_v1
+from nthlayer_generate.specs.context import service_context_from_manifest
+
+# Retired-stack API successors (opensrm-wo62.1, spec §5.2, D7):
+#   ReliabilityManifest.to_dict()            -> cli/migrate.py _legacy_to_srm_v1
+#   ReliabilityManifest.to_service_context() -> specs/context.py
+#       service_context_from_manifest(m).to_dict() (the same dict shape)
+# Hand-built SLODefinitions carry the slo_type common's srm/v1 parser infers
+# from the name (parser/v1.py _infer_slo_type: _NAME_TO_TYPE exact names).
 
 
 class TestOpenSRMFormatDetection:
@@ -43,7 +54,7 @@ class TestOpenSRMFormatDetection:
             "metadata": {"name": "test"},
             "spec": {"type": "api"},
         }
-        assert is_opensrm_format(data) is True
+        assert is_srm_v1_format(data) is True
 
     def test_detect_legacy_format(self):
         """Test detection of legacy format."""
@@ -51,7 +62,7 @@ class TestOpenSRMFormatDetection:
             "service": {"name": "test"},
             "resources": [],
         }
-        assert is_opensrm_format(data) is False
+        assert is_srm_v1_format(data) is False
 
     def test_detect_invalid_api_version(self):
         """Test detection fails for wrong apiVersion."""
@@ -59,7 +70,7 @@ class TestOpenSRMFormatDetection:
             "apiVersion": "v2",  # Wrong version
             "kind": "ServiceReliabilityManifest",
         }
-        assert is_opensrm_format(data) is False
+        assert is_srm_v1_format(data) is False
 
 
 class TestOpenSRMParser:
@@ -80,7 +91,7 @@ class TestOpenSRMParser:
             },
         }
 
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
 
         assert manifest.name == "payment-api"
         assert manifest.team == "payments"
@@ -115,7 +126,7 @@ class TestOpenSRMParser:
             },
         }
 
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
 
         assert len(manifest.slos) == 2
         avail_slo = next(s for s in manifest.slos if s.name == "availability")
@@ -157,7 +168,7 @@ class TestOpenSRMParser:
             },
         }
 
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
 
         assert len(manifest.dependencies) == 2
         postgres = next(d for d in manifest.dependencies if d.name == "postgres")
@@ -203,7 +214,7 @@ class TestOpenSRMParser:
             },
         }
 
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
 
         assert manifest.is_ai_gate()
         assert manifest.type == "ai-gate"
@@ -235,7 +246,7 @@ class TestOpenSRMParser:
         }
 
         with pytest.raises(OpenSRMParseError, match="team is required"):
-            parse_opensrm(data)
+            parse_srm_v1(data)
 
     def test_parse_invalid_format(self):
         """Test error when not OpenSRM format."""
@@ -244,34 +255,11 @@ class TestOpenSRMParser:
         }
 
         with pytest.raises(OpenSRMParseError, match="Invalid OpenSRM format"):
-            parse_opensrm(data)
+            parse_srm_v1(data)
 
 
 class TestUnifiedLoader:
     """Test the unified manifest loader with format auto-detection."""
-
-    def test_load_opensrm_format(self, tmp_path):
-        """Test loading OpenSRM format file."""
-        manifest_file = tmp_path / "service.reliability.yaml"
-        manifest_file.write_text("""
-apiVersion: srm/v1
-kind: ServiceReliabilityManifest
-metadata:
-  name: payment-api
-  team: payments
-  tier: critical
-spec:
-  type: api
-  slos:
-    availability:
-      target: 99.95
-      window: 30d
-""")
-
-        manifest = load_manifest(manifest_file)
-
-        assert manifest.name == "payment-api"
-        assert manifest.source_format == SourceFormat.OPENSRM
 
     def test_load_legacy_format_with_warning(self, tmp_path):
         """Test loading legacy format shows deprecation warning."""
@@ -321,58 +309,8 @@ service:
 
         assert manifest.name == "payment-api"
 
-    def test_load_file_not_found(self, tmp_path):
-        """Test error when file doesn't exist."""
-        with pytest.raises(FileNotFoundError):
-            load_manifest(tmp_path / "nonexistent.yaml")
-
-
 class TestReliabilityManifest:
     """Test the ReliabilityManifest model."""
-
-    def test_create_manifest(self):
-        """Test creating a ReliabilityManifest."""
-        manifest = ReliabilityManifest(
-            name="payment-api",
-            team="payments",
-            tier="critical",
-            type="api",
-        )
-
-        assert manifest.name == "payment-api"
-        assert manifest.tier == "critical"
-        assert manifest.type == "api"
-
-    def test_manifest_type_alias_normalization(self):
-        """Test that legacy type names are normalized."""
-        manifest = ReliabilityManifest(
-            name="processor",
-            team="data",
-            tier="standard",
-            type="background-job",  # Legacy name
-        )
-
-        assert manifest.type == "worker"  # Normalized to OpenSRM name
-
-    def test_manifest_invalid_tier(self):
-        """Test validation of invalid tier."""
-        with pytest.raises(ValueError, match="Invalid tier"):
-            ReliabilityManifest(
-                name="test",
-                team="team",
-                tier="invalid-tier",
-                type="api",
-            )
-
-    def test_manifest_invalid_type(self):
-        """Test validation of invalid type."""
-        with pytest.raises(ValueError, match="Invalid type"):
-            ReliabilityManifest(
-                name="test",
-                team="team",
-                tier="critical",
-                type="invalid-type",
-            )
 
     def test_manifest_to_dict(self):
         """Test converting manifest to dict."""
@@ -382,11 +320,13 @@ class TestReliabilityManifest:
             tier="critical",
             type="api",
             slos=[
-                SLODefinition(name="availability", target=99.95, window="30d"),
+                SLODefinition(
+                    name="availability", target=99.95, slo_type="availability", window="30d"
+                ),
             ],
         )
 
-        d = manifest.to_dict()
+        d = _legacy_to_srm_v1(manifest)
 
         assert d["apiVersion"] == "srm/v1"
         assert d["kind"] == "ServiceReliabilityManifest"
@@ -404,30 +344,12 @@ class TestReliabilityManifest:
             language="java",
         )
 
-        ctx = manifest.to_service_context()
+        ctx = service_context_from_manifest(manifest).to_dict()
 
         assert ctx["service"] == "payment-api"
         assert ctx["team"] == "payments"
         assert ctx["tier"] == "critical"
         assert ctx["language"] == "java"
-
-    def test_ai_gate_helpers(self):
-        """Test AI gate helper methods."""
-        manifest = ReliabilityManifest(
-            name="fraud-detector",
-            team="risk",
-            tier="critical",
-            type="ai-gate",
-            slos=[
-                SLODefinition(name="availability", target=99.9),
-                SLODefinition(name="reversal_rate", target=0.05),
-                SLODefinition(name="high_confidence_failure", target=0.01),
-            ],
-        )
-
-        assert manifest.is_ai_gate()
-        assert len(manifest.get_judgment_slos()) == 2
-        assert len(manifest.get_standard_slos()) == 1
 
 
 class TestServiceTypeConstants:
@@ -457,19 +379,10 @@ class TestServiceTypeConstants:
         assert "web" not in VALID_SERVICE_TYPES
         assert is_valid_service_type("x-web")
 
-    def test_type_aliases(self):
-        """Test type aliases for backward compatibility."""
-        assert SERVICE_TYPE_ALIASES["background-job"] == "worker"
-        assert SERVICE_TYPE_ALIASES["pipeline"] == "batch"
-        # Added by opensrm-ih0v so manifests already written with `web`
-        # keep parsing after the rename.
-        assert SERVICE_TYPE_ALIASES["web"] == "x-web"
-
-
 class TestOpenSRMFileParser:
     """Test parsing OpenSRM files from disk."""
 
-    def test_parse_opensrm_file(self, tmp_path):
+    def test_parse_srm_v1_file(self, tmp_path):
         """Test parsing OpenSRM file from path."""
         manifest_file = tmp_path / "payment-api.reliability.yaml"
         manifest_file.write_text("""
@@ -502,7 +415,7 @@ spec:
         enabled: true
 """)
 
-        manifest = parse_opensrm_file(manifest_file)
+        manifest = parse_srm_v1_file(manifest_file)
 
         assert manifest.name == "payment-api"
         assert manifest.description == "Payment processing API"
@@ -515,26 +428,7 @@ spec:
     def test_parse_opensrm_file_not_found(self, tmp_path):
         """Test error when file not found."""
         with pytest.raises(FileNotFoundError):
-            parse_opensrm_file(tmp_path / "nonexistent.yaml")
-
-
-class TestSLODefinition:
-    """Test SLO definition model."""
-
-    def test_standard_slo(self):
-        """Test standard SLO is not judgment SLO."""
-        slo = SLODefinition(name="availability", target=99.95)
-        assert slo.is_judgment_slo() is False
-
-    def test_judgment_slo_by_name(self):
-        """Test judgment SLO detection by name."""
-        slo = SLODefinition(name="reversal_rate", target=0.05)
-        assert slo.is_judgment_slo() is True
-
-    def test_judgment_slo_by_type(self):
-        """Test judgment SLO detection by type."""
-        slo = SLODefinition(name="custom_judgment", target=0.1, slo_type="judgment")
-        assert slo.is_judgment_slo() is True
+            parse_srm_v1_file(tmp_path / "nonexistent.yaml")
 
 
 class TestContractValidation:
@@ -542,7 +436,7 @@ class TestContractValidation:
 
     def test_contract_validation_passes(self):
         """Test contract validation passes when SLOs are tighter."""
-        from nthlayer_generate.specs.manifest import Contract
+        from nthlayer_common.manifest.v1_compat import convert_v1_contract
 
         manifest = ReliabilityManifest(
             name="payment-api",
@@ -550,32 +444,16 @@ class TestContractValidation:
             tier="critical",
             type="api",
             slos=[
-                SLODefinition(name="availability", target=99.99),  # Internal SLO
+                # Internal SLO
+                SLODefinition(name="availability", target=99.99, slo_type="availability"),
             ],
-            contract=Contract(availability=0.999),  # External contract (99.9%)
+            # External contract (99.9%): the srm/v1 block {availability: 0.999},
+            # converted as common's srm/v1 parser does (parser/v1.py).
+            contracts=[convert_v1_contract("payment-api", 0.999, None, None)],
         )
 
         errors = manifest.validate_contracts()
         assert len(errors) == 0
-
-    def test_contract_validation_fails_loose_slo(self):
-        """Test contract validation fails when SLO is looser than contract."""
-        from nthlayer_generate.specs.manifest import Contract
-
-        manifest = ReliabilityManifest(
-            name="payment-api",
-            team="payments",
-            tier="critical",
-            type="api",
-            slos=[
-                SLODefinition(name="availability", target=99.0),  # Looser than contract
-            ],
-            contract=Contract(availability=0.999),  # External contract (99.9%)
-        )
-
-        errors = manifest.validate_contracts()
-        assert len(errors) == 1
-        assert "looser than contract" in errors[0]
 
     def test_contract_validation_no_contract(self):
         """Test contract validation with no contract."""
@@ -589,36 +467,8 @@ class TestContractValidation:
         errors = manifest.validate_contracts()
         assert len(errors) == 0
 
-    def test_contract_judgment_validation(self):
-        """Test judgment contract validation for ai-gate."""
-        from nthlayer_generate.specs.manifest import Contract
-
-        manifest = ReliabilityManifest(
-            name="fraud-detector",
-            team="risk",
-            tier="critical",
-            type="ai-gate",
-            slos=[
-                SLODefinition(name="reversal_rate", target=0.10),  # Looser than contract
-            ],
-            contract=Contract(judgment={"reversal_rate": 0.05}),  # Contract: max 5%
-        )
-
-        errors = manifest.validate_contracts()
-        assert len(errors) == 1
-        assert "reversal_rate" in errors[0]
-
-
 class TestLoaderEdgeCases:
     """Test loader edge cases for better coverage."""
-
-    def test_load_invalid_yaml(self, tmp_path):
-        """Test loading invalid YAML."""
-        manifest_file = tmp_path / "invalid.yaml"
-        manifest_file.write_text("invalid: yaml: content:")
-
-        with pytest.raises(ManifestLoadError, match="Invalid YAML"):
-            load_manifest(manifest_file)
 
     def test_load_non_dict_yaml(self, tmp_path):
         """Test loading YAML that's not a dict."""
@@ -663,7 +513,7 @@ service:
 
     def test_is_manifest_file_not_yaml(self, tmp_path):
         """Test is_manifest_file with non-YAML file."""
-        from nthlayer_generate.specs.loader import is_manifest_file
+        from nthlayer_common.manifest import is_manifest_file
 
         txt_file = tmp_path / "readme.txt"
         txt_file.write_text("not yaml")
@@ -671,7 +521,7 @@ service:
 
     def test_is_manifest_file_reliability_extension(self, tmp_path):
         """Test is_manifest_file with .reliability.yaml extension."""
-        from nthlayer_generate.specs.loader import is_manifest_file
+        from nthlayer_common.manifest import is_manifest_file
 
         manifest_file = tmp_path / "api.reliability.yaml"
         manifest_file.write_text("""
@@ -688,7 +538,7 @@ spec:
 
     def test_is_manifest_file_service_yaml(self, tmp_path):
         """Test is_manifest_file with service.yaml name."""
-        from nthlayer_generate.specs.loader import is_manifest_file
+        from nthlayer_common.manifest import is_manifest_file
 
         manifest_file = tmp_path / "service.yaml"
         manifest_file.write_text("""
@@ -742,7 +592,7 @@ resources:
         assert manifest.type == "api"
 
         # Convert to OpenSRM format
-        opensrm_data = manifest.to_dict()
+        opensrm_data = _legacy_to_srm_v1(manifest)
         assert opensrm_data["apiVersion"] == "srm/v1"
         assert opensrm_data["kind"] == "ServiceReliabilityManifest"
         assert opensrm_data["metadata"]["name"] == "payment-api"
@@ -789,7 +639,7 @@ resources:
             manifest = load_manifest(legacy_file, suppress_deprecation_warning=True)
 
         # Convert to OpenSRM
-        opensrm_data = manifest.to_dict()
+        opensrm_data = _legacy_to_srm_v1(manifest)
 
         # Write and reload
         output_file = tmp_path / "api-service.reliability.yaml"
@@ -818,7 +668,7 @@ service:
 
         assert manifest.type == "worker"  # Normalized
 
-        opensrm_data = manifest.to_dict()
+        opensrm_data = _legacy_to_srm_v1(manifest)
         assert opensrm_data["spec"]["type"] == "worker"
 
     def test_migrate_already_opensrm(self, tmp_path):
@@ -854,7 +704,7 @@ spec:
         )
 
         # Convert to dict
-        data = manifest.to_dict()
+        data = _legacy_to_srm_v1(manifest)
 
         # Write as YAML
         output_file = tmp_path / "round-trip.reliability.yaml"
@@ -886,7 +736,9 @@ class TestManifestRecordingRuleBuilder:
             tier="critical",
             type="api",
             slos=[
-                SLODefinition(name="availability", target=99.95, window="30d"),
+                SLODefinition(
+                    name="availability", target=99.95, slo_type="availability", window="30d"
+                ),
             ],
         )
 
@@ -909,10 +761,25 @@ class TestManifestRecordingRuleBuilder:
             team="risk",
             tier="critical",
             type="ai-gate",
+            # Judgment SLOs built as common's srm/v1 parser builds them
+            # (parser/v1.py _parse_slos): slo_type "availability" (the
+            # indicator shape) and judgment_type = the srm/v1 SLO name.
             slos=[
-                SLODefinition(name="availability", target=99.9),
-                SLODefinition(name="reversal_rate", target=0.05, window="7d"),
-                SLODefinition(name="high_confidence_failure", target=0.01, window="7d"),
+                SLODefinition(name="availability", target=99.9, slo_type="availability"),
+                SLODefinition(
+                    name="reversal_rate",
+                    target=0.05,
+                    slo_type="availability",
+                    judgment_type="reversal_rate",
+                    window="7d",
+                ),
+                SLODefinition(
+                    name="high_confidence_failure",
+                    target=0.01,
+                    slo_type="availability",
+                    judgment_type="high_confidence_failure",
+                    window="7d",
+                ),
             ],
         )
 
@@ -962,7 +829,7 @@ class TestOpenSRMParserValidationErrors:
             "spec": {"type": "api"},
         }
         with pytest.raises(OpenSRMParseError, match="metadata.name is required"):
-            parse_opensrm(data)
+            parse_srm_v1(data)
 
     def test_missing_metadata_team(self):
         """Test error when metadata.team is missing."""
@@ -976,7 +843,7 @@ class TestOpenSRMParserValidationErrors:
             "spec": {"type": "api"},
         }
         with pytest.raises(OpenSRMParseError, match="metadata.team is required"):
-            parse_opensrm(data)
+            parse_srm_v1(data)
 
     def test_missing_metadata_tier(self):
         """Test error when metadata.tier is missing."""
@@ -990,7 +857,7 @@ class TestOpenSRMParserValidationErrors:
             "spec": {"type": "api"},
         }
         with pytest.raises(OpenSRMParseError, match="metadata.tier is required"):
-            parse_opensrm(data)
+            parse_srm_v1(data)
 
     def test_missing_spec_type(self):
         """Test error when spec.type is missing."""
@@ -1005,7 +872,7 @@ class TestOpenSRMParserValidationErrors:
             "spec": {},
         }
         with pytest.raises(OpenSRMParseError, match="spec.type is required"):
-            parse_opensrm(data)
+            parse_srm_v1(data)
 
     def test_slo_missing_target_and_minimum(self):
         """Test error when SLO has no target or minimum."""
@@ -1028,11 +895,11 @@ class TestOpenSRMParserValidationErrors:
             },
         }
         with pytest.raises(OpenSRMParseError, match="requires a target or minimum"):
-            parse_opensrm(data)
+            parse_srm_v1(data)
 
 
 class TestOpenSRMParserFileParsing:
-    """Test parse_opensrm_file function."""
+    """Test parse_srm_v1_file (generate's parse_opensrm_file before opensrm-wo62.1)."""
 
     def test_invalid_yaml_file(self, tmp_path):
         """Test error on invalid YAML."""
@@ -1040,7 +907,7 @@ class TestOpenSRMParserFileParsing:
         bad_file.write_text("invalid: yaml: content: [")
 
         with pytest.raises(OpenSRMParseError, match="Invalid YAML"):
-            parse_opensrm_file(bad_file)
+            parse_srm_v1_file(bad_file)
 
     def test_non_dict_yaml_file(self, tmp_path):
         """Test error on non-dict YAML."""
@@ -1048,7 +915,7 @@ class TestOpenSRMParserFileParsing:
         list_file.write_text("- item1\n- item2")
 
         with pytest.raises(OpenSRMParseError, match="Expected YAML object"):
-            parse_opensrm_file(list_file)
+            parse_srm_v1_file(list_file)
 
 
 class TestOpenSRMParserSLOEdgeCases:
@@ -1071,7 +938,7 @@ class TestOpenSRMParserSLOEdgeCases:
                 },
             },
         }
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert len(manifest.slos) == 1
         assert manifest.slos[0].name == "availability"
         assert manifest.slos[0].target == 99.95
@@ -1098,7 +965,7 @@ class TestOpenSRMParserDependencyEdgeCases:
                 ],
             },
         }
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert len(manifest.dependencies) == 1
         assert manifest.dependencies[0].name == "valid"
 
@@ -1120,7 +987,7 @@ class TestOpenSRMParserDependencyEdgeCases:
                 ],
             },
         }
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert len(manifest.dependencies) == 1
         assert manifest.dependencies[0].name == "valid"
 
@@ -1141,7 +1008,7 @@ class TestOpenSRMParserDependencyEdgeCases:
                 ],
             },
         }
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert len(manifest.dependencies) == 1
         assert manifest.dependencies[0].criticality is None
 
@@ -1167,7 +1034,7 @@ class TestOpenSRMParserOwnershipEdgeCases:
                 },
             },
         }
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert manifest.ownership is None
 
     def test_ownership_with_pagerduty(self):
@@ -1191,7 +1058,7 @@ class TestOpenSRMParserOwnershipEdgeCases:
                 },
             },
         }
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert manifest.ownership is not None
         assert manifest.ownership.pagerduty is not None
         assert manifest.ownership.pagerduty.service_id == "PD123"
@@ -1346,7 +1213,7 @@ class TestOnCallConfig:
                 ],
             }
         )
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert manifest.ownership is not None
         assert manifest.ownership.oncall is not None
 
@@ -1390,7 +1257,7 @@ class TestOnCallConfig:
                 },
             },
         }
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert manifest.ownership is not None
         assert manifest.ownership.oncall is None
 
@@ -1408,7 +1275,7 @@ class TestOnCallConfig:
                 },
             }
         )
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         oncall = manifest.ownership.oncall
         assert oncall is not None
         assert oncall.timezone == "UTC"
@@ -1436,7 +1303,7 @@ class TestOnCallConfig:
                 ],
             }
         )
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         step = manifest.ownership.oncall.escalation[0]
         assert step.after == "30m"
         assert step.notify == "phone"
@@ -1456,7 +1323,7 @@ class TestOnCallConfig:
             }
         )
         with pytest.raises(OpenSRMParseError, match="roster.*missing required field"):
-            parse_opensrm(data)
+            parse_srm_v1(data)
 
     def test_override_missing_user_raises(self):
         """Override without user raises OpenSRMParseError."""
@@ -1474,7 +1341,7 @@ class TestOnCallConfig:
             }
         )
         with pytest.raises(OpenSRMParseError, match="overrides.*missing required field"):
-            parse_opensrm(data)
+            parse_srm_v1(data)
 
     def test_escalation_missing_notify_raises(self):
         """Escalation step without notify raises OpenSRMParseError."""
@@ -1490,7 +1357,7 @@ class TestOnCallConfig:
             }
         )
         with pytest.raises(OpenSRMParseError, match="escalation.*missing required field"):
-            parse_opensrm(data)
+            parse_srm_v1(data)
 
     def test_missing_timezone_raises(self):
         """Missing timezone raises OpenSRMParseError."""
@@ -1504,7 +1371,7 @@ class TestOnCallConfig:
             }
         )
         with pytest.raises(OpenSRMParseError, match="timezone is required"):
-            parse_opensrm(data)
+            parse_srm_v1(data)
 
     def test_invalid_timezone_raises(self):
         """Invalid timezone string raises OpenSRMParseError."""
@@ -1519,7 +1386,7 @@ class TestOnCallConfig:
             }
         )
         with pytest.raises(OpenSRMParseError, match="invalid IANA timezone"):
-            parse_opensrm(data)
+            parse_srm_v1(data)
 
 
 class TestOpenSRMParserGateEdgeCases:
@@ -1543,7 +1410,7 @@ class TestOpenSRMParserGateEdgeCases:
                 },
             },
         }
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert manifest.deployment.gates is not None
         assert manifest.deployment.gates.error_budget is None
 
@@ -1566,7 +1433,7 @@ class TestOpenSRMParserGateEdgeCases:
                 },
             },
         }
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert manifest.deployment.gates.slo_compliance.threshold == 0.95
 
     def test_recent_incidents_gate(self):
@@ -1592,7 +1459,7 @@ class TestOpenSRMParserGateEdgeCases:
                 },
             },
         }
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         gate = manifest.deployment.gates.recent_incidents
         assert gate.p1_max == 1
         assert gate.p2_max == 3
@@ -1623,7 +1490,7 @@ class TestOpenSRMParserEdgeCases:
             },
         }
 
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert manifest.ownership is not None
         assert manifest.ownership.slack == "#test-oncall"
         assert manifest.ownership.runbook == "https://wiki/runbooks/api"
@@ -1647,7 +1514,7 @@ class TestOpenSRMParserEdgeCases:
             },
         }
 
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert manifest.observability is not None
         assert manifest.observability.metrics_prefix == "api_v2"
 
@@ -1678,7 +1545,7 @@ class TestOpenSRMParserEdgeCases:
             },
         }
 
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert manifest.deployment is not None
         assert "production" in manifest.deployment.environments
         assert manifest.deployment.gates is not None
@@ -1707,7 +1574,7 @@ class TestOpenSRMParserEdgeCases:
             },
         }
 
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert len(manifest.slos) == 1
         assert manifest.slos[0].target == 1000
 
@@ -1738,7 +1605,7 @@ class TestOpenSRMParserEdgeCases:
             },
         }
 
-        manifest = parse_opensrm(data)
+        manifest = parse_srm_v1(data)
         assert len(manifest.dependencies) == 1
         dep = manifest.dependencies[0]
         assert dep.slo is not None
@@ -1779,49 +1646,8 @@ class TestManifestValidation:
                 type="api",
             )
 
-    def test_missing_type_raises_error(self):
-        """Test that missing type raises ValueError."""
-        with pytest.raises(ValueError, match="Service type is required"):
-            ReliabilityManifest(
-                name="test",
-                team="test",
-                tier="standard",
-                type="",  # Empty type
-            )
-
-    def test_invalid_tier_raises_error(self):
-        """Test that invalid tier raises ValueError."""
-        with pytest.raises(ValueError, match="Invalid tier"):
-            ReliabilityManifest(
-                name="test",
-                team="test",
-                tier="invalid-tier",
-                type="api",
-            )
-
-    def test_invalid_type_raises_error(self):
-        """Test that invalid type raises ValueError."""
-        with pytest.raises(ValueError, match="Invalid type"):
-            ReliabilityManifest(
-                name="test",
-                team="test",
-                tier="standard",
-                type="invalid-type",
-            )
-
-
 class TestManifestMethods:
     """Test ReliabilityManifest methods."""
-
-    def test_is_ai_gate_true(self):
-        """Test is_ai_gate returns True for ai-gate type."""
-        manifest = ReliabilityManifest(
-            name="detector",
-            team="risk",
-            tier="critical",
-            type="ai-gate",
-        )
-        assert manifest.is_ai_gate() is True
 
     def test_is_ai_gate_false(self):
         """Test is_ai_gate returns False for non-ai-gate type."""
@@ -1832,40 +1658,6 @@ class TestManifestMethods:
             type="api",
         )
         assert manifest.is_ai_gate() is False
-
-    def test_get_judgment_slos(self):
-        """Test get_judgment_slos returns only judgment SLOs."""
-        manifest = ReliabilityManifest(
-            name="detector",
-            team="risk",
-            tier="critical",
-            type="ai-gate",
-            slos=[
-                SLODefinition(name="availability", target=99.9),
-                SLODefinition(name="reversal_rate", target=0.05),
-                SLODefinition(name="high_confidence_failure", target=0.01),
-            ],
-        )
-        judgment_slos = manifest.get_judgment_slos()
-        assert len(judgment_slos) == 2
-        assert all(s.is_judgment_slo() for s in judgment_slos)
-
-    def test_get_standard_slos(self):
-        """Test get_standard_slos returns only standard SLOs."""
-        manifest = ReliabilityManifest(
-            name="detector",
-            team="risk",
-            tier="critical",
-            type="ai-gate",
-            slos=[
-                SLODefinition(name="availability", target=99.9),
-                SLODefinition(name="latency", target=200, percentile="p99"),
-                SLODefinition(name="reversal_rate", target=0.05),
-            ],
-        )
-        standard_slos = manifest.get_standard_slos()
-        assert len(standard_slos) == 2
-        assert all(not s.is_judgment_slo() for s in standard_slos)
 
     def test_to_service_context(self):
         """Test to_service_context produces legacy-compatible dict."""
@@ -1878,7 +1670,7 @@ class TestManifestMethods:
             framework="spring-boot",
             environment="production",
         )
-        ctx = manifest.to_service_context()
+        ctx = service_context_from_manifest(manifest).to_dict()
         assert ctx["service"] == "payment-api"
         assert ctx["team"] == "payments"
         assert ctx["tier"] == "critical"
@@ -1898,6 +1690,7 @@ class TestManifestMethods:
                 SLODefinition(
                     name="availability",
                     target=99.95,
+                    slo_type="availability",
                     window="30d",
                     unit="percent",
                     percentile="p99",
@@ -1905,7 +1698,7 @@ class TestManifestMethods:
                 ),
             ],
         )
-        data = manifest.to_dict()
+        data = _legacy_to_srm_v1(manifest)
         assert "slos" in data["spec"]
         assert "availability" in data["spec"]["slos"]
         slo = data["spec"]["slos"]["availability"]
@@ -1927,13 +1720,13 @@ class TestManifestMethods:
                 Dependency(name="redis", type="cache", critical=False),
             ],
         )
-        data = manifest.to_dict()
+        data = _legacy_to_srm_v1(manifest)
         assert "dependencies" in data["spec"]
         assert len(data["spec"]["dependencies"]) == 2
 
     def test_to_dict_with_ownership(self):
         """Test to_dict includes ownership."""
-        from nthlayer_generate.specs.manifest import Ownership
+        from nthlayer_common.manifest import Ownership
 
         manifest = ReliabilityManifest(
             name="api",
@@ -1947,76 +1740,12 @@ class TestManifestMethods:
                 runbook="https://wiki/runbooks/api",
             ),
         )
-        data = manifest.to_dict()
+        data = _legacy_to_srm_v1(manifest)
         assert "ownership" in data["spec"]
         assert data["spec"]["ownership"]["team"] == "test"
         assert data["spec"]["ownership"]["slack"] == "#test-oncall"
         assert data["spec"]["ownership"]["email"] == "test@example.com"
         assert data["spec"]["ownership"]["runbook"] == "https://wiki/runbooks/api"
-
-    def test_to_dict_with_contract(self):
-        """Test to_dict includes contract."""
-        from nthlayer_generate.specs.manifest import Contract
-
-        manifest = ReliabilityManifest(
-            name="api",
-            team="test",
-            tier="standard",
-            type="api",
-            contract=Contract(
-                availability=0.999,
-                latency={"p99": "500ms"},
-            ),
-        )
-        data = manifest.to_dict()
-        assert "contract" in data["spec"]
-        assert data["spec"]["contract"]["availability"] == 0.999
-        assert data["spec"]["contract"]["latency"] == {"p99": "500ms"}
-
-    def test_to_dict_with_ai_gate_instrumentation(self):
-        """Test to_dict includes instrumentation for ai-gate."""
-        from nthlayer_generate.specs.manifest import Instrumentation, TelemetryEvent
-
-        manifest = ReliabilityManifest(
-            name="detector",
-            team="risk",
-            tier="critical",
-            type="ai-gate",
-            instrumentation=Instrumentation(
-                telemetry_events=[
-                    TelemetryEvent(
-                        name="decision_made",
-                        fields=["confidence", "outcome"],
-                    ),
-                ],
-            ),
-        )
-        data = manifest.to_dict()
-        assert "instrumentation" in data["spec"]
-        events = data["spec"]["instrumentation"]["telemetry_events"]
-        assert len(events) == 1
-        assert events[0]["name"] == "decision_made"
-
-    def test_to_dict_with_contract_judgment(self):
-        """Test to_dict includes judgment contract for ai-gate."""
-        from nthlayer_generate.specs.manifest import Contract
-
-        manifest = ReliabilityManifest(
-            name="detector",
-            team="risk",
-            tier="critical",
-            type="ai-gate",
-            contract=Contract(
-                judgment={"reversal_rate": 0.05, "high_confidence_failure": 0.01},
-            ),
-        )
-        data = manifest.to_dict()
-        assert "contract" in data["spec"]
-        assert data["spec"]["contract"]["judgment"] == {
-            "reversal_rate": 0.05,
-            "high_confidence_failure": 0.01,
-        }
-
 
 class TestLoaderExtended:
     """Extended tests for loader functionality."""
@@ -2055,19 +1784,6 @@ service:
             )
         assert manifest.source_format == SourceFormat.LEGACY
 
-    def test_load_nonexistent_file(self):
-        """Test loading nonexistent file raises error."""
-        with pytest.raises((FileNotFoundError, ManifestLoadError)):
-            load_manifest("/nonexistent/path/to/file.yaml")
-
-    def test_load_invalid_yaml(self, tmp_path):
-        """Test loading invalid YAML raises error."""
-        bad_file = tmp_path / "bad.yaml"
-        bad_file.write_text("invalid: yaml: content: [")
-
-        with pytest.raises(ManifestLoadError):
-            load_manifest(bad_file)
-
     def test_load_empty_file(self, tmp_path):
         """Test loading empty file raises error."""
         empty_file = tmp_path / "empty.yaml"
@@ -2075,29 +1791,6 @@ service:
 
         with pytest.raises(ManifestLoadError):
             load_manifest(empty_file)
-
-
-class TestSLODefinitionMethods:
-    """Test SLODefinition methods."""
-
-    def test_is_judgment_slo_by_name(self):
-        """Test is_judgment_slo detects judgment SLOs by name."""
-        assert SLODefinition(name="reversal_rate", target=0.05).is_judgment_slo() is True
-        assert SLODefinition(name="high_confidence_failure", target=0.01).is_judgment_slo() is True
-        assert SLODefinition(name="calibration", target=0.1).is_judgment_slo() is True
-        assert SLODefinition(name="feedback_latency", target=24).is_judgment_slo() is True
-
-    def test_is_judgment_slo_by_type(self):
-        """Test is_judgment_slo detects judgment SLOs by slo_type."""
-        slo = SLODefinition(name="custom", target=0.1, slo_type="judgment")
-        assert slo.is_judgment_slo() is True
-
-    def test_standard_slo_not_judgment(self):
-        """Test standard SLOs are not judgment SLOs."""
-        assert SLODefinition(name="availability", target=99.9).is_judgment_slo() is False
-        assert SLODefinition(name="latency", target=200).is_judgment_slo() is False
-        assert SLODefinition(name="error_rate", target=0.1).is_judgment_slo() is False
-        assert SLODefinition(name="throughput", target=1000).is_judgment_slo() is False
 
 
 class TestLoaderLegacyParsing:
@@ -2396,7 +2089,7 @@ class TestIsManifestFile:
 
     def test_non_yaml_extension(self, tmp_path):
         """Test that non-YAML files return False."""
-        from nthlayer_generate.specs.loader import is_manifest_file
+        from nthlayer_common.manifest import is_manifest_file
 
         json_file = tmp_path / "test.json"
         json_file.write_text("{}")
@@ -2404,7 +2097,7 @@ class TestIsManifestFile:
 
     def test_service_yaml_name(self, tmp_path):
         """Test that service.yaml returns True."""
-        from nthlayer_generate.specs.loader import is_manifest_file
+        from nthlayer_common.manifest import is_manifest_file
 
         service_file = tmp_path / "service.yaml"
         service_file.write_text("")
@@ -2412,7 +2105,7 @@ class TestIsManifestFile:
 
     def test_invalid_yaml_returns_false(self, tmp_path):
         """Test that invalid YAML returns False."""
-        from nthlayer_generate.specs.loader import is_manifest_file
+        from nthlayer_common.manifest import is_manifest_file
 
         bad_file = tmp_path / "bad.yaml"
         bad_file.write_text("invalid: yaml: content: [")
@@ -2420,7 +2113,7 @@ class TestIsManifestFile:
 
     def test_non_dict_yaml_returns_false(self, tmp_path):
         """Test that non-dict YAML returns False."""
-        from nthlayer_generate.specs.loader import is_manifest_file
+        from nthlayer_common.manifest import is_manifest_file
 
         list_file = tmp_path / "list.yaml"
         list_file.write_text("- item1\n- item2")
@@ -2428,7 +2121,7 @@ class TestIsManifestFile:
 
     def test_legacy_yaml_without_required_fields(self, tmp_path):
         """Test legacy YAML without all required fields returns False."""
-        from nthlayer_generate.specs.loader import is_manifest_file
+        from nthlayer_common.manifest import is_manifest_file
 
         partial_file = tmp_path / "partial.yaml"
         partial_file.write_text("""
@@ -2454,10 +2147,14 @@ class TestManifestBuilderExtended:
             tier="critical",
             type="api",
             slos=[
-                SLODefinition(name="availability", target=99.95, window="30d"),
-                SLODefinition(name="latency", target=200, unit="ms", percentile="p99"),
-                SLODefinition(name="error_rate", target=0.1, window="7d"),
-                SLODefinition(name="throughput", target=1000, unit="rps"),
+                SLODefinition(
+                    name="availability", target=99.95, slo_type="availability", window="30d"
+                ),
+                SLODefinition(
+                    name="latency", target=200, slo_type="latency", unit="ms", percentile="p99"
+                ),
+                SLODefinition(name="error_rate", target=0.1, slo_type="error_rate", window="7d"),
+                SLODefinition(name="throughput", target=1000, slo_type="throughput", unit="rps"),
             ],
         )
 
@@ -2476,8 +2173,8 @@ class TestManifestBuilderExtended:
             tier="standard",
             type="worker",
             slos=[
-                SLODefinition(name="throughput", target=100, unit="rps"),
-                SLODefinition(name="error_rate", target=0.5, window="7d"),
+                SLODefinition(name="throughput", target=100, slo_type="throughput", unit="rps"),
+                SLODefinition(name="error_rate", target=0.5, slo_type="error_rate", window="7d"),
             ],
         )
 
@@ -2496,7 +2193,7 @@ class TestManifestBuilderExtended:
             tier="high",
             type="stream",
             slos=[
-                SLODefinition(name="throughput", target=10000, unit="eps"),
+                SLODefinition(name="throughput", target=10000, slo_type="throughput", unit="eps"),
             ],
         )
 
@@ -2505,22 +2202,32 @@ class TestManifestBuilderExtended:
 
     def test_build_all_judgment_slo_rules(self):
         """Test building all judgment SLO rule types."""
+        from nthlayer_common.manifest.parser.v1 import parse_srm_v1
+
         from nthlayer_generate.recording_rules.manifest_builder import (
             build_recording_rules_from_manifest,
         )
 
-        manifest = ReliabilityManifest(
-            name="ml-classifier",
-            team="ml",
-            tier="critical",
-            type="ai-gate",
-            slos=[
-                SLODefinition(name="availability", target=99.9),
-                SLODefinition(name="reversal_rate", target=0.05, window="7d"),
-                SLODefinition(name="high_confidence_failure", target=0.01, window="7d"),
-                SLODefinition(name="calibration", target=0.1, window="30d"),
-                SLODefinition(name="feedback_latency", target=3600, window="30d"),
-            ],
+        # calibration and feedback_latency are judgment thresholds under
+        # common (spec D1), so the manifest is the srm/v1 document this test
+        # models, parsed by common: the same five spec.slos entries, in the
+        # shape examples/opensrm/ai-gate.reliability.yaml declares them.
+        manifest = parse_srm_v1(
+            {
+                "apiVersion": "srm/v1",
+                "kind": "ServiceReliabilityManifest",
+                "metadata": {"name": "ml-classifier", "team": "ml", "tier": "critical"},
+                "spec": {
+                    "type": "ai-gate",
+                    "slos": {
+                        "availability": {"target": 99.9},
+                        "reversal_rate": {"target": 0.05, "window": "7d"},
+                        "high_confidence_failure": {"target": 0.01, "window": "7d"},
+                        "calibration": {"target": 0.1, "window": "30d"},
+                        "feedback_latency": {"target": 3600, "window": "30d"},
+                    },
+                },
+            }
         )
 
         groups = build_recording_rules_from_manifest(manifest)

@@ -3,6 +3,7 @@
 import json
 
 from nthlayer_common.gate_models import GateResult
+from nthlayer_common.manifest import ReliabilityManifest, SLODefinition
 
 from nthlayer_generate.generators.backstage import (
     BackstageGenerationResult,
@@ -12,7 +13,6 @@ from nthlayer_generate.generators.backstage import (
     gate_result_to_status,
     generate_backstage_from_manifest,
 )
-from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
 
 
 def _make_manifest(**overrides) -> ReliabilityManifest:
@@ -21,7 +21,9 @@ def _make_manifest(**overrides) -> ReliabilityManifest:
         team="platform",
         tier="critical",
         type="api",
-        slos=[SLODefinition(name="avail", target=99.9, window="30d")],
+        # slo_type: srm/v1 infers "avail" -> availability (common
+        # parser/v1.py _infer_slo_type, name keyword)
+        slos=[SLODefinition(name="avail", target=99.9, slo_type="availability", window="30d")],
     )
     defaults.update(overrides)
     return ReliabilityManifest(**defaults)

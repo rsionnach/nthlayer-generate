@@ -22,6 +22,7 @@ from __future__ import annotations
 import pathlib
 
 import pytest
+from nthlayer_common.manifest import ReliabilityManifest
 from nthlayer_common.manifest.models import (
     SERVICE_TYPE_ALIASES,
     VALID_SERVICE_TYPES,
@@ -30,7 +31,6 @@ from nthlayer_common.manifest.models import (
 
 import nthlayer_generate
 from nthlayer_generate.cli.init import SERVICE_TYPES
-from nthlayer_generate.specs.manifest import ReliabilityManifest
 from nthlayer_generate.specs.validator import validate_service_file
 
 # Values that must behave identically on both sides. Canonical types and
@@ -204,28 +204,6 @@ def test_init_emits_latency_slo_for_http_service_types(menu_type: str):
     assert "latency-p95" in yaml_out, f"--type {menu_type} produced a manifest with no latency SLO"
 
 
-def test_manifest_module_re_exports_the_whole_rule():
-    """specs/manifest.py is the import path consumers already use, so all
-    three parts of the rule must be reachable from it — the two sets and
-    the predicate that actually decides.
-
-    Asserted by importing, not by inspecting ``__all__``: this module does
-    not declare one, so an ``__all__``-based check would pass vacuously
-    while the symbols were missing.
-    """
-    from nthlayer_generate.specs.manifest import (
-        SERVICE_TYPE_ALIASES,
-        VALID_SERVICE_TYPES,
-        ReliabilityManifest,
-        is_valid_service_type,
-    )
-
-    assert is_valid_service_type("x-web")
-    assert "web" not in VALID_SERVICE_TYPES
-    assert SERVICE_TYPE_ALIASES["web"] == "x-web"
-    assert ReliabilityManifest is not None
-
-
 # =============================================================================
 # ${type} is a data-plane value, not a manifest field
 # =============================================================================
@@ -293,8 +271,9 @@ def test_sloth_indicator_query_keeps_the_authored_type(tmp_path, authored: str):
     manifest and checked ``authored_type``, which duplicated coverage
     above and left sloth.py itself untested.
     """
+    from nthlayer_common.manifest import SLODefinition
+
     from nthlayer_generate.generators.sloth import generate_sloth_from_manifest
-    from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
 
     manifest = ReliabilityManifest(
         name="shop",
@@ -328,15 +307,19 @@ def test_authored_type_survives_manifest_to_context_conversion():
     as_service_context() / to_service_context() built a ServiceContext from
     the RESOLVED type, so authored_type was recomputed from `x-web` and the
     authored `web` was destroyed — reopening the zero-series matcher bug on
-    exactly the path specs/loader.py:load_as_legacy uses.
+    exactly the path specs/loader.py:load_as_legacy used. Since
+    opensrm-wo62.1 the hop is specs/context.py:service_context_from_manifest
+    over nthlayer-common's model; ``to_dict()["type"]`` is what
+    to_service_context()["type"] returned.
     """
-    from nthlayer_generate.specs.manifest import ReliabilityManifest
+    from nthlayer_generate.specs.context import service_context_from_manifest
 
     manifest = ReliabilityManifest(name="shop", team="t", tier="critical", type="web")
 
     assert manifest.authored_type == "web"
-    assert manifest.as_service_context().authored_type == "web"
-    assert manifest.to_service_context()["type"] == "web"
+    context = service_context_from_manifest(manifest)
+    assert context.authored_type == "web"
+    assert context.to_dict()["type"] == "web"
 
 
 def test_authored_type_survives_dataclasses_replace():

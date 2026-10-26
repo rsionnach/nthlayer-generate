@@ -310,7 +310,9 @@ class TestForDuration:
 
 class TestOpenSRMParsing:
     def test_parse_opensrm_with_alerting(self) -> None:
-        from nthlayer_generate.specs.opensrm_parser import parse_opensrm
+        from nthlayer_common.manifest.parser.v1 import parse_srm_v1
+
+        from nthlayer_generate.specs.alerting import manifest_alerting
 
         data = {
             "apiVersion": "srm/v1",
@@ -334,14 +336,16 @@ class TestOpenSRMParsing:
                 },
             },
         }
-        manifest = parse_opensrm(data)
-        assert manifest.alerting is not None
-        assert len(manifest.alerting.rules) == 1
-        assert manifest.alerting.channels.slack_webhook == "${SLACK_URL}"
-        assert manifest.alerting.auto_rules is False
+        alerting = manifest_alerting(parse_srm_v1(data))
+        assert alerting is not None
+        assert len(alerting.rules) == 1
+        assert alerting.channels.slack_webhook == "${SLACK_URL}"
+        assert alerting.auto_rules is False
 
     def test_parse_opensrm_with_for_duration(self) -> None:
-        from nthlayer_generate.specs.opensrm_parser import parse_opensrm
+        from nthlayer_common.manifest.parser.v1 import parse_srm_v1
+
+        from nthlayer_generate.specs.alerting import manifest_alerting
 
         data = {
             "apiVersion": "srm/v1",
@@ -355,13 +359,15 @@ class TestOpenSRMParsing:
                 },
             },
         }
-        manifest = parse_opensrm(data)
-        assert manifest.alerting is not None
-        assert manifest.alerting.for_duration.page == "1m"
-        assert manifest.alerting.for_duration.ticket == "10m"
+        alerting = manifest_alerting(parse_srm_v1(data))
+        assert alerting is not None
+        assert alerting.for_duration.page == "1m"
+        assert alerting.for_duration.ticket == "10m"
 
     def test_parse_opensrm_without_alerting(self) -> None:
-        from nthlayer_generate.specs.opensrm_parser import parse_opensrm
+        from nthlayer_common.manifest.parser.v1 import parse_srm_v1
+
+        from nthlayer_generate.specs.alerting import manifest_alerting
 
         data = {
             "apiVersion": "srm/v1",
@@ -369,8 +375,7 @@ class TestOpenSRMParsing:
             "metadata": {"name": "test-svc", "team": "eng", "tier": "standard"},
             "spec": {"type": "api"},
         }
-        manifest = parse_opensrm(data)
-        assert manifest.alerting is None
+        assert manifest_alerting(parse_srm_v1(data)) is None
 
 
 # -------------------------------------------------------------------------
@@ -379,9 +384,30 @@ class TestOpenSRMParsing:
 
 
 class TestLegacyParsing:
-    def test_extract_alerting_from_legacy_resources(self) -> None:
-        from nthlayer_generate.specs.loader import _extract_alerting_from_resources
+    """A legacy ``kind: Alerts`` resource reaches generate's parser through
+    nthlayer-common's legacy loader (opensrm-wo62.1, D3). The ``service:``
+    header is examples/uat/payment-api.yaml's shape (the one shipped legacy
+    example with an Alerts resource)."""
 
+    @staticmethod
+    def _load(tmp_path: Path, resources: list[dict[str, Any]]) -> Any:
+        from nthlayer_common.manifest import load_manifest
+
+        from nthlayer_generate.specs.alerting import manifest_alerting
+
+        path = tmp_path / "svc.yaml"
+        path.write_text(
+            yaml.safe_dump(
+                {
+                    "service": {"name": "svc", "team": "eng", "tier": "high", "type": "api"},
+                    "resources": resources,
+                }
+            ),
+            encoding="utf-8",
+        )
+        return manifest_alerting(load_manifest(path, suppress_deprecation_warning=True))
+
+    def test_extract_alerting_from_legacy_resources(self, tmp_path: Path) -> None:
         resources = [
             {"kind": "SLO", "name": "avail", "spec": {}},
             {
@@ -401,16 +427,14 @@ class TestLegacyParsing:
                 },
             },
         ]
-        alerting = _extract_alerting_from_resources(resources)
+        alerting = self._load(tmp_path, resources)
         assert alerting is not None
         assert len(alerting.rules) == 1
         assert alerting.channels.slack_webhook == "https://hooks.slack.com/x"
 
-    def test_no_alerts_resource_returns_none(self) -> None:
-        from nthlayer_generate.specs.loader import _extract_alerting_from_resources
-
+    def test_no_alerts_resource_returns_none(self, tmp_path: Path) -> None:
         resources = [{"kind": "SLO", "name": "avail", "spec": {}}]
-        assert _extract_alerting_from_resources(resources) is None
+        assert self._load(tmp_path, resources) is None
 
 
 # -------------------------------------------------------------------------

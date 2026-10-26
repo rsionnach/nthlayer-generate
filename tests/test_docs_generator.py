@@ -8,16 +8,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-
-from nthlayer_generate.generators.docs import (
-    DocsGenerationResult,
-    _generate_adr_scaffold,
-    _generate_api_docs,
-    _generate_readme,
-    generate_docs_from_manifest,
-    generate_service_docs,
-)
-from nthlayer_generate.specs.manifest import (
+from nthlayer_common.manifest import (
     Dependency,
     DependencySLO,
     DeploymentConfig,
@@ -27,6 +18,15 @@ from nthlayer_generate.specs.manifest import (
     Ownership,
     ReliabilityManifest,
     SLODefinition,
+)
+
+from nthlayer_generate.generators.docs import (
+    DocsGenerationResult,
+    _generate_adr_scaffold,
+    _generate_api_docs,
+    _generate_readme,
+    generate_docs_from_manifest,
+    generate_service_docs,
 )
 
 

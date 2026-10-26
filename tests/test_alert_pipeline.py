@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from typing import Any
+
+from nthlayer_common.manifest import ReliabilityManifest, SLODefinition
+
 from nthlayer_generate.slos.alerts import AlertEvent, AlertSeverity, AlertType
 from nthlayer_generate.slos.pipeline import (
     AlertPipeline,
@@ -9,8 +13,7 @@ from nthlayer_generate.slos.pipeline import (
     _build_slo_from_manifest,
     _convert_spec_rule_to_alert_rule,
 )
-from nthlayer_generate.specs.alerting import AlertChannels, AlertingConfig, SpecAlertRule
-from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
+from nthlayer_generate.specs.alerting import AlertChannels, SpecAlertRule
 
 
 def _make_manifest(
@@ -18,11 +21,16 @@ def _make_manifest(
     tier: str = "critical",
     service_type: str = "api",
     slos: list[SLODefinition] | None = None,
-    alerting: AlertingConfig | None = None,
+    alerting: dict[str, Any] | None = None,
 ) -> ReliabilityManifest:
+    """``alerting`` is the raw srm/v1 ``spec.alerting`` block: common keeps it
+    as read, and the pipeline parses it at the use site (opensrm-wo62.1, D3).
+
+    ``slo_type``: an srm/v1 SLO named after a standard type has that type
+    (common parser/v1.py ``_infer_slo_type``)."""
     if slos is None:
         slos = [
-            SLODefinition(name="availability", target=99.9, window="30d"),
+            SLODefinition(name="availability", target=99.9, slo_type="availability", window="30d"),
         ]
     return ReliabilityManifest(
         name=name,
@@ -100,7 +108,18 @@ class TestBuildSloFromManifest:
         # by 100 unconditionally (opensrm-5fff.1). A target<1.0 in the
         # manifest is an author error that target_validation flags as a
         # warning; the bridge still converts it.
-        manifest = _make_manifest(slos=[SLODefinition(name="avail", target=0.999, window="7d")])
+        manifest = _make_manifest(
+            slos=[
+                SLODefinition(
+                    # "avail" -> availability: srm/v1 name keyword
+                    # (common parser/v1.py _infer_slo_type)
+                    name="avail",
+                    target=0.999,
+                    slo_type="availability",
+                    window="7d",
+                )
+            ]
+        )
         slo = _build_slo_from_manifest(manifest, manifest.slos[0])
         assert abs(slo.target - 0.00999) < 0.0001
 
@@ -149,18 +168,18 @@ class TestConvertSpecRule:
 
 class TestAlertPipelineEvaluateService:
     def test_dry_run_produces_events_no_notifications(self) -> None:
-        alerting = AlertingConfig(
-            rules=[
-                SpecAlertRule(
-                    name="budget-warn",
-                    type="budget_threshold",
-                    slo="availability",
-                    threshold=0.50,
-                    severity="warning",
-                )
+        alerting = {
+            "rules": [
+                {
+                    "name": "budget-warn",
+                    "type": "budget_threshold",
+                    "slo": "availability",
+                    "threshold": 0.50,
+                    "severity": "warning",
+                }
             ],
-            auto_rules=False,
-        )
+            "auto_rules": False,
+        }
         manifest = _make_manifest(alerting=alerting)
         pipeline = AlertPipeline(dry_run=True)
         result = pipeline.evaluate_service(manifest, simulate_burn_pct=80)
@@ -181,7 +200,7 @@ class TestAlertPipelineEvaluateService:
     def test_auto_rules_generate_alerts_for_critical_tier(self) -> None:
         manifest = _make_manifest(
             tier="critical",
-            alerting=AlertingConfig(auto_rules=True, rules=[]),
+            alerting={"auto_rules": True, "rules": []},
         )
         pipeline = AlertPipeline(dry_run=True)
         result = pipeline.evaluate_service(manifest, simulate_burn_pct=90)
@@ -189,18 +208,18 @@ class TestAlertPipelineEvaluateService:
         assert result.alerts_triggered >= 1
 
     def test_simulation_with_low_burn_no_alerts(self) -> None:
-        alerting = AlertingConfig(
-            rules=[
-                SpecAlertRule(
-                    name="budget-warn",
-                    type="budget_threshold",
-                    slo="availability",
-                    threshold=0.75,
-                    severity="warning",
-                )
+        alerting = {
+            "rules": [
+                {
+                    "name": "budget-warn",
+                    "type": "budget_threshold",
+                    "slo": "availability",
+                    "threshold": 0.75,
+                    "severity": "warning",
+                }
             ],
-            auto_rules=False,
-        )
+            "auto_rules": False,
+        }
         manifest = _make_manifest(alerting=alerting)
         pipeline = AlertPipeline(dry_run=True)
         result = pipeline.evaluate_service(manifest, simulate_burn_pct=10)
@@ -210,21 +229,21 @@ class TestAlertPipelineEvaluateService:
 
     def test_multiple_slos_evaluated(self) -> None:
         slos = [
-            SLODefinition(name="availability", target=99.9, window="30d"),
-            SLODefinition(name="latency", target=99.0, window="30d"),
+            SLODefinition(name="availability", target=99.9, slo_type="availability", window="30d"),
+            SLODefinition(name="latency", target=99.0, slo_type="latency", window="30d"),
         ]
-        alerting = AlertingConfig(
-            rules=[
-                SpecAlertRule(
-                    name="budget-warn",
-                    type="budget_threshold",
-                    slo="*",
-                    threshold=0.50,
-                    severity="warning",
-                )
+        alerting = {
+            "rules": [
+                {
+                    "name": "budget-warn",
+                    "type": "budget_threshold",
+                    "slo": "*",
+                    "threshold": 0.50,
+                    "severity": "warning",
+                }
             ],
-            auto_rules=False,
-        )
+            "auto_rules": False,
+        }
         manifest = _make_manifest(slos=slos, alerting=alerting)
         pipeline = AlertPipeline(dry_run=True)
         result = pipeline.evaluate_service(manifest, simulate_burn_pct=80)
@@ -282,19 +301,19 @@ class TestAlertPipelinePortfolio:
 
 class TestPipelineDispatchNotifications:
     def test_dry_run_sends_zero_notifications(self) -> None:
-        alerting = AlertingConfig(
-            channels=AlertChannels(slack_webhook="https://hooks.slack.com/x"),
-            rules=[
-                SpecAlertRule(
-                    name="budget-warn",
-                    type="budget_threshold",
-                    slo="availability",
-                    threshold=0.50,
-                    severity="warning",
-                ),
+        alerting = {
+            "channels": {"slack_webhook": "https://hooks.slack.com/x"},
+            "rules": [
+                {
+                    "name": "budget-warn",
+                    "type": "budget_threshold",
+                    "slo": "availability",
+                    "threshold": 0.50,
+                    "severity": "warning",
+                },
             ],
-            auto_rules=False,
-        )
+            "auto_rules": False,
+        }
         manifest = _make_manifest(alerting=alerting)
         pipeline = AlertPipeline(dry_run=True)
         result = pipeline.evaluate_service(manifest, simulate_burn_pct=80)

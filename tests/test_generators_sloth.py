@@ -1,7 +1,9 @@
 """Tests for nthlayer.generators.sloth — Sloth SLO spec generation."""
 
+from pathlib import Path
+
 import yaml
-from nthlayer_common.manifest import ReliabilityManifest, SLODefinition
+from nthlayer_common.manifest import ReliabilityManifest, SLODefinition, load_manifest
 
 from nthlayer_generate.generators.sloth import (
     SlothGenerationResult,
@@ -182,3 +184,23 @@ class TestGenerateSlothFromManifest:
         # The query in the SLI should have variables substituted
         sli_str = str(slo["sli"])
         assert "${service}" not in sli_str
+
+
+class TestLatencySloWithoutQuery:
+    """A latency SLO that declares no query yields no SLI queries (opensrm-wo62.1).
+
+    Fixture: examples/services/auth-api.yaml @0331eff. Its ``latency-p95``
+    resource declares only ``threshold_ms`` and ``objective`` (no indicator
+    query), and its name gives it the latency type. Before the fix the
+    latency branch built ``"{query} > t"`` / ``query + ")"`` from the empty
+    query — strings that are not PromQL.
+    """
+
+    def test_latency_slo_without_query_emits_empty_events(self, tmp_path):
+        example = Path(__file__).resolve().parents[1] / "examples/services/auth-api.yaml"
+        manifest = load_manifest(example, suppress_deprecation_warning=True)
+        result = generate_sloth_from_manifest(manifest, tmp_path)
+        assert result.success
+
+        slos = {s["name"]: s for s in yaml.safe_load(result.output_file.read_text())["slos"]}
+        assert slos["latency-p95"]["sli"] == {"events": {"error_query": "", "total_query": ""}}

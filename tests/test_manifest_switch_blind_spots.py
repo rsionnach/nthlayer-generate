@@ -152,7 +152,8 @@ def _type_templated_manifest(directory: Path, authored: str) -> Path:
     data = _read(UAT_SRM)
     data["spec"]["type"] = authored
     for slo in data["spec"]["slos"].values():
-        query = slo["query"].replace(
+        # The shipped example moved query under indicator in a705e5a (spec §4.2, opensrm-0i5h).
+        query = slo["indicator"]["query"].replace(
             'service="payment-api"', 'service="payment-api",svc_type="${type}"'
         )
         _with_both_query_forms(slo, query)
@@ -584,9 +585,6 @@ def _two_contract_provider(directory: Path) -> Path:
     return _write(directory, "payment-api.yaml", data)
 
 
-# raises=AttributeError: the expected failure is the registry reading generate's
-# single `contract`; any other failure (a fixture that no longer loads, say)
-# must not hide behind the marker.
 def test_multi_contract_provider_is_bounded_by_its_weakest_promise(tmp_path: Path) -> None:
     """Spec §5.2: provider availability is the minimum promise over the
     service's contracts. Promises 0.9995 and 0.99: expecting 99.5% exceeds the
@@ -673,7 +671,7 @@ def _uat(directory: Path, *, explicit_type: bool) -> Path:
     each SLO's ``type:`` line removed."""
     data = _read(UAT_SRM)
     for slo in data["spec"]["slos"].values():
-        _with_both_query_forms(slo, slo["query"])
+        _with_both_query_forms(slo, slo["indicator"]["query"])
         if not explicit_type:
             del slo["type"]
     name = "explicit" if explicit_type else "absent"
@@ -695,7 +693,7 @@ def test_sloth_availability_sli_does_not_depend_on_an_explicit_type(tmp_path: Pa
 
     # Documented availability form (docs-site/commands/generate-slo.md): an
     # events SLI whose total_query is the ratio's denominator.
-    query = _read(UAT_SRM)["spec"]["slos"]["availability"]["query"]
+    query = _read(UAT_SRM)["spec"]["slos"]["availability"]["indicator"]["query"]
     assert explicit["availability"]["total_query"].strip() == query.split("/")[1].strip()
 
 
@@ -731,4 +729,4 @@ def test_dashboard_slo_panels_do_not_depend_on_an_explicit_type(tmp_path: Path) 
     slos = _read(UAT_SRM)["spec"]["slos"]
     panels = {p.get("title"): p for p in explicit["dashboard"]["panels"]}
     for name, slo in slos.items():
-        assert [t["expr"] for t in panels[name]["targets"]] == [slo["query"]]
+        assert [t["expr"] for t in panels[name]["targets"]] == [slo["indicator"]["query"]]

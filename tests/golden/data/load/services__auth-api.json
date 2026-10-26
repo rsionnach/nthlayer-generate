@@ -5,6 +5,11 @@
       "auth-db",
       "database",
       true
+    ],
+    [
+      "user-service",
+      "api",
+      true
     ]
   ],
   "error": null,
@@ -12,7 +17,7 @@
   "slos": [
     [
       "latency-p95",
-      null,
+      "latency",
       99.5,
       "30d",
       false

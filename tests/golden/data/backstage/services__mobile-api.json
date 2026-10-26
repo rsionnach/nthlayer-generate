@@ -49,7 +49,7 @@
       "currentValue": null,
       "description": null,
       "name": "latency-p95",
-      "sloType": null,
+      "sloType": "latency",
       "status": null,
       "target": 95.0,
       "window": "30d"

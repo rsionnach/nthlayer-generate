@@ -112,8 +112,8 @@
       "objective": 95.0,
       "sli": {
         "events": {
-          "error_query": " > 0.095",
-          "total_query": ")"
+          "error_query": "",
+          "total_query": ""
         }
       }
     }

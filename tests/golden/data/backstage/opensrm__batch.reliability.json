@@ -49,7 +49,7 @@
       "currentValue": null,
       "description": "Job execution success rate",
       "name": "availability",
-      "sloType": null,
+      "sloType": "availability",
       "status": null,
       "target": 99.0,
       "window": "30d"
@@ -58,7 +58,7 @@
       "currentValue": null,
       "description": "Job failure rate (allow some retries)",
       "name": "error_rate",
-      "sloType": null,
+      "sloType": "error_rate",
       "status": null,
       "target": 1.0,
       "window": "7d"

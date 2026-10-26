@@ -49,7 +49,7 @@
       "currentValue": null,
       "description": "Worker process availability",
       "name": "availability",
-      "sloType": null,
+      "sloType": "availability",
       "status": null,
       "target": 99.9,
       "window": "30d"
@@ -58,7 +58,7 @@
       "currentValue": null,
       "description": "Sustained processing rate",
       "name": "throughput",
-      "sloType": null,
+      "sloType": "throughput",
       "status": null,
       "target": 100.0,
       "window": "30d"
@@ -67,7 +67,7 @@
       "currentValue": null,
       "description": "Job failure rate",
       "name": "error_rate",
-      "sloType": null,
+      "sloType": "error_rate",
       "status": null,
       "target": 0.5,
       "window": "7d"

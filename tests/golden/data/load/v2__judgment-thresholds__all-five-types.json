@@ -1,13 +1,105 @@
 {
-  "authored_type": null,
-  "dependencies": null,
-  "error": [
-    "ManifestLoadError",
-    "service.name is required"
+  "authored_type": "ai-gate",
+  "dependencies": [],
+  "error": null,
+  "judgment_thresholds": [
+    {
+      "bounds": {
+        "maximum_variance_from_overall": 0.05
+      },
+      "measurement": {
+        "bins": null,
+        "confidence_threshold": 0.9,
+        "metric": "high_confidence_failure",
+        "outcome_signal": null,
+        "probe": null,
+        "segment_dimension": "customer_tier",
+        "segment_values": [
+          "enterprise",
+          "smb",
+          "consumer"
+        ],
+        "source": null,
+        "window": "30d"
+      },
+      "type": "segments"
+    },
+    {
+      "bounds": {
+        "maximum_drift": 0.02
+      },
+      "measurement": {
+        "bins": null,
+        "confidence_threshold": null,
+        "metric": null,
+        "outcome_signal": null,
+        "probe": {
+          "frequency": "daily",
+          "frozen_input_set": "s3://probes/credit-decision-2026q1.jsonl"
+        },
+        "segment_dimension": null,
+        "segment_values": [],
+        "source": null,
+        "window": null
+      },
+      "type": "stability"
+    },
+    {
+      "bounds": {
+        "maximum_brier_score": 0.05
+      },
+      "measurement": {
+        "bins": 10,
+        "confidence_threshold": null,
+        "metric": null,
+        "outcome_signal": null,
+        "probe": null,
+        "segment_dimension": null,
+        "segment_values": [],
+        "source": null,
+        "window": "30d"
+      },
+      "type": "calibration"
+    },
+    {
+      "bounds": {
+        "maximum_age": "24h"
+      },
+      "measurement": {
+        "bins": null,
+        "confidence_threshold": null,
+        "metric": null,
+        "outcome_signal": null,
+        "probe": null,
+        "segment_dimension": null,
+        "segment_values": [],
+        "source": null,
+        "window": null
+      },
+      "type": "audit_backlog"
+    },
+    {
+      "bounds": {
+        "maximum_p50": "1h",
+        "maximum_p90": "24h"
+      },
+      "measurement": {
+        "bins": null,
+        "confidence_threshold": null,
+        "metric": null,
+        "outcome_signal": null,
+        "probe": null,
+        "segment_dimension": null,
+        "segment_values": [],
+        "source": null,
+        "window": null
+      },
+      "type": "feedback_latency"
+    }
   ],
-  "ok": false,
-  "slos": null,
-  "source_format": null,
-  "type": null,
+  "ok": true,
+  "slos": [],
+  "source_format": "opensrm_v2",
+  "type": "ai-gate",
   "warnings": []
 }

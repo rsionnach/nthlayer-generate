@@ -19,6 +19,26 @@
       ],
       "source": "search-api",
       "target": "query-cache"
+    },
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "search-api",
+      "target": "product-catalog"
+    },
+    {
+      "confidence": 1.0,
+      "critical": false,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "search-api",
+      "target": "user-profile"
     }
   ],
   "exported_at": "<masked>",
@@ -37,11 +57,17 @@
     },
     {
       "name": "query-cache"
+    },
+    {
+      "name": "product-catalog"
+    },
+    {
+      "name": "user-profile"
     }
   ],
   "stats": {
-    "edge_count": 2,
-    "node_count": 3
+    "edge_count": 4,
+    "node_count": 5
   },
   "version": "1.0"
 }

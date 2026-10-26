@@ -1,0 +1,6 @@
+{
+  "error": [
+    "ValueError",
+    "Service 'pricing-agent' has no availability SLO — required for simulation"
+  ]
+}

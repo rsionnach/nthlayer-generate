@@ -19,6 +19,16 @@
       ],
       "source": "payment-api",
       "target": "redis-cache"
+    },
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "payment-api",
+      "target": "auth-service"
     }
   ],
   "exported_at": "<masked>",
@@ -37,11 +47,14 @@
     },
     {
       "name": "redis-cache"
+    },
+    {
+      "name": "auth-service"
     }
   ],
   "stats": {
-    "edge_count": 2,
-    "node_count": 3
+    "edge_count": 3,
+    "node_count": 4
   },
   "version": "1.0"
 }

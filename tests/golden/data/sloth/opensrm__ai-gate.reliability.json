@@ -75,8 +75,8 @@
       "objective": 100.0,
       "sli": {
         "events": {
-          "error_query": " > 0.1",
-          "total_query": ")"
+          "error_query": "",
+          "total_query": ""
         }
       }
     },
@@ -147,80 +147,6 @@
       "description": "Failures where model was highly confident",
       "name": "high_confidence_failure",
       "objective": 0.01,
-      "sli": {
-        "events": {
-          "error_query": "",
-          "total_query": ""
-        }
-      }
-    },
-    {
-      "alerting": {
-        "annotations": {
-          "summary": "SLO calibration for fraud-detector"
-        },
-        "labels": {
-          "service": "fraud-detector",
-          "tier": "critical"
-        },
-        "name": "FraudDetectorCalibration",
-        "page_alert": {
-          "annotations": {
-            "summary": "High error budget burn on fraud-detector"
-          },
-          "labels": {
-            "severity": "critical"
-          }
-        },
-        "ticket_alert": {
-          "annotations": {
-            "summary": "Error budget burn on fraud-detector"
-          },
-          "labels": {
-            "severity": "warning"
-          }
-        }
-      },
-      "description": "How well confidence scores match actual accuracy",
-      "name": "calibration",
-      "objective": 0.05,
-      "sli": {
-        "events": {
-          "error_query": "",
-          "total_query": ""
-        }
-      }
-    },
-    {
-      "alerting": {
-        "annotations": {
-          "summary": "SLO feedback_latency for fraud-detector"
-        },
-        "labels": {
-          "service": "fraud-detector",
-          "tier": "critical"
-        },
-        "name": "FraudDetectorFeedback_latency",
-        "page_alert": {
-          "annotations": {
-            "summary": "High error budget burn on fraud-detector"
-          },
-          "labels": {
-            "severity": "critical"
-          }
-        },
-        "ticket_alert": {
-          "annotations": {
-            "summary": "Error budget burn on fraud-detector"
-          },
-          "labels": {
-            "severity": "warning"
-          }
-        }
-      },
-      "description": "Time until we know if decision was correct",
-      "name": "feedback_latency",
-      "objective": 3600.0,
       "sli": {
         "events": {
           "error_query": "",

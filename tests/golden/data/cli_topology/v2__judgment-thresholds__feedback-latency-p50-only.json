@@ -1,0 +1,23 @@
+{
+  "exit": 0,
+  "topology": {
+    "edges": [],
+    "exported_at": "<masked>",
+    "metadata": {
+      "providers_used": []
+    },
+    "nodes": [
+      {
+        "name": "intake-agent",
+        "team": "risk",
+        "tier": "critical",
+        "type": "ai-gate"
+      }
+    ],
+    "stats": {
+      "edge_count": 0,
+      "node_count": 1
+    },
+    "version": "1.0"
+  }
+}

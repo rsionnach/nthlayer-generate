@@ -1,6 +1,6 @@
 {
   "exit": 0,
   "files": {
-    "payment-api.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: payment-api-with-deps.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: payment-api\n  team: payments\n  tier: critical\nspec:\n  type: api\n  dependencies:\n  - name: postgres-main\n    type: database\n    critical: true\n  - name: redis-cache\n    type: database\n    critical: false\n  ownership:\n    team: payments\n"
+    "payment-api.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: payment-api-with-deps.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: payment-api\n  team: payments\n  tier: critical\nspec:\n  type: api\n  dependencies:\n  - name: postgres-main\n    type: database\n    critical: true\n  - name: redis-cache\n    type: database\n    critical: false\n  - name: auth-service\n    type: api\n    critical: true\n  ownership:\n    team: payments\n"
   }
 }

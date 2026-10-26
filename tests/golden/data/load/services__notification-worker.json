@@ -12,21 +12,21 @@
   "slos": [
     [
       "delivery-success",
-      null,
+      "availability",
       99.5,
       "30d",
       false
     ],
     [
       "processing-latency-p95",
-      null,
+      "latency",
       98.0,
       "30d",
       false
     ],
     [
       "queue-lag",
-      null,
+      "availability",
       99.0,
       "30d",
       false

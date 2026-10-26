@@ -1,0 +1,134 @@
+{
+  "json": [
+    {
+      "enabled": true,
+      "name": "budget-warning",
+      "severity": "warning",
+      "slo": "payment-api-availability",
+      "threshold": 0.5,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-warning",
+      "severity": "warning",
+      "slo": "payment-api-latency",
+      "threshold": 0.5,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-warning",
+      "severity": "warning",
+      "slo": "payment-api-error-rate",
+      "threshold": 0.5,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-warning",
+      "severity": "warning",
+      "slo": "payment-api-throughput",
+      "threshold": 0.5,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
+      "slo": "payment-api-availability",
+      "threshold": 0.75,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
+      "slo": "payment-api-latency",
+      "threshold": 0.75,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
+      "slo": "payment-api-error-rate",
+      "threshold": 0.75,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
+      "slo": "payment-api-throughput",
+      "threshold": 0.75,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "burn-rate-warning",
+      "severity": "warning",
+      "slo": "payment-api-availability",
+      "threshold": 2.0,
+      "type": "burn_rate"
+    },
+    {
+      "enabled": true,
+      "name": "burn-rate-warning",
+      "severity": "warning",
+      "slo": "payment-api-latency",
+      "threshold": 2.0,
+      "type": "burn_rate"
+    },
+    {
+      "enabled": true,
+      "name": "burn-rate-warning",
+      "severity": "warning",
+      "slo": "payment-api-error-rate",
+      "threshold": 2.0,
+      "type": "burn_rate"
+    },
+    {
+      "enabled": true,
+      "name": "burn-rate-warning",
+      "severity": "warning",
+      "slo": "payment-api-throughput",
+      "threshold": 2.0,
+      "type": "burn_rate"
+    },
+    {
+      "enabled": true,
+      "name": "budget-exhaustion",
+      "severity": "critical",
+      "slo": "payment-api-availability",
+      "threshold": 12.0,
+      "type": "budget_exhaustion"
+    },
+    {
+      "enabled": true,
+      "name": "budget-exhaustion",
+      "severity": "critical",
+      "slo": "payment-api-latency",
+      "threshold": 12.0,
+      "type": "budget_exhaustion"
+    },
+    {
+      "enabled": true,
+      "name": "budget-exhaustion",
+      "severity": "critical",
+      "slo": "payment-api-error-rate",
+      "threshold": 12.0,
+      "type": "budget_exhaustion"
+    },
+    {
+      "enabled": true,
+      "name": "budget-exhaustion",
+      "severity": "critical",
+      "slo": "payment-api-throughput",
+      "threshold": 12.0,
+      "type": "budget_exhaustion"
+    }
+  ],
+  "json_exit": 0,
+  "table_exit": 0
+}

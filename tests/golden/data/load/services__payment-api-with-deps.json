@@ -10,6 +10,11 @@
       "redis-cache",
       "database",
       false
+    ],
+    [
+      "auth-service",
+      "api",
+      true
     ]
   ],
   "error": null,

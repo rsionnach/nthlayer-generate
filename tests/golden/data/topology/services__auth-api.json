@@ -9,6 +9,16 @@
       ],
       "source": "auth-api",
       "target": "auth-db"
+    },
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "auth-api",
+      "target": "user-service"
     }
   ],
   "exported_at": "<masked>",
@@ -24,11 +34,14 @@
     },
     {
       "name": "auth-db"
+    },
+    {
+      "name": "user-service"
     }
   ],
   "stats": {
-    "edge_count": 1,
-    "node_count": 2
+    "edge_count": 2,
+    "node_count": 3
   },
   "version": "1.0"
 }

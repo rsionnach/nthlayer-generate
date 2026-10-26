@@ -3,7 +3,7 @@
   "dependencies": null,
   "error": [
     "ManifestLoadError",
-    "service.name is required"
+    "metadata.labels.tier is required. Set to: critical, high, standard, or low"
   ],
   "ok": false,
   "slos": null,

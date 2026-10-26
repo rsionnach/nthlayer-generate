@@ -3,7 +3,7 @@
   "dependencies": null,
   "error": [
     "ManifestLoadError",
-    "service.name is required"
+    "Judgment SLO missing metadata.name"
   ],
   "ok": false,
   "slos": null,

@@ -1,0 +1,60 @@
+{
+  "groups": [
+    {
+      "name": "credit-decision-agent",
+      "rules": [
+        {
+          "alert": "credit-decision-agent_ApplicationError",
+          "annotations": {
+            "description": "Error-level log entries detected in application logs.",
+            "summary": "[credit-decision-agent] Application errors detected"
+          },
+          "expr": "sum(count_over_time({app=\"credit-decision-agent\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+          "for": "5m",
+          "labels": {
+            "service": "credit-decision-agent",
+            "severity": "warning",
+            "source": "service",
+            "team": "risk",
+            "technology": "ai-gate",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "credit-decision-agent_ApplicationHighErrorRate",
+          "annotations": {
+            "description": "Application is experiencing a high rate of errors.",
+            "summary": "[credit-decision-agent] High error rate in application"
+          },
+          "expr": "sum(count_over_time({app=\"credit-decision-agent\"} |~ \"(?i)error|exception\" [5m])) > 100",
+          "for": "5m",
+          "labels": {
+            "service": "credit-decision-agent",
+            "severity": "critical",
+            "source": "service",
+            "team": "risk",
+            "technology": "ai-gate",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "credit-decision-agent_ApplicationPanic",
+          "annotations": {
+            "description": "Application appears to have crashed or panicked.",
+            "summary": "[credit-decision-agent] Application panic/crash detected"
+          },
+          "expr": "count_over_time({app=\"credit-decision-agent\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+          "for": "0m",
+          "labels": {
+            "service": "credit-decision-agent",
+            "severity": "critical",
+            "source": "service",
+            "team": "risk",
+            "technology": "ai-gate",
+            "tier": "critical"
+          }
+        }
+      ]
+    }
+  ]
+}

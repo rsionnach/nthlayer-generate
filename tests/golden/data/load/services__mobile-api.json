@@ -5,6 +5,21 @@
       "mobile-cache",
       "database",
       true
+    ],
+    [
+      "auth-api",
+      "api",
+      true
+    ],
+    [
+      "user-service",
+      "api",
+      true
+    ],
+    [
+      "content-api",
+      "api",
+      true
     ]
   ],
   "error": null,
@@ -12,7 +27,7 @@
   "slos": [
     [
       "latency-p95",
-      null,
+      "latency",
       95.0,
       "30d",
       false

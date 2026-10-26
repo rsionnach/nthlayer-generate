@@ -1,0 +1,6 @@
+{
+  "error": [
+    "ValueError",
+    "Service 'payment-api' has no availability SLO — required for simulation"
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "groups": [
+    {
+      "interval": "30s",
+      "name": "triage-agent_judgment_metrics",
+      "rules": [
+        {
+          "expr": "histogram_quantile(0.5, rate(ai_gate_feedback_latency_seconds_bucket{service=\"triage-agent\"}[5m]))",
+          "labels": {
+            "service": "triage-agent",
+            "slo": "feedback_latency"
+          },
+          "record": "ai_gate:feedback_latency:p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(ai_gate_feedback_latency_seconds_bucket{service=\"triage-agent\"}[5m]))",
+          "labels": {
+            "service": "triage-agent",
+            "slo": "feedback_latency"
+          },
+          "record": "ai_gate:feedback_latency:p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(ai_gate_feedback_latency_seconds_bucket{service=\"triage-agent\"}[5m]))",
+          "labels": {
+            "service": "triage-agent",
+            "slo": "feedback_latency"
+          },
+          "record": "ai_gate:feedback_latency:p99"
+        },
+        {
+          "expr": "avg(ai_gate_calibration_error{service=\"triage-agent\"})",
+          "labels": {
+            "service": "triage-agent",
+            "slo": "calibration",
+            "target": "0.03"
+          },
+          "record": "ai_gate:calibration:ece"
+        },
+        {
+          "expr": "avg(ai_gate_calibration_error{service=\"triage-agent\",confidence_bucket=\"low\"})",
+          "labels": {
+            "confidence_bucket": "low",
+            "service": "triage-agent"
+          },
+          "record": "ai_gate:calibration_bucket:low"
+        },
+        {
+          "expr": "avg(ai_gate_calibration_error{service=\"triage-agent\",confidence_bucket=\"medium\"})",
+          "labels": {
+            "confidence_bucket": "medium",
+            "service": "triage-agent"
+          },
+          "record": "ai_gate:calibration_bucket:medium"
+        },
+        {
+          "expr": "avg(ai_gate_calibration_error{service=\"triage-agent\",confidence_bucket=\"high\"})",
+          "labels": {
+            "confidence_bucket": "high",
+            "service": "triage-agent"
+          },
+          "record": "ai_gate:calibration_bucket:high"
+        }
+      ]
+    },
+    {
+      "interval": "30s",
+      "name": "triage-agent_health_metrics",
+      "rules": [
+        {
+          "expr": "sum(rate(ai_gate_decisions_total{service=\"triage-agent\"}[5m]))",
+          "labels": {
+            "service": "triage-agent"
+          },
+          "record": "service:ai_gate_decisions:rate5m"
+        },
+        {
+          "expr": "avg(ai_gate_confidence_score{service=\"triage-agent\"})",
+          "labels": {
+            "service": "triage-agent"
+          },
+          "record": "service:ai_gate_confidence:avg"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{service=\"triage-agent\"}[5m]))",
+          "labels": {
+            "service": "triage-agent"
+          },
+          "record": "service:http_requests:rate5m"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{service=\"triage-agent\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"triage-agent\"}[5m]))",
+          "labels": {
+            "service": "triage-agent"
+          },
+          "record": "service:http_errors:rate5m"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"triage-agent\"}[5m]))",
+          "labels": {
+            "service": "triage-agent"
+          },
+          "record": "service:http_request_duration_seconds:p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"triage-agent\"}[5m]))",
+          "labels": {
+            "service": "triage-agent"
+          },
+          "record": "service:http_request_duration_seconds:p99"
+        }
+      ]
+    }
+  ]
+}

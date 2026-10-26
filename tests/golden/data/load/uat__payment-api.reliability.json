@@ -35,7 +35,7 @@
       true
     ]
   ],
-  "source_format": "opensrm",
+  "source_format": "srm_v1",
   "type": "api",
   "warnings": []
 }

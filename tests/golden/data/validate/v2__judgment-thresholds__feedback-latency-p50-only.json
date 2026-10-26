@@ -1,0 +1,7 @@
+{
+  "errors": [
+    "Filename mismatch: expected 'intake-agent.yaml' for service 'intake-agent', got 'feedback-latency-p50-only.yaml'"
+  ],
+  "valid": false,
+  "warnings": []
+}

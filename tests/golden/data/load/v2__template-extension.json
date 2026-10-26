@@ -3,7 +3,7 @@
   "dependencies": null,
   "error": [
     "ManifestLoadError",
-    "service.name is required"
+    "Template 'template:default/payment-services-base' not found. Searched for 'payment-services-base.yaml' in <opensrm>/spec/v2/examples/templates/ and <opensrm>/spec/v2/examples/.nthlayer/templates/"
   ],
   "ok": false,
   "slos": null,

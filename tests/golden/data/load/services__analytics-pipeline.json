@@ -10,6 +10,11 @@
       "raw-data-lake",
       "database",
       true
+    ],
+    [
+      "user-service",
+      "api",
+      true
     ]
   ],
   "error": null,
@@ -17,7 +22,7 @@
   "slos": [
     [
       "freshness-p95",
-      null,
+      "availability",
       90.0,
       "30d",
       false

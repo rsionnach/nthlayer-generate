@@ -11,6 +11,36 @@
         ],
         "source": "mobile-api",
         "target": "mobile-cache"
+      },
+      {
+        "confidence": 1.0,
+        "critical": true,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "mobile-api",
+        "target": "auth-api"
+      },
+      {
+        "confidence": 1.0,
+        "critical": true,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "mobile-api",
+        "target": "user-service"
+      },
+      {
+        "confidence": 1.0,
+        "critical": true,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "mobile-api",
+        "target": "content-api"
       }
     ],
     "exported_at": "<masked>",
@@ -26,11 +56,20 @@
       },
       {
         "name": "mobile-cache"
+      },
+      {
+        "name": "auth-api"
+      },
+      {
+        "name": "user-service"
+      },
+      {
+        "name": "content-api"
       }
     ],
     "stats": {
-      "edge_count": 1,
-      "node_count": 2
+      "edge_count": 4,
+      "node_count": 5
     },
     "version": "1.0"
   }

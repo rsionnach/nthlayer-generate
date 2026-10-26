@@ -1,0 +1,7 @@
+{
+  "errors": [
+    "Filename mismatch: expected 'triage-agent.yaml' for service 'triage-agent', got 'single-bounds.yaml'"
+  ],
+  "valid": false,
+  "warnings": []
+}

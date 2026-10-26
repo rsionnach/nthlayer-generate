@@ -49,7 +49,7 @@
       "currentValue": null,
       "description": null,
       "name": "delivery-success",
-      "sloType": null,
+      "sloType": "availability",
       "status": null,
       "target": 99.5,
       "window": "30d"
@@ -58,7 +58,7 @@
       "currentValue": null,
       "description": null,
       "name": "processing-latency-p95",
-      "sloType": null,
+      "sloType": "latency",
       "status": null,
       "target": 98.0,
       "window": "30d"
@@ -67,7 +67,7 @@
       "currentValue": null,
       "description": null,
       "name": "queue-lag",
-      "sloType": null,
+      "sloType": "availability",
       "status": null,
       "target": 99.0,
       "window": "30d"

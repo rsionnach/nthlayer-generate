@@ -21,6 +21,16 @@
         ],
         "source": "analytics-pipeline",
         "target": "raw-data-lake"
+      },
+      {
+        "confidence": 1.0,
+        "critical": true,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "analytics-pipeline",
+        "target": "user-service"
       }
     ],
     "exported_at": "<masked>",
@@ -39,11 +49,14 @@
       },
       {
         "name": "raw-data-lake"
+      },
+      {
+        "name": "user-service"
       }
     ],
     "stats": {
-      "edge_count": 2,
-      "node_count": 3
+      "edge_count": 3,
+      "node_count": 4
     },
     "version": "1.0"
   }

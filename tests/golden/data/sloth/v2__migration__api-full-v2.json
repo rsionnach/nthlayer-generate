@@ -1,0 +1,159 @@
+{
+  "labels": {
+    "team": "payments",
+    "tier": "critical",
+    "type": "api"
+  },
+  "service": "payment-api",
+  "slos": [
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO payment-api-availability for payment-api"
+        },
+        "labels": {
+          "service": "payment-api",
+          "tier": "critical"
+        },
+        "name": "PaymentApiPaymentApiAvailability",
+        "page_alert": {
+          "annotations": {
+            "summary": "High error budget burn on payment-api"
+          },
+          "labels": {
+            "severity": "critical"
+          }
+        },
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on payment-api"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "99.95% availability over 30 days",
+      "name": "payment-api-availability",
+      "objective": 99.95,
+      "sli": {
+        "events": {
+          "error_query": "",
+          "total_query": ""
+        }
+      }
+    },
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO payment-api-latency for payment-api"
+        },
+        "labels": {
+          "service": "payment-api",
+          "tier": "critical"
+        },
+        "name": "PaymentApiPaymentApiLatency",
+        "page_alert": {
+          "annotations": {
+            "summary": "High error budget burn on payment-api"
+          },
+          "labels": {
+            "severity": "critical"
+          }
+        },
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on payment-api"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "99% of requests under 200ms p99 over 30 days",
+      "name": "payment-api-latency",
+      "objective": 99.0,
+      "sli": {
+        "events": {
+          "error_query": "",
+          "total_query": ""
+        }
+      }
+    },
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO payment-api-error-rate for payment-api"
+        },
+        "labels": {
+          "service": "payment-api",
+          "tier": "critical"
+        },
+        "name": "PaymentApiPaymentApiErrorRate",
+        "page_alert": {
+          "annotations": {
+            "summary": "High error budget burn on payment-api"
+          },
+          "labels": {
+            "severity": "critical"
+          }
+        },
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on payment-api"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "Error rate under 0.1% over 7 days",
+      "name": "payment-api-error-rate",
+      "objective": 99.9,
+      "sli": {
+        "events": {
+          "error_query": "",
+          "total_query": ""
+        }
+      }
+    },
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO payment-api-throughput for payment-api"
+        },
+        "labels": {
+          "service": "payment-api",
+          "tier": "critical"
+        },
+        "name": "PaymentApiPaymentApiThroughput",
+        "page_alert": {
+          "annotations": {
+            "summary": "High error budget burn on payment-api"
+          },
+          "labels": {
+            "severity": "critical"
+          }
+        },
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on payment-api"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "Sustains 1000 rps over a 1 hour window",
+      "name": "payment-api-throughput",
+      "objective": 99.0,
+      "sli": {
+        "events": {
+          "error_query": "",
+          "total_query": ""
+        }
+      }
+    }
+  ],
+  "version": "prometheus/v1"
+}

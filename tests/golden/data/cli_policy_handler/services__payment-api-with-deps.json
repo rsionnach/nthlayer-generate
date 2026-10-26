@@ -31,6 +31,13 @@
           "rule_name": "critical-deps-need-slos",
           "rule_type": "dependency_rule",
           "severity": "warning"
+        },
+        {
+          "field_path": "dependencies.auth-service.slo",
+          "message": "Critical dependency 'auth-service' has no SLO expectations declared",
+          "rule_name": "critical-deps-need-slos",
+          "rule_type": "dependency_rule",
+          "severity": "warning"
         }
       ]
     }

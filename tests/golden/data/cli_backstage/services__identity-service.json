@@ -52,7 +52,7 @@
           "currentValue": null,
           "description": null,
           "name": "availability",
-          "sloType": null,
+          "sloType": "availability",
           "status": null,
           "target": 99.99,
           "window": "30d"
@@ -61,7 +61,7 @@
           "currentValue": null,
           "description": null,
           "name": "latency-p95",
-          "sloType": null,
+          "sloType": "latency",
           "status": null,
           "target": 99.5,
           "window": "30d"
@@ -70,7 +70,7 @@
           "currentValue": null,
           "description": null,
           "name": "latency-p99",
-          "sloType": null,
+          "sloType": "latency",
           "status": null,
           "target": 98.0,
           "window": "30d"

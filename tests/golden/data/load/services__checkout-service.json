@@ -17,21 +17,21 @@
   "slos": [
     [
       "availability",
-      null,
+      "availability",
       99.95,
       "30d",
       false
     ],
     [
       "latency-p95",
-      null,
+      "latency",
       99.0,
       "30d",
       false
     ],
     [
       "latency-p99",
-      null,
+      "latency",
       95.0,
       "30d",
       false

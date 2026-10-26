@@ -5,6 +5,21 @@
       "payments-db",
       "database",
       true
+    ],
+    [
+      "user-service",
+      "api",
+      true
+    ],
+    [
+      "fraud-detection",
+      "api",
+      true
+    ],
+    [
+      "inventory-service",
+      "api",
+      false
     ]
   ],
   "error": null,

@@ -22,27 +22,32 @@
   "slos": [
     [
       "availability",
-      null,
+      "availability",
       99.95,
       "30d",
       false
     ],
     [
       "latency",
-      null,
+      "latency",
       200.0,
       "30d",
       false
     ],
     [
       "error_rate",
-      null,
+      "error_rate",
       0.1,
       "7d",
       false
     ]
   ],
-  "source_format": "opensrm",
+  "source_format": "srm_v1",
   "type": "api",
-  "warnings": []
+  "warnings": [
+    [
+      "TargetConventionWarning",
+      "Service 'payment-api' SLO 'error_rate' has target=0.1 which looks like a ratio (0.0-1.0). This codebase uses 0-100 percentage canonical for SLO targets — write '10.0' for a error_rate SLO. The OpenSLO surface converts to ratio at the boundary; manifest values stay in percentage."
+    ]
+  ]
 }

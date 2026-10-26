@@ -49,7 +49,7 @@
       "currentValue": null,
       "description": "Service availability excluding planned maintenance",
       "name": "availability",
-      "sloType": null,
+      "sloType": "availability",
       "status": null,
       "target": 99.95,
       "window": "30d"
@@ -58,7 +58,7 @@
       "currentValue": null,
       "description": "99th percentile response time",
       "name": "latency",
-      "sloType": null,
+      "sloType": "latency",
       "status": null,
       "target": 200.0,
       "window": "30d"
@@ -67,7 +67,7 @@
       "currentValue": null,
       "description": "5xx error rate as percentage",
       "name": "error_rate",
-      "sloType": null,
+      "sloType": "error_rate",
       "status": null,
       "target": 0.1,
       "window": "7d"

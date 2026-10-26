@@ -52,7 +52,7 @@
           "currentValue": null,
           "description": "Service availability for decision requests",
           "name": "availability",
-          "sloType": null,
+          "sloType": "availability",
           "status": null,
           "target": 99.9,
           "window": "30d"
@@ -61,7 +61,7 @@
           "currentValue": null,
           "description": "Decision latency - critical for checkout flow",
           "name": "latency",
-          "sloType": null,
+          "sloType": "latency",
           "status": null,
           "target": 100.0,
           "window": "30d"
@@ -70,7 +70,7 @@
           "currentValue": null,
           "description": "Human override rate - indicates trust in AI decisions",
           "name": "reversal_rate",
-          "sloType": null,
+          "sloType": "availability",
           "status": null,
           "target": 0.05,
           "window": "7d"
@@ -79,28 +79,10 @@
           "currentValue": null,
           "description": "Failures where model was highly confident",
           "name": "high_confidence_failure",
-          "sloType": null,
+          "sloType": "availability",
           "status": null,
           "target": 0.01,
           "window": "7d"
-        },
-        {
-          "currentValue": null,
-          "description": "How well confidence scores match actual accuracy",
-          "name": "calibration",
-          "sloType": null,
-          "status": null,
-          "target": 0.05,
-          "window": "30d"
-        },
-        {
-          "currentValue": null,
-          "description": "Time until we know if decision was correct",
-          "name": "feedback_latency",
-          "sloType": null,
-          "status": null,
-          "target": 3600.0,
-          "window": "30d"
         }
       ]
     }

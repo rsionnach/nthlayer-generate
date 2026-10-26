@@ -17,20 +17,20 @@
   "slos": [
     [
       "availability",
-      null,
+      "availability",
       99.0,
       "30d",
       false
     ],
     [
       "error_rate",
-      null,
+      "error_rate",
       1.0,
       "7d",
       false
     ]
   ],
-  "source_format": "opensrm",
+  "source_format": "srm_v1",
   "type": "batch",
   "warnings": []
 }

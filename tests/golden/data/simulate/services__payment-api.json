@@ -5,6 +5,24 @@
       "degradation_factor": 0.99,
       "from_service": "payment-api",
       "to_service": "payments-db"
+    },
+    {
+      "critical": true,
+      "degradation_factor": 0.99,
+      "from_service": "payment-api",
+      "to_service": "user-service"
+    },
+    {
+      "critical": true,
+      "degradation_factor": 0.99,
+      "from_service": "payment-api",
+      "to_service": "fraud-detection"
+    },
+    {
+      "critical": false,
+      "degradation_factor": 0.99,
+      "from_service": "payment-api",
+      "to_service": "inventory-service"
     }
   ],
   "failure_models": [

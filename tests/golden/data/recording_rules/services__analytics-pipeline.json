@@ -8,6 +8,40 @@
           "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\"}[30d]))",
           "labels": {
             "service": "analytics-pipeline",
+            "slo": "freshness-p95"
+          },
+          "record": "slo:requests_total:30d"
+        },
+        {
+          "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\",status!~\"5..\"}[30d]))",
+          "labels": {
+            "service": "analytics-pipeline",
+            "slo": "freshness-p95"
+          },
+          "record": "slo:requests_success:30d"
+        },
+        {
+          "expr": "slo:requests_success:30d{service=\"analytics-pipeline\",slo=\"freshness-p95\"} / slo:requests_total:30d{service=\"analytics-pipeline\",slo=\"freshness-p95\"}",
+          "labels": {
+            "objective": "90.0",
+            "service": "analytics-pipeline",
+            "slo": "freshness-p95"
+          },
+          "record": "slo:availability:ratio"
+        },
+        {
+          "expr": "1 - ((1 - slo:availability:ratio{service=\"analytics-pipeline\",slo=\"freshness-p95\"}) / (1 - 0.9))",
+          "labels": {
+            "objective": "90.0",
+            "service": "analytics-pipeline",
+            "slo": "freshness-p95"
+          },
+          "record": "slo:error_budget_remaining:ratio"
+        },
+        {
+          "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\"}[30d]))",
+          "labels": {
+            "service": "analytics-pipeline",
             "slo": "data-quality"
           },
           "record": "slo:requests_total:30d"

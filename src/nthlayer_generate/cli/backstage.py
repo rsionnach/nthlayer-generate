@@ -61,7 +61,7 @@ def generate_backstage_command(
     try:
         if dry_run:
             # Generate without writing to see what would be created
-            from nthlayer_generate.specs.loader import load_manifest
+            from nthlayer_common.manifest import load_manifest
 
             manifest = load_manifest(
                 service_path,

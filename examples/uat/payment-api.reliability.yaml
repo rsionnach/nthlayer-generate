@@ -20,10 +20,11 @@ spec:
       window: 30d
       type: availability
       description: "99.9% availability over 30 days"
-      query: |
-        sum(rate(http_requests_total{service="payment-api",status=~"[1234].."}[5m]))
-        /
-        sum(rate(http_requests_total{service="payment-api"}[5m]))
+      indicator:
+        query: |
+          sum(rate(http_requests_total{service="payment-api",status=~"[1234].."}[5m]))
+          /
+          sum(rate(http_requests_total{service="payment-api"}[5m]))
 
     latency-p95:
       target: 99.0
@@ -32,10 +33,11 @@ spec:
       percentile: p95
       unit: ms
       description: "99% of requests under 500ms at p95"
-      query: |
-        histogram_quantile(0.95,
-          sum(rate(http_request_duration_seconds_bucket{service="payment-api"}[5m])) by (le)
-        )
+      indicator:
+        query: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{service="payment-api"}[5m])) by (le)
+          )
 
   dependencies:
     - name: postgresql

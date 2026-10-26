@@ -18,10 +18,11 @@ import asyncio
 import os
 from typing import Optional
 
+from nthlayer_common.manifest import load_manifest
+
 from nthlayer_generate.cli.ux import console, error
 from nthlayer_generate.dependencies import DependencyDiscovery, create_demo_discovery
 from nthlayer_generate.dependencies.providers.prometheus import PrometheusDepProvider
-from nthlayer_generate.specs.loader import load_manifest
 from nthlayer_generate.topology.enrichment import build_topology
 from nthlayer_generate.topology.serializers import (
     serialize_dot,

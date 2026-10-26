@@ -464,8 +464,9 @@ class PolicyHandler:
         return [{"type": "policy", "action": "evaluate", "count": len(policy_resources)}]
 
     def generate(self, ctx: OrchestratorContext) -> int:
+        from nthlayer_common.manifest import load_manifest
+
         from nthlayer_generate.policies.engine import PolicyEngine
-        from nthlayer_generate.specs.loader import load_manifest
 
         policy_resources = ctx.detector.get_resources_by_kind("PolicyRules")
         if not policy_resources:

@@ -59,7 +59,7 @@ def generate_docs_command(
 
     try:
         if dry_run:
-            from nthlayer_generate.specs.loader import load_manifest
+            from nthlayer_common.manifest import load_manifest
 
             manifest = load_manifest(
                 service_path,

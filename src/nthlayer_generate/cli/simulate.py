@@ -58,7 +58,7 @@ def simulate_command(
 
     # Load manifests
     try:
-        from nthlayer_generate.specs.loader import load_manifest
+        from nthlayer_common.manifest import load_manifest
 
         manifests = [load_manifest(manifest_file)]
     except FileNotFoundError:
@@ -149,7 +149,7 @@ def _load_manifests_from_dir(directory: str, exclude: str = "") -> list:
     """
     from pathlib import Path
 
-    from nthlayer_generate.specs.loader import load_manifest
+    from nthlayer_common.manifest import load_manifest
 
     manifests: list = []
     dir_path = Path(directory)

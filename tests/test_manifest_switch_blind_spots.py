@@ -587,11 +587,6 @@ def _two_contract_provider(directory: Path) -> Path:
 # raises=AttributeError: the expected failure is the registry reading generate's
 # single `contract`; any other failure (a fixture that no longer loads, say)
 # must not hide behind the marker.
-@pytest.mark.xfail(
-    strict=True,
-    raises=AttributeError,
-    reason="multi-contract arrives with common's model (Task 11; folded from Task 9)",
-)
 def test_multi_contract_provider_is_bounded_by_its_weakest_promise(tmp_path: Path) -> None:
     """Spec §5.2: provider availability is the minimum promise over the
     service's contracts. Promises 0.9995 and 0.99: expecting 99.5% exceeds the

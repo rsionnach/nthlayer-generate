@@ -8,6 +8,7 @@ and validates coverage against discovered metrics from Prometheus.
 from __future__ import annotations
 
 import structlog
+from nthlayer_common.manifest import ReliabilityManifest
 
 from nthlayer_generate.metrics.models import (
     MetricDefinition,
@@ -17,7 +18,7 @@ from nthlayer_generate.metrics.models import (
 from nthlayer_generate.metrics.runtime import get_runtime_metrics
 from nthlayer_generate.metrics.standards.aliases import METRIC_ALIASES, get_aliases_for_canonical
 from nthlayer_generate.metrics.templates.registry import get_template, resolve_template_metrics
-from nthlayer_generate.specs.manifest import ReliabilityManifest
+from nthlayer_generate.specs.context import service_context_from_manifest
 from nthlayer_generate.specs.models import ServiceContext  # Used by recommend_metrics
 
 logger = structlog.get_logger()
@@ -36,7 +37,7 @@ def recommend_metrics_from_manifest(
     Returns:
         MetricRecommendation with matched metrics and coverage stats
     """
-    context = manifest.as_service_context()
+    context = service_context_from_manifest(manifest)
     return recommend_metrics(context, discovered_metrics)
 
 

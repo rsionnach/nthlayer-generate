@@ -26,6 +26,7 @@ from typing import Any
 
 import pytest
 import yaml
+from nthlayer_common.manifest import ReliabilityManifest, load_manifest
 
 from nthlayer_generate.dashboards.manifest_builder import build_dashboard_from_manifest
 from nthlayer_generate.dependencies.models import (
@@ -49,8 +50,6 @@ from nthlayer_generate.simulate.engine import run_simulation
 from nthlayer_generate.simulate.graph import build_dependency_models, build_failure_models
 from nthlayer_generate.slos.pipeline import AlertPipeline
 from nthlayer_generate.specs.contracts import ContractRegistry
-from nthlayer_generate.specs.loader import load_manifest
-from nthlayer_generate.specs.manifest import ReliabilityManifest
 from nthlayer_generate.specs.validator import validate_service_file
 from nthlayer_generate.topology.enrichment import build_topology
 

@@ -13,10 +13,14 @@ The generated metrics are compatible with Backstage plugins:
 
 from __future__ import annotations
 
-from nthlayer_common.manifest import JudgmentThreshold, duration_seconds
+from nthlayer_common.manifest import (
+    JudgmentThreshold,
+    ReliabilityManifest,
+    SLODefinition,
+    duration_seconds,
+)
 
 from nthlayer_generate.recording_rules.models import RecordingRule, RecordingRuleGroup
-from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
 
 
 class ManifestRecordingRuleBuilder:
@@ -64,14 +68,9 @@ class ManifestRecordingRuleBuilder:
             for slo in self.manifest.get_judgment_slos():
                 for rule in self._build_judgment_slo_rules(slo):
                     judgment_group.add_rule(rule)
-            # TODO(opensrm-wo62.1): Task 11 — call get_judgment_thresholds()
-            # directly once the manifest is common's. Until then generate's
-            # own ReliabilityManifest (no thresholds) still reaches here.
-            get_thresholds = getattr(self.manifest, "get_judgment_thresholds", None)
-            if get_thresholds is not None:
-                for threshold in get_thresholds():
-                    for rule in self._build_judgment_threshold_rules(threshold):
-                        judgment_group.add_rule(rule)
+            for threshold in self.manifest.get_judgment_thresholds():
+                for rule in self._build_judgment_threshold_rules(threshold):
+                    judgment_group.add_rule(rule)
             if judgment_group.rules:
                 groups.append(judgment_group)
 
@@ -352,20 +351,12 @@ class ManifestRecordingRuleBuilder:
         service = self.manifest.name
         target = slo.target
         window = slo.window
-        # TODO(opensrm-wo62.1): Task 11 — drop the name fallback and the
-        # calibration / feedback_latency branches. generate's own
-        # SLODefinition has no judgment_type and still carries those two as
-        # SLOs; common's model has them as JudgmentThresholds instead.
-        judgment_type = getattr(slo, "judgment_type", None) or slo.name
-
-        if judgment_type == "reversal_rate":
+        # calibration and feedback_latency are JudgmentThresholds in common's
+        # model, never judgment SLOs: _build_judgment_threshold_rules owns them.
+        if slo.judgment_type == "reversal_rate":
             return self._build_reversal_rate_rules(service, target, window)
-        if judgment_type == "high_confidence_failure":
+        if slo.judgment_type == "high_confidence_failure":
             return self._build_high_confidence_failure_rules(service, target, window)
-        if judgment_type == "calibration":
-            return self._build_calibration_rules(service, target)
-        if judgment_type == "feedback_latency":
-            return self._build_feedback_latency_rules(service, target)
         return []
 
     def _build_judgment_threshold_rules(self, threshold: JudgmentThreshold) -> list[RecordingRule]:
@@ -669,7 +660,7 @@ def build_recording_rules_from_manifest(
         List of RecordingRuleGroup objects
 
     Example:
-        >>> from nthlayer_generate.specs import load_manifest
+        >>> from nthlayer_common.manifest import load_manifest
         >>> manifest = load_manifest("payment-api.yaml")
         >>> groups = build_recording_rules_from_manifest(manifest)
         >>> yaml_output = create_rule_groups(groups)

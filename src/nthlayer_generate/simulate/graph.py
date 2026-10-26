@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from nthlayer_common.manifest import ReliabilityManifest
+
 from nthlayer_generate.simulate.models import (
     DependencyModel,
     ServiceFailureModel,
     derive_failure_model,
 )
-from nthlayer_generate.specs.manifest import ReliabilityManifest
 
 
 def _normalize_availability(target: float) -> float:

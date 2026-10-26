@@ -14,16 +14,15 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import yaml
+from nthlayer_common.manifest import SourceFormat, load_manifest
 
 from nthlayer_generate.cli.ux import console, error, header, success, warning
-from nthlayer_generate.specs.loader import load_manifest
-from nthlayer_generate.specs.manifest import SourceFormat
 
 if TYPE_CHECKING:
-    from nthlayer_common.manifest import ReliabilityManifest as CommonReliabilityManifest
+    from nthlayer_common.manifest import ReliabilityManifest
 
 
-def _legacy_to_srm_v1(manifest: CommonReliabilityManifest) -> dict[str, Any]:
+def _legacy_to_srm_v1(manifest: ReliabilityManifest) -> dict[str, Any]:
     """Serialise a legacy-loaded manifest as an srm/v1 document.
 
     A port of generate's ``ReliabilityManifest.to_dict`` (opensrm-wo62.1, D7)
@@ -164,8 +163,10 @@ def migrate_command(
         error(f"Failed to parse {service_yaml}: {e}")
         return 1
 
-    # Check if already OpenSRM format
-    if manifest.source_format == SourceFormat.OPENSRM:
+    # Only legacy needs migrating: srm/v1 and v2 are both already OpenSRM.
+    # Comparing with SRM_V1 instead would "migrate" a v2 file down to srm/v1
+    # (spec §5.2 ruling on source_format).
+    if manifest.source_format != SourceFormat.LEGACY:
         console.print()
         header(f"Migration: {manifest.name}")
         console.print()
@@ -174,7 +175,7 @@ def migrate_command(
         return 0
 
     # Convert to OpenSRM format
-    opensrm_data = manifest.to_dict()
+    opensrm_data = _legacy_to_srm_v1(manifest)
 
     # Generate output YAML
     yaml_output = yaml.dump(

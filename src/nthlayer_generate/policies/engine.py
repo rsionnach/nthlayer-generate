@@ -11,10 +11,10 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from nthlayer_common.manifest import ReliabilityManifest
 
 from nthlayer_generate.policies.models import PolicyReport, PolicyRule, PolicySeverity, RuleType
 from nthlayer_generate.policies.rules import RULE_EVALUATORS
-from nthlayer_generate.specs.manifest import ReliabilityManifest
 
 
 class PolicyEngine:

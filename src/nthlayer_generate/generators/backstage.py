@@ -17,10 +17,8 @@ from typing import Any
 
 import structlog
 from nthlayer_common.gate_models import GateResult
+from nthlayer_common.manifest import ReliabilityManifest, load_manifest
 from nthlayer_common.tiers import TIER_CONFIGS
-
-from nthlayer_generate.specs.loader import load_manifest
-from nthlayer_generate.specs.manifest import ReliabilityManifest
 
 
 class ScoreBand(str, Enum):

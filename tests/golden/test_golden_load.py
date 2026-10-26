@@ -12,8 +12,7 @@ import warnings
 from pathlib import Path
 
 import pytest
-
-from nthlayer_generate.specs.loader import load_manifest
+from nthlayer_common.manifest import load_manifest
 
 from ._corpus import ALL, manifest_id
 from ._golden import check

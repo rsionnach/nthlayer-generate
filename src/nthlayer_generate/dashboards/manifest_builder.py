@@ -11,9 +11,10 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 import structlog
+from nthlayer_common.manifest import ReliabilityManifest
 
 from nthlayer_generate.dashboards.builder_sdk import DashboardBuilderSDK
-from nthlayer_generate.specs.manifest import ReliabilityManifest
+from nthlayer_generate.specs.context import service_context_from_manifest
 from nthlayer_generate.specs.models import Resource, ServiceContext
 
 logger = structlog.get_logger()
@@ -75,7 +76,7 @@ class ManifestDashboardBuilder:
 
     def _manifest_to_context(self):
         """Convert manifest to ServiceContext."""
-        return self.manifest.as_service_context()
+        return service_context_from_manifest(self.manifest)
 
     def _manifest_to_resources(self, context: ServiceContext) -> List[Resource]:
         """Convert manifest SLOs and dependencies to Resources."""

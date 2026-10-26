@@ -1,7 +1,8 @@
 """
 Service definition validation.
 
-Supports both OpenSRM format (apiVersion: srm/v1) and legacy NthLayer format.
+Supports the OpenSRM formats (apiVersion: srm/v1 and opensrm.nthlayer.io/v2),
+loaded through nthlayer-common's manifest model, and the legacy NthLayer format.
 """
 
 from __future__ import annotations
@@ -11,21 +12,23 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from nthlayer_common.manifest import VALID_TIERS
+from nthlayer_common.manifest import (
+    VALID_TIERS,
+    LegacyFormatWarning,
+    ManifestLoadError,
+    load_manifest,
+)
 from nthlayer_common.manifest.models import (
     resolve_service_type,
     valid_service_types_phrase,
 )
+from nthlayer_common.manifest.parser.v1 import is_srm_v1_format
+from nthlayer_common.manifest.parser.v2 import is_opensrm_v2_format
 
 from nthlayer_generate.specs.contracts import (
     ContractRegistry,
     validate_dependency_expectations,
     validate_transitive_feasibility,
-)
-from nthlayer_generate.specs.loader import (
-    LegacyFormatWarning,
-    ManifestLoadError,
-    load_manifest,
 )
 from nthlayer_generate.specs.models import VALID_RESOURCE_KINDS
 from nthlayer_generate.specs.names import is_valid_service_name
@@ -105,8 +108,6 @@ def validate_service_file(
     # First, detect the format to use appropriate parser
     import yaml
 
-    from nthlayer_generate.specs.opensrm_parser import is_opensrm_format
-
     try:
         with open(file_path) as f:
             raw_data = yaml.safe_load(f)
@@ -116,7 +117,11 @@ def validate_service_file(
             errors=[f"Failed to parse YAML: {e}"],
         )
 
-    use_opensrm = is_opensrm_format(raw_data) if isinstance(raw_data, dict) else False
+    # srm/v1 and v2 take the manifest path; legacy keeps parse_service_file,
+    # which preserves the resource list for validation (spec §5.2).
+    use_opensrm = isinstance(raw_data, dict) and (
+        is_srm_v1_format(raw_data) or is_opensrm_v2_format(raw_data)
+    )
 
     # Variables for the parsed service
     service_context: Any  # Either MockContext or ServiceContext

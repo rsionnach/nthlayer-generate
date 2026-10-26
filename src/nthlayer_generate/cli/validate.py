@@ -99,8 +99,9 @@ def _evaluate_policies(service_file: str, policies_path: str) -> int:
     Returns:
         Exit code (0 = pass, 1 = fail)
     """
+    from nthlayer_common.manifest import load_manifest
+
     from nthlayer_generate.policies.engine import PolicyEngine
-    from nthlayer_generate.specs.loader import load_manifest
 
     console.print("[bold]Policy Evaluation:[/bold]")
 

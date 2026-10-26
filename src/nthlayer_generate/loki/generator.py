@@ -10,9 +10,9 @@ from pathlib import Path
 
 import structlog
 import yaml
+from nthlayer_common.manifest import ReliabilityManifest
 
 from nthlayer_generate.specs.helpers import extract_dependency_technologies
-from nthlayer_generate.specs.manifest import ReliabilityManifest
 from nthlayer_generate.specs.models import Resource
 
 from .models import LogQLAlert

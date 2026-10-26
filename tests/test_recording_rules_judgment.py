@@ -216,3 +216,33 @@ def test_threshold_only_manifest_has_no_slo_group(path: Path):
     names = [g.name for g in build_recording_rules_from_manifest(manifest)]
     assert f"{manifest.name}_slo_metrics" not in names
     assert f"{manifest.name}_judgment_metrics" in names
+
+
+def test_srm_v1_feedback_latency_unit_minutes_gives_a_bucket_in_seconds(tmp_path: Path):
+    """Spec §5.3's one deliberate difference: srm/v1 ``feedback_latency`` with
+    ``unit: m`` used to emit ``le="60.0"`` for 60 minutes (``le`` is seconds);
+    it now emits ``"3600.0"``, for both ``le`` and ``target``.
+
+    Fixture: examples/opensrm/ai-gate.reliability.yaml @f252974 with its
+    ``feedback_latency`` entry edited to ``target: 60`` plus ``unit: m``. No
+    shipped example carries a unit. The ``unit`` key's shape is from
+    nthlayer-common docs/upgrading-5.0.md @ee69714 (the srm/v1 lift table:
+    "srm/v1 ``feedback_latency`` ``unit`` ... honoured: ... ``m`` ... ->
+    ``"<n><unit>"``"). The published OpenSRM v1 schema (opensrm
+    spec/v1/schema.json @d39818b, ``FeedbackLatencySLO``) has no ``unit``
+    field: srm/v1 is NthLayer's dialect, not that schema.
+    """
+    data = yaml.safe_load(AI_GATE.read_text())
+    entry = data["spec"]["slos"]["feedback_latency"]
+    entry["target"] = 60
+    entry["unit"] = "m"
+    path = tmp_path / "ai-gate.reliability.yaml"
+    path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+    rules = _by_record(_judgment_rules(_load(path)))
+
+    bucket = rules["ai_gate:feedback_latency:bucket"]
+    # Spec §5.3: 60 minutes -> "3600.0", not the raw "60.0".
+    assert bucket["labels"]["target"] == "3600.0"
+    assert 'le="3600.0"' in bucket["expr"]
+    assert 'le="60.0"' not in bucket["expr"]

@@ -15,8 +15,7 @@ import math
 from pathlib import Path
 
 import structlog
-
-from nthlayer_generate.specs.manifest import Contract, ReliabilityManifest
+from nthlayer_common.manifest import ReliabilityContract, ReliabilityManifest
 
 logger = structlog.get_logger()
 
@@ -25,21 +24,40 @@ class ContractRegistry:
     """
     Registry of service contracts for cross-service validation.
 
-    Stores contracts indexed by service name, enabling dependency
+    Stores each service's contracts (``manifest.contracts``: one for srm/v1,
+    any number for v2) indexed by service name, enabling dependency
     expectation validation and transitive feasibility checks.
     """
 
     def __init__(self) -> None:
-        self._contracts: dict[str, Contract] = {}
+        self._contracts: dict[str, list[ReliabilityContract]] = {}
 
     def register(self, manifest: ReliabilityManifest) -> None:
-        """Register a manifest's contract by service name."""
-        if manifest.contract is not None:
-            self._contracts[manifest.name] = manifest.contract
+        """Register a manifest's contracts by service name.
 
-    def get_contract(self, name: str) -> Contract | None:
-        """Get contract for a service, or None if not registered."""
-        return self._contracts.get(name)
+        A manifest with no contracts is skipped, so ``has_contract`` stays
+        False for it.
+        """
+        if manifest.contracts:
+            self._contracts[manifest.name] = list(manifest.contracts)
+
+    def get_contracts(self, name: str) -> list[ReliabilityContract]:
+        """Contracts registered for a service; empty if none."""
+        return list(self._contracts.get(name, []))
+
+    def promised_availability(self, name: str) -> float | None:
+        """The weakest availability a service promises, or None.
+
+        The minimum ``promise.availability`` over the service's contracts
+        that declare one: the weakest promise is the most a consumer may rely
+        on (spec §5.2). None when no contract declares availability.
+        """
+        promised = [
+            c.promise.availability
+            for c in self._contracts.get(name, [])
+            if c.promise.availability is not None
+        ]
+        return min(promised) if promised else None
 
     def has_contract(self, name: str) -> bool:
         """Check if a service has a registered contract."""
@@ -66,7 +84,7 @@ class ContractRegistry:
         Loads each manifest file found via is_manifest_file() and
         registers any contracts.
         """
-        from nthlayer_generate.specs.loader import (
+        from nthlayer_common.manifest import (
             ManifestLoadError,
             is_manifest_file,
             load_manifest,
@@ -108,19 +126,18 @@ def validate_dependency_expectations(
     warnings: list[str] = []
 
     for dep in manifest.dependencies:
-        contract = registry.get_contract(dep.name)
+        promised = registry.promised_availability(dep.name)
 
-        if dep.slo and dep.slo.availability is not None and contract is not None:
-            if contract.availability is not None:
-                # dep.slo.availability is percentage (99.99),
-                # contract.availability is ratio (0.9999)
-                contract_pct = contract.availability * 100
-                if dep.slo.availability > contract_pct:
-                    warnings.append(
-                        f"Dependency '{dep.name}': expected availability "
-                        f"({dep.slo.availability}%) exceeds provider contract "
-                        f"({contract_pct}%)"
-                    )
+        if dep.slo and dep.slo.availability is not None and promised is not None:
+            # dep.slo.availability is percentage (99.99),
+            # the promised availability is a ratio (0.9999)
+            contract_pct = promised * 100
+            if dep.slo.availability > contract_pct:
+                warnings.append(
+                    f"Dependency '{dep.name}': expected availability "
+                    f"({dep.slo.availability}%) exceeds provider contract "
+                    f"({contract_pct}%)"
+                )
 
         if dep.critical and not registry.has_contract(dep.name):
             warnings.append(f"Critical dependency '{dep.name}' has no contract " f"in registry")
@@ -133,16 +150,23 @@ def validate_transitive_feasibility(
     registry: ContractRegistry,
 ) -> list[str]:
     """
-    Check if the service's contract is feasible given dependency availabilities.
+    Check if the service's contracts are feasible given dependency availabilities.
 
     Uses a serial chain model: theoretical_max = product(dep_availabilities).
-    Only runs if the manifest has a contract with availability set.
+    Checks each of the manifest's contracts that declares availability; only
+    runs if at least one does. With several contracts, each infeasibility
+    message names its contract (spec §5.2); with one, the message is as before.
 
     Returns list of warning strings.
     """
     warnings: list[str] = []
 
-    if not manifest.contract or manifest.contract.availability is None:
+    promising = [
+        (contract, availability)
+        for contract in manifest.contracts
+        if (availability := contract.promise.availability) is not None
+    ]
+    if not promising:
         return warnings
 
     # Collect critical dep availabilities
@@ -154,9 +178,9 @@ def validate_transitive_feasibility(
             continue
 
         # Try registry first, then fall back to expected SLO
-        contract = registry.get_contract(dep.name)
-        if contract is not None and contract.availability is not None:
-            availabilities.append(contract.availability)
+        promised = registry.promised_availability(dep.name)
+        if promised is not None:
+            availabilities.append(promised)
         elif dep.slo and dep.slo.availability is not None:
             # dep.slo.availability is percentage, convert to ratio
             availabilities.append(dep.slo.availability / 100.0)
@@ -175,11 +199,15 @@ def validate_transitive_feasibility(
     # Serial chain: P(all up) = P1 * P2 * ... * Pn
     theoretical_max = math.prod(availabilities)
 
-    if theoretical_max < manifest.contract.availability:
-        warnings.append(
-            f"Contract availability ({manifest.contract.availability}) may be "
-            f"infeasible: critical dependency chain theoretical max is "
-            f"{theoretical_max:.6f}"
-        )
+    for contract, availability in promising:
+        if theoretical_max < availability:
+            message = (
+                f"Contract availability ({availability}) may be "
+                f"infeasible: critical dependency chain theoretical max is "
+                f"{theoretical_max:.6f}"
+            )
+            if len(manifest.contracts) > 1:
+                message += f" (contract '{contract.name}')"
+            warnings.append(message)
 
     return warnings

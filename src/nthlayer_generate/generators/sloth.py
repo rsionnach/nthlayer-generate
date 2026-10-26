@@ -12,8 +12,8 @@ from typing import Any
 
 import structlog
 import yaml
+from nthlayer_common.manifest import ReliabilityManifest, SLODefinition
 
-from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
 from nthlayer_generate.specs.models import ServiceContext
 from nthlayer_generate.specs.parser import parse_service_file, render_resource_spec
 

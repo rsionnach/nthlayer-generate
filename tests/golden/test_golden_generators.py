@@ -1,8 +1,8 @@
 """Library-generator cells: every manifest-path generator over the corpus (spec §6.2).
 
-One test function per cell, each parametrised over the srm/v1 and legacy
-manifests that load today. The loadable set is found by loading the corpus
-(the same call the ``load`` cell pins), not hard-coded, so a manifest that
+One test function per cell, each parametrised over the srm/v1, legacy and
+OpenSRM v2 manifests that load today. The loadable set is found by loading
+the corpus (the same call the ``load`` cell pins), not hard-coded, so a manifest that
 starts or stops loading moves in or out of these cells — and the ``load``
 golden for it changes in the same diff.
 
@@ -53,7 +53,7 @@ from nthlayer_generate.specs.contracts import ContractRegistry
 from nthlayer_generate.specs.validator import validate_service_file
 from nthlayer_generate.topology.enrichment import build_topology
 
-from ._corpus import EX, LEGACY, SRM_V1, manifest_id
+from ._corpus import EX, LEGACY, SRM_V1, V2, manifest_id
 from ._golden import check
 
 
@@ -71,7 +71,7 @@ def _loads(path: Path) -> bool:
 
 
 CASES: tuple[tuple[str, Path], ...] = tuple(
-    (manifest_id(p), p) for p in SRM_V1 + LEGACY if _loads(p)
+    (manifest_id(p), p) for p in SRM_V1 + LEGACY + V2 if _loads(p)
 )
 IDS = [i for i, _ in CASES]
 

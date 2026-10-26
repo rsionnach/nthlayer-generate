@@ -40,9 +40,18 @@ AI_GATE_GOLDEN = (
 P50_ONLY = THRESHOLDS / "feedback-latency-p50-only.yaml"
 CALIBRATION_BOTH = THRESHOLDS / "calibration-both-bounds.yaml"
 ALL_FIVE = THRESHOLDS / "all-five-types.yaml"
+SINGLE_BOUNDS = THRESHOLDS / "single-bounds.yaml"
 REVERSAL_RATE_SLO = V2_EXAMPLES / "judgment-slos" / "01-reversal-rate.yaml"
 
-FIXTURES = (AI_GATE, AI_GATE_GOLDEN, P50_ONLY, CALIBRATION_BOTH, ALL_FIVE, REVERSAL_RATE_SLO)
+FIXTURES = (
+    AI_GATE,
+    AI_GATE_GOLDEN,
+    P50_ONLY,
+    CALIBRATION_BOTH,
+    ALL_FIVE,
+    SINGLE_BOUNDS,
+    REVERSAL_RATE_SLO,
+)
 
 
 def _load(path: Path) -> ReliabilityManifest:
@@ -116,6 +125,34 @@ def test_calibration_with_both_bounds_emits_ece_from_the_ece_bound():
     rules = _by_record(_judgment_rules(manifest))
 
     assert rules["ai_gate:calibration:ece"]["labels"]["target"] == str(bound)
+    for bucket in ("low", "medium", "high"):
+        assert f"ai_gate:calibration_bucket:{bucket}" in rules
+
+
+def test_p90_only_feedback_latency_emits_percentiles_but_no_bucket():
+    bounds = _declared_bounds(SINGLE_BOUNDS, "feedback_latency")
+    # The fixture is the case under test: p90 alone, no p50.
+    assert "maximum_p50" not in bounds
+    assert "maximum_p90" in bounds
+    manifest = _load(SINGLE_BOUNDS)
+
+    rules = _by_record(_judgment_rules(manifest))
+
+    for p in ("p50", "p95", "p99"):
+        assert f"ai_gate:feedback_latency:{p}" in rules
+    assert "ai_gate:feedback_latency:bucket" not in rules
+
+
+def test_ece_only_calibration_emits_ece_from_its_bound():
+    bounds = _declared_bounds(SINGLE_BOUNDS, "calibration")
+    # The fixture is the case under test: ECE alone, no Brier bound.
+    assert set(bounds) == {"maximum_expected_calibration_error"}
+    manifest = _load(SINGLE_BOUNDS)
+
+    rules = _by_record(_judgment_rules(manifest))
+
+    target = str(bounds["maximum_expected_calibration_error"])
+    assert rules["ai_gate:calibration:ece"]["labels"]["target"] == target
     for bucket in ("low", "medium", "high"):
         assert f"ai_gate:calibration_bucket:{bucket}" in rules
 

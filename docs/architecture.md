@@ -28,8 +28,8 @@
 - `identity/` — Service identity resolution across naming conventions
 - `specs/` — Service specification models and parsing
   - `helpers.py` — Shared utilities: `TECH_KEYWORDS`, `infer_technology_from_name()`
-  - `manifest.py` — ReliabilityManifest unified model (OpenSRM + legacy)
-  - `loader.py` — Auto-detect format and load manifests
+  - Manifest model and loading live in `nthlayer_common.manifest` (since 3.0.0);
+    generate has no `manifest.py`, `loader.py` or `opensrm_parser.py`
   - `parser.py` — Legacy format parser, `render_resource_spec()` for variable substitution
 - `slos/` — SLO definition, validation, and recording rule generation
   - `models.py` — SLO, ErrorBudget, SLOStatus, Incident dataclasses; default target: 0.999
@@ -114,8 +114,7 @@ These are hard rules — violations are bugs, not style issues.
 `nthlayer_common` owns the service-type rule — the six OpenSRM v2 values
 plus the `^x-[a-z][a-z0-9-]*$` extension branch. generate does not keep its
 own copy; import `resolve_service_type` / `is_valid_service_type` /
-`valid_service_types_phrase` from `nthlayer_common.manifest.models`, or from
-`specs.manifest`, which re-exports them (opensrm-z3ab).
+`valid_service_types_phrase` from `nthlayer_common.manifest.models` (opensrm-z3ab).
 
 `ServiceContext` and `ReliabilityManifest` each carry **two** spellings, and
 picking the wrong one is a silent bug:

@@ -22,9 +22,7 @@ For each capability:
 | Capability | Current Location | Justification |
 |---|---|---|
 | Manifest parsing (legacy) | `specs/parser.py` | Pure text-to-data. Same YAML always produces same parse tree. |
-| Manifest parsing (OpenSRM) | `specs/opensrm_parser.py` | Deterministic format conversion. |
-| Manifest loading + auto-detect | `specs/loader.py` | Auto-detect + delegate. No runtime state. |
-| Manifest model (ReliabilityManifest, SLODefinition, Ownership, Dependency, BudgetPolicy, DeploymentGates) | `specs/manifest.py` | Data model. BudgetPolicy parsing is compile-time; enforcement is gate. |
+| Manifest parsing, loading, model | `nthlayer_common.manifest` | Moved out of generate in 3.0.0 (opensrm-wo62.1); generate consumes it. Still deterministic; BudgetPolicy parsing is compile-time, enforcement is gate. |
 | Resource models | `specs/models.py` | Pure data structures. |
 | Schema validation | `specs/validator.py` | Deterministic structural validation. |
 | Alerting config model | `specs/alerting.py` | Static config model (AlertingConfig, ForDuration). |

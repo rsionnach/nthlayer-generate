@@ -138,6 +138,33 @@ $ nthlayer validate service.yaml --policies policies.yaml
 
 ---
 
+## ⚠️ Upgrading to 3.0.0: manifests load through `nthlayer-common`
+
+generate no longer carries its own manifest model. It reads manifests through
+[`nthlayer_common.manifest`](https://github.com/rsionnach/nthlayer-common), the
+same model the rest of the ecosystem uses, so **OpenSRM v2 manifests are
+accepted** alongside `opensrm/v1`.
+
+**Breaking, for code that imports generate:**
+
+- `nthlayer_generate.specs` no longer exports `load_manifest`,
+  `ReliabilityManifest`, `SLODefinition` or `ManifestLoadError`, and the
+  modules `specs.manifest`, `specs.loader` and `specs.opensrm_parser` are
+  removed. Import them from `nthlayer_common.manifest`.
+- Every `*_from_manifest` function takes `nthlayer_common`'s
+  `ReliabilityManifest`.
+- `ContractRegistry.get_contract` is replaced by `get_contracts` /
+  `promised_availability`.
+
+**Behaviour changes in manifests:**
+
+- srm/v1 SLOs declare PromQL under `indicator.query`. A top-level `query:` is
+  not read (opensrm-0i5h).
+- Legacy `service.pagerduty` is no longer mapped to ownership. Declare a
+  `kind: PagerDuty` resource instead (OpenSRM spec section 3, D11).
+- `calibration` and `feedback_latency` are judgment thresholds; generated
+  recording rules are unchanged.
+
 ## ⚠️ Upgrading: `type: web` becomes `x-web`
 
 If any `service.yaml` declares `type: web`, read this before upgrading.

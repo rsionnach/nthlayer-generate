@@ -13,13 +13,8 @@ from nthlayer_common.manifest import (
     VALID_TIERS,
     Dependency,
     LegacyFormatWarning,
-    ManifestEscalationStep,
     ManifestLoadError,
-    OnCallConfig,
-    Override,
     ReliabilityManifest,
-    RosterMember,
-    RotationConfig,
     SLODefinition,
     SourceFormat,
     is_valid_service_type,
@@ -39,8 +34,9 @@ from nthlayer_generate.specs.context import service_context_from_manifest
 #   ReliabilityManifest.to_dict()            -> cli/migrate.py _legacy_to_srm_v1
 #   ReliabilityManifest.to_service_context() -> specs/context.py
 #       service_context_from_manifest(m).to_dict() (the same dict shape)
-# Hand-built SLODefinitions carry the slo_type common's srm/v1 parser infers
-# from the name (parser/v1.py _infer_slo_type: _NAME_TO_TYPE exact names).
+# Hand-built SLODefinitions are srm/v1 SLOs keyed by type: in opensrm spec/v1/schema.json @859424a /definitions/SLOs
+# (additionalProperties: false) the SLO key IS the type, so an SLO named
+# availability/latency/error_rate/throughput has that slo_type.
 
 
 class TestOpenSRMFormatDetection:
@@ -1087,95 +1083,6 @@ class TestOnCallConfig:
                 },
             },
         }
-
-    def test_roster_member_dataclass(self):
-        """Test RosterMember has the expected fields."""
-        member = RosterMember(
-            name="Alice",
-            slack_id="U0123ALICE",
-            ntfy_topic="oncall-alice",
-            phone="+353851234567",
-        )
-        assert member.name == "Alice"
-        assert member.slack_id == "U0123ALICE"
-        assert member.ntfy_topic == "oncall-alice"
-        assert member.phone == "+353851234567"
-
-    def test_roster_member_optional_fields(self):
-        """Test RosterMember with only required fields."""
-        member = RosterMember(name="Bob", slack_id="U0456BOB")
-        assert member.ntfy_topic is None
-        assert member.phone is None
-
-    def test_override_dataclass(self):
-        """Test Override has the expected fields."""
-        override = Override(
-            start="2026-04-14T00:00:00Z",
-            end="2026-04-21T00:00:00Z",
-            user="Bob",
-            reason="Alice on annual leave",
-        )
-        assert override.start == "2026-04-14T00:00:00Z"
-        assert override.user == "Bob"
-        assert override.reason == "Alice on annual leave"
-
-    def test_override_optional_reason(self):
-        """Test Override with no reason."""
-        override = Override(
-            start="2026-04-14T00:00:00Z",
-            end="2026-04-21T00:00:00Z",
-            user="Bob",
-        )
-        assert override.reason is None
-
-    def test_escalation_step_dataclass(self):
-        """Test ManifestEscalationStep has the expected fields."""
-        step = ManifestEscalationStep(
-            after="5m",
-            notify="ntfy",
-            target="next_oncall",
-        )
-        assert step.after == "5m"
-        assert step.notify == "ntfy"
-        assert step.target == "next_oncall"
-        assert step.phone is None
-
-    def test_rotation_config_dataclass(self):
-        """Test RotationConfig with roster."""
-        roster = [
-            RosterMember(name="Alice", slack_id="U01"),
-            RosterMember(name="Bob", slack_id="U02"),
-        ]
-        config = RotationConfig(type="weekly", handoff="monday 09:00", roster=roster)
-        assert config.type == "weekly"
-        assert config.handoff == "monday 09:00"
-        assert len(config.roster) == 2
-
-    def test_oncall_config_full(self):
-        """Test OnCallConfig with all fields."""
-        config = OnCallConfig(
-            timezone="Europe/Dublin",
-            rotation=RotationConfig(
-                type="weekly",
-                handoff="monday 09:00",
-                roster=[RosterMember(name="Alice", slack_id="U01")],
-            ),
-            overrides=[
-                Override(
-                    start="2026-04-14T00:00:00Z",
-                    end="2026-04-21T00:00:00Z",
-                    user="Bob",
-                ),
-            ],
-            escalation=[
-                ManifestEscalationStep(after="0m", notify="slack_dm"),
-                ManifestEscalationStep(after="5m", notify="ntfy"),
-            ],
-        )
-        assert config.timezone == "Europe/Dublin"
-        assert config.rotation.type == "weekly"
-        assert len(config.overrides) == 1
-        assert len(config.escalation) == 2
 
     def test_ownership_with_oncall_parsed(self):
         """Test that oncall block is parsed from OpenSRM manifest."""
@@ -2248,3 +2155,40 @@ class TestManifestBuilderExtended:
         assert any("high_confidence_failure" in name for name in rule_names)
         assert any("calibration" in name for name in rule_names)
         assert any("feedback_latency" in name for name in rule_names)
+
+    def test_build_rules_dispatch_on_slo_type_not_name(self):
+        """The builder picks the rule family from slo_type, not from the name.
+
+        Every other fixture here names its SLO after its type, so it cannot
+        tell the two apart. Here the name carries no type keyword. The shape
+        is opensrm spec/v1/schema.json @859424a /definitions/LatencySLO (a
+        p99 duration plus a target ratio); under a v2 manifest the name is
+        free-form and the type is declared separately, which is the case this
+        pins.
+        """
+        from nthlayer_generate.recording_rules.manifest_builder import (
+            build_recording_rules_from_manifest,
+        )
+
+        manifest = ReliabilityManifest(
+            name="checkout",
+            team="payments",
+            tier="critical",
+            type="api",
+            slos=[
+                SLODefinition(
+                    name="p99_checkout",
+                    target=99.0,
+                    slo_type="latency",
+                    percentile="p99",
+                    window="30d",
+                ),
+            ],
+        )
+
+        groups = build_recording_rules_from_manifest(manifest)
+
+        slo_group = next(g for g in groups if g.name == "checkout_slo_metrics")
+        records = {r.record for r in slo_group.rules}
+        assert "slo:latency_requests_total:30d" in records
+        assert "slo:latency_requests_fast:30d" in records

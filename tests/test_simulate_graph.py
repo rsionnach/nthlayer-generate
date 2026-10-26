@@ -25,8 +25,8 @@ def _make_manifest(
         team="test",
         tier="standard",
         type="api",
-        # slo_type: an srm/v1 SLO named "availability" is that type
-        # (common parser/v1.py _NAME_TO_TYPE)
+        # slo_type: srm/v1 SLOs are keyed by type
+        # (opensrm spec/v1/schema.json @859424a /definitions/SLOs, additionalProperties: false)
         slos=[
             SLODefinition(
                 name="availability", target=avail_target, slo_type="availability", window="30d"

@@ -120,9 +120,8 @@ class TestPolicyEngineEvaluate:
     def test_evaluate_mixed_rules(self):
         manifest = _make_manifest(
             tier="critical",
-            # slo_type: srm/v1 infers "avail" -> availability (common
-            # parser/v1.py _infer_slo_type, name keyword)
-            slos=[SLODefinition(name="avail", target=99.9, slo_type="availability")],
+            # srm/v1 SLO key = type (opensrm spec/v1/schema.json @859424a /definitions/SLOs)
+            slos=[SLODefinition(name="availability", target=99.9, slo_type="availability")],
         )
         engine = PolicyEngine(
             rules=[

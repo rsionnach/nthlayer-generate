@@ -21,8 +21,9 @@ def _make_manifest(**overrides) -> ReliabilityManifest:
         team="platform",
         tier="critical",
         type="api",
-        # slo_type: srm/v1 infers "avail" -> availability (common
-        # parser/v1.py _infer_slo_type, name keyword)
+        # slo_type is incidental to what this test asserts (the name "avail" is
+        # asserted on, so it is kept); availability is the type an srm/v1
+        # availability SLO has (opensrm spec/v1/schema.json @859424a /definitions/SLOs).
         slos=[SLODefinition(name="avail", target=99.9, slo_type="availability", window="30d")],
     )
     defaults.update(overrides)

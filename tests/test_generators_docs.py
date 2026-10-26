@@ -22,8 +22,9 @@ def _make_manifest(**overrides) -> ReliabilityManifest:
         tier="critical",
         type="api",
         description="Checkout service",
-        # slo_type: srm/v1 infers "avail" -> availability (common
-        # parser/v1.py _infer_slo_type, name keyword)
+        # slo_type is incidental to what this test asserts (the name "avail" is
+        # asserted on, so it is kept); availability is the type an srm/v1
+        # availability SLO has (opensrm spec/v1/schema.json @859424a /definitions/SLOs).
         slos=[SLODefinition(name="avail", target=99.9, slo_type="availability", window="30d")],
         dependencies=[Dependency(name="postgres", type="database", critical=True)],
     )

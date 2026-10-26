@@ -165,11 +165,10 @@ class TestGenerateSlothFromManifest:
             type="api",
             slos=[
                 SLODefinition(
-                    name="avail",
+                    # srm/v1 SLO key = type (opensrm spec/v1/schema.json @859424a /definitions/SLOs)
+                    name="availability",
                     target=99.9,
                     window="30d",
-                    # srm/v1 infers "avail" -> availability (common
-                    # parser/v1.py _infer_slo_type, name keyword)
                     slo_type="availability",
                     indicator_query="http_requests{service='${service}',team='${team}'}",
                 ),

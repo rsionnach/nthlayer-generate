@@ -159,9 +159,8 @@ class TestTierConstraint:
         manifest = _make_manifest(
             tier="critical",
             slos=[
-                # slo_type: srm/v1 name inference (common parser/v1.py
-                # _infer_slo_type): "avail" keyword, "latency" exact name
-                SLODefinition(name="avail", target=99.9, slo_type="availability"),
+                # srm/v1 SLO key = type (opensrm spec/v1/schema.json @859424a /definitions/SLOs)
+                SLODefinition(name="availability", target=99.9, slo_type="availability"),
                 SLODefinition(name="latency", target=200, slo_type="latency"),
             ],
         )

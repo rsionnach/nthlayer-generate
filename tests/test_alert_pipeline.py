@@ -26,8 +26,8 @@ def _make_manifest(
     """``alerting`` is the raw srm/v1 ``spec.alerting`` block: common keeps it
     as read, and the pipeline parses it at the use site (opensrm-wo62.1, D3).
 
-    ``slo_type``: an srm/v1 SLO named after a standard type has that type
-    (common parser/v1.py ``_infer_slo_type``)."""
+    ``slo_type``: srm/v1 SLOs are keyed by type (opensrm spec/v1/schema.json @859424a /definitions/SLOs,
+    additionalProperties: false), so an SLO named ``availability`` is one."""
     if slos is None:
         slos = [
             SLODefinition(name="availability", target=99.9, slo_type="availability", window="30d"),
@@ -111,9 +111,8 @@ class TestBuildSloFromManifest:
         manifest = _make_manifest(
             slos=[
                 SLODefinition(
-                    # "avail" -> availability: srm/v1 name keyword
-                    # (common parser/v1.py _infer_slo_type)
-                    name="avail",
+                    # srm/v1 SLO key = type (opensrm spec/v1/schema.json @859424a /definitions/SLOs)
+                    name="availability",
                     target=0.999,
                     slo_type="availability",
                     window="7d",

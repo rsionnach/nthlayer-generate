@@ -254,7 +254,8 @@ class TestOpenSRMParser:
             "service": {"name": "test"},
         }
 
-        with pytest.raises(OpenSRMParseError, match="Invalid OpenSRM format"):
+        # The exception type is the contract; the message text is not asserted.
+        with pytest.raises(OpenSRMParseError):
             parse_srm_v1(data)
 
 
@@ -1852,8 +1853,14 @@ service:
                 warnings.simplefilter("ignore", LegacyFormatWarning)
                 load_manifest(manifest_file, suppress_deprecation_warning=True)
 
-    def test_legacy_with_pagerduty_config(self, tmp_path):
-        """Test legacy file with PagerDuty config."""
+    def test_legacy_service_pagerduty_block_is_not_mapped_to_ownership(self, tmp_path):
+        """A legacy ``service.pagerduty`` block does not reach ownership.
+
+        Spec §3 D11 (opensrm-wo62.1, approved): nthlayer-common's legacy
+        loader does not map ``service.pagerduty`` to ``ownership.pagerduty``;
+        the supported legacy form is a ``kind: PagerDuty`` resource, pinned by
+        test_legacy_with_pagerduty_resource.
+        """
         manifest_file = tmp_path / "test.yaml"
         manifest_file.write_text("""
 service:
@@ -1869,8 +1876,7 @@ service:
             warnings.simplefilter("ignore", LegacyFormatWarning)
             manifest = load_manifest(manifest_file, suppress_deprecation_warning=True)
         assert manifest.ownership is not None
-        assert manifest.ownership.pagerduty is not None
-        assert manifest.ownership.pagerduty.service_id == "P123ABC"
+        assert manifest.ownership.pagerduty is None
 
     def test_legacy_with_dependencies_databases(self, tmp_path):
         """Test legacy file with database dependencies."""

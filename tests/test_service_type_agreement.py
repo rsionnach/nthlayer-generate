@@ -33,75 +33,11 @@ import nthlayer_generate
 from nthlayer_generate.cli.init import SERVICE_TYPES
 from nthlayer_generate.specs.validator import validate_service_file
 
-# Values that must behave identically on both sides. Canonical types and
-# extension types are valid; aliases resolve; everything else is rejected.
-_ACCEPTED = sorted(VALID_SERVICE_TYPES) + ["x-web", "x-ml"] + sorted(SERVICE_TYPE_ALIASES)
-# NOT "web": since opensrm-ih0v it is an ALIAS that resolves to x-web, so it
-# appears in _ACCEPTED via SERVICE_TYPE_ALIASES. What must be rejected is
-# generate STORING it — pinned by test_generate_stores_x_web_for_a_web_input.
-_REJECTED = ["ml", "Web", "x-", "x-Web", "nonsense", ""]
-
-
-@pytest.mark.parametrize("service_type", _ACCEPTED)
-def test_generate_accepts_what_common_accepts(service_type: str):
-    """Anything nthlayer-common resolves, generate must accept.
-
-    Includes aliases: generate has always accepted them and must keep
-    doing so, because they resolve before validation on both sides.
-    """
-    assert resolve_service_type(service_type) is not None, (
-        f"test premise broken: nthlayer-common no longer accepts {service_type!r}"
-    )
-
-    manifest = ReliabilityManifest(name="svc", team="t", tier="critical", type=service_type)
-
-    assert manifest.type == resolve_service_type(service_type), (
-        f"generate stored {manifest.type!r} for input {service_type!r}, but "
-        f"nthlayer-common resolves it to {resolve_service_type(service_type)!r}"
-    )
-
-
-@pytest.mark.parametrize("service_type", _REJECTED)
-def test_generate_rejects_what_common_rejects(service_type: str):
-    """And the converse — generate must not be WIDER than common either.
-
-    ``ml`` is the live one: cli/init.py offers it in its type menu, and
-    neither generate's own validator nor nthlayer-common accepts it. That
-    is a separate pre-existing defect (its own bead), but this test pins
-    the boundary so closing it cannot silently widen generate.
-    """
-    assert resolve_service_type(service_type) is None, (
-        f"test premise broken: nthlayer-common now accepts {service_type!r}"
-    )
-
-    with pytest.raises(ValueError):
-        ReliabilityManifest(name="svc", team="t", tier="critical", type=service_type)
-
-
-def test_generate_stores_x_web_for_a_web_input():
-    """The concrete incompatibility, pinned.
-
-    An author writing ``type: web`` gets ``x-web`` from nthlayer-common.
-    Generate previously stored ``web`` and then rejected ``x-web``, so a
-    manifest that round-tripped through common could not be read back.
-    """
-    manifest = ReliabilityManifest(name="svc", team="t", tier="critical", type="web")
-
-    assert manifest.type == "x-web"
-
-
-def test_generate_does_not_store_aliases():
-    """Aliases are input conveniences, never stored values.
-
-    generate's specs/models.py listed ``background-job`` and ``pipeline``
-    as VALID types rather than merely as aliases, so generate would have
-    accepted a manifest that *stored* one — which schema.json rejects and
-    nthlayer-common's design explicitly prevents.
-    """
-    for alias, canonical in SERVICE_TYPE_ALIASES.items():
-        manifest = ReliabilityManifest(name="svc", team="t", tier="critical", type=alias)
-        assert manifest.type == canonical
-        assert manifest.type not in SERVICE_TYPE_ALIASES
+# The accept/reject/stores-x-web/no-stored-alias tests that compared
+# generate's manifest model with nthlayer-common's were deleted with
+# generate's model (opensrm-wo62.1): generate now uses common's model, so
+# they compared common with itself. common pins that boundary in
+# tests/test_manifest_service_type.py.
 
 
 @pytest.mark.parametrize("service_type", ["x-web", "worker", "background-job"])

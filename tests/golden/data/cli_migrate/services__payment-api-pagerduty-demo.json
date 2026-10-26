@@ -1,6 +1,6 @@
 {
   "exit": 0,
   "files": {
-    "payment-api.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: payment-api-pagerduty-demo.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: payment-api\n  team: payments\n  tier: critical\nspec:\n  type: api\n  slos:\n    availability:\n      target: 99.95\n      window: 30d\n    latency-p95:\n      target: 99.0\n      window: 30d\n  dependencies:\n  - name: payments-db\n    type: database\n    critical: true\n  - name: session-cache\n    type: database\n    critical: false\n  ownership:\n    team: payments\n"
+    "payment-api.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: payment-api-pagerduty-demo.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: payment-api\n  team: payments\n  tier: critical\nspec:\n  type: api\n  slos:\n    availability:\n      type: availability\n      target: 99.95\n      window: 30d\n    latency-p95:\n      type: latency\n      target: 99.0\n      window: 30d\n  dependencies:\n  - name: payments-db\n    type: database\n    critical: true\n  - name: session-cache\n    type: database\n    critical: false\n  ownership:\n    team: payments\n"
   }
 }

@@ -28,7 +28,8 @@ def _legacy_to_srm_v1(manifest: ReliabilityManifest) -> dict[str, Any]:
     A port of generate's ``ReliabilityManifest.to_dict`` (opensrm-wo62.1, D7)
     over nthlayer-common's model, for the fields common's legacy parser
     populates: name, team, tier, type, description, labels, annotations,
-    SLOs, dependencies and ownership. ``contract`` and ``instrumentation``
+    SLOs (with their ``type``, which to_dict omitted), dependencies and
+    ownership. ``contract`` and ``instrumentation``
     are not ported: a legacy ``service:`` file has neither, and migrate only
     serialises legacy input.
 
@@ -60,7 +61,11 @@ def _legacy_to_srm_v1(manifest: ReliabilityManifest) -> dict[str, Any]:
     if manifest.slos:
         result["spec"]["slos"] = {}
         for slo in manifest.slos:
+            # ``type`` always: common's srm/v1 parser infers it only from a
+            # few names and indicator shapes, and rejects the file otherwise
+            # (``_infer_slo_type``) — six shipped legacy examples included.
             slo_data: dict[str, Any] = {
+                "type": slo.slo_type,
                 "target": slo.target,
                 "window": slo.window,
             }

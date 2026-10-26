@@ -72,3 +72,49 @@ def test_port_writes_the_resolved_type(tmp_path: Path) -> None:
     ported = _legacy_to_srm_v1(load_manifest(path, suppress_deprecation_warning=True))
 
     assert ported["spec"]["type"] == "x-web"
+
+
+# Every shipped legacy manifest: the 17 under examples/services/ plus the three
+# legacy files under examples/uat/ (the srm/v1 one there is excluded by name).
+_SHIPPED_LEGACY = sorted((REPO / "examples" / "services").glob("*.yaml")) + [
+    REPO / "examples" / "uat" / n
+    for n in ("payment-api.yaml", "payment-api-with-slas.yaml", "payment-api-partial-slas.yaml")
+]
+# examples/services/analytics-stream.yaml declares ``type: stream-processor``,
+# which common's legacy loader rejects before migrate ever runs
+# (checkpoint-B-coverage.md §1). Named, not filtered by catching errors, so a
+# second unloadable example fails the count below instead of vanishing.
+_UNLOADABLE = {REPO / "examples" / "services" / "analytics-stream.yaml"}
+_ROUND_TRIP = [p for p in _SHIPPED_LEGACY if p not in _UNLOADABLE]
+
+
+def test_round_trip_covers_every_loadable_legacy_example() -> None:
+    assert all(p.is_file() for p in _SHIPPED_LEGACY)
+    assert len(_ROUND_TRIP) >= 19
+    for path in _UNLOADABLE:
+        with pytest.raises(ValueError, match="stream-processor"):
+            load_manifest(path, suppress_deprecation_warning=True)
+    # Template-only examples (api-minimal, ...) declare no SLOs, so the SLO
+    # assertion below is vacuous for them; most examples must still carry some.
+    with_slos = [p for p in _ROUND_TRIP if load_manifest(p, suppress_deprecation_warning=True).slos]
+    assert len(with_slos) >= 10
+
+
+def _slo_set(manifest: Any) -> set[tuple[str, str, float, str]]:
+    return {(s.name, s.slo_type, s.target, s.window) for s in manifest.slos}
+
+
+@pytest.mark.parametrize(
+    "path", _ROUND_TRIP, ids=[f"{p.parent.name}/{p.stem}" for p in _ROUND_TRIP]
+)
+def test_migrated_file_loads_in_common_with_the_same_slos(path: Path, tmp_path: Path) -> None:
+    """opensrm-wo62.1 correctness C1: common's srm/v1 parser requires an SLO
+    ``type`` it cannot infer from the name (parser/v1.py ``_infer_slo_type``),
+    so the written file must carry it or ``load_manifest`` rejects it."""
+    legacy = load_manifest(path, suppress_deprecation_warning=True)
+
+    out = tmp_path / f"{legacy.name}.reliability.yaml"
+    out.write_text(yaml.safe_dump(_legacy_to_srm_v1(legacy), sort_keys=False), encoding="utf-8")
+    migrated = load_manifest(out)
+
+    assert _slo_set(migrated) == _slo_set(legacy)

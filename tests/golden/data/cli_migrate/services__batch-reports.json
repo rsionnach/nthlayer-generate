@@ -1,6 +1,6 @@
 {
   "exit": 0,
   "files": {
-    "batch-reports.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: batch-reports.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: batch-reports\n  team: data\n  tier: low\nspec:\n  type: api\n  slos:\n    report-success-rate:\n      target: 95.0\n      window: 30d\n  dependencies:\n  - name: analytics-db\n    type: database\n    critical: false\n  - name: reports-storage\n    type: database\n    critical: false\n  ownership:\n    team: data\n"
+    "batch-reports.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: batch-reports.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: batch-reports\n  team: data\n  tier: low\nspec:\n  type: api\n  slos:\n    report-success-rate:\n      type: availability\n      target: 95.0\n      window: 30d\n  dependencies:\n  - name: analytics-db\n    type: database\n    critical: false\n  - name: reports-storage\n    type: database\n    critical: false\n  ownership:\n    team: data\n"
   }
 }

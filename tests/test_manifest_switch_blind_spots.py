@@ -5,12 +5,12 @@ divergences no golden pins: D6 (``${type}``), D3 (``alerting``), D4
 (contracts beyond the single srm/v1 one), G5 at ``validate`` and G1 in the
 sloth and dashboard SLI. These tests are the only check on them.
 
-They are written against the pre-switch consumers (generate's own manifest
-stack) and must pass UNCHANGED after plan Task 11 moves every consumer onto
-nthlayer-common's model. ``SWITCHED`` tells the two runs apart by whether
-generate's loader still exists, so the one file serves both; a test asserts
-a different value on each side only where the spec sanctions the change
-(spec §5.2 for docs/backstage, §6.3 G1 and G5), and says so.
+They were first written against the pre-switch consumers (generate's own
+manifest stack) and passed unchanged once plan Task 11 moved every consumer
+onto nthlayer-common's model. The switch is done, so the pre-switch branches
+are gone; the post-switch expectations remain, and where they differ from the
+old behaviour it is because the spec sanctions the change (spec §5.2 for
+docs/backstage, §6.3 G1 and G5), noted at each test.
 
 Expected values come from shipped examples, the OpenSRM schema and spec, and
 documented formats — never from running the code under test. Every fixture
@@ -68,38 +68,27 @@ API_CRITICAL = EX / "opensrm" / "api-critical.reliability.yaml"  # f252974
 LEGACY_WITH_DEPS = EX / "services" / "payment-api-with-deps.yaml"  # 0331eff
 V2_API_FULL = OPENSRM / "spec" / "v2" / "examples" / "migration" / "api-full-v2.yaml"  # 0530688
 
-# True once plan Task 11 has deleted generate's loader and every consumer
-# takes nthlayer-common's ReliabilityManifest.
-SWITCHED = importlib.util.find_spec("nthlayer_generate.specs.loader") is None
-
-
 def load(path: Path) -> Any:
-    """Load *path* with the loader the consumers take on this side of the switch."""
-    if SWITCHED:
-        from nthlayer_common.manifest import load_manifest
-    else:
-        from nthlayer_generate.specs.loader import load_manifest  # type: ignore[no-redef]
+    """Load *path* with nthlayer-common's loader, which every consumer now uses."""
+    from nthlayer_common.manifest import load_manifest
+
     return load_manifest(path, suppress_deprecation_warning=True)
 
 
 def parsed_alerting(manifest: Any) -> AlertingConfig | None:
-    """The manifest's parsed alerting block: at load before, at use after (D3)."""
-    if SWITCHED:
-        from nthlayer_generate.specs.alerting import manifest_alerting
+    """The manifest's parsed alerting block, parsed at use rather than at load (D3)."""
+    from nthlayer_generate.specs.alerting import manifest_alerting
 
-        return manifest_alerting(manifest)
-    return manifest.alerting  # type: ignore[no-any-return]
+    return manifest_alerting(manifest)
 
 
-def test_switch_detection_agrees_across_the_retired_stack() -> None:
-    # Task 11 deletes specs/manifest.py, specs/loader.py and
-    # specs/opensrm_parser.py together; a half-done switch would make SWITCHED
-    # pick the wrong side's expectations.
+def test_retired_manifest_stack_is_absent() -> None:
     retired = [
-        importlib.util.find_spec(f"nthlayer_generate.specs.{m}") is None
+        m
         for m in ("manifest", "loader", "opensrm_parser")
+        if importlib.util.find_spec(f"nthlayer_generate.specs.{m}") is not None
     ]
-    assert retired == [SWITCHED] * 3
+    assert retired == []
 
 
 def _read(path: Path) -> Any:
@@ -113,14 +102,14 @@ def _write(directory: Path, name: str, data: Any) -> Path:
 
 
 def _with_both_query_forms(slo: dict[str, Any], query: str) -> None:
-    """Put *query* where both loaders read it.
+    """Put *query* in both srm/v1 query forms.
 
-    generate's srm/v1 parser reads only a top-level ``query``
-    (specs/opensrm_parser.py:237); common's reads only ``indicator.query``
-    (nthlayer_common parser/v1.py, opensrm-0i5h). Plan Task 11 moves the
-    shipped UAT example to the nested form in the switch commit (spec §4.2);
-    a fixture that must pass on both sides carries the identical text in
-    both places, so the query itself never differs between the two runs.
+    generate's former parser read only a top-level ``query`` (the deleted
+    specs/opensrm_parser.py, historical); common's reads only
+    ``indicator.query`` (nthlayer_common parser/v1.py, opensrm-0i5h). The
+    switch commit moved the shipped UAT example to the nested form (spec
+    §4.2); the fixtures still carry the identical text in both places, so
+    the query never differs from the shipped one.
     """
     slo["query"] = query
     slo["indicator"] = {"query": query}
@@ -213,8 +202,8 @@ def _documented_rules() -> list[SpecAlertRule]:
 
 def _srm_with_alerting(directory: Path, block: Any) -> Path:
     """examples/opensrm/api-critical.reliability.yaml @f252974, plus
-    ``spec.alerting: <block>`` (srm/v1 reads it there: generate
-    specs/opensrm_parser.py:143, common parser/v1.py:124)."""
+    ``spec.alerting: <block>`` (srm/v1 reads it there: common parser/v1.py:124;
+    generate's former parser, since deleted, did the same)."""
     data = _read(API_CRITICAL)
     data["spec"]["alerting"] = block
     return _write(directory, "payment-api.reliability.yaml", data)
@@ -475,17 +464,13 @@ def test_docs_and_backstage_ignore_a_valid_alerting_block(tmp_path: Path) -> Non
 
 
 def test_malformed_block_at_docs_and_backstage(tmp_path: Path) -> None:
-    """Before: rejected at load. After: accepted, because load no longer parses
-    ``alerting`` and neither generator reads it (spec §5.2, Review Focus 6)."""
+    """Accepted, because load no longer parses ``alerting`` and neither generator
+    reads it (spec §5.2, Review Focus 6). The former loader rejected it at load."""
     path = _srm_malformed(tmp_path)
     docs = generate_service_docs(path, tmp_path / "docs")
     stage = generate_backstage_entity(path, tmp_path / "backstage")
-    if SWITCHED:
-        assert docs.success, docs.error
-        assert stage.success, stage.error
-    else:
-        assert not docs.success
-        assert not stage.success
+    assert docs.success, docs.error
+    assert stage.success, stage.error
 
 
 # =============================================================================
@@ -625,7 +610,7 @@ def test_legacy_critical_dependencies_without_contract_are_warned() -> None:
     manifest = load(LEGACY_WITH_DEPS)
     warnings = validate_dependency_expectations(manifest, ContractRegistry())
 
-    expected = {"postgres-main", "auth-service"} if SWITCHED else {"postgres-main"}
+    expected = {"postgres-main", "auth-service"}
     warned = {
         d for d in ("postgres-main", "redis-cache", "auth-service") if _no_contract(warnings, d)
     }
@@ -706,14 +691,8 @@ def test_sloth_latency_sli_with_and_without_an_explicit_type(tmp_path: Path) -> 
     assert explicit["latency-p95"]["error_query"]
     assert explicit["latency-p95"]["total_query"]
 
-    if SWITCHED:
-        # G1: `latency-p95` is now inferred `latency` — the declared form.
-        assert absent["latency-p95"] == explicit["latency-p95"]
-    else:
-        # Before: no type, so the name is the indicator type, which is not
-        # `latency`; the generic branch leaves the error query empty.
-        assert absent["latency-p95"]["error_query"] == ""
-        assert absent["latency-p95"] != explicit["latency-p95"]
+    # G1: `latency-p95` is inferred `latency` — the declared form.
+    assert absent["latency-p95"] == explicit["latency-p95"]
 
 
 def test_dashboard_slo_panels_do_not_depend_on_an_explicit_type(tmp_path: Path) -> None:

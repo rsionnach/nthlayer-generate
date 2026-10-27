@@ -93,7 +93,7 @@ class TestOpenSRMParser:
         assert manifest.team == "payments"
         assert manifest.tier == "critical"
         assert manifest.type == "api"
-        assert manifest.source_format == SourceFormat.OPENSRM
+        assert manifest.source_format == SourceFormat.SRM_V1
 
     def test_parse_opensrm_with_slos(self):
         """Test parsing OpenSRM with SLO definitions."""
@@ -491,7 +491,7 @@ spec:
 
         manifest = load_manifest(manifest_file, format="opensrm")
         assert manifest.name == "test-api"
-        assert manifest.source_format == SourceFormat.OPENSRM
+        assert manifest.source_format == SourceFormat.SRM_V1
 
     def test_load_explicit_legacy_format(self, tmp_path):
         """Test loading with explicit legacy format."""
@@ -602,7 +602,7 @@ resources:
 
         # Verify new file loads as OpenSRM
         migrated = load_manifest(output_file)
-        assert migrated.source_format == SourceFormat.OPENSRM
+        assert migrated.source_format == SourceFormat.SRM_V1
         assert migrated.name == "payment-api"
         assert migrated.team == "payments"
 
@@ -644,7 +644,7 @@ resources:
             yaml.dump(opensrm_data, f, default_flow_style=False, sort_keys=False)
 
         migrated = load_manifest(output_file)
-        assert migrated.source_format == SourceFormat.OPENSRM
+        assert migrated.source_format == SourceFormat.SRM_V1
         assert len(migrated.slos) >= 0  # SLOs may or may not be preserved depending on parsing
 
     def test_migrate_type_aliases(self, tmp_path):
@@ -683,7 +683,7 @@ spec:
 """)
 
         manifest = load_manifest(opensrm_file)
-        assert manifest.source_format == SourceFormat.OPENSRM
+        assert manifest.source_format == SourceFormat.SRM_V1
         # No migration needed
 
     def test_round_trip_preserves_data(self, tmp_path):
@@ -1673,7 +1673,7 @@ spec:
   type: api
 """)
         manifest = load_manifest(manifest_file, format="opensrm")
-        assert manifest.source_format == SourceFormat.OPENSRM
+        assert manifest.source_format == SourceFormat.SRM_V1
 
     def test_load_with_force_format_legacy(self, tmp_path):
         """Test forcing legacy format."""

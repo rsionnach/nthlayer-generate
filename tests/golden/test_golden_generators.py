@@ -26,19 +26,12 @@ from typing import Any
 
 import pytest
 import yaml
-from nthlayer_common.manifest import ReliabilityManifest, load_manifest
 
 from nthlayer_generate.dashboards.manifest_builder import build_dashboard_from_manifest
-from nthlayer_generate.dependencies.models import (
-    DependencyGraph,
-    DependencyType,
-    ResolvedDependency,
-)
 from nthlayer_generate.generators.alerts import generate_alerts_from_manifest
 from nthlayer_generate.generators.backstage import generate_backstage_entity
 from nthlayer_generate.generators.docs import generate_service_docs
 from nthlayer_generate.generators.sloth import generate_sloth_from_manifest
-from nthlayer_generate.identity import ServiceIdentity
 from nthlayer_generate.loki.generator import generate_loki_alerts_from_manifest
 from nthlayer_generate.metrics.recommender import recommend_metrics_from_manifest
 from nthlayer_generate.policies.engine import PolicyEngine
@@ -53,13 +46,17 @@ from nthlayer_generate.specs.contracts import ContractRegistry
 from nthlayer_generate.specs.validator import validate_service_file
 from nthlayer_generate.topology.enrichment import build_topology
 
-from ._corpus import EX, LEGACY, SRM_V1, V2, manifest_id
+from ._corpus import (
+    EX,
+    LEGACY,
+    SRM_V1,
+    V2,
+    _error,
+    _graph_from_declared_dependencies,
+    _load,
+    manifest_id,
+)
 from ._golden import check
-
-
-def _load(path: Path) -> ReliabilityManifest:
-    # Same call as the load cell (test_golden_load.load_record).
-    return load_manifest(path, suppress_deprecation_warning=True)
 
 
 def _loads(path: Path) -> bool:
@@ -74,10 +71,6 @@ CASES: tuple[tuple[str, Path], ...] = tuple(
     (manifest_id(p), p) for p in SRM_V1 + LEGACY + V2 if _loads(p)
 )
 IDS = [i for i, _ in CASES]
-
-
-def _error(e: Exception) -> dict[str, Any]:
-    return {"error": [type(e).__name__, str(e)]}
 
 
 def _read_yaml(path: Path | None) -> Any:
@@ -179,33 +172,6 @@ def simulate(path: Path, tmp: Path) -> Any:
         "dependency_models": dependency_models,
         "result": result.to_dict(),
     }
-
-
-def _graph_from_declared_dependencies(m: ReliabilityManifest) -> DependencyGraph:
-    """The service plus one edge per dependency the manifest declares.
-
-    This is constructed input, not a manifest fixture: it is derived only
-    from the manifest's own ``dependencies``, so ``build_topology`` has an
-    edge to enrich for each one. Every edge is ``SERVICE`` with confidence
-    1.0 from a ``"manifest"`` provider — fixed values, so the golden varies
-    only with what the manifest declares (names, critical, SLO contracts).
-    """
-    graph = DependencyGraph()
-    source = ServiceIdentity(canonical_name=m.name)
-    graph.add_service(source)
-    for dep in m.dependencies:
-        target = ServiceIdentity(canonical_name=dep.name)
-        graph.add_service(target)
-        graph.add_edge(
-            ResolvedDependency(
-                source=source,
-                target=target,
-                dep_type=DependencyType.SERVICE,
-                confidence=1.0,
-                providers=["manifest"],
-            )
-        )
-    return graph
 
 
 def topology(path: Path, tmp: Path) -> Any:

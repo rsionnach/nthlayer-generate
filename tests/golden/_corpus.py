@@ -12,8 +12,17 @@ never from the code under test.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import yaml
+from nthlayer_common.manifest import ReliabilityManifest, load_manifest
+
+from nthlayer_generate.dependencies.models import (
+    DependencyGraph,
+    DependencyType,
+    ResolvedDependency,
+)
+from nthlayer_generate.identity import ServiceIdentity
 
 # parents: [0]=golden/ [1]=tests/ [2]=nthlayer-generate/ [3]=<ecosystem>/
 REPO = Path(__file__).resolve().parents[2]
@@ -99,3 +108,42 @@ def manifest_id(path: Path) -> str:
 
 
 ALL: tuple[Path, ...] = SRM_V1 + LEGACY + NON_MANIFESTS + V2
+
+
+# --- helpers shared by the generator and CLI cells ---------------------------
+
+
+def _load(path: Path) -> ReliabilityManifest:
+    # Same call as the load cell (test_golden_load.load_record).
+    return load_manifest(path, suppress_deprecation_warning=True)
+
+
+def _error(e: Exception) -> dict[str, Any]:
+    return {"error": [type(e).__name__, str(e)]}
+
+
+def _graph_from_declared_dependencies(m: ReliabilityManifest) -> DependencyGraph:
+    """The service plus one edge per dependency the manifest declares.
+
+    This is constructed input, not a manifest fixture: it is derived only
+    from the manifest's own ``dependencies``, so ``build_topology`` has an
+    edge to enrich for each one. Every edge is ``SERVICE`` with confidence
+    1.0 from a ``"manifest"`` provider — fixed values, so the golden varies
+    only with what the manifest declares (names, critical, SLO contracts).
+    """
+    graph = DependencyGraph()
+    source = ServiceIdentity(canonical_name=m.name)
+    graph.add_service(source)
+    for dep in m.dependencies:
+        target = ServiceIdentity(canonical_name=dep.name)
+        graph.add_service(target)
+        graph.add_edge(
+            ResolvedDependency(
+                source=source,
+                target=target,
+                dep_type=DependencyType.SERVICE,
+                confidence=1.0,
+                providers=["manifest"],
+            )
+        )
+    return graph

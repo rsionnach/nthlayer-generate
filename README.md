@@ -143,7 +143,7 @@ $ nthlayer validate service.yaml --policies policies.yaml
 generate no longer carries its own manifest model. It reads manifests through
 [`nthlayer_common.manifest`](https://github.com/rsionnach/nthlayer-common), the
 same model the rest of the ecosystem uses, so **OpenSRM v2 manifests are
-accepted** alongside `opensrm/v1`.
+accepted** alongside `srm/v1`.
 
 **Breaking, for code that imports generate:**
 
@@ -161,9 +161,11 @@ accepted** alongside `opensrm/v1`.
 - srm/v1 SLOs declare PromQL under `indicator.query`. A top-level `query:` is
   not read (opensrm-0i5h).
 - Legacy `service.pagerduty` is no longer mapped to ownership. Declare a
-  `kind: PagerDuty` resource instead (OpenSRM spec section 3, D11).
-- `calibration` and `feedback_latency` are judgment thresholds; generated
-  recording rules are unchanged.
+  `kind: PagerDuty` resource instead (OpenSRM spec section 3).
+- `calibration` and `feedback_latency` are judgment thresholds. Recording-rule
+  names are unchanged; the rules are emitted only when
+  `maximum_expected_calibration_error` (calibration) or `maximum_p50`
+  (feedback latency) is declared.
 
 ## ⚠️ Upgrading: `type: web` becomes `x-web`
 

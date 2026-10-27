@@ -43,9 +43,9 @@ from nthlayer_generate.orchestration.registry import OrchestratorContext
 from nthlayer_generate.policies.engine import PolicyEngine
 from nthlayer_generate.policies.models import PolicyReport
 
-from ._corpus import EX
+from ._corpus import EX, _error, _graph_from_declared_dependencies, _load
 from ._golden import check
-from .test_golden_generators import CASES, IDS, _error, _graph_from_declared_dependencies, _load
+from .test_golden_generators import CASES, IDS
 
 POLICIES = EX / "policies.yaml"
 

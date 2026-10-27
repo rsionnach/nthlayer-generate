@@ -8,6 +8,14 @@ fails, so a run that wrote goldens can never be mistaken for a passing run
 Goldens are never regenerated to make a test pass. A golden diff is the
 output under review.
 
+Updating goldens:
+
+1. Run the golden tests with ``NTHLAYER_UPDATE_GOLDENS=1``. That run fails by
+   design, so it can never be mistaken for a pass.
+2. Rerun without the variable; it must pass.
+3. Review ``git diff tests/golden/data`` as the change under review and get it
+   approved before committing.
+
 A test module that calls ``check()`` declares the goldens it produces as a
 module-level ``GOLDEN_CELLS: dict[str, tuple[str, ...]]`` (cell -> manifest
 ids), built from the same list it parametrises over. ``expected_goldens()``
@@ -218,7 +226,7 @@ def check(cell: str, manifest_id: str, value: object, *, tmp: Path | None = None
     if not path.is_file():
         raise AssertionError(
             f"missing golden {path.relative_to(REPO)}; write it with {UPDATE_ENV}=1 "
-            "from unchanged code"
+            "from code whose output you intend to pin"
         )
     expected = path.read_text(encoding="utf-8")
     if actual != expected:

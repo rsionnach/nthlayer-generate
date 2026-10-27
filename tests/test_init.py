@@ -614,7 +614,7 @@ class TestServiceNameRuleIsShared:
 
     They did, and `nthlayer init 1-svc --team ops` exited 0 writing a file that
     `nthlayer validate` then refused. The divergence itself is recorded once,
-    at the rule in specs/manifest.py.
+    at the rule in specs/names.py.
 
     The table and its provenance live in tests/service_name_cases.py, shared
     with the setup-wizard tests that assert the same rule.

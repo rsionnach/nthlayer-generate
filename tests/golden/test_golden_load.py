@@ -46,14 +46,12 @@ def load_record(path: Path) -> dict[str, object]:
     record["source_format"] = manifest.source_format
     record["type"] = manifest.type
     # The spelling the file used, before alias resolution (common 5.4.0).
-    record["authored_type"] = getattr(manifest, "authored_type", None)
+    record["authored_type"] = manifest.authored_type
     record["slos"] = [
         [s.name, s.slo_type, s.target, s.window, bool(s.indicator_query)] for s in manifest.slos
     ]
-    # Generate's model has no judgment_thresholds today; common's does.
-    # Recorded only when non-empty, so the switch to common adds the key only
-    # to the manifests that declare thresholds, not to every loadable golden.
-    thresholds = getattr(manifest, "judgment_thresholds", ())
+    # Key added only when non-empty so the golden shape stays stable.
+    thresholds = manifest.judgment_thresholds
     if thresholds:
         record["judgment_thresholds"] = list(thresholds)
     record["dependencies"] = [[d.name, d.type, d.critical] for d in manifest.dependencies]

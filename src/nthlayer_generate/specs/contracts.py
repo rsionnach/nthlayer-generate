@@ -13,12 +13,23 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
-from typing import Any
 
 import structlog
-from nthlayer_common.manifest import ReliabilityContract, ReliabilityManifest, SourceFormat
+from nthlayer_common.manifest import (
+    Dependency,
+    ReliabilityContract,
+    ReliabilityManifest,
+    SourceFormat,
+)
 
 logger = structlog.get_logger()
+
+# Decimal places for comparing and printing availabilities: enough to absorb
+# float noise (99.9 / 100 is 0.9990000000000001) without hiding a real gap.
+# Ratios are rounded to _RATIO_PLACES; their percentage form, which is the
+# ratio times 100, to two fewer.
+_RATIO_PLACES = 12
+_PCT_PLACES = _RATIO_PLACES - 2
 
 
 class ContractRegistry:
@@ -111,7 +122,7 @@ class ContractRegistry:
         return registry
 
 
-def _expected_ratio(manifest: ReliabilityManifest, dep: Any) -> float | None:
+def _expected_ratio(manifest: ReliabilityManifest, dep: Dependency) -> float | None:
     """A dependency's expected availability as a ratio, or None if undeclared.
 
     opensrm/v2 stores ``expected_availability`` as a Ratio (0.9995, schema.json
@@ -128,7 +139,7 @@ def _expected_ratio(manifest: ReliabilityManifest, dep: Any) -> float | None:
 
 def _pct(ratio: float) -> float:
     """Ratio as the percentage the warnings print, rounded to hide float noise."""
-    return round(ratio * 100, 10)
+    return round(ratio * 100, _PCT_PLACES)
 
 
 def validate_dependency_expectations(
@@ -154,7 +165,7 @@ def validate_dependency_expectations(
             expected is not None
             and promised is not None
             # rounded: 99.9 / 100 is 0.9990000000000001, which must not exceed 0.999
-            and round(expected, 12) > round(promised, 12)
+            and round(expected, _RATIO_PLACES) > round(promised, _RATIO_PLACES)
         ):
             # Both are ratios here; the message prints percentages.
             warnings.append(

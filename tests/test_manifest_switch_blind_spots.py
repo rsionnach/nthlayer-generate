@@ -574,11 +574,6 @@ def test_multi_contract_provider_is_bounded_by_its_weakest_promise(tmp_path: Pat
     """Spec §5.2: provider availability is the minimum promise over the
     service's contracts. Promises 0.9995 and 0.99: expecting 99.5% exceeds the
     weaker one (99.0%) though not the stronger (99.95%), so it warns.
-
-    Loaded with nthlayer-common directly: generate's model has a single
-    ``contract`` and cannot represent this, so it fails until the registry
-    reads ``contracts`` (plan Task 11, which absorbed Task 9). Removing this
-    marker when it XPASSes is the one edit Task 11 may make to this file.
     """
     from nthlayer_common.manifest import load_manifest
 

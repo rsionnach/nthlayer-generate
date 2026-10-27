@@ -1,4 +1,4 @@
-"""Load records: what today's loader makes of every corpus file (cell ``load``).
+"""Load records: what nthlayer-common's `load_manifest` makes of every corpus file (cell ``load``).
 
 One golden per file: whether it loads, the exception if not, every warning
 emitted, and the manifest fields the later cells depend on. Failures are

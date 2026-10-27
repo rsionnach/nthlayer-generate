@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.1.1](https://github.com/rsionnach/nthlayer-generate/compare/v3.1.0...v3.1.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* require nthlayer-common 5.6.0; re-pin template-user goldens (opensrm-wo62.4.1) ([c47b808](https://github.com/rsionnach/nthlayer-generate/commit/c47b808d63b3bae3d3c3979abd80a316fcb4f0d7))
+* require nthlayer-common 5.6.0; re-pin template-user goldens (opensrm-wo62.4.1) ([c0aaabc](https://github.com/rsionnach/nthlayer-generate/commit/c0aaabc6bbb5072f1e86724704e072b87761328a))
+
 ## [3.1.0](https://github.com/rsionnach/nthlayer-generate/compare/v3.0.0...v3.1.0) (2026-10-27)
 
 

@@ -14,15 +14,72 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import yaml
-from nthlayer_common.manifest import SRM_V1_JUDGMENT_THRESHOLD_TYPES, SourceFormat, load_manifest
+from nthlayer_common.manifest import (
+    SRM_V1_JUDGMENT_THRESHOLD_TYPES,
+    SourceFormat,
+    duration_seconds,
+    load_manifest,
+)
 
 from nthlayer_generate.cli.ux import console, error, header, success, warning
 
 if TYPE_CHECKING:
-    from nthlayer_common.manifest import ReliabilityManifest
+    from nthlayer_common.manifest import JudgmentThreshold, ReliabilityManifest
 
 
-def _legacy_to_srm_v1(manifest: ReliabilityManifest) -> dict[str, Any]:
+# What srm/v1 can carry per threshold type, the inverse of nthlayer_common's
+# srm_v1_threshold (manifest/thresholds.py): calibration is one ECE bound plus a
+# window, over a fixed 10 bins; feedback_latency is one maximum_p50 over a fixed
+# 30d window.
+_SRM_V1_CALIBRATION_BINS = 10
+_SRM_V1_FEEDBACK_LATENCY_WINDOW = "30d"
+
+
+def _threshold_to_srm_v1(
+    threshold: JudgmentThreshold, lost: list[str]
+) -> dict[str, Any] | None:
+    """The srm/v1 ``spec.slos`` entry for *threshold*, or None if it has no srm/v1 form.
+
+    Anything srm/v1 cannot express is appended to *lost* as a message naming the
+    threshold and the bound, never dropped silently. No ``type`` key:
+    srm/v1 rejects one on these names.
+    """
+    kind = threshold.type
+    bounds = dict(threshold.bounds)
+    entry: dict[str, Any] | None = None
+    if kind == "calibration":
+        ece = bounds.pop("maximum_expected_calibration_error", None)
+        if ece is not None:
+            entry = {"target": ece}
+            if threshold.measurement.window:
+                entry["window"] = threshold.measurement.window
+            if threshold.measurement.bins != _SRM_V1_CALIBRATION_BINS:
+                lost.append(
+                    f"calibration: bins={threshold.measurement.bins} (srm/v1 fixes "
+                    f"{_SRM_V1_CALIBRATION_BINS})"
+                )
+    elif kind == "feedback_latency":
+        p50 = bounds.pop("maximum_p50", None)
+        if isinstance(p50, str):
+            seconds = duration_seconds(p50)
+            if seconds.is_integer():
+                entry = {"target": int(seconds), "unit": "s"}
+            else:
+                entry = {"target": int(round(seconds * 1000)), "unit": "ms"}
+        elif p50 is not None:
+            lost.append(f"feedback_latency: maximum_p50={p50!r} (not a Duration)")
+    for bound in sorted(bounds):
+        lost.append(f"{kind}: {bound}={bounds[bound]!r} (no srm/v1 form)")
+    if entry is None and kind in ("calibration", "feedback_latency") and not bounds:
+        lost.append(f"{kind}: no carriable bound")
+    if kind not in ("calibration", "feedback_latency"):
+        lost.append(f"{kind}: threshold type has no srm/v1 form")
+    return entry
+
+
+def _legacy_to_srm_v1(
+    manifest: ReliabilityManifest, lost: list[str] | None = None
+) -> dict[str, Any]:
     """Serialise a legacy-loaded manifest as an srm/v1 document.
 
     A port of generate's ``ReliabilityManifest.to_dict`` (opensrm-wo62.1, D7)
@@ -37,6 +94,11 @@ def _legacy_to_srm_v1(manifest: ReliabilityManifest) -> dict[str, Any]:
     file carries the canonical spelling the spec accepts (``x-web``, not
     ``web``). The authored spelling is for ``${type}`` substitution into
     queries, which is not this destination (opensrm-z3ab).
+
+    ``manifest.judgment_thresholds`` (calibration and feedback_latency, which
+    common's legacy parser lifts out of ``slos``) are written back as srm/v1
+    ``spec.slos`` entries. What srm/v1 cannot express is appended to *lost*
+    (when given) rather than dropped silently [opensrm-wo62.1].
     """
     result: dict[str, Any] = {
         "apiVersion": "srm/v1",
@@ -58,7 +120,7 @@ def _legacy_to_srm_v1(manifest: ReliabilityManifest) -> dict[str, Any]:
     if manifest.annotations:
         result["metadata"]["annotations"] = manifest.annotations
 
-    if manifest.slos:
+    if manifest.slos or manifest.judgment_thresholds:
         result["spec"]["slos"] = {}
         for slo in manifest.slos:
             # ``type`` always: common's srm/v1 parser infers it only from a
@@ -80,6 +142,15 @@ def _legacy_to_srm_v1(manifest: ReliabilityManifest) -> dict[str, Any]:
             if slo.description:
                 slo_data["description"] = slo.description
             result["spec"]["slos"][slo.name] = slo_data
+        threshold_lost: list[str] = []
+        for threshold in manifest.judgment_thresholds:
+            entry = _threshold_to_srm_v1(threshold, threshold_lost)
+            if entry is not None:
+                result["spec"]["slos"][threshold.type] = entry
+        if lost is not None:
+            lost.extend(threshold_lost)
+        if not result["spec"]["slos"]:
+            del result["spec"]["slos"]
 
     if manifest.dependencies:
         result["spec"]["dependencies"] = [
@@ -184,7 +255,10 @@ def migrate_command(
         return 0
 
     # Convert to OpenSRM format
-    opensrm_data = _legacy_to_srm_v1(manifest)
+    lost: list[str] = []
+    opensrm_data = _legacy_to_srm_v1(manifest, lost)
+    for item in lost:
+        warning(f"Judgment threshold not carried into srm/v1: {item}")
 
     # Generate output YAML
     yaml_output = yaml.dump(

@@ -157,3 +157,49 @@ def test_migrated_ai_gate_judgment_slos_load_as_thresholds(tmp_path: Path) -> No
         "calibration",
         "feedback_latency",
     }
+
+
+def _legacy_ai_gate(tmp_path: Path) -> Path:
+    """Same fixture provenance as the test above: payment-api.yaml's legacy shape
+    with ai-gate.reliability.yaml's calibration 0.05 / 30d and feedback_latency 3600 / 30d."""
+    data = yaml.safe_load(
+        (REPO / "examples" / "services" / "payment-api.yaml").read_text(encoding="utf-8")
+    )
+    data["service"]["type"] = "ai-gate"
+    data["resources"] = [
+        {"kind": "SLO", "name": name, "spec": {"objective": objective, "window": "30d"}}
+        for name, objective in (("calibration", 0.05), ("feedback_latency", 3600))
+    ]
+    src = tmp_path / "gate.yaml"
+    src.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    return src
+
+
+def test_migrated_thresholds_round_trip_with_equal_bounds_and_window(tmp_path: Path):
+    legacy = load_manifest(_legacy_ai_gate(tmp_path), suppress_deprecation_warning=True)
+    assert legacy.judgment_thresholds, "fixture no longer yields thresholds"
+    lost: list[str] = []
+    out = tmp_path / "gate.reliability.yaml"
+    out.write_text(yaml.safe_dump(_legacy_to_srm_v1(legacy, lost), sort_keys=False), encoding="utf-8")
+
+    migrated = load_manifest(out)
+
+    assert lost == []
+    assert migrated.judgment_thresholds == legacy.judgment_thresholds
+
+
+def test_threshold_srm_v1_cannot_carry_is_reported_not_dropped(tmp_path: Path):
+    import dataclasses
+
+    legacy = load_manifest(_legacy_ai_gate(tmp_path), suppress_deprecation_warning=True)
+    (latency,) = [t for t in legacy.judgment_thresholds if t.type == "feedback_latency"]
+    legacy.judgment_thresholds = [
+        dataclasses.replace(latency, bounds={**latency.bounds, "maximum_p95": "2h"})
+    ]
+    lost: list[str] = []
+
+    doc = _legacy_to_srm_v1(legacy, lost)
+
+    assert doc["spec"]["slos"]["feedback_latency"]["target"] == 3600
+    assert len(lost) == 1
+    assert "feedback_latency" in lost[0] and "maximum_p95" in lost[0]

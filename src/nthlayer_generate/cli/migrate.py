@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import yaml
-from nthlayer_common.manifest import SourceFormat, load_manifest
+from nthlayer_common.manifest import SRM_V1_JUDGMENT_THRESHOLD_TYPES, SourceFormat, load_manifest
 
 from nthlayer_generate.cli.ux import console, error, header, success, warning
 
@@ -64,11 +64,15 @@ def _legacy_to_srm_v1(manifest: ReliabilityManifest) -> dict[str, Any]:
             # ``type`` always: common's srm/v1 parser infers it only from a
             # few names and indicator shapes, and rejects the file otherwise
             # (``_infer_slo_type``) — six shipped legacy examples included.
-            slo_data: dict[str, Any] = {
-                "type": slo.slo_type,
-                "target": slo.target,
-                "window": slo.window,
-            }
+            # Key order is the written file's order: ``type`` first.
+            slo_data: dict[str, Any] = {}
+            # Except the names srm/v1 lifts into JudgmentThresholds: it
+            # rejects an explicit ``type`` on those (nthlayer_common
+            # SRM_V1_JUDGMENT_THRESHOLD_TYPES; manifest/thresholds.py).
+            if slo.name not in SRM_V1_JUDGMENT_THRESHOLD_TYPES:
+                slo_data["type"] = slo.slo_type
+            slo_data["target"] = slo.target
+            slo_data["window"] = slo.window
             if slo.unit:
                 slo_data["unit"] = slo.unit
             if slo.percentile:

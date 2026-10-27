@@ -118,3 +118,42 @@ def test_migrated_file_loads_in_common_with_the_same_slos(path: Path, tmp_path: 
     migrated = load_manifest(out)
 
     assert _slo_set(migrated) == _slo_set(legacy)
+
+
+def test_migrated_ai_gate_judgment_slos_load_as_thresholds(tmp_path: Path) -> None:
+    """opensrm-wo62.1 R5 edge-cases: srm/v1 lifts ``calibration`` and
+    ``feedback_latency`` into JudgmentThresholds and rejects an explicit
+    ``type`` on them (SRM_V1_JUDGMENT_THRESHOLD_TYPES, nthlayer_common
+    manifest/models.py; "srm/v1 'calibration' does not take 'type'",
+    manifest/thresholds.py). Fixture: the legacy ``resources: - kind: SLO``
+    shape of examples/services/payment-api.yaml with ``service.type: ai-gate``
+    and SLO names/values from examples/opensrm/ai-gate.reliability.yaml
+    (calibration 0.05 / 30d, feedback_latency 3600 / 30d)."""
+    data = yaml.safe_load(
+        (REPO / "examples" / "services" / "payment-api.yaml").read_text(encoding="utf-8")
+    )
+    data["service"]["type"] = "ai-gate"
+    data["resources"] = [
+        {
+            "kind": "SLO",
+            "name": name,
+            "spec": {
+                "objective": objective,
+                "window": "30d",
+                "indicator": {"type": name, "query": f"{name}{{service=\"${{service}}\"}}"},
+            },
+        }
+        for name, objective in (("calibration", 0.05), ("feedback_latency", 3600))
+    ]
+    src = tmp_path / "gate.yaml"
+    src.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    legacy = load_manifest(src, suppress_deprecation_warning=True)
+    out = tmp_path / "gate.reliability.yaml"
+    out.write_text(yaml.safe_dump(_legacy_to_srm_v1(legacy), sort_keys=False), encoding="utf-8")
+    migrated = load_manifest(out)
+
+    assert {t.type for t in migrated.get_judgment_thresholds()} == {
+        "calibration",
+        "feedback_latency",
+    }

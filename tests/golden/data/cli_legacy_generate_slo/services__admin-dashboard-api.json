@@ -70,5 +70,25 @@
       ],
       "version": "prometheus/v1"
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✓ Generated SLOs for admin-dashboard-api",
+    "  SLO count: 2",
+    "  Output: <tmp>/out/sloth/admin-dashboard-api.yaml",
+    "",
+    "Generated SLOs:",
+    "  • admin-dashboard-api-availability (99.5%)",
+    "  • admin-dashboard-api-latency-p95 (95.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/admin-dashboard-api.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/admin-dashboard-api.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
 }

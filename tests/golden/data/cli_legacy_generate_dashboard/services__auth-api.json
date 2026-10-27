@@ -493,5 +493,35 @@
       "message": "Auto-generated dashboard for auth-api",
       "overwrite": true
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/auth-api.yaml",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "  Service: auth-api",
+    "  Team: platform",
+    "  Tier: critical",
+    "  Type: api",
+    "  Resources: 5 defined",
+    "",
+    "  SLOs: 3",
+    "  Dependencies: 1",
+    "",
+    "Building dashboard...",
+    "  Mode: Overview panels (key metrics)",
+    "  Title: auth-api",
+    "  UID: auth-api-overview",
+    "  Panels: 0",
+    "",
+    "Writing dashboard to <tmp>/out/dashboard.json...",
+    "",
+    "Dashboard generated successfully!",
+    ""
+  ]
 }

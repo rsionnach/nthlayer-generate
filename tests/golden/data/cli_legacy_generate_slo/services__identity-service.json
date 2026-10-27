@@ -123,5 +123,26 @@
       ],
       "version": "prometheus/v1"
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✓ Generated SLOs for identity-service",
+    "  SLO count: 3",
+    "  Output: <tmp>/out/sloth/identity-service.yaml",
+    "",
+    "Generated SLOs:",
+    "  • identity-service-availability (99.99%)",
+    "  • identity-service-latency-p95 (99.5%)",
+    "  • identity-service-latency-p99 (98.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/identity-service.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/identity-service.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
 }

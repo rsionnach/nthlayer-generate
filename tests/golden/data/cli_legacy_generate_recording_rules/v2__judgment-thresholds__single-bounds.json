@@ -1,4 +1,16 @@
 {
   "exit": 1,
-  "files": {}
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Prometheus Recording Rules  │",
+    "╰──╯",
+    "",
+    "Service: <opensrm>/spec/v2/examples/judgment-thresholds/single-bounds.yaml",
+    "Output: <tmp>/out/recording-rules.yaml",
+    "",
+    "Parsing service specification...",
+    "✗ Error generating recording rules: Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/single-bounds.yaml"
+  ]
 }

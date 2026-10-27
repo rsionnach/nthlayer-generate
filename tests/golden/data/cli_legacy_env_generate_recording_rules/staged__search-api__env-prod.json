@@ -263,5 +263,44 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Prometheus Recording Rules  │",
+    "╰──╯",
+    "",
+    "Service: <tmp>/_staged/services/search-api.yaml",
+    "Environment: prod",
+    "Output: <tmp>/out/recording-rules.yaml",
+    "",
+    "Parsing service specification...",
+    "  Service: search-api",
+    "  Team: search",
+    "  Tier: critical",
+    "  Type: api",
+    "  SLOs: 6",
+    "",
+    "Building recording rules...",
+    "  Groups: 2",
+    "  Rules: 30",
+    "  • search-api_slo_metrics: 26 rules (interval: 30s)",
+    "  • search-api_health_metrics: 4 rules (interval: 30s)",
+    "",
+    "Writing recording rules to <tmp>/out/recording-rules.yaml...",
+    "",
+    "✓ Recording rules generated successfully!",
+    "",
+    "Next steps:",
+    "  1. Add to Prometheus configuration:",
+    "  rule_files:",
+    "  - <tmp>/out/recording-rules.yaml",
+    "",
+    "  2. Reload Prometheus:",
+    "  curl -X POST http://prometheus:9090/-/reload",
+    "",
+    "  3. Verify rules are loaded:",
+    "  curl http://prometheus:9090/api/v1/rules",
+    ""
+  ]
 }

@@ -431,5 +431,31 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/checkout-service.yaml",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "📊 Loading alerts for dependencies: mysql, redis",
+    "  ✓ mysql: 14 alerts (5 fixed)",
+    "  ✓ redis: 12 alerts (7 fixed)",
+    "",
+    "✅ Generated 26 total alerts",
+    "  Breakdown: mysql=14, redis=12",
+    "  Written to: <tmp>/out/alerts.yaml",
+    "",
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
+  ]
 }

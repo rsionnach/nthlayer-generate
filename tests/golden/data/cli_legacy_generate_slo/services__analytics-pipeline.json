@@ -99,5 +99,26 @@
       ],
       "version": "prometheus/v1"
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✓ Generated SLOs for analytics-pipeline",
+    "  SLO count: 3",
+    "  Output: <tmp>/out/sloth/analytics-pipeline.yaml",
+    "",
+    "Generated SLOs:",
+    "  • analytics-pipeline-success-rate (95.0%)",
+    "  • analytics-pipeline-freshness-p95 (90.0%)",
+    "  • analytics-pipeline-data-quality (99.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/analytics-pipeline.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/analytics-pipeline.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
 }

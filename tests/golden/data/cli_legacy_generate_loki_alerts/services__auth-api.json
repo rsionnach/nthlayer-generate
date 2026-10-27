@@ -187,5 +187,32 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/auth-api.yaml",
+    "",
+    "Service: auth-api",
+    "Type: api",
+    "Tier: critical",
+    "Dependencies: postgresql",
+    "",
+    "✓ Generated 10 Loki alerts",
+    "",
+    "Alert breakdown:",
+    "  Service alerts: 3",
+    "  Dependency alerts: 7",
+    "",
+    "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
+    "",
+    "✓ Done!"
+  ]
 }

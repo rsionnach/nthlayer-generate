@@ -1,4 +1,13 @@
 {
   "exit": 1,
-  "files": {}
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✗ Generation failed: Missing required 'service' section in examples/uat/payment-api.reliability.yaml",
+    ""
+  ]
 }

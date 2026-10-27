@@ -86,5 +86,25 @@
       ],
       "version": "prometheus/v1"
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✓ Generated SLOs for payment-api",
+    "  SLO count: 2",
+    "  Output: <tmp>/out/sloth/payment-api.yaml",
+    "",
+    "Generated SLOs:",
+    "  • payment-api-availability (99.9%)",
+    "  • payment-api-latency-p95 (99.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/payment-api.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/payment-api.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
 }

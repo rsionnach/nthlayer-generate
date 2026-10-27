@@ -70,5 +70,25 @@
       ],
       "version": "prometheus/v1"
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✓ Generated SLOs for notification-service",
+    "  SLO count: 2",
+    "  Output: <tmp>/out/sloth/notification-service.yaml",
+    "",
+    "Generated SLOs:",
+    "  • notification-service-job-success-rate (99.5%)",
+    "  • notification-service-processing-time-p95 (95.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/notification-service.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/notification-service.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
 }

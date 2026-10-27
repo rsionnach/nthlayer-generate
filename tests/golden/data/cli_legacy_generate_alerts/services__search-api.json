@@ -314,5 +314,30 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/search-api.yaml",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "📊 Loading alerts for dependencies: elasticsearch",
+    "  ✓ elasticsearch: 19 alerts (11 fixed)",
+    "",
+    "✅ Generated 19 total alerts",
+    "  Breakdown: elasticsearch=19",
+    "  Written to: <tmp>/out/alerts.yaml",
+    "",
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
+  ]
 }

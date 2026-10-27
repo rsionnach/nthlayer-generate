@@ -123,5 +123,26 @@
       ],
       "version": "prometheus/v1"
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✓ Generated SLOs for auth-api",
+    "  SLO count: 3",
+    "  Output: <tmp>/out/sloth/auth-api.yaml",
+    "",
+    "Generated SLOs:",
+    "  • auth-api-availability (99.9%)",
+    "  • auth-api-latency-p95 (99.5%)",
+    "  • auth-api-token-generation-latency (99.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/auth-api.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/auth-api.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
 }

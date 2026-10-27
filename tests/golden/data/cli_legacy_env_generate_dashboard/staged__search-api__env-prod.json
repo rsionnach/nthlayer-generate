@@ -1204,5 +1204,36 @@
       "message": "Auto-generated dashboard for search-api",
       "overwrite": true
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: <tmp>/_staged/services/search-api.yaml",
+    "Environment: prod",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "  Service: search-api",
+    "  Team: search",
+    "  Tier: critical",
+    "  Type: api",
+    "  Resources: 9 defined",
+    "",
+    "  SLOs: 6",
+    "  Dependencies: 2",
+    "",
+    "Building dashboard...",
+    "  Mode: Overview panels (key metrics)",
+    "  Title: search-api",
+    "  UID: search-api-overview",
+    "  Panels: 0",
+    "",
+    "Writing dashboard to <tmp>/out/dashboard.json...",
+    "",
+    "Dashboard generated successfully!",
+    ""
+  ]
 }

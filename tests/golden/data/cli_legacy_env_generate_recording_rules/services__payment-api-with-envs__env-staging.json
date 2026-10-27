@@ -129,5 +129,44 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Prometheus Recording Rules  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/payment-api-with-envs.yaml",
+    "Environment: staging",
+    "Output: <tmp>/out/recording-rules.yaml",
+    "",
+    "Parsing service specification...",
+    "  Service: payment-api",
+    "  Team: payments",
+    "  Tier: standard",
+    "  Type: api",
+    "  SLOs: 2",
+    "",
+    "Building recording rules...",
+    "  Groups: 2",
+    "  Rules: 14",
+    "  • payment-api_slo_metrics: 10 rules (interval: 30s)",
+    "  • payment-api_health_metrics: 4 rules (interval: 30s)",
+    "",
+    "Writing recording rules to <tmp>/out/recording-rules.yaml...",
+    "",
+    "✓ Recording rules generated successfully!",
+    "",
+    "Next steps:",
+    "  1. Add to Prometheus configuration:",
+    "  rule_files:",
+    "  - <tmp>/out/recording-rules.yaml",
+    "",
+    "  2. Reload Prometheus:",
+    "  curl -X POST http://prometheus:9090/-/reload",
+    "",
+    "  3. Verify rules are loaded:",
+    "  curl http://prometheus:9090/api/v1/rules",
+    ""
+  ]
 }

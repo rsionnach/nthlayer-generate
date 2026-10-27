@@ -1,4 +1,29 @@
 {
   "exit": 1,
-  "files": {}
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/admin-dashboard-api.yaml",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "⚠️  No dependencies found in service definition",
+    "  Add a Dependencies resource to enable alert generation",
+    "",
+    "Tip: Add a Dependencies resource to your service YAML:",
+    "  resources:",
+    "  - kind: Dependencies",
+    "  name: upstream",
+    "  spec:",
+    "  databases:",
+    "  - type: postgres",
+    "  - type: redis"
+  ]
 }

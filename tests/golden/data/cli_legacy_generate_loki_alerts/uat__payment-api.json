@@ -295,5 +295,32 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/uat/payment-api.yaml",
+    "",
+    "Service: payment-api",
+    "Type: api",
+    "Tier: critical",
+    "Dependencies: postgresql, redis",
+    "",
+    "✓ Generated 16 Loki alerts",
+    "",
+    "Alert breakdown:",
+    "  Service alerts: 3",
+    "  Dependency alerts: 13",
+    "",
+    "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
+    "",
+    "✓ Done!"
+  ]
 }

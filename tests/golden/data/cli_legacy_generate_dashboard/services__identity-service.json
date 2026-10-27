@@ -704,5 +704,35 @@
       "message": "Auto-generated dashboard for identity-service",
       "overwrite": true
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/identity-service.yaml",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "  Service: identity-service",
+    "  Team: identity",
+    "  Tier: critical",
+    "  Type: api",
+    "  Resources: 6 defined",
+    "",
+    "  SLOs: 3",
+    "  Dependencies: 1",
+    "",
+    "Building dashboard...",
+    "  Mode: Overview panels (key metrics)",
+    "  Title: identity-service",
+    "  UID: identity-service-overview",
+    "  Panels: 0",
+    "",
+    "Writing dashboard to <tmp>/out/dashboard.json...",
+    "",
+    "Dashboard generated successfully!",
+    ""
+  ]
 }

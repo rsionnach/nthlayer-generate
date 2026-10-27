@@ -512,5 +512,35 @@
       "message": "Auto-generated dashboard for analytics-stream",
       "overwrite": true
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/analytics-stream.yaml",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "  Service: analytics-stream",
+    "  Team: data",
+    "  Tier: high",
+    "  Type: stream-processor",
+    "  Resources: 6 defined",
+    "",
+    "  SLOs: 3",
+    "  Dependencies: 1",
+    "",
+    "Building dashboard...",
+    "  Mode: Overview panels (key metrics)",
+    "  Title: analytics-stream",
+    "  UID: analytics-stream-overview",
+    "  Panels: 0",
+    "",
+    "Writing dashboard to <tmp>/out/dashboard.json...",
+    "",
+    "Dashboard generated successfully!",
+    ""
+  ]
 }

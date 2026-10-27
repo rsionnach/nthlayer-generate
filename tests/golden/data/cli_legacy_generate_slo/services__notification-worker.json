@@ -99,5 +99,26 @@
       ],
       "version": "prometheus/v1"
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✓ Generated SLOs for notification-worker",
+    "  SLO count: 3",
+    "  Output: <tmp>/out/sloth/notification-worker.yaml",
+    "",
+    "Generated SLOs:",
+    "  • notification-worker-delivery-success (99.5%)",
+    "  • notification-worker-processing-latency-p95 (98.0%)",
+    "  • notification-worker-queue-lag (99.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/notification-worker.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/notification-worker.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
 }

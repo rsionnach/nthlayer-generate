@@ -106,5 +106,41 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: <tmp>/_staged/services/search-api.yaml",
+    "Environment: dev",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "🔍 Alert Filtering Strategy:",
+    "  Environment: dev",
+    "  Tier: low",
+    "",
+    "  Severities included: critical",
+    "  Rationale: Development gets only critical alerts to reduce noise",
+    "",
+    "  Additional tier filtering:",
+    "  • Low tier: Only critical alerts",
+    "",
+    "📊 Loading alerts for dependencies: elasticsearch",
+    "  ✓ elasticsearch: 6 alerts (5 fixed)",
+    "",
+    "✅ Generated 6 total alerts",
+    "  Breakdown: elasticsearch=6",
+    "  Written to: <tmp>/out/alerts.yaml",
+    "",
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
+  ]
 }

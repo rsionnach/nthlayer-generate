@@ -70,5 +70,25 @@
       ],
       "version": "prometheus/v1"
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✓ Generated SLOs for email-worker",
+    "  SLO count: 2",
+    "  Output: <tmp>/out/sloth/email-worker.yaml",
+    "",
+    "Generated SLOs:",
+    "  • email-worker-success-rate (99.0%)",
+    "  • email-worker-processing-latency-p95 (99.9%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/email-worker.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/email-worker.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
 }

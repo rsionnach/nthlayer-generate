@@ -99,5 +99,26 @@
       ],
       "version": "prometheus/v1"
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✓ Generated SLOs for batch-reports",
+    "  SLO count: 3",
+    "  Output: <tmp>/out/sloth/batch-reports.yaml",
+    "",
+    "Generated SLOs:",
+    "  • batch-reports-availability (99.0%)",
+    "  • batch-reports-latency-p95 (90.0%)",
+    "  • batch-reports-report-success-rate (95.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/batch-reports.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/batch-reports.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
 }

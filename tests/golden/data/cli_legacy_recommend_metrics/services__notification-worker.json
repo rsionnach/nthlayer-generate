@@ -1,158 +1,162 @@
 {
   "check_exit": 2,
-  "check_json": {
-    "recommended": [
-      {
-        "description": "Number of jobs waiting in queue",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "jobs.queue.depth",
-        "requirement_level": "recommended",
-        "slo_usage": [
-          "saturation"
-        ],
-        "status": "missing",
-        "type": "gauge",
-        "unit": "{job}"
+  "check_json": [
+    {
+      "recommended": [
+        {
+          "description": "Number of jobs waiting in queue",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "jobs.queue.depth",
+          "requirement_level": "recommended",
+          "slo_usage": [
+            "saturation"
+          ],
+          "status": "missing",
+          "type": "gauge",
+          "unit": "{job}"
+        },
+        {
+          "description": "Time jobs spend waiting in queue",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "jobs.queue.latency",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "histogram",
+          "unit": "seconds"
+        },
+        {
+          "description": "Number of job retries",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "jobs.retries.total",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "counter",
+          "unit": "{retry}"
+        }
+      ],
+      "required": [
+        {
+          "description": "Duration of job execution",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "jobs.duration",
+          "requirement_level": "required",
+          "slo_usage": [
+            "latency"
+          ],
+          "status": "missing",
+          "type": "histogram",
+          "unit": "seconds"
+        },
+        {
+          "description": "Total jobs processed",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "jobs.total",
+          "requirement_level": "required",
+          "slo_usage": [
+            "availability"
+          ],
+          "status": "missing",
+          "type": "counter",
+          "unit": "{job}"
+        }
+      ],
+      "runtime": null,
+      "runtime_metrics": [],
+      "service": "notification-worker",
+      "service_type": "worker",
+      "summary": {
+        "recommended_coverage": 0.0,
+        "required_coverage": 0.0,
+        "slo_ready": false
       },
-      {
-        "description": "Time jobs spend waiting in queue",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "jobs.queue.latency",
-        "requirement_level": "recommended",
-        "slo_usage": [],
-        "status": "missing",
-        "type": "histogram",
-        "unit": "seconds"
+      "tier": "high"
+    }
+  ],
+  "json": [
+    {
+      "recommended": [
+        {
+          "description": "Number of jobs waiting in queue",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "jobs.queue.depth",
+          "requirement_level": "recommended",
+          "slo_usage": [
+            "saturation"
+          ],
+          "status": "unknown",
+          "type": "gauge",
+          "unit": "{job}"
+        },
+        {
+          "description": "Time jobs spend waiting in queue",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "jobs.queue.latency",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "histogram",
+          "unit": "seconds"
+        },
+        {
+          "description": "Number of job retries",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "jobs.retries.total",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "counter",
+          "unit": "{retry}"
+        }
+      ],
+      "required": [
+        {
+          "description": "Duration of job execution",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "jobs.duration",
+          "requirement_level": "required",
+          "slo_usage": [
+            "latency"
+          ],
+          "status": "unknown",
+          "type": "histogram",
+          "unit": "seconds"
+        },
+        {
+          "description": "Total jobs processed",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "jobs.total",
+          "requirement_level": "required",
+          "slo_usage": [
+            "availability"
+          ],
+          "status": "unknown",
+          "type": "counter",
+          "unit": "{job}"
+        }
+      ],
+      "runtime": null,
+      "runtime_metrics": [],
+      "service": "notification-worker",
+      "service_type": "worker",
+      "summary": {
+        "recommended_coverage": 0.0,
+        "required_coverage": 0.0,
+        "slo_ready": false
       },
-      {
-        "description": "Number of job retries",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "jobs.retries.total",
-        "requirement_level": "recommended",
-        "slo_usage": [],
-        "status": "missing",
-        "type": "counter",
-        "unit": "{retry}"
-      }
-    ],
-    "required": [
-      {
-        "description": "Duration of job execution",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "jobs.duration",
-        "requirement_level": "required",
-        "slo_usage": [
-          "latency"
-        ],
-        "status": "missing",
-        "type": "histogram",
-        "unit": "seconds"
-      },
-      {
-        "description": "Total jobs processed",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "jobs.total",
-        "requirement_level": "required",
-        "slo_usage": [
-          "availability"
-        ],
-        "status": "missing",
-        "type": "counter",
-        "unit": "{job}"
-      }
-    ],
-    "runtime": null,
-    "runtime_metrics": [],
-    "service": "notification-worker",
-    "service_type": "worker",
-    "summary": {
-      "recommended_coverage": 0.0,
-      "required_coverage": 0.0,
-      "slo_ready": false
-    },
-    "tier": "high"
-  },
-  "json": {
-    "recommended": [
-      {
-        "description": "Number of jobs waiting in queue",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "jobs.queue.depth",
-        "requirement_level": "recommended",
-        "slo_usage": [
-          "saturation"
-        ],
-        "status": "unknown",
-        "type": "gauge",
-        "unit": "{job}"
-      },
-      {
-        "description": "Time jobs spend waiting in queue",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "jobs.queue.latency",
-        "requirement_level": "recommended",
-        "slo_usage": [],
-        "status": "unknown",
-        "type": "histogram",
-        "unit": "seconds"
-      },
-      {
-        "description": "Number of job retries",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "jobs.retries.total",
-        "requirement_level": "recommended",
-        "slo_usage": [],
-        "status": "unknown",
-        "type": "counter",
-        "unit": "{retry}"
-      }
-    ],
-    "required": [
-      {
-        "description": "Duration of job execution",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "jobs.duration",
-        "requirement_level": "required",
-        "slo_usage": [
-          "latency"
-        ],
-        "status": "unknown",
-        "type": "histogram",
-        "unit": "seconds"
-      },
-      {
-        "description": "Total jobs processed",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "jobs.total",
-        "requirement_level": "required",
-        "slo_usage": [
-          "availability"
-        ],
-        "status": "unknown",
-        "type": "counter",
-        "unit": "{job}"
-      }
-    ],
-    "runtime": null,
-    "runtime_metrics": [],
-    "service": "notification-worker",
-    "service_type": "worker",
-    "summary": {
-      "recommended_coverage": 0.0,
-      "required_coverage": 0.0,
-      "slo_ready": false
-    },
-    "tier": "high"
-  },
+      "tier": "high"
+    }
+  ],
   "json_exit": 0
 }

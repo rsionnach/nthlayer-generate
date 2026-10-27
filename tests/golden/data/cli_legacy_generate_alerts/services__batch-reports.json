@@ -106,5 +106,31 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/batch-reports.yaml",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "📊 Loading alerts for dependencies: postgresql, s3",
+    "  ✓ postgresql: 6 alerts (5 fixed)",
+    "  ⚠️  s3: No alerts found",
+    "",
+    "✅ Generated 6 total alerts",
+    "  Breakdown: postgresql=6",
+    "  Written to: <tmp>/out/alerts.yaml",
+    "",
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
+  ]
 }

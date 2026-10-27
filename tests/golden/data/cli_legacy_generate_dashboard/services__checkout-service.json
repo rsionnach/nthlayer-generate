@@ -517,5 +517,35 @@
       "message": "Auto-generated dashboard for checkout-service",
       "overwrite": true
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/checkout-service.yaml",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "  Service: checkout-service",
+    "  Team: commerce",
+    "  Tier: critical",
+    "  Type: api",
+    "  Resources: 6 defined",
+    "",
+    "  SLOs: 3",
+    "  Dependencies: 1",
+    "",
+    "Building dashboard...",
+    "  Mode: Overview panels (key metrics)",
+    "  Title: checkout-service",
+    "  UID: checkout-service-overview",
+    "  Panels: 0",
+    "",
+    "Writing dashboard to <tmp>/out/dashboard.json...",
+    "",
+    "Dashboard generated successfully!",
+    ""
+  ]
 }

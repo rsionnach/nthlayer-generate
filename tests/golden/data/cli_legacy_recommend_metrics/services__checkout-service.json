@@ -1,134 +1,138 @@
 {
   "check_exit": 2,
-  "check_json": {
-    "recommended": [
-      {
-        "description": "Number of active HTTP server requests",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "http.server.active_requests",
-        "requirement_level": "recommended",
-        "slo_usage": [
-          "saturation"
-        ],
-        "status": "missing",
-        "type": "updown_counter",
-        "unit": "{request}"
+  "check_json": [
+    {
+      "recommended": [
+        {
+          "description": "Number of active HTTP server requests",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.active_requests",
+          "requirement_level": "recommended",
+          "slo_usage": [
+            "saturation"
+          ],
+          "status": "missing",
+          "type": "updown_counter",
+          "unit": "{request}"
+        },
+        {
+          "description": "Size of HTTP server request bodies",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.request.size",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "histogram",
+          "unit": "bytes"
+        },
+        {
+          "description": "Size of HTTP server response bodies",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.response.size",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "histogram",
+          "unit": "bytes"
+        }
+      ],
+      "required": [
+        {
+          "description": "Duration of HTTP server requests",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.request.duration",
+          "requirement_level": "required",
+          "slo_usage": [
+            "latency",
+            "availability"
+          ],
+          "status": "missing",
+          "type": "histogram",
+          "unit": "seconds"
+        }
+      ],
+      "runtime": null,
+      "runtime_metrics": [],
+      "service": "checkout-service",
+      "service_type": "api",
+      "summary": {
+        "recommended_coverage": 0.0,
+        "required_coverage": 0.0,
+        "slo_ready": false
       },
-      {
-        "description": "Size of HTTP server request bodies",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "http.server.request.size",
-        "requirement_level": "recommended",
-        "slo_usage": [],
-        "status": "missing",
-        "type": "histogram",
-        "unit": "bytes"
+      "tier": "critical"
+    }
+  ],
+  "json": [
+    {
+      "recommended": [
+        {
+          "description": "Number of active HTTP server requests",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.active_requests",
+          "requirement_level": "recommended",
+          "slo_usage": [
+            "saturation"
+          ],
+          "status": "unknown",
+          "type": "updown_counter",
+          "unit": "{request}"
+        },
+        {
+          "description": "Size of HTTP server request bodies",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.request.size",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "histogram",
+          "unit": "bytes"
+        },
+        {
+          "description": "Size of HTTP server response bodies",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.response.size",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "histogram",
+          "unit": "bytes"
+        }
+      ],
+      "required": [
+        {
+          "description": "Duration of HTTP server requests",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.request.duration",
+          "requirement_level": "required",
+          "slo_usage": [
+            "latency",
+            "availability"
+          ],
+          "status": "unknown",
+          "type": "histogram",
+          "unit": "seconds"
+        }
+      ],
+      "runtime": null,
+      "runtime_metrics": [],
+      "service": "checkout-service",
+      "service_type": "api",
+      "summary": {
+        "recommended_coverage": 0.0,
+        "required_coverage": 0.0,
+        "slo_ready": false
       },
-      {
-        "description": "Size of HTTP server response bodies",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "http.server.response.size",
-        "requirement_level": "recommended",
-        "slo_usage": [],
-        "status": "missing",
-        "type": "histogram",
-        "unit": "bytes"
-      }
-    ],
-    "required": [
-      {
-        "description": "Duration of HTTP server requests",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "http.server.request.duration",
-        "requirement_level": "required",
-        "slo_usage": [
-          "latency",
-          "availability"
-        ],
-        "status": "missing",
-        "type": "histogram",
-        "unit": "seconds"
-      }
-    ],
-    "runtime": null,
-    "runtime_metrics": [],
-    "service": "checkout-service",
-    "service_type": "api",
-    "summary": {
-      "recommended_coverage": 0.0,
-      "required_coverage": 0.0,
-      "slo_ready": false
-    },
-    "tier": "critical"
-  },
-  "json": {
-    "recommended": [
-      {
-        "description": "Number of active HTTP server requests",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "http.server.active_requests",
-        "requirement_level": "recommended",
-        "slo_usage": [
-          "saturation"
-        ],
-        "status": "unknown",
-        "type": "updown_counter",
-        "unit": "{request}"
-      },
-      {
-        "description": "Size of HTTP server request bodies",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "http.server.request.size",
-        "requirement_level": "recommended",
-        "slo_usage": [],
-        "status": "unknown",
-        "type": "histogram",
-        "unit": "bytes"
-      },
-      {
-        "description": "Size of HTTP server response bodies",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "http.server.response.size",
-        "requirement_level": "recommended",
-        "slo_usage": [],
-        "status": "unknown",
-        "type": "histogram",
-        "unit": "bytes"
-      }
-    ],
-    "required": [
-      {
-        "description": "Duration of HTTP server requests",
-        "found_as": null,
-        "match_confidence": 0.0,
-        "name": "http.server.request.duration",
-        "requirement_level": "required",
-        "slo_usage": [
-          "latency",
-          "availability"
-        ],
-        "status": "unknown",
-        "type": "histogram",
-        "unit": "seconds"
-      }
-    ],
-    "runtime": null,
-    "runtime_metrics": [],
-    "service": "checkout-service",
-    "service_type": "api",
-    "summary": {
-      "recommended_coverage": 0.0,
-      "required_coverage": 0.0,
-      "slo_ready": false
-    },
-    "tier": "critical"
-  },
+      "tier": "critical"
+    }
+  ],
   "json_exit": 0
 }

@@ -169,5 +169,32 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/notification-worker.yaml",
+    "",
+    "Service: notification-worker",
+    "Type: worker",
+    "Tier: high",
+    "Dependencies: redis",
+    "",
+    "✓ Generated 9 Loki alerts",
+    "",
+    "Alert breakdown:",
+    "  Service alerts: 3",
+    "  Dependency alerts: 6",
+    "",
+    "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
+    "",
+    "✓ Done!"
+  ]
 }

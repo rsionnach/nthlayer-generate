@@ -681,5 +681,35 @@
       "message": "Auto-generated dashboard for payment-api",
       "overwrite": true
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: examples/uat/payment-api-with-slas.yaml",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "  Service: payment-api",
+    "  Team: payments-team",
+    "  Tier: critical",
+    "  Type: api",
+    "  Resources: 3 defined",
+    "",
+    "  SLOs: 2",
+    "  Dependencies: 1",
+    "",
+    "Building dashboard...",
+    "  Mode: Overview panels (key metrics)",
+    "  Title: payment-api",
+    "  UID: payment-api-overview",
+    "  Panels: 0",
+    "",
+    "Writing dashboard to <tmp>/out/dashboard.json...",
+    "",
+    "Dashboard generated successfully!",
+    ""
+  ]
 }

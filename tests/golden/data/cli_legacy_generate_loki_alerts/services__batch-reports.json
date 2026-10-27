@@ -241,5 +241,32 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/batch-reports.yaml",
+    "",
+    "Service: batch-reports",
+    "Type: api",
+    "Tier: low",
+    "Dependencies: postgresql, s3",
+    "",
+    "✓ Generated 13 Loki alerts",
+    "",
+    "Alert breakdown:",
+    "  Service alerts: 3",
+    "  Dependency alerts: 10",
+    "",
+    "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
+    "",
+    "✓ Done!"
+  ]
 }

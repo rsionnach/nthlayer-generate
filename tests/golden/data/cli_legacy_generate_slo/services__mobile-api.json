@@ -160,5 +160,27 @@
       ],
       "version": "prometheus/v1"
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✓ Generated SLOs for mobile-api",
+    "  SLO count: 4",
+    "  Output: <tmp>/out/sloth/mobile-api.yaml",
+    "",
+    "Generated SLOs:",
+    "  • mobile-api-availability (99.9%)",
+    "  • mobile-api-latency-p95 (95.0%)",
+    "  • mobile-api-latency-p99 (90.0%)",
+    "  • mobile-api-auth-success-rate (99.9%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/mobile-api.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/mobile-api.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
 }

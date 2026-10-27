@@ -120,5 +120,43 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Prometheus Recording Rules  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/email-worker.yaml",
+    "Output: <tmp>/out/recording-rules.yaml",
+    "",
+    "Parsing service specification...",
+    "  Service: email-worker",
+    "  Team: notifications",
+    "  Tier: standard",
+    "  Type: worker",
+    "  SLOs: 2",
+    "",
+    "Building recording rules...",
+    "  Groups: 2",
+    "  Rules: 13",
+    "  • email-worker_slo_metrics: 9 rules (interval: 30s)",
+    "  • email-worker_health_metrics: 4 rules (interval: 30s)",
+    "",
+    "Writing recording rules to <tmp>/out/recording-rules.yaml...",
+    "",
+    "✓ Recording rules generated successfully!",
+    "",
+    "Next steps:",
+    "  1. Add to Prometheus configuration:",
+    "  rule_files:",
+    "  - <tmp>/out/recording-rules.yaml",
+    "",
+    "  2. Reload Prometheus:",
+    "  curl -X POST http://prometheus:9090/-/reload",
+    "",
+    "  3. Verify rules are loaded:",
+    "  curl http://prometheus:9090/api/v1/rules",
+    ""
+  ]
 }

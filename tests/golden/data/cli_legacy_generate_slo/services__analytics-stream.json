@@ -99,5 +99,26 @@
       ],
       "version": "prometheus/v1"
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✓ Generated SLOs for analytics-stream",
+    "  SLO count: 3",
+    "  Output: <tmp>/out/sloth/analytics-stream.yaml",
+    "",
+    "Generated SLOs:",
+    "  • analytics-stream-processing-availability (99.5%)",
+    "  • analytics-stream-stream-lag (99.0%)",
+    "  • analytics-stream-event-latency-p99 (95.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/analytics-stream.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/analytics-stream.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
 }

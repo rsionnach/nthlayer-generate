@@ -86,5 +86,25 @@
       ],
       "version": "prometheus/v1"
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✓ Generated SLOs for api-minimal",
+    "  SLO count: 2",
+    "  Output: <tmp>/out/sloth/api-minimal.yaml",
+    "",
+    "Generated SLOs:",
+    "  • api-minimal-availability (99.9%)",
+    "  • api-minimal-latency-p95 (99.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/api-minimal.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/api-minimal.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
 }

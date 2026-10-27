@@ -61,5 +61,32 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/notification-service.yaml",
+    "",
+    "Service: notification-service",
+    "Type: worker",
+    "Tier: standard",
+    "Dependencies: none",
+    "",
+    "✓ Generated 3 Loki alerts",
+    "",
+    "Alert breakdown:",
+    "  Service alerts: 3",
+    "  Dependency alerts: 0",
+    "",
+    "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
+    "",
+    "✓ Done!"
+  ]
 }

@@ -205,6 +205,9 @@ def _isolate(env: Env) -> None:
     mp.setattr(ux, "has_gum", lambda: False)
     mp.setattr(ux.console, "_width", CONSOLE_WIDTH)
     mp.setattr(ux.console, "_force_terminal", False)
+    # The console fixes its colour mode at import; FORCE_COLOR in the shell
+    # would otherwise put ANSI codes into every text cell.
+    mp.setattr(ux.console, "_color_system", None)
     mp.setattr(
         "nthlayer_generate.orchestration.handlers.PagerDutyResourceManager",
         type("PagerDutyResourceManager", (_NoNetwork,), {}),
@@ -238,31 +241,44 @@ def _isolate(env: Env) -> None:
 
 def generate_slo(path: Path, env: Env, environment: str | None) -> Any:
     code = generate_slo_command(str(path), output_dir=str(env.tmp / "out"), environment=environment)
-    return {"exit": code, "files": env.files()}
+    return {"exit": code, "files": env.files(), "text": env.text()}
 
 
 def generate_alerts(path: Path, env: Env, environment: str | None) -> Any:
     out = env.tmp / "out" / "alerts.yaml"
     code = generate_alerts_command(str(path), output=str(out), environment=environment)
-    return {"exit": code, "files": env.files()}
+    return {"exit": code, "files": env.files(), "text": env.text()}
 
 
 def generate_loki_alerts(path: Path, env: Env, environment: str | None) -> Any:
     assert environment is None, "generate-loki-alerts takes no --env"
     out = env.tmp / "out" / "loki-alerts.yaml"
-    return {"exit": generate_loki_command(str(path), output=str(out)), "files": env.files()}
+    code = generate_loki_command(str(path), output=str(out))
+    return {"exit": code, "files": env.files(), "text": _sorted_dependencies(env.text())}
+
+
+def _sorted_dependencies(lines: list[str]) -> list[str]:
+    """The legacy loki extractor returns list(set(...)), so the printed
+    "Dependencies: a, b" line has no stable order. Pin it sorted."""
+    prefix = "Dependencies: "
+    return [
+        prefix + ", ".join(sorted(line[len(prefix) :].split(", ")))
+        if line.startswith(prefix)
+        else line
+        for line in lines
+    ]
 
 
 def generate_recording_rules(path: Path, env: Env, environment: str | None) -> Any:
     out = env.tmp / "out" / "recording-rules.yaml"
     code = generate_recording_rules_command(str(path), output=str(out), environment=environment)
-    return {"exit": code, "files": env.files()}
+    return {"exit": code, "files": env.files(), "text": env.text()}
 
 
 def generate_dashboard(path: Path, env: Env, environment: str | None) -> Any:
     out = env.tmp / "out" / "dashboard.json"
     code = generate_dashboard_command(str(path), output=str(out), environment=environment)
-    return {"exit": code, "files": env.files()}
+    return {"exit": code, "files": env.files(), "text": env.text()}
 
 
 def recommend_metrics(path: Path, env: Env, environment: str | None) -> Any:
@@ -279,6 +295,8 @@ def recommend_metrics(path: Path, env: Env, environment: str | None) -> Any:
 
     env.monkeypatch.setattr(rm, "_output_json", recording_output_json)
     as_json = recommend_metrics_command(str(path), output_format="json", environment=environment)
+    json_emitted = list(emitted)
+    emitted.clear()
     # --check against a Prometheus that has none of the metrics.
     env.monkeypatch.setattr(rm, "discover_service_metrics", lambda **kwargs: [])
     checked = recommend_metrics_command(
@@ -292,8 +310,9 @@ def recommend_metrics(path: Path, env: Env, environment: str | None) -> Any:
     return {
         "json_exit": as_json,
         "check_exit": checked,
-        "json": emitted[0] if emitted else None,
-        "check_json": emitted[1] if len(emitted) > 1 else None,
+        # Recorded per call, so one call emitting cannot be filed under the other.
+        "json": json_emitted,
+        "check_json": list(emitted),
     }
 
 

@@ -234,5 +234,31 @@
       ],
       "version": "prometheus/v1"
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "Environment: prod",
+    "",
+    "✓ Generated SLOs for search-api",
+    "  SLO count: 6",
+    "  Output: <tmp>/out/sloth/search-api.yaml",
+    "",
+    "Generated SLOs:",
+    "  • search-api-search-availability (99.5%)",
+    "  • search-api-search-latency-p95 (99.0%)",
+    "  • search-api-search-quality (95.0%)",
+    "  • search-api-availability (99.9%)",
+    "  • search-api-latency-p95 (99.0%)",
+    "  • search-api-latency-p99 (95.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/search-api.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/search-api.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
 }

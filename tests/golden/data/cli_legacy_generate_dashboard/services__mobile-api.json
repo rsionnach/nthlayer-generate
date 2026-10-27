@@ -462,5 +462,35 @@
       "message": "Auto-generated dashboard for mobile-api",
       "overwrite": true
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/mobile-api.yaml",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "  Service: mobile-api",
+    "  Team: mobile",
+    "  Tier: critical",
+    "  Type: api",
+    "  Resources: 6 defined",
+    "",
+    "  SLOs: 4",
+    "  Dependencies: 1",
+    "",
+    "Building dashboard...",
+    "  Mode: Overview panels (key metrics)",
+    "  Title: mobile-api",
+    "  UID: mobile-api-overview",
+    "  Panels: 0",
+    "",
+    "Writing dashboard to <tmp>/out/dashboard.json...",
+    "",
+    "Dashboard generated successfully!",
+    ""
+  ]
 }

@@ -692,5 +692,43 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: <tmp>/_staged/services/payment-api.yaml",
+    "Environment: prod",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "🔍 Alert Filtering Strategy:",
+    "  Environment: prod",
+    "  Tier: critical",
+    "",
+    "  Severities included: critical, warning, info",
+    "  Rationale: Production gets all alerts for comprehensive coverage",
+    "",
+    "  Additional tier filtering:",
+    "  • Critical tier: No additional filtering",
+    "",
+    "📊 Loading alerts for dependencies: postgres, postgresql, redis",
+    "  ✓ postgres: 15 alerts (9 fixed)",
+    "  ✓ postgresql: 15 alerts (9 fixed)",
+    "  ✓ redis: 12 alerts (7 fixed)",
+    "",
+    "✅ Generated 42 total alerts",
+    "  Breakdown: postgres=15, postgresql=15, redis=12",
+    "  Written to: <tmp>/out/alerts.yaml",
+    "",
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
+  ]
 }

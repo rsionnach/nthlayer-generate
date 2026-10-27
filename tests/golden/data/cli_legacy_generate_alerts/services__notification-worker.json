@@ -202,5 +202,30 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/notification-worker.yaml",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "📊 Loading alerts for dependencies: redis",
+    "  ✓ redis: 12 alerts (7 fixed)",
+    "",
+    "✅ Generated 12 total alerts",
+    "  Breakdown: redis=12",
+    "  Written to: <tmp>/out/alerts.yaml",
+    "",
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
+  ]
 }

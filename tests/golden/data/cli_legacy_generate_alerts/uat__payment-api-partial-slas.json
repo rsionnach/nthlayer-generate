@@ -447,5 +447,31 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/uat/payment-api-partial-slas.yaml",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "📊 Loading alerts for dependencies: postgresql, redis",
+    "  ✓ postgresql: 15 alerts (9 fixed)",
+    "  ✓ redis: 12 alerts (7 fixed)",
+    "",
+    "✅ Generated 27 total alerts",
+    "  Breakdown: postgresql=15, redis=12",
+    "  Written to: <tmp>/out/alerts.yaml",
+    "",
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
+  ]
 }

@@ -250,5 +250,41 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: <tmp>/_staged/services/payment-api.yaml",
+    "Environment: staging",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "🔍 Alert Filtering Strategy:",
+    "  Environment: staging",
+    "  Tier: standard",
+    "",
+    "  Severities included: critical, warning",
+    "  Rationale: Staging gets critical + warning for pre-prod validation",
+    "",
+    "  Additional tier filtering:",
+    "  • Standard tier: Only critical + warning",
+    "",
+    "📊 Loading alerts for dependencies: postgresql",
+    "  ✓ postgresql: 15 alerts (9 fixed)",
+    "",
+    "✅ Generated 15 total alerts",
+    "  Breakdown: postgresql=15",
+    "  Written to: <tmp>/out/alerts.yaml",
+    "",
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
+  ]
 }

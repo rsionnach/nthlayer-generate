@@ -282,5 +282,41 @@
         }
       ]
     }
-  }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: <tmp>/_staged/services/search-api.yaml",
+    "Environment: staging",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "🔍 Alert Filtering Strategy:",
+    "  Environment: staging",
+    "  Tier: standard",
+    "",
+    "  Severities included: critical, warning",
+    "  Rationale: Staging gets critical + warning for pre-prod validation",
+    "",
+    "  Additional tier filtering:",
+    "  • Standard tier: Only critical + warning",
+    "",
+    "📊 Loading alerts for dependencies: elasticsearch",
+    "  ✓ elasticsearch: 17 alerts (9 fixed)",
+    "",
+    "✅ Generated 17 total alerts",
+    "  Breakdown: elasticsearch=17",
+    "  Written to: <tmp>/out/alerts.yaml",
+    "",
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
+  ]
 }

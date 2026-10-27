@@ -1,0 +1,47 @@
+# TEST-ONLY golden fixture (opensrm-wo62.4.2) — not a shipped example.
+#
+# Exists to reach: src/nthlayer_generate/specs/parser.py:104-112, the
+# parse-time `if environment:` substitution of ${env}/${service}/${team} over
+# the whole document. No shipped manifest or overlay uses ${env} or ${team}
+# outside a resource spec, and ${service} inside a spec is substituted again
+# later, so without this file that branch can be deleted with every golden
+# still green.
+#
+# ${env} and ${team} sit in resource NAMES, which no later pass rewrites and
+# which reach the sloth, recording-rule, dashboard and plan/apply goldens.
+# Run with --env prod (ENV_CASES) against environments/checkout-env-vars-prod.yaml,
+# and without an environment (CASES), where the placeholders stay literal.
+#
+# Adapted from examples/services/checkout-service.yaml (service block, SLO
+# specs) and examples/services/payment-api-with-envs.yaml (base file whose
+# environments/ directory carries the overlay).
+
+service:
+  name: checkout-env-vars
+  team: commerce
+  tier: critical
+  type: api
+  description: Order checkout for ${team} in ${env}
+
+resources:
+  - kind: SLO
+    name: availability-${env}
+    spec:
+      objective: 99.95
+      window: 30d
+      indicators:
+        - type: availability
+          success_ratio:
+            total_query: sum(rate(http_requests_total{service="checkout-env-vars"}[5m]))
+            good_query: sum(rate(http_requests_total{service="checkout-env-vars",status!~"5.."}[5m]))
+
+  - kind: SLO
+    name: latency-p95-${team}
+    spec:
+      objective: 99.0
+      window: 30d
+      indicators:
+        - type: latency
+          threshold_ms: 800
+          percentile: 95
+          latency_query: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service="checkout-env-vars"}[5m]))

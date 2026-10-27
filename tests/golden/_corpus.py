@@ -4,9 +4,12 @@ The lists are explicit rather than globbed so that a new example cannot join
 the corpus unclassified: ``test_golden_harness`` compares them with the
 directory globs and fails until the new file is placed in exactly one list.
 
-Inputs come from shipped files only — generate's ``examples/`` and the
-OpenSRM spec's ``spec/v2/examples/`` in the sibling ``opensrm`` checkout —
-never from the code under test.
+Inputs come from shipped files — generate's ``examples/`` and the OpenSRM
+spec's ``spec/v2/examples/`` in the sibling ``opensrm`` checkout — never from
+the code under test. The one exception is ``LEGACY_FIXTURES``: test-only
+inputs, each adapted from a shipped example, that exist only to reach a
+legacy branch no shipped file reaches. Each names that branch and its source
+example in its header comment.
 """
 
 from __future__ import annotations
@@ -29,6 +32,7 @@ REPO = Path(__file__).resolve().parents[2]
 OPENSRM = Path(__file__).resolve().parents[3] / "opensrm"
 EX = REPO / "examples"
 V2_EXAMPLES = OPENSRM / "spec" / "v2" / "examples"
+FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 # apiVersion: srm/v1 manifests (7).
 SRM_V1: tuple[Path, ...] = tuple(
@@ -87,6 +91,20 @@ V2: tuple[Path, ...] = tuple(
 )
 
 
+# Test-only legacy ``service:`` manifests under fixtures/legacy/ (R5
+# provenance, wo62.4.2). Not part of the shipped corpus: each reaches a
+# legacy branch (named in its header comment) that no example reaches, so a
+# mutant there would otherwise leave every golden green. Explicit, and
+# test_golden_legacy_generators asserts the directory holds nothing else.
+LEGACY_FIXTURES: tuple[Path, ...] = tuple(
+    FIXTURES / "legacy" / n
+    for n in (
+        "checkout-db-deps.yaml",
+        "checkout-env-vars.yaml",
+    )
+)
+
+
 def manifest_id(path: Path) -> str:
     """Stable, checkout-independent id for a corpus file.
 
@@ -94,12 +112,15 @@ def manifest_id(path: Path) -> str:
     ``<opensrm>/spec/v2/examples/services/api.yaml`` -> ``v2__services__api``.
     Only ``.yaml`` is dropped: ``uat/payment-api.reliability.yaml`` and
     ``uat/payment-api.yaml`` are different manifests and must not collide.
+    A test fixture is ``fixture__legacy__<stem>``.
     """
     path = path.resolve()
     if path.is_relative_to(EX):
         prefix, rel = "", path.relative_to(EX)
     elif path.is_relative_to(V2_EXAMPLES):
         prefix, rel = "v2__", path.relative_to(V2_EXAMPLES)
+    elif path.is_relative_to(FIXTURES):
+        prefix, rel = "fixture__", path.relative_to(FIXTURES)
     else:
         raise ValueError(f"{path} is not in the golden corpus")
     if rel.suffix != ".yaml":

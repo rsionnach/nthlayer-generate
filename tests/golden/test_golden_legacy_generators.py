@@ -13,6 +13,13 @@ Two families of cells:
 * ``legacy_env_*`` — the same builders run with an environment set, over the
   shipped environment overlays (see ``ENV_CASES``). No other golden covers
   the overlay merge.
+* ``legacy_dashboard_no_intent`` — ``DashboardBuilderSDK`` with
+  ``use_intent_templates=False``, the only way to reach its hardcoded health
+  panels (dashboards/builder_sdk.py:361-480): ``build_dashboard`` always
+  finds an intent template, falling back to "http".
+
+Both families also run over ``LEGACY_FIXTURES`` (``_corpus``): test-only
+inputs that reach legacy branches no shipped example reaches.
 
 Every cell runs with the working directory set to the temp dir, because the
 legacy parser searches upward from the cwd for ``.nthlayer/templates``
@@ -34,7 +41,7 @@ from typing import Any
 import pytest
 import yaml
 
-from nthlayer_generate.dashboards.builder_sdk import build_dashboard
+from nthlayer_generate.dashboards.builder_sdk import DashboardBuilderSDK, build_dashboard
 from nthlayer_generate.generators.alerts import generate_alerts_for_service
 from nthlayer_generate.generators.sloth import generate_sloth_spec
 from nthlayer_generate.loki.generator import generate_loki_alerts_for_service_file
@@ -44,12 +51,20 @@ from nthlayer_generate.recording_rules.models import create_rule_groups
 from nthlayer_generate.specs.custom_templates import CustomTemplateLoader
 from nthlayer_generate.specs.parser import parse_service_file
 
-from ._corpus import EX, LEGACY, SRM_V1, V2, _error, manifest_id
+from ._corpus import EX, FIXTURES, LEGACY, LEGACY_FIXTURES, SRM_V1, V2, _error, manifest_id
 from ._golden import check
 
 # Every manifest, loadable or not: the legacy parser's rejections are pinned.
-CASES: tuple[tuple[str, Path], ...] = tuple((manifest_id(p), p) for p in SRM_V1 + LEGACY + V2)
+# The test-only fixtures come last, so every corpus id is unchanged.
+CASES: tuple[tuple[str, Path], ...] = tuple(
+    (manifest_id(p), p) for p in SRM_V1 + LEGACY + V2 + LEGACY_FIXTURES
+)
 IDS = [i for i, _ in CASES]
+# Legacy-format inputs only: srm/v1 and v2 fail to parse before any builder.
+NO_INTENT_CASES: tuple[tuple[str, Path], ...] = tuple(
+    (manifest_id(p), p) for p in LEGACY + LEGACY_FIXTURES
+)
+NO_INTENT_IDS = [i for i, _ in NO_INTENT_CASES]
 
 
 # --- environment-overlay cases ------------------------------------------------
@@ -100,6 +115,10 @@ ENV_CASES: tuple[EnvCase, ...] = (
     # are service-specific; the rest fall through to the shared {env}.yaml.
     *(EnvCase(EX / "services" / "payment-api.yaml", e, staged=True) for e in ENVIRONMENTS),
     *(EnvCase(EX / "services" / "search-api.yaml", e, staged=True) for e in ENVIRONMENTS),
+    # Test-only: fixtures/legacy/environments/checkout-env-vars-prod.yaml, found
+    # in place. Reaches the parse-time ${env}/${team} substitution
+    # (specs/parser.py:104-112), which no shipped file reaches.
+    EnvCase(FIXTURES / "legacy" / "checkout-env-vars.yaml", "prod", staged=False),
 )
 ENV_IDS = [c.id for c in ENV_CASES]
 
@@ -168,6 +187,11 @@ def loki(path: Path, tmp: Path, environment: str | None) -> Any:
     return {"count": len(alerts_), "file": rules_as_sets(_read_yaml(ruler_file))}
 
 
+def dashboard_no_intent(path: Path, tmp: Path, environment: str | None) -> Any:
+    context, resources = parse_service_file(path, environment=environment)
+    return DashboardBuilderSDK(context, resources, use_intent_templates=False).build()
+
+
 Cell = Callable[[Path, Path, "str | None"], Any]
 
 CELLS: dict[str, Cell] = {
@@ -185,9 +209,11 @@ ENV_CELLS: dict[str, Cell] = {
     "legacy_env_dashboard": dashboard,
     "legacy_env_metrics": metrics,
 }
+NO_INTENT_CELL = "legacy_dashboard_no_intent"
 GOLDEN_CELLS = {
     **{cell: tuple(IDS) for cell in CELLS},
     **{cell: tuple(ENV_IDS) for cell in ENV_CELLS},
+    NO_INTENT_CELL: tuple(NO_INTENT_IDS),
 }
 
 
@@ -202,9 +228,23 @@ def _run(fn: Cell, cell: str, mid: str, path: Path, tmp: Path, environment: str 
 def test_corpus_and_env_cases_are_non_empty() -> None:
     # A zero-case parametrise would leave these cells green and empty.
     assert CASES
-    assert len(CASES) == len(SRM_V1) + len(LEGACY) + len(V2)
-    assert len(ENV_CASES) == 9
+    assert len(CASES) == len(SRM_V1) + len(LEGACY) + len(V2) + len(LEGACY_FIXTURES)
+    assert len(NO_INTENT_CASES) == len(LEGACY) + len(LEGACY_FIXTURES)
+    assert len(ENV_CASES) == 10
     assert all(c.base.is_file() for c in ENV_CASES)
+
+
+def test_legacy_fixtures_are_listed_and_name_their_branch() -> None:
+    # A fixture file nobody lists is never run; one with no provenance header
+    # cannot be checked against the branch it claims to reach.
+    on_disk = sorted((FIXTURES / "legacy").rglob("*.yaml"))
+    overlays = [p for p in on_disk if p.parent.name == "environments"]
+    assert sorted(LEGACY_FIXTURES) == sorted(set(on_disk) - set(overlays))
+    for p in on_disk:
+        header = p.read_text(encoding="utf-8").split("\n\n", 1)[0]
+        assert header.startswith("# TEST-ONLY golden fixture"), p.name
+        assert "src/nthlayer_generate/" in header, p.name
+        assert "examples/" in header, p.name
 
 
 def test_every_env_case_finds_an_overlay(tmp_path: Path) -> None:
@@ -247,6 +287,15 @@ def test_legacy(
     monkeypatch.chdir(tmp_path)
     no_user_templates(monkeypatch)
     _run(CELLS[cell], cell, mid, path, tmp_path, None)
+
+
+@pytest.mark.parametrize(("mid", "path"), NO_INTENT_CASES, ids=NO_INTENT_IDS)
+def test_legacy_dashboard_no_intent(
+    mid: str, path: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    no_user_templates(monkeypatch)
+    _run(dashboard_no_intent, NO_INTENT_CELL, mid, path, tmp_path, None)
 
 
 @pytest.mark.parametrize("cell", sorted(ENV_CELLS))

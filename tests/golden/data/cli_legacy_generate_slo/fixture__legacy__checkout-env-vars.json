@@ -1,0 +1,110 @@
+{
+  "exit": 0,
+  "files": {
+    "sloth/checkout-env-vars.yaml": {
+      "labels": {
+        "team": "commerce",
+        "tier": "critical",
+        "type": "api"
+      },
+      "service": "checkout-env-vars",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO availability-${env} for checkout-env-vars"
+            },
+            "labels": {
+              "service": "checkout-env-vars",
+              "tier": "critical"
+            },
+            "name": "CheckoutEnvVarsAvailability${env}",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on checkout-env-vars"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on checkout-env-vars"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.95% availability ${env}",
+          "name": "availability-${env}",
+          "objective": 99.95,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO latency-p95-${team} for checkout-env-vars"
+            },
+            "labels": {
+              "service": "checkout-env-vars",
+              "tier": "critical"
+            },
+            "name": "CheckoutEnvVarsLatencyP95${team}",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on checkout-env-vars"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on checkout-env-vars"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.0% latency p95 ${team}",
+          "name": "latency-p95-${team}",
+          "objective": 99.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✓ Generated SLOs for checkout-env-vars",
+    "  SLO count: 2",
+    "  Output: <tmp>/out/sloth/checkout-env-vars.yaml",
+    "",
+    "Generated SLOs:",
+    "  • checkout-env-vars-availability-${env} (99.95%)",
+    "  • checkout-env-vars-latency-p95-${team} (99.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/checkout-env-vars.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/checkout-env-vars.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "slo_count": 2,
+  "spec": {
+    "labels": {
+      "team": "commerce",
+      "tier": "critical",
+      "type": "api"
+    },
+    "service": "checkout-env-vars",
+    "slos": [
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO availability-${env} for checkout-env-vars"
+          },
+          "labels": {
+            "service": "checkout-env-vars",
+            "tier": "critical"
+          },
+          "name": "CheckoutEnvVarsAvailability${env}",
+          "page_alert": {
+            "annotations": {
+              "summary": "High error budget burn on checkout-env-vars"
+            },
+            "labels": {
+              "severity": "critical"
+            }
+          },
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on checkout-env-vars"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "99.95% availability ${env}",
+        "name": "availability-${env}",
+        "objective": 99.95,
+        "sli": {
+          "events": {
+            "error_query": "",
+            "total_query": ""
+          }
+        }
+      },
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO latency-p95-${team} for checkout-env-vars"
+          },
+          "labels": {
+            "service": "checkout-env-vars",
+            "tier": "critical"
+          },
+          "name": "CheckoutEnvVarsLatencyP95${team}",
+          "page_alert": {
+            "annotations": {
+              "summary": "High error budget burn on checkout-env-vars"
+            },
+            "labels": {
+              "severity": "critical"
+            }
+          },
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on checkout-env-vars"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "99.0% latency p95 ${team}",
+        "name": "latency-p95-${team}",
+        "objective": 99.0,
+        "sli": {
+          "events": {
+            "error_query": "",
+            "total_query": ""
+          }
+        }
+      }
+    ],
+    "version": "prometheus/v1"
+  }
+}

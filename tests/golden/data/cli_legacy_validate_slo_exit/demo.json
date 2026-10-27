@@ -1,0 +1,51 @@
+{
+  "exit": 1,
+  "json": {
+    "all_valid": false,
+    "results": [
+      {
+        "all_found": true,
+        "error": null,
+        "found_metrics": [
+          "http_requests_total"
+        ],
+        "metrics": [
+          "http_requests_total"
+        ],
+        "missing_metrics": [],
+        "query": "sum(rate(http_requests_total{service=\"payment-api\",status=~\"2..\"}[5m])) / sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+        "slo_name": "payment-api-availability"
+      },
+      {
+        "all_found": true,
+        "error": null,
+        "found_metrics": [
+          "http_request_duration_seconds_bucket"
+        ],
+        "metrics": [
+          "http_request_duration_seconds_bucket"
+        ],
+        "missing_metrics": [],
+        "query": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])) by (le))",
+        "slo_name": "payment-api-latency"
+      },
+      {
+        "all_found": false,
+        "error": null,
+        "found_metrics": [
+          "http_requests_total"
+        ],
+        "metrics": [
+          "http_errors_total",
+          "http_requests_total"
+        ],
+        "missing_metrics": [
+          "http_errors_total"
+        ],
+        "query": "sum(rate(http_errors_total{service=\"payment-api\"}[5m])) / sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+        "slo_name": "payment-api-error-rate"
+      }
+    ],
+    "service": "payment-api"
+  }
+}

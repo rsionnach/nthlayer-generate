@@ -1,0 +1,77 @@
+{
+  "dev": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: dev",
+      "Service: tests/golden/fixtures/legacy/checkout-env-vars.yaml",
+      "",
+      "✗ Environment file not found: dev",
+      "",
+      "Searched for:",
+      "  • checkout-env-vars-dev.yaml",
+      "  • checkout-env-vars-dev.yml",
+      "  • dev.yaml",
+      "  • dev.yml",
+      ""
+    ]
+  },
+  "prod": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: prod",
+      "Service: tests/golden/fixtures/legacy/checkout-env-vars.yaml",
+      "",
+      "✓ Found: checkout-env-vars-prod.yaml",
+      "",
+      "Testing with service file...",
+      "✓ Successfully merged with checkout-env-vars.yaml",
+      "  Result: tier=critical, 2 resource(s)",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  },
+  "staging": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: staging",
+      "Service: tests/golden/fixtures/legacy/checkout-env-vars.yaml",
+      "",
+      "✗ Environment file not found: staging",
+      "",
+      "Searched for:",
+      "  • checkout-env-vars-staging.yaml",
+      "  • checkout-env-vars-staging.yml",
+      "  • staging.yaml",
+      "  • staging.yml",
+      ""
+    ]
+  }
+}

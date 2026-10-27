@@ -1,0 +1,77 @@
+{
+  "dev": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: dev",
+      "Service: tests/golden/fixtures/legacy/checkout-db-deps.yaml",
+      "",
+      "✗ Environment file not found: dev",
+      "",
+      "Searched for:",
+      "  • checkout-db-deps-dev.yaml",
+      "  • checkout-db-deps-dev.yml",
+      "  • dev.yaml",
+      "  • dev.yml",
+      ""
+    ]
+  },
+  "prod": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: prod",
+      "Service: tests/golden/fixtures/legacy/checkout-db-deps.yaml",
+      "",
+      "✗ Environment file not found: prod",
+      "",
+      "Searched for:",
+      "  • checkout-db-deps-prod.yaml",
+      "  • checkout-db-deps-prod.yml",
+      "  • prod.yaml",
+      "  • prod.yml",
+      ""
+    ]
+  },
+  "staging": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: staging",
+      "Service: tests/golden/fixtures/legacy/checkout-db-deps.yaml",
+      "",
+      "✗ Environment file not found: staging",
+      "",
+      "Searched for:",
+      "  • checkout-db-deps-staging.yaml",
+      "  • checkout-db-deps-staging.yml",
+      "  • staging.yaml",
+      "  • staging.yml",
+      ""
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+# TEST-ONLY golden fixture (opensrm-wo62.4.2) — not a shipped example.
+#
+# Exists to reach two branches of extract_dependencies in
+# src/nthlayer_generate/generators/alerts.py:
+#
+# * :45-48 — a database with no `type:` has its technology inferred from the
+#   first `-` segment of its name (mysql-orders -> mysql). Every shipped
+#   example gives databases an explicit type.
+# * :74 — `list(set(dependencies))`, the dedup of dependency technologies.
+#   postgres-main and postgres-replica both declare postgres; without the
+#   dedup the postgres alerts are emitted twice. No shipped example repeats a
+#   technology.
+#
+# Adapted from examples/services/checkout-service.yaml (service block, SLO,
+# Dependencies shape) and examples/services/payment-api-with-deps.yaml
+# (postgres-main / name-prefix naming).
+
+service:
+  name: checkout-db-deps
+  team: commerce
+  tier: critical
+  type: api
+
+resources:
+  - kind: SLO
+    name: availability
+    spec:
+      objective: 99.95
+      window: 30d
+      indicators:
+        - type: availability
+          success_ratio:
+            total_query: sum(rate(http_requests_total{service="checkout-db-deps"}[5m]))
+            good_query: sum(rate(http_requests_total{service="checkout-db-deps",status!~"5.."}[5m]))
+
+  - kind: Dependencies
+    name: dependencies
+    spec:
+      databases:
+        - name: mysql-orders
+          version: "8.0"
+        - type: postgres
+          name: postgres-main
+        - type: postgres
+          name: postgres-replica

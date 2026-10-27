@@ -544,6 +544,27 @@ def slo_list(env: Env) -> Any:
     return {"exit": code, "text": text}
 
 
+def _validate_slo_json(env: Env, **kwargs: Any) -> Any:
+    env.discard_output()
+    code = validate_slo_command(output_format="json", **kwargs)
+    doc = json.loads(env.capsys.readouterr().out)
+    for result in doc.get("results", []):
+        for key in ("metrics", "found_metrics", "missing_metrics"):
+            if isinstance(result.get(key), list):
+                result[key] = sorted(result[key])
+    return {"exit": code, "json": doc}
+
+
+def validate_slo_demo(env: Env) -> Any:
+    # --demo's canned results include an SLO with a missing metric, so this is
+    # the one offline input that exits 1 (cli/validate_slo.py:417-419). No
+    # manifest can: offline every extracted metric counts as found, and no
+    # shipped manifest's SLO has the spec.query or
+    # spec.objectives[0].indicator.spec.query the command reads, so every
+    # manifest cell above extracts no metrics at all.
+    return _validate_slo_json(env, service_file="unused.yaml", demo=True)
+
+
 def _validate_env_dir(directory: Path) -> Callable[[Env], Any]:
     def cell(env: Env) -> Any:
         out: dict[str, Any] = {}
@@ -561,6 +582,9 @@ SINGLETONS: dict[str, dict[str, Callable[[Env], Any]]] = {
     "cli_legacy_validate_env_dir": {
         "examples": _validate_env_dir(EX),
         "examples__services": _validate_env_dir(EX / "services"),
+    },
+    "cli_legacy_validate_slo_exit": {
+        "demo": validate_slo_demo,
     },
 }
 

@@ -48,7 +48,10 @@ dependencies = [
     # is_valid_service_type from nthlayer_common.manifest.models, which landed
     # in 2.0.0 (opensrm-ih0v). The >=0.1.5 floor before it claimed a
     # compatibility that no longer existed.
-    # WHY 5.5.0 (opensrm-wo62.1): 5.4.0 adds ReliabilityManifest.authored_type.
+    # WHY 5.5.0 (opensrm-wo62.1): its legacy-format parser sets judgment_type
+    # and lifts calibration/feedback_latency the way srm/v1 does; generate's
+    # judgment rules and migrate depend on that. (History: 5.4.0 added
+    # ReliabilityManifest.authored_type.)
     # Rule 10: the floor is the installed sibling, so bump it on every
     # nthlayer-common minor release; the floor guard fails until you do.
     # History: 5.3.1 (opensrm-dww5) was the floor because its opensrm/v1

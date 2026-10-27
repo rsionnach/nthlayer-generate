@@ -35,6 +35,7 @@ from ._golden import (
     expected_goldens,
     normalise,
     stored_files,
+    update_mode,
 )
 
 
@@ -93,6 +94,31 @@ def test_manifest_ids_are_unique() -> None:
 def test_update_mode_is_off() -> None:
     # A run that wrote goldens must not be able to pass.
     assert os.environ.get(UPDATE_ENV) is None
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("1", True),
+        ("true", True),
+        ("TRUE", True),
+        ("Yes", True),
+        ("0", False),
+        ("false", False),
+        ("", False),
+        ("no", False),
+    ],
+)
+def test_update_mode_is_truthy_values_only(
+    monkeypatch: pytest.MonkeyPatch, value: str, expected: bool
+) -> None:
+    monkeypatch.setenv(UPDATE_ENV, value)
+    assert update_mode() is expected
+
+
+def test_update_mode_unset_is_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv(UPDATE_ENV, raising=False)
+    assert update_mode() is False
 
 
 def _has_masked_key(node: object, key: str) -> bool:

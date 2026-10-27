@@ -10,7 +10,8 @@ output under review.
 
 Updating goldens:
 
-1. Run the golden tests with ``NTHLAYER_UPDATE_GOLDENS=1``. That run fails by
+1. Run the golden tests with ``NTHLAYER_UPDATE_GOLDENS=1`` (only 1/true/yes,
+   case-insensitive, enable it; 0, false and empty do not). That run fails by
    design, so it can never be mistaken for a pass.
 2. Rerun without the variable; it must pass.
 3. Review ``git diff tests/golden/data`` as the change under review and get it
@@ -210,7 +211,7 @@ def golden_path(cell: str, manifest_id: str) -> Path:
 
 
 def update_mode() -> bool:
-    return os.environ.get(UPDATE_ENV) is not None
+    return os.environ.get(UPDATE_ENV, "").strip().lower() in {"1", "true", "yes"}
 
 
 def check(cell: str, manifest_id: str, value: object, *, tmp: Path | None = None) -> None:
@@ -221,7 +222,7 @@ def check(cell: str, manifest_id: str, value: object, *, tmp: Path | None = None
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(actual, encoding="utf-8")
         raise AssertionError(
-            f"{UPDATE_ENV} is set: wrote {path.relative_to(REPO)}; rerun without it"
+            f"{UPDATE_ENV} is enabled: wrote {path.relative_to(REPO)}; rerun without it"
         )
     if not path.is_file():
         raise AssertionError(

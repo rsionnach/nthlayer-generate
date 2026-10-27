@@ -167,6 +167,24 @@ accepted** alongside `srm/v1`.
   `maximum_expected_calibration_error` (calibration) or `maximum_p50`
   (feedback latency) is declared.
 
+**`migrate` / `validate`:**
+
+- `migrate` treats srm/v1 and v2 files as already migrated; it never
+  downgrades a v2 manifest.
+- `migrate` prints `Not carried into srm/v1: ...` warnings for anything srm/v1
+  cannot express, and still exits 0 (see bead opensrm-us97).
+- Legacy-format ai-gate manifests need `nthlayer-common>=5.5.0` for their
+  judgment SLOs and thresholds; generate 3.0.0 requires it.
+- `validate` does not run contract checks on legacy files.
+- `ContractRegistry` exposes `get_contracts(service) -> list[ReliabilityContract]`
+  and `promised_availability(service) -> float | None` (the minimum over the
+  contracts that declare one):
+
+  ```python
+  contracts = registry.get_contracts("checkout")
+  promised = registry.promised_availability("checkout")  # e.g. 99.9, or None
+  ```
+
 ## ⚠️ Upgrading: `type: web` becomes `x-web`
 
 If any `service.yaml` declares `type: web`, read this before upgrading.

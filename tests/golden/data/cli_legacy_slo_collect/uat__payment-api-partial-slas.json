@@ -1,0 +1,27 @@
+{
+  "exit": 0,
+  "queries": [
+    "sum(rate(http_requests_total{service=\"payment-api\",status=~\"[1234]..\"}[5m]))\n/\nsum(rate(http_requests_total{service=\"payment-api\"}[5m]))\n"
+  ],
+  "text": [
+    "",
+    "============================================================",
+    "  Error Budget Status: payment-api-partial-slas",
+    "============================================================",
+    "",
+    "Prometheus: http://prometheus.invalid",
+    "",
+    "[OK] SLO: availability (99.5%)",
+    "  Window: 30d rolling",
+    "  Current SLI: 99.95%",
+    "",
+    "  Error Budget:",
+    "  Total: 216.0 min",
+    "  Burned: 21.6 min (10%)",
+    "  Status: HEALTHY",
+    "",
+    "------------------------------------------------------------",
+    "Summary: 1/1 SLOs healthy",
+    ""
+  ]
+}

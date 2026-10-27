@@ -1,0 +1,25 @@
+{
+  "exit": 0,
+  "text": [
+    "",
+    "",
+    "╭──╮",
+    "│ SLO Status: payment-api-partial-slas  │",
+    "╰──╯",
+    "",
+    "SLO: availability",
+    "  Objective: 99.5%",
+    "  Window: 30d",
+    "  Error Budget: 216.0 minutes (0.50%)",
+    "",
+    "  Indicator: availability",
+    "  Query: sum(rate(http_requests_total{service=\"payment-api\",status...",
+    "",
+    "──",
+    "Total: 1 SLO(s) defined",
+    "",
+    "To collect metrics and calculate actual budget:",
+    "  nthlayer slo collect payment-api-partial-slas",
+    ""
+  ]
+}

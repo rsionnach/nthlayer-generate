@@ -1,0 +1,299 @@
+{
+  "exit": 0,
+  "files": {
+    "loki-alerts.yaml": {
+      "groups": [
+        {
+          "name": "checkout-service",
+          "rules": [
+            {
+              "alert": "checkout-service_ApplicationError",
+              "annotations": {
+                "description": "Error-level log entries detected in application logs.",
+                "summary": "[checkout-service] Application errors detected"
+              },
+              "expr": "sum(count_over_time({app=\"checkout-service\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "service": "checkout-service",
+                "severity": "warning",
+                "source": "service",
+                "team": "commerce",
+                "technology": "api",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-service_ApplicationHighErrorRate",
+              "annotations": {
+                "description": "Application is experiencing a high rate of errors.",
+                "summary": "[checkout-service] High error rate in application"
+              },
+              "expr": "sum(count_over_time({app=\"checkout-service\"} |~ \"(?i)error|exception\" [5m])) > 100",
+              "for": "5m",
+              "labels": {
+                "service": "checkout-service",
+                "severity": "critical",
+                "source": "service",
+                "team": "commerce",
+                "technology": "api",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-service_ApplicationPanic",
+              "annotations": {
+                "description": "Application appears to have crashed or panicked.",
+                "summary": "[checkout-service] Application panic/crash detected"
+              },
+              "expr": "count_over_time({app=\"checkout-service\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "service": "checkout-service",
+                "severity": "critical",
+                "source": "service",
+                "team": "commerce",
+                "technology": "api",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-service_mysql_MysqlConnectionRefused",
+              "annotations": {
+                "description": "Applications cannot connect to MySQL.",
+                "summary": "[checkout-service/mysql] MySQL connection error"
+              },
+              "expr": "count_over_time({app=\"mysql\", service=\"checkout-service\"} |~ \"Connection refused|Can't connect|Access denied\" [1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "dependency": "mysql",
+                "service": "checkout-service",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "mysql",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-service_mysql_MysqlDeadlock",
+              "annotations": {
+                "description": "A deadlock was detected in MySQL.",
+                "summary": "[checkout-service/mysql] MySQL deadlock detected"
+              },
+              "expr": "count_over_time({app=\"mysql\", service=\"checkout-service\"} |~ \"Deadlock found|deadlock\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "mysql",
+                "service": "checkout-service",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "mysql",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-service_mysql_MysqlError",
+              "annotations": {
+                "description": "MySQL logged an ERROR level message.",
+                "summary": "[checkout-service/mysql] MySQL error detected"
+              },
+              "expr": "count_over_time({app=\"mysql\", service=\"checkout-service\"} |~ \"\\\\[ERROR\\\\]\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "mysql",
+                "service": "checkout-service",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "mysql",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-service_mysql_MysqlReplicationError",
+              "annotations": {
+                "description": "MySQL replication is experiencing errors.",
+                "summary": "[checkout-service/mysql] MySQL replication error"
+              },
+              "expr": "count_over_time({app=\"mysql\", service=\"checkout-service\"} |~ \"Slave.*error|replication.*error|Got fatal error\" [1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "dependency": "mysql",
+                "service": "checkout-service",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "mysql",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-service_mysql_MysqlSlowQuery",
+              "annotations": {
+                "description": "Slow queries being logged. Review query performance.",
+                "summary": "[checkout-service/mysql] MySQL slow queries detected"
+              },
+              "expr": "sum(count_over_time({app=\"mysql\", service=\"checkout-service\"} |~ \"slow query|Query_time:\" [5m])) > 5",
+              "for": "5m",
+              "labels": {
+                "dependency": "mysql",
+                "service": "checkout-service",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "mysql",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-service_mysql_MysqlTableCorruption",
+              "annotations": {
+                "description": "MySQL table corruption detected. Immediate action required.",
+                "summary": "[checkout-service/mysql] MySQL table corruption detected"
+              },
+              "expr": "count_over_time({app=\"mysql\", service=\"checkout-service\"} |~ \"Table.*corrupt|Incorrect key file|crashed\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "mysql",
+                "service": "checkout-service",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "mysql",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-service_mysql_MysqlTooManyConnections",
+              "annotations": {
+                "description": "MySQL has reached max_connections limit.",
+                "summary": "[checkout-service/mysql] MySQL too many connections"
+              },
+              "expr": "count_over_time({app=\"mysql\", service=\"checkout-service\"} |= \"Too many connections\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "mysql",
+                "service": "checkout-service",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "mysql",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-service_redis_RedisClusterDown",
+              "annotations": {
+                "description": "Redis cluster is in a down state. Some slots may not be covered.",
+                "summary": "[checkout-service/redis] Redis cluster down"
+              },
+              "expr": "count_over_time({app=\"redis\", service=\"checkout-service\"} |~ \"CLUSTERDOWN|cluster.*down|slots.*not covered\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "redis",
+                "service": "checkout-service",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "redis",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-service_redis_RedisConnectionRefused",
+              "annotations": {
+                "description": "Applications cannot connect to Redis. Check if Redis is running and acce...",
+                "summary": "[checkout-service/redis] Redis connection refused"
+              },
+              "expr": "count_over_time({app=\"redis\", service=\"checkout-service\"} |~ \"Connection refused|ECONNREFUSED\" [1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "dependency": "redis",
+                "service": "checkout-service",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "redis",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-service_redis_RedisOutOfMemory",
+              "annotations": {
+                "description": "Redis is out of memory. Consider increasing maxmemory or reviewing evict...",
+                "summary": "[checkout-service/redis] Redis out of memory"
+              },
+              "expr": "count_over_time({app=\"redis\", service=\"checkout-service\"} |~ \"OOM|out of memory|Can't save\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "redis",
+                "service": "checkout-service",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "redis",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-service_redis_RedisRDBSaveFailed",
+              "annotations": {
+                "description": "Redis background save (RDB) failed. Check disk space and permissions.",
+                "summary": "[checkout-service/redis] Redis RDB save failed"
+              },
+              "expr": "count_over_time({app=\"redis\", service=\"checkout-service\"} |~ \"MISCONF|Background saving|RDB\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "redis",
+                "service": "checkout-service",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "redis",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-service_redis_RedisReplicationBroken",
+              "annotations": {
+                "description": "Redis replication to master is broken. Check network connectivity and ma...",
+                "summary": "[checkout-service/redis] Redis replication broken"
+              },
+              "expr": "count_over_time({app=\"redis\", service=\"checkout-service\"} |~ \"MASTER aborted|Disconnected from MASTER|replication\" [1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "dependency": "redis",
+                "service": "checkout-service",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "redis",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-service_redis_RedisSlowlog",
+              "annotations": {
+                "description": "Slow Redis commands detected. Review command patterns and consider optim...",
+                "summary": "[checkout-service/redis] Redis slow commands detected"
+              },
+              "expr": "sum(count_over_time({app=\"redis\", service=\"checkout-service\"} |~ \"Slow|slowlog\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "dependency": "redis",
+                "service": "checkout-service",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "redis",
+                "tier": "critical"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

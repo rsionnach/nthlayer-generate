@@ -1,0 +1,12 @@
+{
+  "exit": 1,
+  "text": [
+    "",
+    "",
+    "╭──╮",
+    "│ SLO Status: batch.reliability  │",
+    "╰──╯",
+    "",
+    "Error parsing service file: Missing required 'service' section in examples/opensrm/batch.reliability.yaml"
+  ]
+}

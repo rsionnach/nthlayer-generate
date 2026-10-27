@@ -1,0 +1,214 @@
+{
+  "json": {
+    "checks": {
+      "alert_generation": {
+        "alert_count": 19,
+        "message": "19 alerts will be generated",
+        "status": "pass"
+      },
+      "dashboard_generation": {
+        "dashboard_count": 1,
+        "message": "1 dashboards will be generated",
+        "status": "pass"
+      },
+      "recording_rules": {
+        "message": "14 recording rules will be generated",
+        "rule_count": 14,
+        "status": "pass"
+      },
+      "slo_definition": {
+        "message": "3 SLOs defined",
+        "slo_count": 3,
+        "status": "pass"
+      }
+    },
+    "command": "plan",
+    "metadata": {
+      "resources": {
+        "alerts": [
+          {
+            "count": 12,
+            "severity": "critical"
+          },
+          {
+            "count": 7,
+            "severity": "warning"
+          }
+        ],
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "analytics-stream",
+            "slo_count": 3,
+            "team": "data",
+            "tier": "high",
+            "type": "backstage_entity"
+          }
+        ],
+        "dashboard": [
+          {
+            "description": "Auto-generated monitoring dashboard",
+            "name": "analytics-stream-dashboard",
+            "panels": "12+"
+          }
+        ],
+        "pagerduty": [
+          {
+            "name": "data",
+            "type": "team"
+          },
+          {
+            "names": [
+              "data-primary",
+              "data-secondary",
+              "data-manager"
+            ],
+            "type": "schedules"
+          },
+          {
+            "name": "data-escalation",
+            "type": "escalation_policy"
+          },
+          {
+            "name": "analytics-stream",
+            "support_model": "self",
+            "tier": "high",
+            "type": "service"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 10,
+            "interval": "30s",
+            "type": "analytics-stream_slo_metrics"
+          },
+          {
+            "count": 4,
+            "interval": "30s",
+            "type": "analytics-stream_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "processing-availability",
+            "objective": 99.5,
+            "window": "30d"
+          },
+          {
+            "name": "stream-lag",
+            "objective": 99.0,
+            "window": "30d"
+          },
+          {
+            "name": "event-latency-p99",
+            "objective": 95.0,
+            "window": "30d"
+          }
+        ]
+      },
+      "service_yaml": "examples/services/analytics-stream.yaml"
+    },
+    "service": "analytics-stream",
+    "summary": {
+      "errors": 0,
+      "passed": 4,
+      "status": "pass",
+      "total": 4,
+      "total_resources": 13,
+      "warnings": 0
+    },
+    "timestamp": "<masked>",
+    "version": "1.0"
+  },
+  "json_exit": 0,
+  "plan": {
+    "errors": [],
+    "resources": {
+      "alerts": [
+        {
+          "count": 12,
+          "severity": "critical"
+        },
+        {
+          "count": 7,
+          "severity": "warning"
+        }
+      ],
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "analytics-stream",
+          "slo_count": 3,
+          "team": "data",
+          "tier": "high",
+          "type": "backstage_entity"
+        }
+      ],
+      "dashboard": [
+        {
+          "description": "Auto-generated monitoring dashboard",
+          "name": "analytics-stream-dashboard",
+          "panels": "12+"
+        }
+      ],
+      "pagerduty": [
+        {
+          "name": "data",
+          "type": "team"
+        },
+        {
+          "names": [
+            "data-primary",
+            "data-secondary",
+            "data-manager"
+          ],
+          "type": "schedules"
+        },
+        {
+          "name": "data-escalation",
+          "type": "escalation_policy"
+        },
+        {
+          "name": "analytics-stream",
+          "support_model": "self",
+          "tier": "high",
+          "type": "service"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 10,
+          "interval": "30s",
+          "type": "analytics-stream_slo_metrics"
+        },
+        {
+          "count": 4,
+          "interval": "30s",
+          "type": "analytics-stream_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "processing-availability",
+          "objective": 99.5,
+          "window": "30d"
+        },
+        {
+          "name": "stream-lag",
+          "objective": 99.0,
+          "window": "30d"
+        },
+        {
+          "name": "event-latency-p99",
+          "objective": 95.0,
+          "window": "30d"
+        }
+      ]
+    },
+    "service_name": "analytics-stream",
+    "service_yaml": "examples/services/analytics-stream.yaml",
+    "warnings": []
+  },
+  "success": true,
+  "total_resources": 13
+}

@@ -1,0 +1,119 @@
+{
+  "groups": [
+    {
+      "interval": "30s",
+      "name": "email-worker_slo_metrics",
+      "rules": [
+        {
+          "expr": "sum(increase(http_requests_total{service=\"email-worker\"}[30d]))",
+          "labels": {
+            "service": "email-worker",
+            "slo": "success-rate"
+          },
+          "record": "slo:error_requests_total:30d"
+        },
+        {
+          "expr": "sum(increase(http_requests_total{service=\"email-worker\",status=~\"5..\"}[30d]))",
+          "labels": {
+            "service": "email-worker",
+            "slo": "success-rate"
+          },
+          "record": "slo:error_requests_failed:30d"
+        },
+        {
+          "expr": "slo:error_requests_failed:30d{service=\"email-worker\",slo=\"success-rate\"} / slo:error_requests_total:30d{service=\"email-worker\",slo=\"success-rate\"}",
+          "labels": {
+            "objective": "99.0",
+            "service": "email-worker",
+            "slo": "success-rate"
+          },
+          "record": "slo:error_rate:ratio"
+        },
+        {
+          "expr": "sum(increase(http_request_duration_seconds_count{service=\"email-worker\"}[30d]))",
+          "labels": {
+            "service": "email-worker",
+            "slo": "processing-latency-p95"
+          },
+          "record": "slo:latency_requests_total:30d"
+        },
+        {
+          "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"email-worker\",le=\"0.5\"}[30d]))",
+          "labels": {
+            "service": "email-worker",
+            "slo": "processing-latency-p95",
+            "threshold": "500ms"
+          },
+          "record": "slo:latency_requests_fast:30d"
+        },
+        {
+          "expr": "slo:latency_requests_fast:30d{service=\"email-worker\",slo=\"processing-latency-p95\"} / slo:latency_requests_total:30d{service=\"email-worker\",slo=\"processing-latency-p95\"}",
+          "labels": {
+            "objective": "99.0",
+            "service": "email-worker",
+            "slo": "processing-latency-p95"
+          },
+          "record": "slo:latency:ratio"
+        },
+        {
+          "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"email-worker\"}[5m]))",
+          "labels": {
+            "service": "email-worker",
+            "slo": "processing-latency-p95"
+          },
+          "record": "slo:http_request_duration_seconds:p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"email-worker\"}[5m]))",
+          "labels": {
+            "service": "email-worker",
+            "slo": "processing-latency-p95"
+          },
+          "record": "slo:http_request_duration_seconds:p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"email-worker\"}[5m]))",
+          "labels": {
+            "service": "email-worker",
+            "slo": "processing-latency-p95"
+          },
+          "record": "slo:http_request_duration_seconds:p99"
+        }
+      ]
+    },
+    {
+      "interval": "30s",
+      "name": "email-worker_health_metrics",
+      "rules": [
+        {
+          "expr": "sum(rate(http_requests_total{service=\"email-worker\"}[5m]))",
+          "labels": {
+            "service": "email-worker"
+          },
+          "record": "service:http_requests:rate5m"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{service=\"email-worker\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"email-worker\"}[5m]))",
+          "labels": {
+            "service": "email-worker"
+          },
+          "record": "service:http_errors:rate5m"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"email-worker\"}[5m]))",
+          "labels": {
+            "service": "email-worker"
+          },
+          "record": "service:http_request_duration_seconds:p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"email-worker\"}[5m]))",
+          "labels": {
+            "service": "email-worker"
+          },
+          "record": "service:http_request_duration_seconds:p99"
+        }
+      ]
+    }
+  ]
+}

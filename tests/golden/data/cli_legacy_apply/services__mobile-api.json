@@ -1,0 +1,1131 @@
+{
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "mobile-api-redis",
+          "rules": [
+            {
+              "alert": "RedisClusterFlapping",
+              "annotations": {
+                "description": "Changes have been detected in Redis replica connection. This can occur when replica nodes lose connection to the master and reconnect (a.k.a flapping).\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis cluster flapping (instance {{ $labels.instance }})"
+              },
+              "expr": "changes(redis_connected_slaves[1m]) > 1",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisDisconnectedSlaves",
+              "annotations": {
+                "description": "Redis not replicating for all slaves. Consider reviewing the redis replication status.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis disconnected slaves (instance [instance unavailable])"
+              },
+              "expr": "count without (instance, job) (redis_connected_slaves) - sum without (instance, job) (redis_connected_slaves) - 1 > 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisDown",
+              "annotations": {
+                "description": "Redis instance is down\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis down (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_up == 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisMissingBackup",
+              "annotations": {
+                "description": "Redis has not been backuped for 24 hours\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis missing backup (instance {{ $labels.instance }})"
+              },
+              "expr": "time() - redis_rdb_last_save_timestamp_seconds > 60 * 60 * 24",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisMissingMaster",
+              "annotations": {
+                "description": "Redis cluster has no node marked as master.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis missing master (instance [instance unavailable])"
+              },
+              "expr": "(count(redis_instance_info{role=\"master\"}) or vector(0)) < 1",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisNotEnoughConnections",
+              "annotations": {
+                "description": "Redis instance should have more connections (> 5)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis not enough connections (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_connected_clients < 5",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "warning",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisOutOfConfiguredMaxmemory",
+              "annotations": {
+                "description": "Redis is running out of configured maxmemory (> 90%)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis out of configured maxmemory (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_memory_used_bytes / redis_memory_max_bytes * 100 > 90 and on(instance) redis_memory_max_bytes > 0",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "warning",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisOutOfSystemMemory",
+              "annotations": {
+                "description": "Redis is running out of system memory (> 90%)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis out of system memory (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_memory_used_bytes / redis_total_system_memory_bytes * 100 > 90",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "warning",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisRejectedConnections",
+              "annotations": {
+                "description": "Some connections to Redis has been rejected\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis rejected connections (instance {{ $labels.instance }})"
+              },
+              "expr": "increase(redis_rejected_connections_total[1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisReplicationBroken",
+              "annotations": {
+                "description": "Redis instance lost a slave\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis replication broken (instance {{ $labels.instance }})"
+              },
+              "expr": "delta(redis_connected_slaves[1m]) < 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisTooManyConnections",
+              "annotations": {
+                "description": "Redis is running out of connections (> 90% used)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis too many connections (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_connected_clients / redis_config_maxclients * 100 > 90",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "warning",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisTooManyMasters",
+              "annotations": {
+                "description": "Redis cluster has too many nodes marked as master.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis too many masters (instance [instance unavailable])"
+              },
+              "expr": "count(redis_instance_info{role=\"master\"}) > 1",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": 10.0,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/mobile-api/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": null,
+        "serviceManifest": "examples/services/mobile-api.yaml",
+        "slothSpec": "generated/mobile-api/sloth/mobile-api.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": null,
+        "name": "mobile-api",
+        "supportModel": "self",
+        "team": "mobile",
+        "tier": "critical",
+        "type": "api"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "availability",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.9,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "latency-p95",
+          "sloType": "latency",
+          "status": null,
+          "target": 95.0,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "latency-p99",
+          "sloType": "latency",
+          "status": null,
+          "target": 90.0,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "auth-success-rate",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.9,
+          "window": "30d"
+        }
+      ]
+    },
+    "dashboard.json": {
+      "dashboard": {
+        "annotations": {},
+        "description": "Auto-generated dashboard for mobile-api service",
+        "editable": true,
+        "fiscalYearStartMonth": 0,
+        "graphTooltip": 0,
+        "panels": [
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 0
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "SLO Metrics",
+            "type": "row"
+          },
+          {
+            "description": "Target: 99.9%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"mobile-api\",code!~\"5..\"}[5m]))\n/\nsum(rate(http_requests_total{service=\"mobile-api\"}[5m]))\n",
+                "legendFormat": "availability",
+                "refId": "A"
+              }
+            ],
+            "title": "availability",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 95.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"mobile-api\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "latency-p95",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 90.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 10
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.99,\n  rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m])\n)\n",
+                "legendFormat": "latency-p99",
+                "refId": "A"
+              }
+            ],
+            "title": "latency-p99",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 99.9%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 10
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(api_key_validations{service=\"mobile-api\",status=\"success\"}[5m]))\n/\nsum(rate(api_key_validations{service=\"mobile-api\"}[5m]))\n",
+                "legendFormat": "auth-success-rate",
+                "refId": "A"
+              }
+            ],
+            "title": "auth-success-rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 19
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Service Health",
+            "type": "row"
+          },
+          {
+            "description": "Total requests per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"mobile-api\"}[5m]))",
+                "legendFormat": "{{http}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Request Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Percentage of requests returning 5xx errors",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"mobile-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"mobile-api\"}[5m])) * 100",
+                "legendFormat": "error %",
+                "refId": "A"
+              }
+            ],
+            "title": "Error Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "95th percentile request duration",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 29
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m])))",
+                "legendFormat": "{{http}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Request Latency (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 38
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Dependencies",
+            "type": "row"
+          },
+          {
+            "description": "Redis memory consumption",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 39
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "redis_memory_used_bytes{service=\"redis\"}",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Redis Memory Usage",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Cache hit rate - should be >90% for good performance",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 39
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(cache_hits_total{service=\"redis\"}[5m])) /\n(sum(rate(cache_hits_total{service=\"redis\"}[5m])) +\nsum(rate(cache_misses_total{service=\"redis\"}[5m]))) * 100",
+                "legendFormat": "Hit rate %",
+                "refId": "A"
+              }
+            ],
+            "title": "Cache Hit Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "Number of connected clients",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 48
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "redis_connected_clients{service=\"redis\"}",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Connected Clients",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Cache hits and misses per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 48
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(cache_hits_total{service=\"redis\"}[5m])",
+                "legendFormat": "Hits/sec",
+                "refId": "A"
+              },
+              {
+                "expr": "rate(cache_misses_total{service=\"redis\"}[5m])",
+                "legendFormat": "Misses/sec",
+                "refId": "B"
+              }
+            ],
+            "title": "Cache Hits vs Misses",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Keys evicted due to memory pressure - should be zero",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 57
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_evicted_keys_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Evicted Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Keys expired per second due to TTL",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 57
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_expired_keys_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Expired Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Redis commands processed per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 66
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_commands_processed_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Commands/sec",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Total number of keys in database",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 66
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(redis_db_keys{service=\"redis\"})",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Total Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          }
+        ],
+        "schemaVersion": 36,
+        "style": "dark",
+        "tags": [
+          "mobile",
+          "critical",
+          "api"
+        ],
+        "templating": {},
+        "time": {
+          "from": "now-6h",
+          "to": "now"
+        },
+        "timezone": "browser",
+        "title": "mobile-api - Service Dashboard",
+        "uid": "mobile-api-overview"
+      },
+      "message": "Auto-generated dashboard for mobile-api",
+      "overwrite": true
+    },
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "mobile-api_health_metrics",
+          "rules": [
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m]))",
+              "labels": {
+                "service": "mobile-api"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m]))",
+              "labels": {
+                "service": "mobile-api"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"mobile-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"mobile-api\"}[5m]))",
+              "labels": {
+                "service": "mobile-api"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"mobile-api\"}[5m]))",
+              "labels": {
+                "service": "mobile-api"
+              },
+              "record": "service:http_requests:rate5m"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "mobile-api_slo_metrics",
+          "rules": [
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"mobile-api\",slo=\"availability\"}) / (1 - 0.9990000000000001))",
+              "labels": {
+                "objective": "99.9",
+                "service": "mobile-api",
+                "slo": "availability"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m]))",
+              "labels": {
+                "service": "mobile-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m]))",
+              "labels": {
+                "service": "mobile-api",
+                "slo": "latency-p99"
+              },
+              "record": "slo:http_request_duration_seconds:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m]))",
+              "labels": {
+                "service": "mobile-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m]))",
+              "labels": {
+                "service": "mobile-api",
+                "slo": "latency-p99"
+              },
+              "record": "slo:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m]))",
+              "labels": {
+                "service": "mobile-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m]))",
+              "labels": {
+                "service": "mobile-api",
+                "slo": "latency-p99"
+              },
+              "record": "slo:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "slo:error_requests_failed:30d{service=\"mobile-api\",slo=\"auth-success-rate\"} / slo:error_requests_total:30d{service=\"mobile-api\",slo=\"auth-success-rate\"}",
+              "labels": {
+                "objective": "99.9",
+                "service": "mobile-api",
+                "slo": "auth-success-rate"
+              },
+              "record": "slo:error_rate:ratio"
+            },
+            {
+              "expr": "slo:latency_requests_fast:30d{service=\"mobile-api\",slo=\"latency-p95\"} / slo:latency_requests_total:30d{service=\"mobile-api\",slo=\"latency-p95\"}",
+              "labels": {
+                "objective": "95.0",
+                "service": "mobile-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "slo:latency_requests_fast:30d{service=\"mobile-api\",slo=\"latency-p99\"} / slo:latency_requests_total:30d{service=\"mobile-api\",slo=\"latency-p99\"}",
+              "labels": {
+                "objective": "90.0",
+                "service": "mobile-api",
+                "slo": "latency-p99"
+              },
+              "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"mobile-api\",slo=\"availability\"} / slo:requests_total:30d{service=\"mobile-api\",slo=\"availability\"}",
+              "labels": {
+                "objective": "99.9",
+                "service": "mobile-api",
+                "slo": "availability"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"mobile-api\",le=\"0.5\"}[30d]))",
+              "labels": {
+                "service": "mobile-api",
+                "slo": "latency-p95",
+                "threshold": "500ms"
+              },
+              "record": "slo:latency_requests_fast:30d"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"mobile-api\",le=\"0.5\"}[30d]))",
+              "labels": {
+                "service": "mobile-api",
+                "slo": "latency-p99",
+                "threshold": "500ms"
+              },
+              "record": "slo:latency_requests_fast:30d"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_count{service=\"mobile-api\"}[30d]))",
+              "labels": {
+                "service": "mobile-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:latency_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_count{service=\"mobile-api\"}[30d]))",
+              "labels": {
+                "service": "mobile-api",
+                "slo": "latency-p99"
+              },
+              "record": "slo:latency_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"mobile-api\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "mobile-api",
+                "slo": "availability"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"mobile-api\",status=~\"5..\"}[30d]))",
+              "labels": {
+                "service": "mobile-api",
+                "slo": "auth-success-rate"
+              },
+              "record": "slo:error_requests_failed:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"mobile-api\"}[30d]))",
+              "labels": {
+                "service": "mobile-api",
+                "slo": "auth-success-rate"
+              },
+              "record": "slo:error_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"mobile-api\"}[30d]))",
+              "labels": {
+                "service": "mobile-api",
+                "slo": "availability"
+              },
+              "record": "slo:requests_total:30d"
+            }
+          ]
+        }
+      ]
+    },
+    "sloth/mobile-api.yaml": {
+      "labels": {
+        "team": "mobile",
+        "tier": "critical",
+        "type": "api"
+      },
+      "service": "mobile-api",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO availability for mobile-api"
+            },
+            "labels": {
+              "service": "mobile-api",
+              "tier": "critical"
+            },
+            "name": "MobileApiAvailability",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on mobile-api"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on mobile-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.9% availability",
+          "name": "availability",
+          "objective": 99.9,
+          "sli": {
+            "events": {
+              "error_query": "sum(rate(http_requests_total{service=\"mobile-api\",code=~\"5..\"}[5m]))",
+              "total_query": "sum(rate(http_requests_total{service=\"mobile-api\"}[5m]))"
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO latency-p95 for mobile-api"
+            },
+            "labels": {
+              "service": "mobile-api",
+              "tier": "critical"
+            },
+            "name": "MobileApiLatencyP95",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on mobile-api"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on mobile-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "95.0% latency p95",
+          "name": "latency-p95",
+          "objective": 95.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO latency-p99 for mobile-api"
+            },
+            "labels": {
+              "service": "mobile-api",
+              "tier": "critical"
+            },
+            "name": "MobileApiLatencyP99",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on mobile-api"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on mobile-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "90.0% latency p99",
+          "name": "latency-p99",
+          "objective": 90.0,
+          "sli": {
+            "events": {
+              "error_query": "histogram_quantile(0.99,\n  rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m])\n)\n > 5.0",
+              "total_query": "sum(rate(0.99,\n  rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m])\n)\n)"
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO auth-success-rate for mobile-api"
+            },
+            "labels": {
+              "service": "mobile-api",
+              "tier": "critical"
+            },
+            "name": "MobileApiAuthSuccessRate",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on mobile-api"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on mobile-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.9% auth success rate",
+          "name": "auth-success-rate",
+          "objective": 99.9,
+          "sli": {
+            "events": {
+              "error_query": "sum(rate(api_key_validations{service=\"mobile-api\",status=\"success\"}[5m]))",
+              "total_query": "sum(rate(api_key_validations{service=\"mobile-api\"}[5m]))"
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
+  "json": {
+    "duration_seconds": "<masked>",
+    "errors": [],
+    "output_dir": "<tmp>/out",
+    "resources_created": {
+      "alerts": 12,
+      "backstage": 1,
+      "dashboard": 1,
+      "recording-rules": 23,
+      "slos": 4
+    },
+    "service_name": "mobile-api",
+    "success": true,
+    "total_resources": 41
+  },
+  "preamble": [],
+  "stray": []
+}

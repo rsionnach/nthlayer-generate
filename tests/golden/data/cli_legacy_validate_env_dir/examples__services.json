@@ -1,0 +1,65 @@
+{
+  "dev": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: dev",
+      "Directory: examples/services",
+      "",
+      "✓ Found: dev.yaml",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  },
+  "prod": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: prod",
+      "Directory: examples/services",
+      "",
+      "✓ Found: prod.yaml",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  },
+  "staging": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: staging",
+      "Directory: examples/services",
+      "",
+      "✓ Found: staging.yaml",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  }
+}

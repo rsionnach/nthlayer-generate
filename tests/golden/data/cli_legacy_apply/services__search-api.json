@@ -1,0 +1,1331 @@
+{
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "search-api-elasticsearch",
+          "rules": [
+            {
+              "alert": "ElasticsearchClusterRed",
+              "annotations": {
+                "description": "Elastic Cluster Red status\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch Cluster Red (instance {{ $labels.instance }})"
+              },
+              "expr": "elasticsearch_cluster_health_status{color=\"red\"} == 1",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "critical",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchClusterYellow",
+              "annotations": {
+                "description": "Elastic Cluster Yellow status\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch Cluster Yellow (instance {{ $labels.instance }})"
+              },
+              "expr": "elasticsearch_cluster_health_status{color=\"yellow\"} == 1",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "warning",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchDiskOutOfSpace",
+              "annotations": {
+                "description": "The disk usage is over 90%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch disk out of space (instance {{ $labels.instance }})"
+              },
+              "expr": "elasticsearch_filesystem_data_available_bytes / elasticsearch_filesystem_data_size_bytes * 100 < 10",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "critical",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchDiskSpaceLow",
+              "annotations": {
+                "description": "The disk usage is over 80%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch disk space low (instance {{ $labels.instance }})"
+              },
+              "expr": "elasticsearch_filesystem_data_available_bytes / elasticsearch_filesystem_data_size_bytes * 100 < 20",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "warning",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchHealthyDataNodes",
+              "annotations": {
+                "description": "Missing data node in Elasticsearch cluster\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch Healthy Data Nodes (instance {{ $labels.instance }})"
+              },
+              "expr": "elasticsearch_cluster_health_number_of_data_nodes < 3",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "critical",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchHealthyNodes",
+              "annotations": {
+                "description": "Missing node in Elasticsearch cluster\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch Healthy Nodes (instance {{ $labels.instance }})"
+              },
+              "expr": "elasticsearch_cluster_health_number_of_nodes < 3",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "critical",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchHeapUsageTooHigh",
+              "annotations": {
+                "description": "The heap usage is over 90%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch Heap Usage Too High (instance {{ $labels.instance }})"
+              },
+              "expr": "(elasticsearch_jvm_memory_used_bytes{area=\"heap\"} / elasticsearch_jvm_memory_max_bytes{area=\"heap\"}) * 100 > 90",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "critical",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchHeapUsageWarning",
+              "annotations": {
+                "description": "The heap usage is over 80%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch Heap Usage warning (instance {{ $labels.instance }})"
+              },
+              "expr": "(elasticsearch_jvm_memory_used_bytes{area=\"heap\"} / elasticsearch_jvm_memory_max_bytes{area=\"heap\"}) * 100 > 80",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "warning",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchHighIndexingLatency",
+              "annotations": {
+                "description": "The indexing latency on Elasticsearch cluster is higher than the threshold.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch High Indexing Latency (instance {{ $labels.instance }})"
+              },
+              "expr": "increase(elasticsearch_indices_indexing_index_time_seconds_total[1m]) / increase(elasticsearch_indices_indexing_index_total[1m]) > 0.0005",
+              "for": "10m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "warning",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchHighIndexingRate",
+              "annotations": {
+                "description": "The indexing rate on Elasticsearch cluster is higher than the threshold.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch High Indexing Rate (instance [instance unavailable])"
+              },
+              "expr": "sum(rate(elasticsearch_indices_indexing_index_total[1m]))> 10000",
+              "for": "5m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "warning",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchHighQueryLatency",
+              "annotations": {
+                "description": "The query latency on Elasticsearch cluster is higher than the threshold.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch High Query Latency (instance {{ $labels.instance }})"
+              },
+              "expr": "increase(elasticsearch_indices_search_fetch_time_seconds[1m]) / increase(elasticsearch_indices_search_fetch_total[1m]) > 1",
+              "for": "5m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "warning",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchHighQueryRate",
+              "annotations": {
+                "description": "The query rate on Elasticsearch cluster is higher than the threshold.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch High Query Rate (instance [instance unavailable])"
+              },
+              "expr": "sum(rate(elasticsearch_indices_search_query_total[1m])) > 100",
+              "for": "5m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "warning",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchInitializingShards",
+              "annotations": {
+                "description": "Elasticsearch is initializing shards\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch initializing shards (instance {{ $labels.instance }})"
+              },
+              "expr": "elasticsearch_cluster_health_initializing_shards > 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "info",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchInitializingShardsTooLong",
+              "annotations": {
+                "description": "Elasticsearch has been initializing shards for 15 min\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch initializing shards too long (instance {{ $labels.instance }})"
+              },
+              "expr": "elasticsearch_cluster_health_initializing_shards > 0",
+              "for": "15m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "warning",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchNoNewDocuments",
+              "annotations": {
+                "description": "No new documents for 10 min!\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch no new documents (instance {{ $labels.instance }})"
+              },
+              "expr": "increase(elasticsearch_indices_indexing_index_total{es_data_node=\"true\"}[10m]) < 1",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "warning",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchPendingTasks",
+              "annotations": {
+                "description": "Elasticsearch has pending tasks. Cluster works slowly.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch pending tasks (instance {{ $labels.instance }})"
+              },
+              "expr": "elasticsearch_cluster_health_number_of_pending_tasks > 0",
+              "for": "15m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "warning",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchRelocatingShards",
+              "annotations": {
+                "description": "Elasticsearch is relocating shards\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch relocating shards (instance {{ $labels.instance }})"
+              },
+              "expr": "elasticsearch_cluster_health_relocating_shards > 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "info",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchRelocatingShardsTooLong",
+              "annotations": {
+                "description": "Elasticsearch has been relocating shards for 15min\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch relocating shards too long (instance {{ $labels.instance }})"
+              },
+              "expr": "elasticsearch_cluster_health_relocating_shards > 0",
+              "for": "15m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "warning",
+                "team": "search",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "ElasticsearchUnassignedShards",
+              "annotations": {
+                "description": "Elasticsearch has unassigned shards\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Elasticsearch unassigned shards (instance {{ $labels.instance }})"
+              },
+              "expr": "elasticsearch_cluster_health_unassigned_shards > 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "search-api",
+                "severity": "critical",
+                "team": "search",
+                "tier": "high"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": null,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/search-api/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": null,
+        "serviceManifest": "examples/services/search-api.yaml",
+        "slothSpec": "generated/search-api/sloth/search-api.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": null,
+        "name": "search-api",
+        "supportModel": "self",
+        "team": "search",
+        "tier": "high",
+        "type": "api"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "search-availability",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.5,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "search-latency-p95",
+          "sloType": "latency",
+          "status": null,
+          "target": 99.0,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "search-quality",
+          "sloType": "custom",
+          "status": null,
+          "target": 95.0,
+          "window": "7d"
+        }
+      ]
+    },
+    "dashboard.json": {
+      "dashboard": {
+        "annotations": {},
+        "description": "Auto-generated dashboard for search-api service",
+        "editable": true,
+        "fiscalYearStartMonth": 0,
+        "graphTooltip": 0,
+        "panels": [
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 0
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "SLO Metrics",
+            "type": "row"
+          },
+          {
+            "description": "Target: 99.5%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"search-api\",status!~\"5..\"}[5m]))\n/\nsum(rate(http_requests_total{service=\"search-api\"}[5m]))\n",
+                "legendFormat": "search-availability",
+                "refId": "A"
+              }
+            ],
+            "title": "search-availability",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 99.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m])\n)\n",
+                "legendFormat": "search-latency-p95",
+                "refId": "A"
+              }
+            ],
+            "title": "search-latency-p95",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 95.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 10
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(search_results_total{service=\"search-api\",status=\"found\"}[5m]))\n/\nsum(rate(search_results_total{service=\"search-api\"}[5m]))\n* 100\n",
+                "legendFormat": "search-quality",
+                "refId": "A"
+              }
+            ],
+            "title": "search-quality",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 19
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Service Health",
+            "type": "row"
+          },
+          {
+            "description": "Total requests per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"search-api\"}[5m]))",
+                "legendFormat": "{{http}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Request Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Percentage of requests returning 5xx errors",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"search-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"search-api\"}[5m])) * 100",
+                "legendFormat": "error %",
+                "refId": "A"
+              }
+            ],
+            "title": "Error Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "95th percentile request duration",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 29
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m])))",
+                "legendFormat": "{{http}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Request Latency (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 38
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Dependencies",
+            "type": "row"
+          },
+          {
+            "description": "Elasticsearch cluster health (0=green, 1=yellow, 2=red)",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 39
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "elasticsearch_cluster_health_status{service=\"elasticsearch\"}",
+                "legendFormat": "{{elasticsearch}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Cluster Health Status",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "Number of active and relocating shards",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 39
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "elasticsearch_cluster_health_active_shards{service=\"elasticsearch\"}",
+                "legendFormat": "Active",
+                "refId": "A"
+              },
+              {
+                "expr": "elasticsearch_cluster_health_relocating_shards{service=\"elasticsearch\"}",
+                "legendFormat": "Relocating",
+                "refId": "B"
+              }
+            ],
+            "title": "Active Shards",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Search queries per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 48
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(elasticsearch_indices_search_query_total{service=\"elasticsearch\"}[5m]))",
+                "legendFormat": "{{elasticsearch}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Search Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Search query latency (95th percentile)",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 48
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(elasticsearch_indices_search_query_time_seconds_bucket{service=\"elasticsearch\"}[5m])))",
+                "legendFormat": "{{elasticsearch}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Search Latency (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Documents indexed per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 57
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(elasticsearch_indices_indexing_index_total{service=\"elasticsearch\"}[5m]))",
+                "legendFormat": "{{elasticsearch}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Indexing Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Total size of all indices",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 57
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(elasticsearch_indices_store_size_bytes{service=\"elasticsearch\"})",
+                "legendFormat": "{{elasticsearch}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Index Size",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Total number of documents across all indices",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 66
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(elasticsearch_indices_docs{service=\"elasticsearch\"})",
+                "legendFormat": "{{elasticsearch}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Document Count",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "JVM heap memory utilization percentage",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 66
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "elasticsearch_jvm_memory_used_bytes{service=\"elasticsearch\",area=\"heap\"} / \non() elasticsearch_jvm_memory_max_bytes{service=\"elasticsearch\",area=\"heap\"} * 100",
+                "legendFormat": "Heap %",
+                "refId": "A"
+              }
+            ],
+            "title": "JVM Heap Usage",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "Garbage collection time per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 75
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(elasticsearch_jvm_gc_collection_seconds_sum{service=\"elasticsearch\"}[5m])",
+                "legendFormat": "{{elasticsearch}}",
+                "refId": "A"
+              }
+            ],
+            "title": "GC Time",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Redis memory consumption",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 75
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "redis_memory_used_bytes{service=\"redis\"}",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Redis Memory Usage",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Cache hit rate - should be >90% for good performance",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 84
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(cache_hits_total{service=\"redis\"}[5m])) /\n(sum(rate(cache_hits_total{service=\"redis\"}[5m])) +\nsum(rate(cache_misses_total{service=\"redis\"}[5m]))) * 100",
+                "legendFormat": "Hit rate %",
+                "refId": "A"
+              }
+            ],
+            "title": "Cache Hit Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "Number of connected clients",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 84
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "redis_connected_clients{service=\"redis\"}",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Connected Clients",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Cache hits and misses per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 93
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(cache_hits_total{service=\"redis\"}[5m])",
+                "legendFormat": "Hits/sec",
+                "refId": "A"
+              },
+              {
+                "expr": "rate(cache_misses_total{service=\"redis\"}[5m])",
+                "legendFormat": "Misses/sec",
+                "refId": "B"
+              }
+            ],
+            "title": "Cache Hits vs Misses",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Keys evicted due to memory pressure - should be zero",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 93
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_evicted_keys_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Evicted Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Keys expired per second due to TTL",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 102
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_expired_keys_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Expired Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Redis commands processed per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 102
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_commands_processed_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Commands/sec",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Total number of keys in database",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 111
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(redis_db_keys{service=\"redis\"})",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Total Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          }
+        ],
+        "schemaVersion": 36,
+        "style": "dark",
+        "tags": [
+          "search",
+          "high",
+          "api"
+        ],
+        "templating": {},
+        "time": {
+          "from": "now-6h",
+          "to": "now"
+        },
+        "timezone": "browser",
+        "title": "search-api - Service Dashboard",
+        "uid": "search-api-overview"
+      },
+      "message": "Auto-generated dashboard for search-api",
+      "overwrite": true
+    },
+    "pagerduty-config.json": {
+      "note": "Set PAGERDUTY_API_KEY to create resources in PagerDuty",
+      "resources_to_create": {
+        "escalation_policy": "search-escalation",
+        "schedules": [
+          "search-primary",
+          "search-secondary",
+          "search-manager"
+        ],
+        "service": "search-api",
+        "team": "search"
+      },
+      "service_name": "search-api",
+      "support_model": "self",
+      "team": "search",
+      "tier": "high",
+      "timezone": "America/New_York"
+    },
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "search-api_health_metrics",
+          "rules": [
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m]))",
+              "labels": {
+                "service": "search-api"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m]))",
+              "labels": {
+                "service": "search-api"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"search-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"search-api\"}[5m]))",
+              "labels": {
+                "service": "search-api"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"search-api\"}[5m]))",
+              "labels": {
+                "service": "search-api"
+              },
+              "record": "service:http_requests:rate5m"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "search-api_slo_metrics",
+          "rules": [
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"search-api\",slo=\"search-availability\"}) / (1 - 0.995))",
+              "labels": {
+                "objective": "99.5",
+                "service": "search-api",
+                "slo": "search-availability"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m]))",
+              "labels": {
+                "service": "search-api",
+                "slo": "search-latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m]))",
+              "labels": {
+                "service": "search-api",
+                "slo": "search-latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m]))",
+              "labels": {
+                "service": "search-api",
+                "slo": "search-latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "slo:latency_requests_fast:30d{service=\"search-api\",slo=\"search-latency-p95\"} / slo:latency_requests_total:30d{service=\"search-api\",slo=\"search-latency-p95\"}",
+              "labels": {
+                "objective": "99.0",
+                "service": "search-api",
+                "slo": "search-latency-p95"
+              },
+              "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"search-api\",slo=\"search-availability\"} / slo:requests_total:30d{service=\"search-api\",slo=\"search-availability\"}",
+              "labels": {
+                "objective": "99.5",
+                "service": "search-api",
+                "slo": "search-availability"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"search-api\",le=\"0.5\"}[30d]))",
+              "labels": {
+                "service": "search-api",
+                "slo": "search-latency-p95",
+                "threshold": "500ms"
+              },
+              "record": "slo:latency_requests_fast:30d"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_count{service=\"search-api\"}[30d]))",
+              "labels": {
+                "service": "search-api",
+                "slo": "search-latency-p95"
+              },
+              "record": "slo:latency_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"search-api\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "search-api",
+                "slo": "search-availability"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"search-api\"}[30d]))",
+              "labels": {
+                "service": "search-api",
+                "slo": "search-availability"
+              },
+              "record": "slo:requests_total:30d"
+            }
+          ]
+        }
+      ]
+    },
+    "sloth/search-api.yaml": {
+      "labels": {
+        "team": "search",
+        "tier": "high",
+        "type": "api"
+      },
+      "service": "search-api",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO search-availability for search-api"
+            },
+            "labels": {
+              "service": "search-api",
+              "tier": "high"
+            },
+            "name": "SearchApiSearchAvailability",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on search-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.5% search availability",
+          "name": "search-availability",
+          "objective": 99.5,
+          "sli": {
+            "events": {
+              "error_query": "sum(rate(http_requests_total{service=\"search-api\",status!~\"5..\"}[5m]))",
+              "total_query": "sum(rate(http_requests_total{service=\"search-api\"}[5m]))"
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO search-latency-p95 for search-api"
+            },
+            "labels": {
+              "service": "search-api",
+              "tier": "high"
+            },
+            "name": "SearchApiSearchLatencyP95",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on search-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.0% search latency p95",
+          "name": "search-latency-p95",
+          "objective": 99.0,
+          "sli": {
+            "events": {
+              "error_query": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m])\n)\n > 0.3",
+              "total_query": "sum(rate(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m])\n)\n)"
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO search-quality for search-api"
+            },
+            "labels": {
+              "service": "search-api",
+              "tier": "high"
+            },
+            "name": "SearchApiSearchQuality",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on search-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "95.0% search quality",
+          "name": "search-quality",
+          "objective": 95.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": "sum(rate(search_results_total{service=\"search-api\",status=\"found\"}[5m]))\n/\nsum(rate(search_results_total{service=\"search-api\"}[5m]))\n* 100\n"
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
+  "json": {
+    "duration_seconds": "<masked>",
+    "errors": [],
+    "output_dir": "<tmp>/out",
+    "resources_created": {
+      "alerts": 19,
+      "backstage": 1,
+      "dashboard": 1,
+      "pagerduty": 1,
+      "recording-rules": 14,
+      "slos": 3
+    },
+    "service_name": "search-api",
+    "success": true,
+    "total_resources": 39
+  },
+  "preamble": [],
+  "stray": []
+}

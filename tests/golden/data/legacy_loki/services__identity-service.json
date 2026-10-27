@@ -1,0 +1,297 @@
+{
+  "count": 16,
+  "file": {
+    "groups": [
+      {
+        "name": "identity-service",
+        "rules": [
+          {
+            "alert": "identity-service_ApplicationError",
+            "annotations": {
+              "description": "Error-level log entries detected in application logs.",
+              "summary": "[identity-service] Application errors detected"
+            },
+            "expr": "sum(count_over_time({app=\"identity-service\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+            "for": "5m",
+            "labels": {
+              "service": "identity-service",
+              "severity": "warning",
+              "source": "service",
+              "team": "identity",
+              "technology": "api",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "identity-service_ApplicationHighErrorRate",
+            "annotations": {
+              "description": "Application is experiencing a high rate of errors.",
+              "summary": "[identity-service] High error rate in application"
+            },
+            "expr": "sum(count_over_time({app=\"identity-service\"} |~ \"(?i)error|exception\" [5m])) > 100",
+            "for": "5m",
+            "labels": {
+              "service": "identity-service",
+              "severity": "critical",
+              "source": "service",
+              "team": "identity",
+              "technology": "api",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "identity-service_ApplicationPanic",
+            "annotations": {
+              "description": "Application appears to have crashed or panicked.",
+              "summary": "[identity-service] Application panic/crash detected"
+            },
+            "expr": "count_over_time({app=\"identity-service\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+            "for": "0m",
+            "labels": {
+              "service": "identity-service",
+              "severity": "critical",
+              "source": "service",
+              "team": "identity",
+              "technology": "api",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "identity-service_postgresql_PostgresqlConnectionRefused",
+            "annotations": {
+              "description": "Applications are unable to connect to PostgreSQL. Check if the database ...",
+              "summary": "[identity-service/postgresql] PostgreSQL connection refused"
+            },
+            "expr": "count_over_time({app=\"postgresql\", service=\"identity-service\"} |~ \"connection refused|could not connect\" [1m]) > 0",
+            "for": "1m",
+            "labels": {
+              "dependency": "postgresql",
+              "service": "identity-service",
+              "severity": "critical",
+              "source": "dependency",
+              "team": "identity",
+              "technology": "postgresql",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "identity-service_postgresql_PostgresqlDeadlock",
+            "annotations": {
+              "description": "A deadlock was detected in PostgreSQL. This may indicate application log...",
+              "summary": "[identity-service/postgresql] PostgreSQL deadlock detected"
+            },
+            "expr": "count_over_time({app=\"postgresql\", service=\"identity-service\"} |= \"deadlock detected\" [1m]) > 0",
+            "for": "0m",
+            "labels": {
+              "dependency": "postgresql",
+              "service": "identity-service",
+              "severity": "warning",
+              "source": "dependency",
+              "team": "identity",
+              "technology": "postgresql",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "identity-service_postgresql_PostgresqlFatalError",
+            "annotations": {
+              "description": "PostgreSQL logged a FATAL error which typically indicates a serious issu...",
+              "summary": "[identity-service/postgresql] PostgreSQL FATAL error detected"
+            },
+            "expr": "count_over_time({app=\"postgresql\", service=\"identity-service\"} |= \"FATAL\" [1m]) > 0",
+            "for": "0m",
+            "labels": {
+              "dependency": "postgresql",
+              "service": "identity-service",
+              "severity": "critical",
+              "source": "dependency",
+              "team": "identity",
+              "technology": "postgresql",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "identity-service_postgresql_PostgresqlOutOfConnections",
+            "annotations": {
+              "description": "PostgreSQL has reached its maximum connection limit. Consider increasing...",
+              "summary": "[identity-service/postgresql] PostgreSQL out of connections"
+            },
+            "expr": "count_over_time({app=\"postgresql\", service=\"identity-service\"} |= \"too many connections\" [1m]) > 0",
+            "for": "0m",
+            "labels": {
+              "dependency": "postgresql",
+              "service": "identity-service",
+              "severity": "critical",
+              "source": "dependency",
+              "team": "identity",
+              "technology": "postgresql",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "identity-service_postgresql_PostgresqlPanicError",
+            "annotations": {
+              "description": "PostgreSQL logged a PANIC error - the database may have crashed or be in...",
+              "summary": "[identity-service/postgresql] PostgreSQL PANIC error detected"
+            },
+            "expr": "count_over_time({app=\"postgresql\", service=\"identity-service\"} |= \"PANIC\" [1m]) > 0",
+            "for": "0m",
+            "labels": {
+              "dependency": "postgresql",
+              "service": "identity-service",
+              "severity": "critical",
+              "source": "dependency",
+              "team": "identity",
+              "technology": "postgresql",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "identity-service_postgresql_PostgresqlReplicationLag",
+            "annotations": {
+              "description": "Replication lag detected between primary and replica. Check network and ...",
+              "summary": "[identity-service/postgresql] PostgreSQL replication lag detected"
+            },
+            "expr": "count_over_time({app=\"postgresql\", service=\"identity-service\"} |~ \"replication.*lag|recovery.*behind\" [1m]) > 0",
+            "for": "5m",
+            "labels": {
+              "dependency": "postgresql",
+              "service": "identity-service",
+              "severity": "warning",
+              "source": "dependency",
+              "team": "identity",
+              "technology": "postgresql",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "identity-service_postgresql_PostgresqlSlowQuery",
+            "annotations": {
+              "description": "Slow queries (>1s) are being logged. Review query performance and consid...",
+              "summary": "[identity-service/postgresql] PostgreSQL slow queries detected"
+            },
+            "expr": "sum(count_over_time({app=\"postgresql\", service=\"identity-service\"} |= \"duration:\" |~ \"duration: [0-9]{4,}\" [5m])) > 5",
+            "for": "5m",
+            "labels": {
+              "dependency": "postgresql",
+              "service": "identity-service",
+              "severity": "warning",
+              "source": "dependency",
+              "team": "identity",
+              "technology": "postgresql",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "identity-service_redis_RedisClusterDown",
+            "annotations": {
+              "description": "Redis cluster is in a down state. Some slots may not be covered.",
+              "summary": "[identity-service/redis] Redis cluster down"
+            },
+            "expr": "count_over_time({app=\"redis\", service=\"identity-service\"} |~ \"CLUSTERDOWN|cluster.*down|slots.*not covered\" [1m]) > 0",
+            "for": "0m",
+            "labels": {
+              "dependency": "redis",
+              "service": "identity-service",
+              "severity": "critical",
+              "source": "dependency",
+              "team": "identity",
+              "technology": "redis",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "identity-service_redis_RedisConnectionRefused",
+            "annotations": {
+              "description": "Applications cannot connect to Redis. Check if Redis is running and acce...",
+              "summary": "[identity-service/redis] Redis connection refused"
+            },
+            "expr": "count_over_time({app=\"redis\", service=\"identity-service\"} |~ \"Connection refused|ECONNREFUSED\" [1m]) > 0",
+            "for": "1m",
+            "labels": {
+              "dependency": "redis",
+              "service": "identity-service",
+              "severity": "critical",
+              "source": "dependency",
+              "team": "identity",
+              "technology": "redis",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "identity-service_redis_RedisOutOfMemory",
+            "annotations": {
+              "description": "Redis is out of memory. Consider increasing maxmemory or reviewing evict...",
+              "summary": "[identity-service/redis] Redis out of memory"
+            },
+            "expr": "count_over_time({app=\"redis\", service=\"identity-service\"} |~ \"OOM|out of memory|Can't save\" [1m]) > 0",
+            "for": "0m",
+            "labels": {
+              "dependency": "redis",
+              "service": "identity-service",
+              "severity": "critical",
+              "source": "dependency",
+              "team": "identity",
+              "technology": "redis",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "identity-service_redis_RedisRDBSaveFailed",
+            "annotations": {
+              "description": "Redis background save (RDB) failed. Check disk space and permissions.",
+              "summary": "[identity-service/redis] Redis RDB save failed"
+            },
+            "expr": "count_over_time({app=\"redis\", service=\"identity-service\"} |~ \"MISCONF|Background saving|RDB\" [1m]) > 0",
+            "for": "0m",
+            "labels": {
+              "dependency": "redis",
+              "service": "identity-service",
+              "severity": "warning",
+              "source": "dependency",
+              "team": "identity",
+              "technology": "redis",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "identity-service_redis_RedisReplicationBroken",
+            "annotations": {
+              "description": "Redis replication to master is broken. Check network connectivity and ma...",
+              "summary": "[identity-service/redis] Redis replication broken"
+            },
+            "expr": "count_over_time({app=\"redis\", service=\"identity-service\"} |~ \"MASTER aborted|Disconnected from MASTER|replication\" [1m]) > 0",
+            "for": "1m",
+            "labels": {
+              "dependency": "redis",
+              "service": "identity-service",
+              "severity": "critical",
+              "source": "dependency",
+              "team": "identity",
+              "technology": "redis",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "identity-service_redis_RedisSlowlog",
+            "annotations": {
+              "description": "Slow Redis commands detected. Review command patterns and consider optim...",
+              "summary": "[identity-service/redis] Redis slow commands detected"
+            },
+            "expr": "sum(count_over_time({app=\"redis\", service=\"identity-service\"} |~ \"Slow|slowlog\" [5m])) > 10",
+            "for": "5m",
+            "labels": {
+              "dependency": "redis",
+              "service": "identity-service",
+              "severity": "warning",
+              "source": "dependency",
+              "team": "identity",
+              "technology": "redis",
+              "tier": "critical"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

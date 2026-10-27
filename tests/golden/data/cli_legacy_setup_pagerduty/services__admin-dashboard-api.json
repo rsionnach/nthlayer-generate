@@ -1,0 +1,33 @@
+{
+  "dry_run_exit": 0,
+  "dry_run_text": [
+    "",
+    "╭──╮",
+    "│ Setup PagerDuty Integration  │",
+    "╰──╯",
+    "",
+    "Service: admin-dashboard-api",
+    "  Team: platform",
+    "  Tier: standard",
+    "",
+    "ℹ DRY RUN MODE - No changes will be made",
+    "",
+    "Would create/verify:",
+    "  • PagerDuty service: admin-dashboard-api",
+    "  • Team mapping: platform",
+    ""
+  ],
+  "no_key_exit": 1,
+  "setup_service_calls": [
+    {
+      "auto_resolve_timeout": null,
+      "create_escalation_policy_config": null,
+      "escalation_policy_id": null,
+      "escalation_policy_name": null,
+      "service_name": "admin-dashboard-api",
+      "team_name": "platform",
+      "urgency": "low"
+    }
+  ],
+  "stubbed_exit": 0
+}

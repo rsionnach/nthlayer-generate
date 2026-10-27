@@ -1,0 +1,615 @@
+{
+  "exit": 0,
+  "files": {
+    "dashboard.json": {
+      "dashboard": {
+        "annotations": {},
+        "description": "Auto-generated dashboard for email-worker service",
+        "editable": true,
+        "fiscalYearStartMonth": 0,
+        "graphTooltip": 0,
+        "panels": [
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 0
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "SLO Metrics",
+            "type": "row"
+          },
+          {
+            "description": "Target: 99.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(job_success_total{service=\"email-worker\"}[5m]))\n/\nsum(rate(job_total{service=\"email-worker\"}[5m]))\n",
+                "legendFormat": "success-rate",
+                "refId": "A"
+              }
+            ],
+            "title": "success-rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 99.9%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(notifications_sent_total{service=\"email-worker\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "processing-latency-p95",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 10
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Service Health",
+            "type": "row"
+          },
+          {
+            "description": "Jobs/notifications processed per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 11
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(notifications_sent_total{service=\"email-worker\"}[5m]))",
+                "legendFormat": "{{notifications}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Notification Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Percentage of jobs/notifications failing",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 11
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(notifications_sent_total{service=\"email-worker\",status=\"failed\"}[5m])) / sum(rate(notifications_sent_total{service=\"email-worker\"}[5m])) * 100",
+                "legendFormat": "error %",
+                "refId": "A"
+              }
+            ],
+            "title": "Error Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "95th percentile processing duration",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(notification_processing_duration_seconds_bucket{service=\"email-worker\"}[5m])))",
+                "legendFormat": "{{notification}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Processing Latency (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 29
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Dependencies",
+            "type": "row"
+          },
+          {
+            "description": "Active database connections vs max connections limit",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 30
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_stat_database_numbackends{service=\"postgresql\"}",
+                "legendFormat": "{{datname}} connections",
+                "refId": "A"
+              },
+              {
+                "expr": "pg_settings_max_connections{service=\"postgresql\"}",
+                "legendFormat": "Max connections",
+                "refId": "B"
+              }
+            ],
+            "title": "PostgreSQL Connections",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Number of currently executing queries",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 30
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_stat_activity_count{service=\"postgresql\",state=\"active\"}",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Active Queries",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Buffer cache hit ratio - should be >99% for good performance",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 39
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(pg_stat_database_blks_hit{service=\"postgresql\"}) /\n(sum(pg_stat_database_blks_hit{service=\"postgresql\"}) + sum(pg_stat_database_blks_read{service=\"postgresql\"})) * 100",
+                "legendFormat": "Cache hit %",
+                "refId": "A"
+              }
+            ],
+            "title": "Cache Hit Ratio",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "Transaction commits and rollbacks per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 39
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(pg_stat_database_xact_commit{service=\"postgresql\"}[5m])",
+                "legendFormat": "{{datname}} commits/sec",
+                "refId": "A"
+              },
+              {
+                "expr": "rate(pg_stat_database_xact_rollback{service=\"postgresql\"}[5m])",
+                "legendFormat": "{{datname}} rollbacks/sec",
+                "refId": "B"
+              }
+            ],
+            "title": "Transaction Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Total database size",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 48
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_database_size_bytes{service=\"postgresql\"}",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Database Size",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "Query execution time (95th percentile)",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 48
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(pg_stat_statements_mean_exec_time_seconds_bucket{service=\"postgresql\"}[5m])))",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Query Duration (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Deadlocks per second - should be near zero",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 57
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(pg_stat_database_deadlocks{service=\"postgresql\"}[5m])",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Deadlocks",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Replication lag in seconds",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 57
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_replication_lag_seconds{service=\"postgresql\"}",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Replication Lag",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Dead tuples indicating table bloat - vacuum if high",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 66
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(pg_stat_user_tables_n_dead_tup{service=\"postgresql\"}) by (relname)",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Table Bloat (Dead Tuples)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Connection pool utilization percentage",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 66
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_stat_database_numbackends{service=\"postgresql\"} /\non() group_left pg_settings_max_connections{service=\"postgresql\"} * 100",
+                "legendFormat": "Pool usage %",
+                "refId": "A"
+              }
+            ],
+            "title": "Connection Pool Utilization",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "### Queue Messages - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `rabbitmq.queue_messages`: No resolver configured and no candidates defined\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  rabbitmq.queue_messages: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Add metrics: rabbitmq.queue_messages"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 75
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Queue Messages",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "### Queue Consumers - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `rabbitmq.queue_consumers`: No resolver configured and no candidates defined\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  rabbitmq.queue_consumers: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Add metrics: rabbitmq.queue_consumers"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 75
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Queue Consumers",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "### Message Rate - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `rabbitmq.message_publish_rate`: No resolver configured and no candidates defined\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  rabbitmq.message_publish_rate: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Add metrics: rabbitmq.message_publish_rate"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 84
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Message Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "### Connections - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `rabbitmq.connections`: No resolver configured and no candidates defined\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  rabbitmq.connections: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Add metrics: rabbitmq.connections"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 84
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Connections",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "### Memory Usage - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `rabbitmq.memory_used`: No resolver configured and no candidates defined\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  rabbitmq.memory_used: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Add metrics: rabbitmq.memory_used"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 93
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Memory Usage",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "### Disk Free - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `rabbitmq.disk_free`: No resolver configured and no candidates defined\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  rabbitmq.disk_free: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Add metrics: rabbitmq.disk_free"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 93
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Disk Free",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          }
+        ],
+        "schemaVersion": 36,
+        "style": "dark",
+        "tags": [
+          "notifications",
+          "standard",
+          "worker"
+        ],
+        "templating": {},
+        "time": {
+          "from": "now-6h",
+          "to": "now"
+        },
+        "timezone": "browser",
+        "title": "email-worker - Service Dashboard",
+        "uid": "email-worker-overview"
+      },
+      "message": "Auto-generated dashboard for email-worker",
+      "overwrite": true
+    }
+  }
+}

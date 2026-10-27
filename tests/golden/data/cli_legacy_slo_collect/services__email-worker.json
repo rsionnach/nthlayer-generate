@@ -1,0 +1,31 @@
+{
+  "exit": 0,
+  "queries": [
+    "sum(rate(job_success_total{service=\"email-worker\"}[5m]))\n/\nsum(rate(job_total{service=\"email-worker\"}[5m]))\n"
+  ],
+  "text": [
+    "",
+    "============================================================",
+    "  Error Budget Status: email-worker",
+    "============================================================",
+    "",
+    "Prometheus: http://prometheus.invalid",
+    "",
+    "[OK] SLO: success-rate (99.0%)",
+    "  Window: 30d rolling",
+    "  Current SLI: 99.95%",
+    "",
+    "  Error Budget:",
+    "  Total: 432.0 min",
+    "  Burned: 21.6 min (5%)",
+    "  Status: HEALTHY",
+    "",
+    "[-] SLO: processing-latency-p95 (99.9%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "------------------------------------------------------------",
+    "Summary: 1/2 SLOs healthy",
+    ""
+  ]
+}

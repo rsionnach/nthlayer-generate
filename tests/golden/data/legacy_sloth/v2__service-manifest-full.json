@@ -1,0 +1,4 @@
+{
+  "error": "Missing required 'service' section in <opensrm>/spec/v2/examples/service-manifest-full.yaml",
+  "service": "unknown"
+}

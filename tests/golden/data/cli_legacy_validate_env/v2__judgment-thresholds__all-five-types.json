@@ -1,0 +1,65 @@
+{
+  "dev": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: dev",
+      "Service: <opensrm>/spec/v2/examples/judgment-thresholds/all-five-types.yaml",
+      "",
+      "✗ No environments directory found",
+      "",
+      "Expected: <opensrm>/spec/v2/examples/judgment-thresholds/environments",
+      ""
+    ]
+  },
+  "prod": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: prod",
+      "Service: <opensrm>/spec/v2/examples/judgment-thresholds/all-five-types.yaml",
+      "",
+      "✗ No environments directory found",
+      "",
+      "Expected: <opensrm>/spec/v2/examples/judgment-thresholds/environments",
+      ""
+    ]
+  },
+  "staging": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: staging",
+      "Service: <opensrm>/spec/v2/examples/judgment-thresholds/all-five-types.yaml",
+      "",
+      "✗ No environments directory found",
+      "",
+      "Expected: <opensrm>/spec/v2/examples/judgment-thresholds/environments",
+      ""
+    ]
+  }
+}

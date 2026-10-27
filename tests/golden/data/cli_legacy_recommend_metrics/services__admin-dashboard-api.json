@@ -1,0 +1,224 @@
+{
+  "check_exit": 2,
+  "check_json": {
+    "recommended": [
+      {
+        "description": "Number of active HTTP server requests",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "http.server.active_requests",
+        "requirement_level": "recommended",
+        "slo_usage": [
+          "saturation"
+        ],
+        "status": "missing",
+        "type": "updown_counter",
+        "unit": "{request}"
+      },
+      {
+        "description": "Size of HTTP server request bodies",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "http.server.request.size",
+        "requirement_level": "recommended",
+        "slo_usage": [],
+        "status": "missing",
+        "type": "histogram",
+        "unit": "bytes"
+      },
+      {
+        "description": "Size of HTTP server response bodies",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "http.server.response.size",
+        "requirement_level": "recommended",
+        "slo_usage": [],
+        "status": "missing",
+        "type": "histogram",
+        "unit": "bytes"
+      }
+    ],
+    "required": [
+      {
+        "description": "Duration of HTTP server requests",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "http.server.request.duration",
+        "requirement_level": "required",
+        "slo_usage": [
+          "latency",
+          "availability"
+        ],
+        "status": "missing",
+        "type": "histogram",
+        "unit": "seconds"
+      }
+    ],
+    "runtime": "python",
+    "runtime_metrics": [
+      {
+        "description": "Number of garbage collections",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "process.runtime.cpython.gc_count",
+        "requirement_level": "recommended",
+        "slo_usage": [],
+        "status": "missing",
+        "type": "counter",
+        "unit": "{collection}"
+      },
+      {
+        "description": "Python process memory usage",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "process.runtime.cpython.memory",
+        "requirement_level": "recommended",
+        "slo_usage": [],
+        "status": "missing",
+        "type": "gauge",
+        "unit": "bytes"
+      },
+      {
+        "description": "CPU time used by Python process",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "process.runtime.cpython.cpu_time",
+        "requirement_level": "recommended",
+        "slo_usage": [],
+        "status": "missing",
+        "type": "counter",
+        "unit": "seconds"
+      },
+      {
+        "description": "Number of Python threads",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "process.runtime.cpython.thread_count",
+        "requirement_level": "recommended",
+        "slo_usage": [],
+        "status": "missing",
+        "type": "gauge",
+        "unit": "{thread}"
+      }
+    ],
+    "service": "admin-dashboard-api",
+    "service_type": "api",
+    "summary": {
+      "recommended_coverage": 0.0,
+      "required_coverage": 0.0,
+      "slo_ready": false
+    },
+    "tier": "standard"
+  },
+  "json": {
+    "recommended": [
+      {
+        "description": "Number of active HTTP server requests",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "http.server.active_requests",
+        "requirement_level": "recommended",
+        "slo_usage": [
+          "saturation"
+        ],
+        "status": "unknown",
+        "type": "updown_counter",
+        "unit": "{request}"
+      },
+      {
+        "description": "Size of HTTP server request bodies",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "http.server.request.size",
+        "requirement_level": "recommended",
+        "slo_usage": [],
+        "status": "unknown",
+        "type": "histogram",
+        "unit": "bytes"
+      },
+      {
+        "description": "Size of HTTP server response bodies",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "http.server.response.size",
+        "requirement_level": "recommended",
+        "slo_usage": [],
+        "status": "unknown",
+        "type": "histogram",
+        "unit": "bytes"
+      }
+    ],
+    "required": [
+      {
+        "description": "Duration of HTTP server requests",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "http.server.request.duration",
+        "requirement_level": "required",
+        "slo_usage": [
+          "latency",
+          "availability"
+        ],
+        "status": "unknown",
+        "type": "histogram",
+        "unit": "seconds"
+      }
+    ],
+    "runtime": "python",
+    "runtime_metrics": [
+      {
+        "description": "Number of garbage collections",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "process.runtime.cpython.gc_count",
+        "requirement_level": "recommended",
+        "slo_usage": [],
+        "status": "unknown",
+        "type": "counter",
+        "unit": "{collection}"
+      },
+      {
+        "description": "Python process memory usage",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "process.runtime.cpython.memory",
+        "requirement_level": "recommended",
+        "slo_usage": [],
+        "status": "unknown",
+        "type": "gauge",
+        "unit": "bytes"
+      },
+      {
+        "description": "CPU time used by Python process",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "process.runtime.cpython.cpu_time",
+        "requirement_level": "recommended",
+        "slo_usage": [],
+        "status": "unknown",
+        "type": "counter",
+        "unit": "seconds"
+      },
+      {
+        "description": "Number of Python threads",
+        "found_as": null,
+        "match_confidence": 0.0,
+        "name": "process.runtime.cpython.thread_count",
+        "requirement_level": "recommended",
+        "slo_usage": [],
+        "status": "unknown",
+        "type": "gauge",
+        "unit": "{thread}"
+      }
+    ],
+    "service": "admin-dashboard-api",
+    "service_type": "api",
+    "summary": {
+      "recommended_coverage": 0.0,
+      "required_coverage": 0.0,
+      "slo_ready": false
+    },
+    "tier": "standard"
+  },
+  "json_exit": 0
+}

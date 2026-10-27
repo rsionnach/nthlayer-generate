@@ -1,0 +1,101 @@
+{
+  "slo_count": 3,
+  "spec": {
+    "labels": {
+      "team": "search",
+      "tier": "low",
+      "type": "api"
+    },
+    "service": "search-api",
+    "slos": [
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO search-availability for search-api"
+          },
+          "labels": {
+            "service": "search-api",
+            "tier": "low"
+          },
+          "name": "SearchApiSearchAvailability",
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on search-api"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "99.5% search availability",
+        "name": "search-availability",
+        "objective": 99.5,
+        "sli": {
+          "events": {
+            "error_query": "sum(rate(http_requests_total{service=\"search-api\",status!~\"5..\"}[5m]))",
+            "total_query": "sum(rate(http_requests_total{service=\"search-api\"}[5m]))"
+          }
+        }
+      },
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO search-latency-p95 for search-api"
+          },
+          "labels": {
+            "service": "search-api",
+            "tier": "low"
+          },
+          "name": "SearchApiSearchLatencyP95",
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on search-api"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "99.0% search latency p95",
+        "name": "search-latency-p95",
+        "objective": 99.0,
+        "sli": {
+          "events": {
+            "error_query": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m])\n)\n > 0.3",
+            "total_query": "sum(rate(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m])\n)\n)"
+          }
+        }
+      },
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO search-quality for search-api"
+          },
+          "labels": {
+            "service": "search-api",
+            "tier": "low"
+          },
+          "name": "SearchApiSearchQuality",
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on search-api"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "95.0% search quality",
+        "name": "search-quality",
+        "objective": 95.0,
+        "sli": {
+          "events": {
+            "error_query": "",
+            "total_query": "sum(rate(search_results_total{service=\"search-api\",status=\"found\"}[5m]))\n/\nsum(rate(search_results_total{service=\"search-api\"}[5m]))\n* 100\n"
+          }
+        }
+      }
+    ],
+    "version": "prometheus/v1"
+  }
+}

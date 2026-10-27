@@ -1,0 +1,1203 @@
+{
+  "dashboard": {
+    "annotations": {},
+    "description": "Auto-generated dashboard for search-api service",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "panels": [
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": "<masked>",
+        "panels": [],
+        "title": "SLO Metrics",
+        "type": "row"
+      },
+      {
+        "description": "Target: 99.5%",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 1
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{service=\"search-api\",status!~\"5..\"}[5m]))\n/\nsum(rate(http_requests_total{service=\"search-api\"}[5m]))\n",
+            "legendFormat": "search-availability",
+            "refId": "A"
+          }
+        ],
+        "title": "search-availability",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Target: 99.0%",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 1
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m])\n)\n",
+            "legendFormat": "search-latency-p95",
+            "refId": "A"
+          }
+        ],
+        "title": "search-latency-p95",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Target: 95.0%",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 10
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(search_results_total{service=\"search-api\",status=\"found\"}[5m]))\n/\nsum(rate(search_results_total{service=\"search-api\"}[5m]))\n* 100\n",
+            "legendFormat": "search-quality",
+            "refId": "A"
+          }
+        ],
+        "title": "search-quality",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Target: 99.9%",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 10
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{service=\"search-api\"}[5m]))",
+            "refId": "A"
+          }
+        ],
+        "title": "availability",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Target: 99.0%",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 19
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{service=\"search-api\"}[5m]))",
+            "refId": "A"
+          }
+        ],
+        "title": "latency-p95",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Target: 95.0%",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 19
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{service=\"search-api\"}[5m]))",
+            "refId": "A"
+          }
+        ],
+        "title": "latency-p99",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 28
+        },
+        "id": "<masked>",
+        "panels": [],
+        "title": "Service Health",
+        "type": "row"
+      },
+      {
+        "description": "Total requests per second",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 29
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{service=\"search-api\"}[5m]))",
+            "legendFormat": "{{http}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Request Rate",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Percentage of requests returning 5xx errors",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 29
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{service=\"search-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"search-api\"}[5m])) * 100",
+            "legendFormat": "error %",
+            "refId": "A"
+          }
+        ],
+        "title": "Error Rate",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "95th percentile request duration",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 38
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m])))",
+            "legendFormat": "{{http}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Request Latency (p95)",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 47
+        },
+        "id": "<masked>",
+        "panels": [],
+        "title": "Dependencies",
+        "type": "row"
+      },
+      {
+        "description": "Elasticsearch cluster health (0=green, 1=yellow, 2=red)",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 48
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "elasticsearch_cluster_health_status{service=\"elasticsearch\"}",
+            "legendFormat": "{{elasticsearch}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Cluster Health Status",
+        "transformations": [],
+        "transparent": false,
+        "type": "stat"
+      },
+      {
+        "description": "Number of active and relocating shards",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 48
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "elasticsearch_cluster_health_active_shards{service=\"elasticsearch\"}",
+            "legendFormat": "Active",
+            "refId": "A"
+          },
+          {
+            "expr": "elasticsearch_cluster_health_relocating_shards{service=\"elasticsearch\"}",
+            "legendFormat": "Relocating",
+            "refId": "B"
+          }
+        ],
+        "title": "Active Shards",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Search queries per second",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 57
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(elasticsearch_indices_search_query_total{service=\"elasticsearch\"}[5m]))",
+            "legendFormat": "{{elasticsearch}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Search Rate",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Search query latency (95th percentile)",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 57
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(elasticsearch_indices_search_query_time_seconds_bucket{service=\"elasticsearch\"}[5m])))",
+            "legendFormat": "{{elasticsearch}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Search Latency (p95)",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Documents indexed per second",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 66
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(elasticsearch_indices_indexing_index_total{service=\"elasticsearch\"}[5m]))",
+            "legendFormat": "{{elasticsearch}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Indexing Rate",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Total size of all indices",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 66
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(elasticsearch_indices_store_size_bytes{service=\"elasticsearch\"})",
+            "legendFormat": "{{elasticsearch}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Index Size",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Total number of documents across all indices",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 75
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(elasticsearch_indices_docs{service=\"elasticsearch\"})",
+            "legendFormat": "{{elasticsearch}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Document Count",
+        "transformations": [],
+        "transparent": false,
+        "type": "stat"
+      },
+      {
+        "description": "JVM heap memory utilization percentage",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 75
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "elasticsearch_jvm_memory_used_bytes{service=\"elasticsearch\",area=\"heap\"} / \non() elasticsearch_jvm_memory_max_bytes{service=\"elasticsearch\",area=\"heap\"} * 100",
+            "legendFormat": "Heap %",
+            "refId": "A"
+          }
+        ],
+        "title": "JVM Heap Usage",
+        "transformations": [],
+        "transparent": false,
+        "type": "gauge"
+      },
+      {
+        "description": "Garbage collection time per second",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 84
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "rate(elasticsearch_jvm_gc_collection_seconds_sum{service=\"elasticsearch\"}[5m])",
+            "legendFormat": "{{elasticsearch}}",
+            "refId": "A"
+          }
+        ],
+        "title": "GC Time",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Redis memory consumption",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 84
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "redis_memory_used_bytes{service=\"redis\"}",
+            "legendFormat": "{{redis}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Redis Memory Usage",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Cache hit rate - should be >90% for good performance",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 93
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(cache_hits_total{service=\"redis\"}[5m])) /\n(sum(rate(cache_hits_total{service=\"redis\"}[5m])) +\nsum(rate(cache_misses_total{service=\"redis\"}[5m]))) * 100",
+            "legendFormat": "Hit rate %",
+            "refId": "A"
+          }
+        ],
+        "title": "Cache Hit Rate",
+        "transformations": [],
+        "transparent": false,
+        "type": "gauge"
+      },
+      {
+        "description": "Number of connected clients",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 93
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "redis_connected_clients{service=\"redis\"}",
+            "legendFormat": "{{redis}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Connected Clients",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Cache hits and misses per second",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 102
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "rate(cache_hits_total{service=\"redis\"}[5m])",
+            "legendFormat": "Hits/sec",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(cache_misses_total{service=\"redis\"}[5m])",
+            "legendFormat": "Misses/sec",
+            "refId": "B"
+          }
+        ],
+        "title": "Cache Hits vs Misses",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Keys evicted due to memory pressure - should be zero",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 102
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "rate(redis_evicted_keys_total{service=\"redis\"}[5m])",
+            "legendFormat": "{{redis}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Evicted Keys",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Keys expired per second due to TTL",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 111
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "rate(redis_expired_keys_total{service=\"redis\"}[5m])",
+            "legendFormat": "{{redis}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Expired Keys",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Redis commands processed per second",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 111
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "rate(redis_commands_processed_total{service=\"redis\"}[5m])",
+            "legendFormat": "{{redis}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Commands/sec",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Total number of keys in database",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 120
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(redis_db_keys{service=\"redis\"})",
+            "legendFormat": "{{redis}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Total Keys",
+        "transformations": [],
+        "transparent": false,
+        "type": "stat"
+      },
+      {
+        "description": "Elasticsearch cluster health (0=green, 1=yellow, 2=red)",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 120
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "elasticsearch_cluster_health_status{service=\"elasticsearch\"}",
+            "legendFormat": "{{elasticsearch}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Cluster Health Status",
+        "transformations": [],
+        "transparent": false,
+        "type": "stat"
+      },
+      {
+        "description": "Number of active and relocating shards",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 129
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "elasticsearch_cluster_health_active_shards{service=\"elasticsearch\"}",
+            "legendFormat": "Active",
+            "refId": "A"
+          },
+          {
+            "expr": "elasticsearch_cluster_health_relocating_shards{service=\"elasticsearch\"}",
+            "legendFormat": "Relocating",
+            "refId": "B"
+          }
+        ],
+        "title": "Active Shards",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Search queries per second",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 129
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(elasticsearch_indices_search_query_total{service=\"elasticsearch\"}[5m]))",
+            "legendFormat": "{{elasticsearch}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Search Rate",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Search query latency (95th percentile)",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 138
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(elasticsearch_indices_search_query_time_seconds_bucket{service=\"elasticsearch\"}[5m])))",
+            "legendFormat": "{{elasticsearch}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Search Latency (p95)",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Documents indexed per second",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 138
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(elasticsearch_indices_indexing_index_total{service=\"elasticsearch\"}[5m]))",
+            "legendFormat": "{{elasticsearch}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Indexing Rate",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Total size of all indices",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 147
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(elasticsearch_indices_store_size_bytes{service=\"elasticsearch\"})",
+            "legendFormat": "{{elasticsearch}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Index Size",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Total number of documents across all indices",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 147
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(elasticsearch_indices_docs{service=\"elasticsearch\"})",
+            "legendFormat": "{{elasticsearch}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Document Count",
+        "transformations": [],
+        "transparent": false,
+        "type": "stat"
+      },
+      {
+        "description": "JVM heap memory utilization percentage",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 156
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "elasticsearch_jvm_memory_used_bytes{service=\"elasticsearch\",area=\"heap\"} / \non() elasticsearch_jvm_memory_max_bytes{service=\"elasticsearch\",area=\"heap\"} * 100",
+            "legendFormat": "Heap %",
+            "refId": "A"
+          }
+        ],
+        "title": "JVM Heap Usage",
+        "transformations": [],
+        "transparent": false,
+        "type": "gauge"
+      },
+      {
+        "description": "Garbage collection time per second",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 156
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "rate(elasticsearch_jvm_gc_collection_seconds_sum{service=\"elasticsearch\"}[5m])",
+            "legendFormat": "{{elasticsearch}}",
+            "refId": "A"
+          }
+        ],
+        "title": "GC Time",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Redis memory consumption",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 165
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "redis_memory_used_bytes{service=\"redis\"}",
+            "legendFormat": "{{redis}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Redis Memory Usage",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Cache hit rate - should be >90% for good performance",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 165
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(cache_hits_total{service=\"redis\"}[5m])) /\n(sum(rate(cache_hits_total{service=\"redis\"}[5m])) +\nsum(rate(cache_misses_total{service=\"redis\"}[5m]))) * 100",
+            "legendFormat": "Hit rate %",
+            "refId": "A"
+          }
+        ],
+        "title": "Cache Hit Rate",
+        "transformations": [],
+        "transparent": false,
+        "type": "gauge"
+      },
+      {
+        "description": "Number of connected clients",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 174
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "redis_connected_clients{service=\"redis\"}",
+            "legendFormat": "{{redis}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Connected Clients",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Cache hits and misses per second",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 174
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "rate(cache_hits_total{service=\"redis\"}[5m])",
+            "legendFormat": "Hits/sec",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(cache_misses_total{service=\"redis\"}[5m])",
+            "legendFormat": "Misses/sec",
+            "refId": "B"
+          }
+        ],
+        "title": "Cache Hits vs Misses",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Keys evicted due to memory pressure - should be zero",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 183
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "rate(redis_evicted_keys_total{service=\"redis\"}[5m])",
+            "legendFormat": "{{redis}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Evicted Keys",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Keys expired per second due to TTL",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 183
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "rate(redis_expired_keys_total{service=\"redis\"}[5m])",
+            "legendFormat": "{{redis}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Expired Keys",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Redis commands processed per second",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 192
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "rate(redis_commands_processed_total{service=\"redis\"}[5m])",
+            "legendFormat": "{{redis}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Commands/sec",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Total number of keys in database",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 192
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(redis_db_keys{service=\"redis\"})",
+            "legendFormat": "{{redis}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Total Keys",
+        "transformations": [],
+        "transparent": false,
+        "type": "stat"
+      }
+    ],
+    "schemaVersion": 36,
+    "style": "dark",
+    "tags": [
+      "search",
+      "critical",
+      "api",
+      "prod"
+    ],
+    "templating": {},
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timezone": "browser",
+    "title": "search-api - Service Dashboard",
+    "uid": "search-api-overview"
+  },
+  "message": "Auto-generated dashboard for search-api",
+  "overwrite": true
+}

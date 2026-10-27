@@ -1,0 +1,6 @@
+{
+  "error": [
+    "ServiceParseError",
+    "Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/feedback-latency-p50-only.yaml"
+  ]
+}

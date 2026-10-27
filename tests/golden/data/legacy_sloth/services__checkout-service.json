@@ -1,0 +1,125 @@
+{
+  "slo_count": 3,
+  "spec": {
+    "labels": {
+      "team": "commerce",
+      "tier": "critical",
+      "type": "api"
+    },
+    "service": "checkout-service",
+    "slos": [
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO availability for checkout-service"
+          },
+          "labels": {
+            "service": "checkout-service",
+            "tier": "critical"
+          },
+          "name": "CheckoutServiceAvailability",
+          "page_alert": {
+            "annotations": {
+              "summary": "High error budget burn on checkout-service"
+            },
+            "labels": {
+              "severity": "critical"
+            }
+          },
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on checkout-service"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "99.95% availability",
+        "name": "availability",
+        "objective": 99.95,
+        "sli": {
+          "events": {
+            "error_query": "",
+            "total_query": ""
+          }
+        }
+      },
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO latency-p95 for checkout-service"
+          },
+          "labels": {
+            "service": "checkout-service",
+            "tier": "critical"
+          },
+          "name": "CheckoutServiceLatencyP95",
+          "page_alert": {
+            "annotations": {
+              "summary": "High error budget burn on checkout-service"
+            },
+            "labels": {
+              "severity": "critical"
+            }
+          },
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on checkout-service"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "99.0% latency p95",
+        "name": "latency-p95",
+        "objective": 99.0,
+        "sli": {
+          "events": {
+            "error_query": "",
+            "total_query": ""
+          }
+        }
+      },
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO latency-p99 for checkout-service"
+          },
+          "labels": {
+            "service": "checkout-service",
+            "tier": "critical"
+          },
+          "name": "CheckoutServiceLatencyP99",
+          "page_alert": {
+            "annotations": {
+              "summary": "High error budget burn on checkout-service"
+            },
+            "labels": {
+              "severity": "critical"
+            }
+          },
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on checkout-service"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "95.0% latency p99",
+        "name": "latency-p99",
+        "objective": 95.0,
+        "sli": {
+          "events": {
+            "error_query": "",
+            "total_query": ""
+          }
+        }
+      }
+    ],
+    "version": "prometheus/v1"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "exit": 1,
+  "queries": [],
+  "text": [
+    "",
+    "============================================================",
+    "  Error Budget Status: x-service-type",
+    "============================================================",
+    "",
+    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/x-service-type.yaml"
+  ]
+}

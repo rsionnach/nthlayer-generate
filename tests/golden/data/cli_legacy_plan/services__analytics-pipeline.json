@@ -1,0 +1,138 @@
+{
+  "json": {
+    "checks": {
+      "alert_generation": {
+        "alert_count": 0,
+        "message": "0 alerts will be generated",
+        "status": "pass"
+      },
+      "dashboard_generation": {
+        "dashboard_count": 1,
+        "message": "1 dashboards will be generated",
+        "status": "pass"
+      },
+      "recording_rules": {
+        "message": "7 recording rules will be generated",
+        "rule_count": 7,
+        "status": "pass"
+      },
+      "slo_definition": {
+        "message": "2 SLOs defined",
+        "slo_count": 2,
+        "status": "pass"
+      }
+    },
+    "command": "plan",
+    "metadata": {
+      "resources": {
+        "alerts": [],
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "analytics-pipeline",
+            "slo_count": 2,
+            "team": "data",
+            "tier": "standard",
+            "type": "backstage_entity"
+          }
+        ],
+        "dashboard": [
+          {
+            "description": "Auto-generated monitoring dashboard",
+            "name": "analytics-pipeline-dashboard",
+            "panels": "12+"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 3,
+            "interval": "30s",
+            "type": "analytics-pipeline_slo_metrics"
+          },
+          {
+            "count": 4,
+            "interval": "30s",
+            "type": "analytics-pipeline_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "freshness-p95",
+            "objective": 90.0,
+            "window": "30d"
+          },
+          {
+            "name": "data-quality",
+            "objective": 99.0,
+            "window": "30d"
+          }
+        ]
+      },
+      "service_yaml": "examples/services/analytics-pipeline.yaml"
+    },
+    "service": "analytics-pipeline",
+    "summary": {
+      "errors": 0,
+      "passed": 4,
+      "status": "pass",
+      "total": 4,
+      "total_resources": 6,
+      "warnings": 0
+    },
+    "timestamp": "<masked>",
+    "version": "1.0"
+  },
+  "json_exit": 0,
+  "plan": {
+    "errors": [],
+    "resources": {
+      "alerts": [],
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "analytics-pipeline",
+          "slo_count": 2,
+          "team": "data",
+          "tier": "standard",
+          "type": "backstage_entity"
+        }
+      ],
+      "dashboard": [
+        {
+          "description": "Auto-generated monitoring dashboard",
+          "name": "analytics-pipeline-dashboard",
+          "panels": "12+"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 3,
+          "interval": "30s",
+          "type": "analytics-pipeline_slo_metrics"
+        },
+        {
+          "count": 4,
+          "interval": "30s",
+          "type": "analytics-pipeline_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "freshness-p95",
+          "objective": 90.0,
+          "window": "30d"
+        },
+        {
+          "name": "data-quality",
+          "objective": 99.0,
+          "window": "30d"
+        }
+      ]
+    },
+    "service_name": "analytics-pipeline",
+    "service_yaml": "examples/services/analytics-pipeline.yaml",
+    "warnings": []
+  },
+  "success": true,
+  "total_resources": 6
+}

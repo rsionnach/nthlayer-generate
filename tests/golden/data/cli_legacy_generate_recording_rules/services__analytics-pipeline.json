@@ -1,0 +1,74 @@
+{
+  "exit": 0,
+  "files": {
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "analytics-pipeline_health_metrics",
+          "rules": [
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"analytics-pipeline\"}[5m]))",
+              "labels": {
+                "service": "analytics-pipeline"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"analytics-pipeline\"}[5m]))",
+              "labels": {
+                "service": "analytics-pipeline"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"analytics-pipeline\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"analytics-pipeline\"}[5m]))",
+              "labels": {
+                "service": "analytics-pipeline"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"analytics-pipeline\"}[5m]))",
+              "labels": {
+                "service": "analytics-pipeline"
+              },
+              "record": "service:http_requests:rate5m"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "analytics-pipeline_slo_metrics",
+          "rules": [
+            {
+              "expr": "slo:error_requests_failed:30d{service=\"analytics-pipeline\",slo=\"success-rate\"} / slo:error_requests_total:30d{service=\"analytics-pipeline\",slo=\"success-rate\"}",
+              "labels": {
+                "objective": "95.0",
+                "service": "analytics-pipeline",
+                "slo": "success-rate"
+              },
+              "record": "slo:error_rate:ratio"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\",status=~\"5..\"}[30d]))",
+              "labels": {
+                "service": "analytics-pipeline",
+                "slo": "success-rate"
+              },
+              "record": "slo:error_requests_failed:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\"}[30d]))",
+              "labels": {
+                "service": "analytics-pipeline",
+                "slo": "success-rate"
+              },
+              "record": "slo:error_requests_total:30d"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

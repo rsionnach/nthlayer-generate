@@ -1,0 +1,166 @@
+{
+  "json": {
+    "checks": {
+      "alert_generation": {
+        "alert_count": 12,
+        "message": "12 alerts will be generated",
+        "status": "pass"
+      },
+      "dashboard_generation": {
+        "dashboard_count": 1,
+        "message": "1 dashboards will be generated",
+        "status": "pass"
+      },
+      "recording_rules": {
+        "message": "23 recording rules will be generated",
+        "rule_count": 23,
+        "status": "pass"
+      },
+      "slo_definition": {
+        "message": "3 SLOs defined",
+        "slo_count": 3,
+        "status": "pass"
+      }
+    },
+    "command": "plan",
+    "metadata": {
+      "resources": {
+        "alerts": [
+          {
+            "count": 8,
+            "severity": "critical"
+          },
+          {
+            "count": 4,
+            "severity": "warning"
+          }
+        ],
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "mobile-api",
+            "slo_count": 3,
+            "team": "mobile",
+            "tier": "critical",
+            "type": "backstage_entity"
+          }
+        ],
+        "dashboard": [
+          {
+            "description": "Auto-generated monitoring dashboard",
+            "name": "mobile-api-dashboard",
+            "panels": "12+"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 19,
+            "interval": "30s",
+            "type": "mobile-api_slo_metrics"
+          },
+          {
+            "count": 4,
+            "interval": "30s",
+            "type": "mobile-api_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "latency-p95",
+            "objective": 95.0,
+            "window": "30d"
+          },
+          {
+            "name": "latency-p99",
+            "objective": 90.0,
+            "window": "30d"
+          },
+          {
+            "name": "auth-success-rate",
+            "objective": 99.9,
+            "window": "30d"
+          }
+        ]
+      },
+      "service_yaml": "examples/services/mobile-api.yaml"
+    },
+    "service": "mobile-api",
+    "summary": {
+      "errors": 0,
+      "passed": 4,
+      "status": "pass",
+      "total": 4,
+      "total_resources": 9,
+      "warnings": 0
+    },
+    "timestamp": "<masked>",
+    "version": "1.0"
+  },
+  "json_exit": 0,
+  "plan": {
+    "errors": [],
+    "resources": {
+      "alerts": [
+        {
+          "count": 8,
+          "severity": "critical"
+        },
+        {
+          "count": 4,
+          "severity": "warning"
+        }
+      ],
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "mobile-api",
+          "slo_count": 3,
+          "team": "mobile",
+          "tier": "critical",
+          "type": "backstage_entity"
+        }
+      ],
+      "dashboard": [
+        {
+          "description": "Auto-generated monitoring dashboard",
+          "name": "mobile-api-dashboard",
+          "panels": "12+"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 19,
+          "interval": "30s",
+          "type": "mobile-api_slo_metrics"
+        },
+        {
+          "count": 4,
+          "interval": "30s",
+          "type": "mobile-api_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "latency-p95",
+          "objective": 95.0,
+          "window": "30d"
+        },
+        {
+          "name": "latency-p99",
+          "objective": 90.0,
+          "window": "30d"
+        },
+        {
+          "name": "auth-success-rate",
+          "objective": 99.9,
+          "window": "30d"
+        }
+      ]
+    },
+    "service_name": "mobile-api",
+    "service_yaml": "examples/services/mobile-api.yaml",
+    "warnings": []
+  },
+  "success": true,
+  "total_resources": 9
+}

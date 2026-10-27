@@ -1,0 +1,12 @@
+{
+  "exit": 1,
+  "queries": [],
+  "text": [
+    "",
+    "============================================================",
+    "  Error Budget Status: segments-two-dimensions",
+    "============================================================",
+    "",
+    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/segments-two-dimensions.yaml"
+  ]
+}

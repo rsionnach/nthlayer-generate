@@ -1,0 +1,24 @@
+{
+  "exit": 0,
+  "queries": [],
+  "text": [
+    "",
+    "============================================================",
+    "  Error Budget Status: payment-api-pagerduty-demo",
+    "============================================================",
+    "",
+    "Prometheus: http://prometheus.invalid",
+    "",
+    "[-] SLO: availability (99.95%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "[-] SLO: latency-p95 (99.0%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "------------------------------------------------------------",
+    "Summary: 0/2 SLOs healthy",
+    ""
+  ]
+}

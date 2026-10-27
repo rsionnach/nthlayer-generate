@@ -1,0 +1,65 @@
+{
+  "dev": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: dev",
+      "Service: examples/opensrm/batch.reliability.yaml",
+      "",
+      "✗ No environments directory found",
+      "",
+      "Expected: examples/opensrm/environments",
+      ""
+    ]
+  },
+  "prod": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: prod",
+      "Service: examples/opensrm/batch.reliability.yaml",
+      "",
+      "✗ No environments directory found",
+      "",
+      "Expected: examples/opensrm/environments",
+      ""
+    ]
+  },
+  "staging": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: staging",
+      "Service: examples/opensrm/batch.reliability.yaml",
+      "",
+      "✗ No environments directory found",
+      "",
+      "Expected: examples/opensrm/environments",
+      ""
+    ]
+  }
+}

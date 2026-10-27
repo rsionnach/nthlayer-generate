@@ -1,0 +1,245 @@
+{
+  "exit": 0,
+  "files": {
+    "loki-alerts.yaml": {
+      "groups": [
+        {
+          "name": "analytics-stream",
+          "rules": [
+            {
+              "alert": "analytics-stream_ApplicationError",
+              "annotations": {
+                "description": "Error-level log entries detected in application logs.",
+                "summary": "[analytics-stream] Application errors detected"
+              },
+              "expr": "sum(count_over_time({app=\"analytics-stream\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "service": "analytics-stream",
+                "severity": "warning",
+                "source": "service",
+                "team": "data",
+                "technology": "stream-processor",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "analytics-stream_ApplicationHighErrorRate",
+              "annotations": {
+                "description": "Application is experiencing a high rate of errors.",
+                "summary": "[analytics-stream] High error rate in application"
+              },
+              "expr": "sum(count_over_time({app=\"analytics-stream\"} |~ \"(?i)error|exception\" [5m])) > 100",
+              "for": "5m",
+              "labels": {
+                "service": "analytics-stream",
+                "severity": "critical",
+                "source": "service",
+                "team": "data",
+                "technology": "stream-processor",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "analytics-stream_ApplicationPanic",
+              "annotations": {
+                "description": "Application appears to have crashed or panicked.",
+                "summary": "[analytics-stream] Application panic/crash detected"
+              },
+              "expr": "count_over_time({app=\"analytics-stream\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "service": "analytics-stream",
+                "severity": "critical",
+                "source": "service",
+                "team": "data",
+                "technology": "stream-processor",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "analytics-stream_mongodb_MongodbConnectionError",
+              "annotations": {
+                "description": "Applications cannot connect to MongoDB. Check if MongoDB is running.",
+                "summary": "[analytics-stream/mongodb] MongoDB connection error"
+              },
+              "expr": "count_over_time({app=\"mongodb\", service=\"analytics-stream\"} |~ \"connection.*refused|failed to connect|ECONNREFUSED\" [1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "dependency": "mongodb",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "data",
+                "technology": "mongodb",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "analytics-stream_mongodb_MongodbDiskSpaceLow",
+              "annotations": {
+                "description": "MongoDB is running low on disk space.",
+                "summary": "[analytics-stream/mongodb] MongoDB disk space low"
+              },
+              "expr": "count_over_time({app=\"mongodb\", service=\"analytics-stream\"} |~ \"disk space|storage.*full|ENOSPC\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "mongodb",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "data",
+                "technology": "mongodb",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "analytics-stream_mongodb_MongodbReplicaSetError",
+              "annotations": {
+                "description": "MongoDB replica set has issues. Check member connectivity and elections.",
+                "summary": "[analytics-stream/mongodb] MongoDB replica set error"
+              },
+              "expr": "count_over_time({app=\"mongodb\", service=\"analytics-stream\"} |~ \"replica set|replication.*error|cannot reach\" [1m]) > 0",
+              "for": "5m",
+              "labels": {
+                "dependency": "mongodb",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "data",
+                "technology": "mongodb",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "analytics-stream_mongodb_MongodbSlowQuery",
+              "annotations": {
+                "description": "Slow queries detected. Review query patterns and indexes.",
+                "summary": "[analytics-stream/mongodb] MongoDB slow queries detected"
+              },
+              "expr": "sum(count_over_time({app=\"mongodb\", service=\"analytics-stream\"} |~ \"Slow query|operation exceeded|exceeded.*ms\" [5m])) > 5",
+              "for": "5m",
+              "labels": {
+                "dependency": "mongodb",
+                "service": "analytics-stream",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "data",
+                "technology": "mongodb",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "analytics-stream_redis_RedisClusterDown",
+              "annotations": {
+                "description": "Redis cluster is in a down state. Some slots may not be covered.",
+                "summary": "[analytics-stream/redis] Redis cluster down"
+              },
+              "expr": "count_over_time({app=\"redis\", service=\"analytics-stream\"} |~ \"CLUSTERDOWN|cluster.*down|slots.*not covered\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "redis",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "data",
+                "technology": "redis",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "analytics-stream_redis_RedisConnectionRefused",
+              "annotations": {
+                "description": "Applications cannot connect to Redis. Check if Redis is running and acce...",
+                "summary": "[analytics-stream/redis] Redis connection refused"
+              },
+              "expr": "count_over_time({app=\"redis\", service=\"analytics-stream\"} |~ \"Connection refused|ECONNREFUSED\" [1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "dependency": "redis",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "data",
+                "technology": "redis",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "analytics-stream_redis_RedisOutOfMemory",
+              "annotations": {
+                "description": "Redis is out of memory. Consider increasing maxmemory or reviewing evict...",
+                "summary": "[analytics-stream/redis] Redis out of memory"
+              },
+              "expr": "count_over_time({app=\"redis\", service=\"analytics-stream\"} |~ \"OOM|out of memory|Can't save\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "redis",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "data",
+                "technology": "redis",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "analytics-stream_redis_RedisRDBSaveFailed",
+              "annotations": {
+                "description": "Redis background save (RDB) failed. Check disk space and permissions.",
+                "summary": "[analytics-stream/redis] Redis RDB save failed"
+              },
+              "expr": "count_over_time({app=\"redis\", service=\"analytics-stream\"} |~ \"MISCONF|Background saving|RDB\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "redis",
+                "service": "analytics-stream",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "data",
+                "technology": "redis",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "analytics-stream_redis_RedisReplicationBroken",
+              "annotations": {
+                "description": "Redis replication to master is broken. Check network connectivity and ma...",
+                "summary": "[analytics-stream/redis] Redis replication broken"
+              },
+              "expr": "count_over_time({app=\"redis\", service=\"analytics-stream\"} |~ \"MASTER aborted|Disconnected from MASTER|replication\" [1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "dependency": "redis",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "data",
+                "technology": "redis",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "analytics-stream_redis_RedisSlowlog",
+              "annotations": {
+                "description": "Slow Redis commands detected. Review command patterns and consider optim...",
+                "summary": "[analytics-stream/redis] Redis slow commands detected"
+              },
+              "expr": "sum(count_over_time({app=\"redis\", service=\"analytics-stream\"} |~ \"Slow|slowlog\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "dependency": "redis",
+                "service": "analytics-stream",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "data",
+                "technology": "redis",
+                "tier": "high"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

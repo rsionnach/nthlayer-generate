@@ -1,0 +1,124 @@
+{
+  "exit": 0,
+  "files": {
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "notification-worker_health_metrics",
+          "rules": [
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"notification-worker\"}[5m]))",
+              "labels": {
+                "service": "notification-worker"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"notification-worker\"}[5m]))",
+              "labels": {
+                "service": "notification-worker"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"notification-worker\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"notification-worker\"}[5m]))",
+              "labels": {
+                "service": "notification-worker"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"notification-worker\"}[5m]))",
+              "labels": {
+                "service": "notification-worker"
+              },
+              "record": "service:http_requests:rate5m"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "notification-worker_slo_metrics",
+          "rules": [
+            {
+              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"notification-worker\"}[5m]))",
+              "labels": {
+                "service": "notification-worker",
+                "slo": "processing-latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"notification-worker\"}[5m]))",
+              "labels": {
+                "service": "notification-worker",
+                "slo": "processing-latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"notification-worker\"}[5m]))",
+              "labels": {
+                "service": "notification-worker",
+                "slo": "processing-latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "slo:error_requests_failed:30d{service=\"notification-worker\",slo=\"delivery-success\"} / slo:error_requests_total:30d{service=\"notification-worker\",slo=\"delivery-success\"}",
+              "labels": {
+                "objective": "99.5",
+                "service": "notification-worker",
+                "slo": "delivery-success"
+              },
+              "record": "slo:error_rate:ratio"
+            },
+            {
+              "expr": "slo:latency_requests_fast:30d{service=\"notification-worker\",slo=\"processing-latency-p95\"} / slo:latency_requests_total:30d{service=\"notification-worker\",slo=\"processing-latency-p95\"}",
+              "labels": {
+                "objective": "98.0",
+                "service": "notification-worker",
+                "slo": "processing-latency-p95"
+              },
+              "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"notification-worker\",le=\"0.5\"}[30d]))",
+              "labels": {
+                "service": "notification-worker",
+                "slo": "processing-latency-p95",
+                "threshold": "500ms"
+              },
+              "record": "slo:latency_requests_fast:30d"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_count{service=\"notification-worker\"}[30d]))",
+              "labels": {
+                "service": "notification-worker",
+                "slo": "processing-latency-p95"
+              },
+              "record": "slo:latency_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"notification-worker\",status=~\"5..\"}[30d]))",
+              "labels": {
+                "service": "notification-worker",
+                "slo": "delivery-success"
+              },
+              "record": "slo:error_requests_failed:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"notification-worker\"}[30d]))",
+              "labels": {
+                "service": "notification-worker",
+                "slo": "delivery-success"
+              },
+              "record": "slo:error_requests_total:30d"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

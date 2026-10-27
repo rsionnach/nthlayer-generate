@@ -1,0 +1,23 @@
+{
+  "dry_run_exit": 1,
+  "dry_run_text": [
+    "",
+    "╭──╮",
+    "│ Setup PagerDuty Integration  │",
+    "╰──╯",
+    "",
+    "✗ No PagerDuty resource found in examples/services/analytics-pipeline.yaml",
+    "",
+    "Add a PagerDuty resource to your service definition:",
+    "  resources:",
+    "  - kind: PagerDuty",
+    "  name: primary",
+    "  spec:",
+    "  escalation_policy: my-policy",
+    "  urgency: high",
+    ""
+  ],
+  "no_key_exit": 1,
+  "setup_service_calls": [],
+  "stubbed_exit": 1
+}

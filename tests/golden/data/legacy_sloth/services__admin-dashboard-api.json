@@ -1,0 +1,72 @@
+{
+  "slo_count": 2,
+  "spec": {
+    "labels": {
+      "team": "platform",
+      "tier": "standard",
+      "type": "api"
+    },
+    "service": "admin-dashboard-api",
+    "slos": [
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO availability for admin-dashboard-api"
+          },
+          "labels": {
+            "service": "admin-dashboard-api",
+            "tier": "standard"
+          },
+          "name": "AdminDashboardApiAvailability",
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on admin-dashboard-api"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "99.5% availability",
+        "name": "availability",
+        "objective": 99.5,
+        "sli": {
+          "events": {
+            "error_query": "sum(rate(http_requests_total{service=\"admin-dashboard-api\",code=~\"5..\"}[5m]))",
+            "total_query": "sum(rate(http_requests_total{service=\"admin-dashboard-api\"}[5m]))"
+          }
+        }
+      },
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO latency-p95 for admin-dashboard-api"
+          },
+          "labels": {
+            "service": "admin-dashboard-api",
+            "tier": "standard"
+          },
+          "name": "AdminDashboardApiLatencyP95",
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on admin-dashboard-api"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "95.0% latency p95",
+        "name": "latency-p95",
+        "objective": 95.0,
+        "sli": {
+          "events": {
+            "error_query": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"admin-dashboard-api\"}[5m])\n)\n > 1.0",
+            "total_query": "sum(rate(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"admin-dashboard-api\"}[5m])\n)\n)"
+          }
+        }
+      }
+    ],
+    "version": "prometheus/v1"
+  }
+}

@@ -70,6 +70,12 @@ MASK: frozenset[str] = frozenset(
         "updated_at",
         # topology: TopologyGraph.exported_at, datetime.now.
         "exported_at",
+        # cli_legacy_plan: the JSON report's timestamp, datetime.now
+        # (cli/formatters/json_fmt.py:55).
+        "timestamp",
+        # cli_legacy_apply: ApplyResult.duration_seconds, wall-clock time
+        # (orchestrator.py:226).
+        "duration_seconds",
     }
 )
 

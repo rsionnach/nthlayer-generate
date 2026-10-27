@@ -1,0 +1,133 @@
+{
+  "exit": 0,
+  "files": {
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "analytics-stream_health_metrics",
+          "rules": [
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"analytics-stream\"}[5m]))",
+              "labels": {
+                "service": "analytics-stream"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"analytics-stream\"}[5m]))",
+              "labels": {
+                "service": "analytics-stream"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"analytics-stream\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
+              "labels": {
+                "service": "analytics-stream"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
+              "labels": {
+                "service": "analytics-stream"
+              },
+              "record": "service:http_requests:rate5m"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "analytics-stream_slo_metrics",
+          "rules": [
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"analytics-stream\",slo=\"processing-availability\"}) / (1 - 0.995))",
+              "labels": {
+                "objective": "99.5",
+                "service": "analytics-stream",
+                "slo": "processing-availability"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"analytics-stream\"}[5m]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "event-latency-p99"
+              },
+              "record": "slo:http_request_duration_seconds:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"analytics-stream\"}[5m]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "event-latency-p99"
+              },
+              "record": "slo:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"analytics-stream\"}[5m]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "event-latency-p99"
+              },
+              "record": "slo:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "slo:latency_requests_fast:30d{service=\"analytics-stream\",slo=\"event-latency-p99\"} / slo:latency_requests_total:30d{service=\"analytics-stream\",slo=\"event-latency-p99\"}",
+              "labels": {
+                "objective": "95.0",
+                "service": "analytics-stream",
+                "slo": "event-latency-p99"
+              },
+              "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"analytics-stream\",slo=\"processing-availability\"} / slo:requests_total:30d{service=\"analytics-stream\",slo=\"processing-availability\"}",
+              "labels": {
+                "objective": "99.5",
+                "service": "analytics-stream",
+                "slo": "processing-availability"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"analytics-stream\",le=\"0.5\"}[30d]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "event-latency-p99",
+                "threshold": "500ms"
+              },
+              "record": "slo:latency_requests_fast:30d"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_count{service=\"analytics-stream\"}[30d]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "event-latency-p99"
+              },
+              "record": "slo:latency_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"analytics-stream\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "processing-availability"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"analytics-stream\"}[30d]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "processing-availability"
+              },
+              "record": "slo:requests_total:30d"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

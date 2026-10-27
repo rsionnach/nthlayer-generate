@@ -1,0 +1,12 @@
+{
+  "exit": 1,
+  "queries": [],
+  "text": [
+    "",
+    "============================================================",
+    "  Error Budget Status: batch",
+    "============================================================",
+    "",
+    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/services/batch.yaml"
+  ]
+}

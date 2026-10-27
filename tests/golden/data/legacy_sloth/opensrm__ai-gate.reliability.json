@@ -1,0 +1,4 @@
+{
+  "error": "Missing required 'service' section in examples/opensrm/ai-gate.reliability.yaml",
+  "service": "unknown"
+}

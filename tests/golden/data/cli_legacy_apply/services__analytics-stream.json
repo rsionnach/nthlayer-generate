@@ -1,0 +1,1098 @@
+{
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "analytics-stream-mongodb",
+          "rules": [
+            {
+              "alert": "MongodbCursorsTimeouts",
+              "annotations": {
+                "description": "Too many cursors are timing out\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "MongoDB cursors timeouts (instance {{ $labels.instance }})"
+              },
+              "expr": "increase(mongodb_ss_metrics_cursor_timedOut[1m]) > 100",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "warning",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "MongodbDown",
+              "annotations": {
+                "description": "MongoDB instance is down\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "MongoDB Down (instance {{ $labels.instance }})"
+              },
+              "expr": "mongodb_up == 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "MongodbNumberCursorsOpen",
+              "annotations": {
+                "description": "Too many cursors opened by MongoDB for clients (> 10k)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "MongoDB number cursors open (instance {{ $labels.instance }})"
+              },
+              "expr": "mongodb_ss_metrics_cursor_open{csr_type=\"total\"} > 10 * 1000",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "warning",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "MongodbReplicaMemberUnhealthy",
+              "annotations": {
+                "description": "MongoDB replica member is not healthy\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Mongodb replica member unhealthy (instance {{ $labels.instance }})"
+              },
+              "expr": "mongodb_rs_members_health == 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "MongodbReplicationHeadroom",
+              "annotations": {
+                "description": "MongoDB replication headroom is <= 0\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "MongoDB replication headroom (instance [instance unavailable])"
+              },
+              "expr": "sum(avg(mongodb_mongod_replset_oplog_head_timestamp - mongodb_mongod_replset_oplog_tail_timestamp)) - sum(avg(mongodb_rs_members_optimeDate{member_state=\"PRIMARY\"} - on (set) group_right mongodb_rs_members_optimeDate{member_state=\"SECONDARY\"})) <= 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "MongodbReplicationLag",
+              "annotations": {
+                "description": "Mongodb replication lag is more than 10s\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "MongoDB replication lag (instance {{ $labels.instance }})"
+              },
+              "expr": "(mongodb_rs_members_optimeDate{member_state=\"PRIMARY\"} - on (set) group_right mongodb_rs_members_optimeDate{member_state=\"SECONDARY\"}) / 1000 > 10",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "MongodbTooManyConnections",
+              "annotations": {
+                "description": "Too many connections (> 80%)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "MongoDB too many connections (instance {{ $labels.instance }})"
+              },
+              "expr": "avg by(instance) (rate(mongodb_ss_connections{conn_type=\"current\"}[1m])) / avg by(instance) (sum (mongodb_ss_connections) by (instance)) * 100 > 80",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "warning",
+                "team": "data",
+                "tier": "high"
+              }
+            }
+          ]
+        },
+        {
+          "name": "analytics-stream-redis",
+          "rules": [
+            {
+              "alert": "RedisClusterFlapping",
+              "annotations": {
+                "description": "Changes have been detected in Redis replica connection. This can occur when replica nodes lose connection to the master and reconnect (a.k.a flapping).\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis cluster flapping (instance {{ $labels.instance }})"
+              },
+              "expr": "changes(redis_connected_slaves[1m]) > 1",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "RedisDisconnectedSlaves",
+              "annotations": {
+                "description": "Redis not replicating for all slaves. Consider reviewing the redis replication status.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis disconnected slaves (instance [instance unavailable])"
+              },
+              "expr": "count without (instance, job) (redis_connected_slaves) - sum without (instance, job) (redis_connected_slaves) - 1 > 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "RedisDown",
+              "annotations": {
+                "description": "Redis instance is down\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis down (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_up == 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "RedisMissingBackup",
+              "annotations": {
+                "description": "Redis has not been backuped for 24 hours\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis missing backup (instance {{ $labels.instance }})"
+              },
+              "expr": "time() - redis_rdb_last_save_timestamp_seconds > 60 * 60 * 24",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "RedisMissingMaster",
+              "annotations": {
+                "description": "Redis cluster has no node marked as master.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis missing master (instance [instance unavailable])"
+              },
+              "expr": "(count(redis_instance_info{role=\"master\"}) or vector(0)) < 1",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "RedisNotEnoughConnections",
+              "annotations": {
+                "description": "Redis instance should have more connections (> 5)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis not enough connections (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_connected_clients < 5",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "warning",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "RedisOutOfConfiguredMaxmemory",
+              "annotations": {
+                "description": "Redis is running out of configured maxmemory (> 90%)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis out of configured maxmemory (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_memory_used_bytes / redis_memory_max_bytes * 100 > 90 and on(instance) redis_memory_max_bytes > 0",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "warning",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "RedisOutOfSystemMemory",
+              "annotations": {
+                "description": "Redis is running out of system memory (> 90%)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis out of system memory (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_memory_used_bytes / redis_total_system_memory_bytes * 100 > 90",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "warning",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "RedisRejectedConnections",
+              "annotations": {
+                "description": "Some connections to Redis has been rejected\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis rejected connections (instance {{ $labels.instance }})"
+              },
+              "expr": "increase(redis_rejected_connections_total[1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "RedisReplicationBroken",
+              "annotations": {
+                "description": "Redis instance lost a slave\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis replication broken (instance {{ $labels.instance }})"
+              },
+              "expr": "delta(redis_connected_slaves[1m]) < 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "RedisTooManyConnections",
+              "annotations": {
+                "description": "Redis is running out of connections (> 90% used)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis too many connections (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_connected_clients / redis_config_maxclients * 100 > 90",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "warning",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "RedisTooManyMasters",
+              "annotations": {
+                "description": "Redis cluster has too many nodes marked as master.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis too many masters (instance [instance unavailable])"
+              },
+              "expr": "count(redis_instance_info{role=\"master\"}) > 1",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "critical",
+                "team": "data",
+                "tier": "high"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "dashboard.json": {
+      "dashboard": {
+        "annotations": {},
+        "description": "Auto-generated dashboard for analytics-stream service",
+        "editable": true,
+        "fiscalYearStartMonth": 0,
+        "graphTooltip": 0,
+        "panels": [
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 0
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "SLO Metrics",
+            "type": "row"
+          },
+          {
+            "description": "Target: 99.5%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "processing-availability",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 99.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "stream-lag",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 95.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 10
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "event-latency-p99",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 19
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Service Health",
+            "type": "row"
+          },
+          {
+            "description": "Total requests per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
+                "legendFormat": "{{http}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Request Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Percentage of requests returning 5xx errors",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"analytics-stream\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"analytics-stream\"}[5m])) * 100",
+                "legendFormat": "error %",
+                "refId": "A"
+              }
+            ],
+            "title": "Error Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "95th percentile request duration",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 29
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{service=\"analytics-stream\"}[5m])))",
+                "legendFormat": "{{http}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Request Latency (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 38
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Dependencies",
+            "type": "row"
+          },
+          {
+            "description": "Active MongoDB connections",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 39
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "mongodb_connections{service=\"mongodb\",state=\"current\"}",
+                "legendFormat": "{{mongodb}}",
+                "refId": "A"
+              }
+            ],
+            "title": "MongoDB Connections",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Database operations per second by type",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 39
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(mongodb_op_counters_total{service=\"mongodb\"}[5m])",
+                "legendFormat": "{{mongodb}}",
+                "refId": "A"
+              }
+            ],
+            "title": "MongoDB Operations/sec",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Query execution time (95th percentile)",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 48
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(mongodb_mongod_op_latencies_latency_bucket{service=\"mongodb\"}[5m]))) * 1000",
+                "legendFormat": "{{mongodb}}",
+                "refId": "A"
+              }
+            ],
+            "title": "MongoDB Query Duration (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Redis memory consumption",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 48
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "redis_memory_used_bytes{service=\"redis\"}",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Redis Memory Usage",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Cache hit rate - should be >90% for good performance",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 57
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(cache_hits_total{service=\"redis\"}[5m])) /\n(sum(rate(cache_hits_total{service=\"redis\"}[5m])) +\nsum(rate(cache_misses_total{service=\"redis\"}[5m]))) * 100",
+                "legendFormat": "Hit rate %",
+                "refId": "A"
+              }
+            ],
+            "title": "Cache Hit Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "Number of connected clients",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 57
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "redis_connected_clients{service=\"redis\"}",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Connected Clients",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Cache hits and misses per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 66
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(cache_hits_total{service=\"redis\"}[5m])",
+                "legendFormat": "Hits/sec",
+                "refId": "A"
+              },
+              {
+                "expr": "rate(cache_misses_total{service=\"redis\"}[5m])",
+                "legendFormat": "Misses/sec",
+                "refId": "B"
+              }
+            ],
+            "title": "Cache Hits vs Misses",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Keys evicted due to memory pressure - should be zero",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 66
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_evicted_keys_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Evicted Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Keys expired per second due to TTL",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 75
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_expired_keys_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Expired Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Redis commands processed per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 75
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_commands_processed_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Commands/sec",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Total number of keys in database",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 84
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(redis_db_keys{service=\"redis\"})",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Total Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          }
+        ],
+        "schemaVersion": 36,
+        "style": "dark",
+        "tags": [
+          "data",
+          "high",
+          "stream-processor"
+        ],
+        "templating": {},
+        "time": {
+          "from": "now-6h",
+          "to": "now"
+        },
+        "timezone": "browser",
+        "title": "analytics-stream - Service Dashboard",
+        "uid": "analytics-stream-overview"
+      },
+      "message": "Auto-generated dashboard for analytics-stream",
+      "overwrite": true
+    },
+    "pagerduty-config.json": {
+      "note": "Set PAGERDUTY_API_KEY to create resources in PagerDuty",
+      "resources_to_create": {
+        "escalation_policy": "data-escalation",
+        "schedules": [
+          "data-primary",
+          "data-secondary",
+          "data-manager"
+        ],
+        "service": "analytics-stream",
+        "team": "data"
+      },
+      "service_name": "analytics-stream",
+      "support_model": "self",
+      "team": "data",
+      "tier": "high",
+      "timezone": "America/New_York"
+    },
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "analytics-stream_health_metrics",
+          "rules": [
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"analytics-stream\"}[5m]))",
+              "labels": {
+                "service": "analytics-stream"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"analytics-stream\"}[5m]))",
+              "labels": {
+                "service": "analytics-stream"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"analytics-stream\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
+              "labels": {
+                "service": "analytics-stream"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
+              "labels": {
+                "service": "analytics-stream"
+              },
+              "record": "service:http_requests:rate5m"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "analytics-stream_slo_metrics",
+          "rules": [
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"analytics-stream\",slo=\"processing-availability\"}) / (1 - 0.995))",
+              "labels": {
+                "objective": "99.5",
+                "service": "analytics-stream",
+                "slo": "processing-availability"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"analytics-stream\"}[5m]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "event-latency-p99"
+              },
+              "record": "slo:http_request_duration_seconds:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"analytics-stream\"}[5m]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "event-latency-p99"
+              },
+              "record": "slo:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"analytics-stream\"}[5m]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "event-latency-p99"
+              },
+              "record": "slo:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "slo:latency_requests_fast:30d{service=\"analytics-stream\",slo=\"event-latency-p99\"} / slo:latency_requests_total:30d{service=\"analytics-stream\",slo=\"event-latency-p99\"}",
+              "labels": {
+                "objective": "95.0",
+                "service": "analytics-stream",
+                "slo": "event-latency-p99"
+              },
+              "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"analytics-stream\",slo=\"processing-availability\"} / slo:requests_total:30d{service=\"analytics-stream\",slo=\"processing-availability\"}",
+              "labels": {
+                "objective": "99.5",
+                "service": "analytics-stream",
+                "slo": "processing-availability"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"analytics-stream\",le=\"0.5\"}[30d]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "event-latency-p99",
+                "threshold": "500ms"
+              },
+              "record": "slo:latency_requests_fast:30d"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_count{service=\"analytics-stream\"}[30d]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "event-latency-p99"
+              },
+              "record": "slo:latency_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"analytics-stream\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "processing-availability"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"analytics-stream\"}[30d]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "processing-availability"
+              },
+              "record": "slo:requests_total:30d"
+            }
+          ]
+        }
+      ]
+    },
+    "sloth/analytics-stream.yaml": {
+      "labels": {
+        "team": "data",
+        "tier": "high",
+        "type": "stream-processor"
+      },
+      "service": "analytics-stream",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO processing-availability for analytics-stream"
+            },
+            "labels": {
+              "service": "analytics-stream",
+              "tier": "high"
+            },
+            "name": "AnalyticsStreamProcessingAvailability",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on analytics-stream"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.5% processing availability",
+          "name": "processing-availability",
+          "objective": 99.5,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO stream-lag for analytics-stream"
+            },
+            "labels": {
+              "service": "analytics-stream",
+              "tier": "high"
+            },
+            "name": "AnalyticsStreamStreamLag",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on analytics-stream"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.0% stream lag",
+          "name": "stream-lag",
+          "objective": 99.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO event-latency-p99 for analytics-stream"
+            },
+            "labels": {
+              "service": "analytics-stream",
+              "tier": "high"
+            },
+            "name": "AnalyticsStreamEventLatencyP99",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on analytics-stream"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "95.0% event latency p99",
+          "name": "event-latency-p99",
+          "objective": 95.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
+  "json": {
+    "duration_seconds": "<masked>",
+    "errors": [],
+    "output_dir": "<tmp>/out",
+    "resources_created": {
+      "alerts": 19,
+      "backstage": 0,
+      "dashboard": 1,
+      "pagerduty": 1,
+      "recording-rules": 14,
+      "slos": 3
+    },
+    "service_name": "analytics-stream",
+    "success": true,
+    "total_resources": 38
+  },
+  "preamble": [
+    "   ⚠️  Backstage generation warning: Invalid type 'stream-processor'. Must be one of: ai-gate, api, batch, database, stream, worker; or an extension type matching 'x-<lowercase-name>'."
+  ],
+  "stray": []
+}

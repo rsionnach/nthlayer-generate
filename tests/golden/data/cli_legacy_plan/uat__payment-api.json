@@ -1,0 +1,156 @@
+{
+  "json": {
+    "checks": {
+      "alert_generation": {
+        "alert_count": 27,
+        "message": "27 alerts will be generated",
+        "status": "pass"
+      },
+      "dashboard_generation": {
+        "dashboard_count": 1,
+        "message": "1 dashboards will be generated",
+        "status": "pass"
+      },
+      "recording_rules": {
+        "message": "14 recording rules will be generated",
+        "rule_count": 14,
+        "status": "pass"
+      },
+      "slo_definition": {
+        "message": "2 SLOs defined",
+        "slo_count": 2,
+        "status": "pass"
+      }
+    },
+    "command": "plan",
+    "metadata": {
+      "resources": {
+        "alerts": [
+          {
+            "count": 14,
+            "severity": "critical"
+          },
+          {
+            "count": 13,
+            "severity": "warning"
+          }
+        ],
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "payment-api",
+            "slo_count": 2,
+            "team": "payments-team",
+            "tier": "critical",
+            "type": "backstage_entity"
+          }
+        ],
+        "dashboard": [
+          {
+            "description": "Auto-generated monitoring dashboard",
+            "name": "payment-api-dashboard",
+            "panels": "12+"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 10,
+            "interval": "30s",
+            "type": "payment-api_slo_metrics"
+          },
+          {
+            "count": 4,
+            "interval": "30s",
+            "type": "payment-api_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "availability",
+            "objective": 99.9,
+            "window": "30d"
+          },
+          {
+            "name": "latency-p95",
+            "objective": 99.0,
+            "window": "30d"
+          }
+        ]
+      },
+      "service_yaml": "examples/uat/payment-api.yaml"
+    },
+    "service": "payment-api",
+    "summary": {
+      "errors": 0,
+      "passed": 4,
+      "status": "pass",
+      "total": 4,
+      "total_resources": 8,
+      "warnings": 0
+    },
+    "timestamp": "<masked>",
+    "version": "1.0"
+  },
+  "json_exit": 0,
+  "plan": {
+    "errors": [],
+    "resources": {
+      "alerts": [
+        {
+          "count": 14,
+          "severity": "critical"
+        },
+        {
+          "count": 13,
+          "severity": "warning"
+        }
+      ],
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "payment-api",
+          "slo_count": 2,
+          "team": "payments-team",
+          "tier": "critical",
+          "type": "backstage_entity"
+        }
+      ],
+      "dashboard": [
+        {
+          "description": "Auto-generated monitoring dashboard",
+          "name": "payment-api-dashboard",
+          "panels": "12+"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 10,
+          "interval": "30s",
+          "type": "payment-api_slo_metrics"
+        },
+        {
+          "count": 4,
+          "interval": "30s",
+          "type": "payment-api_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "availability",
+          "objective": 99.9,
+          "window": "30d"
+        },
+        {
+          "name": "latency-p95",
+          "objective": 99.0,
+          "window": "30d"
+        }
+      ]
+    },
+    "service_name": "payment-api",
+    "service_yaml": "examples/uat/payment-api.yaml",
+    "warnings": []
+  },
+  "success": true,
+  "total_resources": 8
+}

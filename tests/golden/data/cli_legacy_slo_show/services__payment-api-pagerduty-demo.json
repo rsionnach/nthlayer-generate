@@ -1,0 +1,31 @@
+{
+  "exit": 0,
+  "text": [
+    "",
+    "",
+    "╭──╮",
+    "│ SLO Status: payment-api-pagerduty-demo  │",
+    "╰──╯",
+    "",
+    "SLO: availability",
+    "  Objective: 99.95%",
+    "  Window: 30d",
+    "  Error Budget: 21.6 minutes (0.05%)",
+    "",
+    "  Indicator: availability",
+    "",
+    "SLO: latency-p95",
+    "  Objective: 99.0%",
+    "  Window: 30d",
+    "  Error Budget: 432.0 minutes (1.00%)",
+    "",
+    "  Indicator: latency",
+    "",
+    "──",
+    "Total: 2 SLO(s) defined",
+    "",
+    "To collect metrics and calculate actual budget:",
+    "  nthlayer slo collect payment-api-pagerduty-demo",
+    ""
+  ]
+}

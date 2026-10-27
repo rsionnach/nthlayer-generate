@@ -1,0 +1,41 @@
+{
+  "exit": 0,
+  "queries": [
+    "sum(rate(http_requests{service=\"payment-api\",code!~\"5..\"}[5m]))\n/\nsum(rate(http_requests{service=\"payment-api\"}[5m]))\n",
+    "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])\n)\n"
+  ],
+  "text": [
+    "",
+    "============================================================",
+    "  Error Budget Status: payment-api",
+    "============================================================",
+    "",
+    "Prometheus: http://prometheus.invalid",
+    "",
+    "[!!] SLO: availability (99.95%)",
+    "  Window: 30d rolling",
+    "  Current SLI: 99.95%",
+    "",
+    "  Error Budget:",
+    "  Total: 21.6 min",
+    "  Burned: 21.6 min (100%)",
+    "  Status: CRITICAL",
+    "",
+    "[OK] SLO: latency-p95 (99.0%)",
+    "  Window: 30d rolling",
+    "  Current SLI: 99.95%",
+    "",
+    "  Error Budget:",
+    "  Total: 432.0 min",
+    "  Burned: 21.6 min (5%)",
+    "  Status: HEALTHY",
+    "",
+    "[-] SLO: latency-p99 (95.0%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "------------------------------------------------------------",
+    "Summary: 1/3 SLOs healthy",
+    ""
+  ]
+}

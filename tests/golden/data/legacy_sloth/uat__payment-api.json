@@ -1,0 +1,88 @@
+{
+  "slo_count": 2,
+  "spec": {
+    "labels": {
+      "team": "payments-team",
+      "tier": "critical",
+      "type": "api"
+    },
+    "service": "payment-api",
+    "slos": [
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO availability for payment-api"
+          },
+          "labels": {
+            "service": "payment-api",
+            "tier": "critical"
+          },
+          "name": "PaymentApiAvailability",
+          "page_alert": {
+            "annotations": {
+              "summary": "High error budget burn on payment-api"
+            },
+            "labels": {
+              "severity": "critical"
+            }
+          },
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on payment-api"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "99.9% availability",
+        "name": "availability",
+        "objective": 99.9,
+        "sli": {
+          "events": {
+            "error_query": "sum(rate(http_requests_total{service=\"payment-api\",status=~\"[1234]..\"}[5m]))",
+            "total_query": "sum(rate(http_requests_total{service=\"payment-api\"}[5m]))"
+          }
+        }
+      },
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO latency-p95 for payment-api"
+          },
+          "labels": {
+            "service": "payment-api",
+            "tier": "critical"
+          },
+          "name": "PaymentApiLatencyP95",
+          "page_alert": {
+            "annotations": {
+              "summary": "High error budget burn on payment-api"
+            },
+            "labels": {
+              "severity": "critical"
+            }
+          },
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on payment-api"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "99.0% latency p95",
+        "name": "latency-p95",
+        "objective": 99.0,
+        "sli": {
+          "events": {
+            "error_query": "histogram_quantile(0.95,\n  sum(rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])) by (le)\n)\n > 0.5",
+            "total_query": "sum(rate(0.95,\n  sum(rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])) by (le)\n)\n)"
+          }
+        }
+      }
+    ],
+    "version": "prometheus/v1"
+  }
+}

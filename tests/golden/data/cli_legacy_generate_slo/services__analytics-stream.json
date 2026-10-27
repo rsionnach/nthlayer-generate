@@ -1,0 +1,103 @@
+{
+  "exit": 0,
+  "files": {
+    "sloth/analytics-stream.yaml": {
+      "labels": {
+        "team": "data",
+        "tier": "high",
+        "type": "stream-processor"
+      },
+      "service": "analytics-stream",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO processing-availability for analytics-stream"
+            },
+            "labels": {
+              "service": "analytics-stream",
+              "tier": "high"
+            },
+            "name": "AnalyticsStreamProcessingAvailability",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on analytics-stream"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.5% processing availability",
+          "name": "processing-availability",
+          "objective": 99.5,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO stream-lag for analytics-stream"
+            },
+            "labels": {
+              "service": "analytics-stream",
+              "tier": "high"
+            },
+            "name": "AnalyticsStreamStreamLag",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on analytics-stream"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.0% stream lag",
+          "name": "stream-lag",
+          "objective": 99.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO event-latency-p99 for analytics-stream"
+            },
+            "labels": {
+              "service": "analytics-stream",
+              "tier": "high"
+            },
+            "name": "AnalyticsStreamEventLatencyP99",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on analytics-stream"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "95.0% event latency p99",
+          "name": "event-latency-p99",
+          "objective": 95.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  }
+}

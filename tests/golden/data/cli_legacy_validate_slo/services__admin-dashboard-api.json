@@ -1,0 +1,27 @@
+{
+  "exit": 0,
+  "json": {
+    "all_valid": true,
+    "results": [
+      {
+        "all_found": true,
+        "error": "No metrics found in query",
+        "found_metrics": [],
+        "metrics": [],
+        "missing_metrics": [],
+        "query": "",
+        "slo_name": "admin-dashboard-api-availability"
+      },
+      {
+        "all_found": true,
+        "error": "No metrics found in query",
+        "found_metrics": [],
+        "metrics": [],
+        "missing_metrics": [],
+        "query": "",
+        "slo_name": "admin-dashboard-api-latency-p95"
+      }
+    ],
+    "service": "admin-dashboard-api"
+  }
+}

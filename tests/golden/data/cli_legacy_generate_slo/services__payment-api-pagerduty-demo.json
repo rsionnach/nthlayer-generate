@@ -1,0 +1,90 @@
+{
+  "exit": 0,
+  "files": {
+    "sloth/payment-api.yaml": {
+      "labels": {
+        "team": "payments",
+        "tier": "critical",
+        "type": "api"
+      },
+      "service": "payment-api",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO availability for payment-api"
+            },
+            "labels": {
+              "service": "payment-api",
+              "tier": "critical"
+            },
+            "name": "PaymentApiAvailability",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on payment-api"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on payment-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.95% availability",
+          "name": "availability",
+          "objective": 99.95,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO latency-p95 for payment-api"
+            },
+            "labels": {
+              "service": "payment-api",
+              "tier": "critical"
+            },
+            "name": "PaymentApiLatencyP95",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on payment-api"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on payment-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.0% latency p95",
+          "name": "latency-p95",
+          "objective": 99.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  }
+}

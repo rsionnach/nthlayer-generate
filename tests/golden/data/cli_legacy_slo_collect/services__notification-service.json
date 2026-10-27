@@ -1,0 +1,37 @@
+{
+  "exit": 0,
+  "queries": [
+    "sum(rate(job_runs{service=\"notification-service\",status=\"success\"}[5m]))\n/\nsum(rate(job_runs{service=\"notification-service\"}[5m]))\n",
+    "histogram_quantile(0.95,\n  rate(job_duration_seconds_bucket{service=\"notification-service\"}[5m])\n)\n"
+  ],
+  "text": [
+    "",
+    "============================================================",
+    "  Error Budget Status: notification-service",
+    "============================================================",
+    "",
+    "Prometheus: http://prometheus.invalid",
+    "",
+    "[OK] SLO: job-success-rate (99.5%)",
+    "  Window: 30d rolling",
+    "  Current SLI: 99.95%",
+    "",
+    "  Error Budget:",
+    "  Total: 216.0 min",
+    "  Burned: 21.6 min (10%)",
+    "  Status: HEALTHY",
+    "",
+    "[OK] SLO: processing-time-p95 (95.0%)",
+    "  Window: 30d rolling",
+    "  Current SLI: 99.95%",
+    "",
+    "  Error Budget:",
+    "  Total: 2160.0 min",
+    "  Burned: 21.6 min (1%)",
+    "  Status: HEALTHY",
+    "",
+    "------------------------------------------------------------",
+    "Summary: 2/2 SLOs healthy",
+    ""
+  ]
+}

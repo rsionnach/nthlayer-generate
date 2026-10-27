@@ -1,0 +1,77 @@
+{
+  "dev": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: dev",
+      "Service: examples/services/analytics-stream.yaml",
+      "",
+      "✓ Found: dev.yaml",
+      "",
+      "Testing with service file...",
+      "✓ Successfully merged with analytics-stream.yaml",
+      "  Result: tier=low, 9 resource(s)",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  },
+  "prod": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: prod",
+      "Service: examples/services/analytics-stream.yaml",
+      "",
+      "✓ Found: prod.yaml",
+      "",
+      "Testing with service file...",
+      "✓ Successfully merged with analytics-stream.yaml",
+      "  Result: tier=critical, 7 resource(s)",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  },
+  "staging": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: staging",
+      "Service: examples/services/analytics-stream.yaml",
+      "",
+      "✓ Found: staging.yaml",
+      "",
+      "Testing with service file...",
+      "✓ Successfully merged with analytics-stream.yaml",
+      "  Result: tier=standard, 9 resource(s)",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  }
+}

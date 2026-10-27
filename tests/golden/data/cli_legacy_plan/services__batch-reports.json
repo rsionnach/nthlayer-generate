@@ -1,0 +1,138 @@
+{
+  "json": {
+    "checks": {
+      "alert_generation": {
+        "alert_count": 6,
+        "message": "6 alerts will be generated",
+        "status": "pass"
+      },
+      "dashboard_generation": {
+        "dashboard_count": 1,
+        "message": "1 dashboards will be generated",
+        "status": "pass"
+      },
+      "recording_rules": {
+        "message": "17 recording rules will be generated",
+        "rule_count": 17,
+        "status": "pass"
+      },
+      "slo_definition": {
+        "message": "1 SLOs defined",
+        "slo_count": 1,
+        "status": "pass"
+      }
+    },
+    "command": "plan",
+    "metadata": {
+      "resources": {
+        "alerts": [
+          {
+            "count": 6,
+            "severity": "critical"
+          }
+        ],
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "batch-reports",
+            "slo_count": 1,
+            "team": "data",
+            "tier": "low",
+            "type": "backstage_entity"
+          }
+        ],
+        "dashboard": [
+          {
+            "description": "Auto-generated monitoring dashboard",
+            "name": "batch-reports-dashboard",
+            "panels": "12+"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 13,
+            "interval": "30s",
+            "type": "batch-reports_slo_metrics"
+          },
+          {
+            "count": 4,
+            "interval": "30s",
+            "type": "batch-reports_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "report-success-rate",
+            "objective": 95.0,
+            "window": "30d"
+          }
+        ]
+      },
+      "service_yaml": "examples/services/batch-reports.yaml"
+    },
+    "service": "batch-reports",
+    "summary": {
+      "errors": 0,
+      "passed": 4,
+      "status": "pass",
+      "total": 4,
+      "total_resources": 6,
+      "warnings": 0
+    },
+    "timestamp": "<masked>",
+    "version": "1.0"
+  },
+  "json_exit": 0,
+  "plan": {
+    "errors": [],
+    "resources": {
+      "alerts": [
+        {
+          "count": 6,
+          "severity": "critical"
+        }
+      ],
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "batch-reports",
+          "slo_count": 1,
+          "team": "data",
+          "tier": "low",
+          "type": "backstage_entity"
+        }
+      ],
+      "dashboard": [
+        {
+          "description": "Auto-generated monitoring dashboard",
+          "name": "batch-reports-dashboard",
+          "panels": "12+"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 13,
+          "interval": "30s",
+          "type": "batch-reports_slo_metrics"
+        },
+        {
+          "count": 4,
+          "interval": "30s",
+          "type": "batch-reports_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "report-success-rate",
+          "objective": 95.0,
+          "window": "30d"
+        }
+      ]
+    },
+    "service_name": "batch-reports",
+    "service_yaml": "examples/services/batch-reports.yaml",
+    "warnings": []
+  },
+  "success": true,
+  "total_resources": 6
+}

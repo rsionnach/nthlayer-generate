@@ -1,0 +1,145 @@
+{
+  "recommended": [
+    {
+      "description": "Number of active HTTP server requests",
+      "found_as": null,
+      "match_confidence": 0.0,
+      "name": "http.server.active_requests",
+      "requirement_level": "recommended",
+      "slo_usage": [
+        "saturation"
+      ],
+      "status": "unknown",
+      "type": "updown_counter",
+      "unit": "{request}"
+    },
+    {
+      "description": "Size of HTTP server request bodies",
+      "found_as": null,
+      "match_confidence": 0.0,
+      "name": "http.server.request.size",
+      "requirement_level": "recommended",
+      "slo_usage": [],
+      "status": "unknown",
+      "type": "histogram",
+      "unit": "bytes"
+    },
+    {
+      "description": "Size of HTTP server response bodies",
+      "found_as": null,
+      "match_confidence": 0.0,
+      "name": "http.server.response.size",
+      "requirement_level": "recommended",
+      "slo_usage": [],
+      "status": "unknown",
+      "type": "histogram",
+      "unit": "bytes"
+    }
+  ],
+  "required": [
+    {
+      "description": "Duration of HTTP server requests",
+      "found_as": null,
+      "match_confidence": 0.0,
+      "name": "http.server.request.duration",
+      "requirement_level": "required",
+      "slo_usage": [
+        "latency",
+        "availability"
+      ],
+      "status": "unknown",
+      "type": "histogram",
+      "unit": "seconds"
+    }
+  ],
+  "runtime": "java",
+  "runtime_metrics": [
+    {
+      "description": "JVM memory used",
+      "found_as": null,
+      "match_confidence": 0.0,
+      "name": "process.runtime.jvm.memory.usage",
+      "requirement_level": "recommended",
+      "slo_usage": [
+        "saturation"
+      ],
+      "status": "unknown",
+      "type": "updown_counter",
+      "unit": "bytes"
+    },
+    {
+      "description": "JVM memory committed",
+      "found_as": null,
+      "match_confidence": 0.0,
+      "name": "process.runtime.jvm.memory.committed",
+      "requirement_level": "recommended",
+      "slo_usage": [],
+      "status": "unknown",
+      "type": "updown_counter",
+      "unit": "bytes"
+    },
+    {
+      "description": "JVM memory limit",
+      "found_as": null,
+      "match_confidence": 0.0,
+      "name": "process.runtime.jvm.memory.limit",
+      "requirement_level": "recommended",
+      "slo_usage": [],
+      "status": "unknown",
+      "type": "updown_counter",
+      "unit": "bytes"
+    },
+    {
+      "description": "Duration of JVM garbage collection",
+      "found_as": null,
+      "match_confidence": 0.0,
+      "name": "process.runtime.jvm.gc.duration",
+      "requirement_level": "recommended",
+      "slo_usage": [],
+      "status": "unknown",
+      "type": "histogram",
+      "unit": "seconds"
+    },
+    {
+      "description": "Number of JVM threads",
+      "found_as": null,
+      "match_confidence": 0.0,
+      "name": "process.runtime.jvm.threads.count",
+      "requirement_level": "recommended",
+      "slo_usage": [],
+      "status": "unknown",
+      "type": "updown_counter",
+      "unit": "{thread}"
+    },
+    {
+      "description": "Number of loaded JVM classes",
+      "found_as": null,
+      "match_confidence": 0.0,
+      "name": "process.runtime.jvm.classes.loaded",
+      "requirement_level": "recommended",
+      "slo_usage": [],
+      "status": "unknown",
+      "type": "updown_counter",
+      "unit": "{class}"
+    },
+    {
+      "description": "Recent CPU utilization (0.0 to 1.0)",
+      "found_as": null,
+      "match_confidence": 0.0,
+      "name": "process.runtime.jvm.cpu.recent_utilization",
+      "requirement_level": "recommended",
+      "slo_usage": [],
+      "status": "unknown",
+      "type": "gauge",
+      "unit": "1"
+    }
+  ],
+  "service": "payment-api",
+  "service_type": "api",
+  "summary": {
+    "recommended_coverage": 0.0,
+    "required_coverage": 0.0,
+    "slo_ready": false
+  },
+  "tier": "critical"
+}

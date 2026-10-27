@@ -1,0 +1,248 @@
+{
+  "exit": 0,
+  "files": {
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": null,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/notification-service/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": null,
+        "serviceManifest": "examples/services/notification-service.yaml",
+        "slothSpec": "generated/notification-service/sloth/notification-service.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": null,
+        "name": "notification-service",
+        "supportModel": "self",
+        "team": "platform",
+        "tier": "standard",
+        "type": "worker"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "job-success-rate",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.5,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "processing-time-p95",
+          "sloType": "latency",
+          "status": null,
+          "target": 95.0,
+          "window": "30d"
+        }
+      ]
+    },
+    "pagerduty-config.json": {
+      "note": "Set PAGERDUTY_API_KEY to create resources in PagerDuty",
+      "resources_to_create": {
+        "escalation_policy": "platform-escalation",
+        "schedules": [
+          "platform-primary",
+          "platform-secondary",
+          "platform-manager"
+        ],
+        "service": "notification-service",
+        "team": "platform"
+      },
+      "service_name": "notification-service",
+      "support_model": "self",
+      "team": "platform",
+      "tier": "standard",
+      "timezone": "America/New_York"
+    },
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "notification-service_health_metrics",
+          "rules": [
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"notification-service\"}[5m]))",
+              "labels": {
+                "service": "notification-service"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"notification-service\"}[5m]))",
+              "labels": {
+                "service": "notification-service"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"notification-service\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"notification-service\"}[5m]))",
+              "labels": {
+                "service": "notification-service"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"notification-service\"}[5m]))",
+              "labels": {
+                "service": "notification-service"
+              },
+              "record": "service:http_requests:rate5m"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "notification-service_slo_metrics",
+          "rules": [
+            {
+              "expr": "slo:error_requests_failed:30d{service=\"notification-service\",slo=\"job-success-rate\"} / slo:error_requests_total:30d{service=\"notification-service\",slo=\"job-success-rate\"}",
+              "labels": {
+                "objective": "99.5",
+                "service": "notification-service",
+                "slo": "job-success-rate"
+              },
+              "record": "slo:error_rate:ratio"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"notification-service\",status=~\"5..\"}[30d]))",
+              "labels": {
+                "service": "notification-service",
+                "slo": "job-success-rate"
+              },
+              "record": "slo:error_requests_failed:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"notification-service\"}[30d]))",
+              "labels": {
+                "service": "notification-service",
+                "slo": "job-success-rate"
+              },
+              "record": "slo:error_requests_total:30d"
+            }
+          ]
+        }
+      ]
+    },
+    "sloth/notification-service.yaml": {
+      "labels": {
+        "team": "platform",
+        "tier": "standard",
+        "type": "worker"
+      },
+      "service": "notification-service",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO job-success-rate for notification-service"
+            },
+            "labels": {
+              "service": "notification-service",
+              "tier": "standard"
+            },
+            "name": "NotificationServiceJobSuccessRate",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on notification-service"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.5% job success rate",
+          "name": "job-success-rate",
+          "objective": 99.5,
+          "sli": {
+            "events": {
+              "error_query": "sum(rate(job_runs{service=\"notification-service\",status=\"success\"}[5m]))",
+              "total_query": "sum(rate(job_runs{service=\"notification-service\"}[5m]))"
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO processing-time-p95 for notification-service"
+            },
+            "labels": {
+              "service": "notification-service",
+              "tier": "standard"
+            },
+            "name": "NotificationServiceProcessingTimeP95",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on notification-service"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "95.0% processing time p95",
+          "name": "processing-time-p95",
+          "objective": 95.0,
+          "sli": {
+            "events": {
+              "error_query": "histogram_quantile(0.95,\n  rate(job_duration_seconds_bucket{service=\"notification-service\"}[5m])\n)\n > 5.0",
+              "total_query": "sum(rate(0.95,\n  rate(job_duration_seconds_bucket{service=\"notification-service\"}[5m])\n)\n)"
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
+  "json": {
+    "duration_seconds": "<masked>",
+    "errors": [],
+    "output_dir": "<tmp>/out",
+    "resources_created": {
+      "alerts": 0,
+      "backstage": 1,
+      "dashboard": 1,
+      "pagerduty": 1,
+      "recording-rules": 7,
+      "slos": 2
+    },
+    "service_name": "notification-service",
+    "success": true,
+    "total_resources": 12
+  },
+  "preamble": [
+    "✗ Error generating dashboard: 'No template found for technology: sqs'"
+  ],
+  "stray": []
+}

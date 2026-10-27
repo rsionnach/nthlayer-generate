@@ -1,0 +1,191 @@
+{
+  "exit": 0,
+  "files": {
+    "loki-alerts.yaml": {
+      "groups": [
+        {
+          "name": "email-worker",
+          "rules": [
+            {
+              "alert": "email-worker_ApplicationError",
+              "annotations": {
+                "description": "Error-level log entries detected in application logs.",
+                "summary": "[email-worker] Application errors detected"
+              },
+              "expr": "sum(count_over_time({app=\"email-worker\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "service": "email-worker",
+                "severity": "warning",
+                "source": "service",
+                "team": "notifications",
+                "technology": "worker",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "email-worker_ApplicationHighErrorRate",
+              "annotations": {
+                "description": "Application is experiencing a high rate of errors.",
+                "summary": "[email-worker] High error rate in application"
+              },
+              "expr": "sum(count_over_time({app=\"email-worker\"} |~ \"(?i)error|exception\" [5m])) > 100",
+              "for": "5m",
+              "labels": {
+                "service": "email-worker",
+                "severity": "critical",
+                "source": "service",
+                "team": "notifications",
+                "technology": "worker",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "email-worker_ApplicationPanic",
+              "annotations": {
+                "description": "Application appears to have crashed or panicked.",
+                "summary": "[email-worker] Application panic/crash detected"
+              },
+              "expr": "count_over_time({app=\"email-worker\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "service": "email-worker",
+                "severity": "critical",
+                "source": "service",
+                "team": "notifications",
+                "technology": "worker",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "email-worker_postgresql_PostgresqlConnectionRefused",
+              "annotations": {
+                "description": "Applications are unable to connect to PostgreSQL. Check if the database ...",
+                "summary": "[email-worker/postgresql] PostgreSQL connection refused"
+              },
+              "expr": "count_over_time({app=\"postgresql\", service=\"email-worker\"} |~ \"connection refused|could not connect\" [1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "dependency": "postgresql",
+                "service": "email-worker",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "notifications",
+                "technology": "postgresql",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "email-worker_postgresql_PostgresqlDeadlock",
+              "annotations": {
+                "description": "A deadlock was detected in PostgreSQL. This may indicate application log...",
+                "summary": "[email-worker/postgresql] PostgreSQL deadlock detected"
+              },
+              "expr": "count_over_time({app=\"postgresql\", service=\"email-worker\"} |= \"deadlock detected\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "postgresql",
+                "service": "email-worker",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "notifications",
+                "technology": "postgresql",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "email-worker_postgresql_PostgresqlFatalError",
+              "annotations": {
+                "description": "PostgreSQL logged a FATAL error which typically indicates a serious issu...",
+                "summary": "[email-worker/postgresql] PostgreSQL FATAL error detected"
+              },
+              "expr": "count_over_time({app=\"postgresql\", service=\"email-worker\"} |= \"FATAL\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "postgresql",
+                "service": "email-worker",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "notifications",
+                "technology": "postgresql",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "email-worker_postgresql_PostgresqlOutOfConnections",
+              "annotations": {
+                "description": "PostgreSQL has reached its maximum connection limit. Consider increasing...",
+                "summary": "[email-worker/postgresql] PostgreSQL out of connections"
+              },
+              "expr": "count_over_time({app=\"postgresql\", service=\"email-worker\"} |= \"too many connections\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "postgresql",
+                "service": "email-worker",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "notifications",
+                "technology": "postgresql",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "email-worker_postgresql_PostgresqlPanicError",
+              "annotations": {
+                "description": "PostgreSQL logged a PANIC error - the database may have crashed or be in...",
+                "summary": "[email-worker/postgresql] PostgreSQL PANIC error detected"
+              },
+              "expr": "count_over_time({app=\"postgresql\", service=\"email-worker\"} |= \"PANIC\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "postgresql",
+                "service": "email-worker",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "notifications",
+                "technology": "postgresql",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "email-worker_postgresql_PostgresqlReplicationLag",
+              "annotations": {
+                "description": "Replication lag detected between primary and replica. Check network and ...",
+                "summary": "[email-worker/postgresql] PostgreSQL replication lag detected"
+              },
+              "expr": "count_over_time({app=\"postgresql\", service=\"email-worker\"} |~ \"replication.*lag|recovery.*behind\" [1m]) > 0",
+              "for": "5m",
+              "labels": {
+                "dependency": "postgresql",
+                "service": "email-worker",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "notifications",
+                "technology": "postgresql",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "email-worker_postgresql_PostgresqlSlowQuery",
+              "annotations": {
+                "description": "Slow queries (>1s) are being logged. Review query performance and consid...",
+                "summary": "[email-worker/postgresql] PostgreSQL slow queries detected"
+              },
+              "expr": "sum(count_over_time({app=\"postgresql\", service=\"email-worker\"} |= \"duration:\" |~ \"duration: [0-9]{4,}\" [5m])) > 5",
+              "for": "5m",
+              "labels": {
+                "dependency": "postgresql",
+                "service": "email-worker",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "notifications",
+                "technology": "postgresql",
+                "tier": "standard"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

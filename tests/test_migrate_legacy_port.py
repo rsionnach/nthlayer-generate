@@ -159,25 +159,41 @@ def test_migrated_ai_gate_judgment_slos_load_as_thresholds(tmp_path: Path) -> No
     }
 
 
-def _legacy_ai_gate(tmp_path: Path) -> Path:
+def _legacy_ai_gate(tmp_path: Path, calibration_window: str = "30d") -> Path:
     """Same fixture provenance as the test above: payment-api.yaml's legacy shape
-    with ai-gate.reliability.yaml's calibration 0.05 / 30d and feedback_latency 3600 / 30d."""
+    with ai-gate.reliability.yaml's calibration 0.05 / 30d and feedback_latency 3600 / 30d.
+    *calibration_window* replaces calibration's 30d."""
     data = yaml.safe_load(
         (REPO / "examples" / "services" / "payment-api.yaml").read_text(encoding="utf-8")
     )
     data["service"]["type"] = "ai-gate"
     data["resources"] = [
-        {"kind": "SLO", "name": name, "spec": {"objective": objective, "window": "30d"}}
-        for name, objective in (("calibration", 0.05), ("feedback_latency", 3600))
+        {"kind": "SLO", "name": name, "spec": {"objective": objective, "window": window}}
+        for name, objective, window in (
+            ("calibration", 0.05, calibration_window),
+            ("feedback_latency", 3600, "30d"),
+        )
     ]
     src = tmp_path / "gate.yaml"
     src.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
     return src
 
 
-def test_migrated_thresholds_round_trip_with_equal_bounds_and_window(tmp_path: Path):
-    legacy = load_manifest(_legacy_ai_gate(tmp_path), suppress_deprecation_warning=True)
+# 30d is the srm/v1 calibration window default (common's srm_v1_threshold:
+# ``config.get("window", "30d")``), so it alone cannot show the window is
+# carried. 7d is another Duration (schema.json ``^[0-9]+(ms|s|m|h|d|w)$``),
+# which the srm/v1 calibration ``window`` field accepts (srm_v1_threshold:
+# "window must be a duration").
+@pytest.mark.parametrize("calibration_window", ["30d", "7d"])
+def test_migrated_thresholds_round_trip_with_equal_bounds_and_window(
+    tmp_path: Path, calibration_window: str
+):
+    legacy = load_manifest(
+        _legacy_ai_gate(tmp_path, calibration_window), suppress_deprecation_warning=True
+    )
     assert legacy.judgment_thresholds, "fixture no longer yields thresholds"
+    (calibration,) = [t for t in legacy.judgment_thresholds if t.type == "calibration"]
+    assert calibration.measurement.window == calibration_window
     lost: list[str] = []
     out = tmp_path / "gate.reliability.yaml"
     out.write_text(yaml.safe_dump(_legacy_to_srm_v1(legacy, lost), sort_keys=False), encoding="utf-8")
@@ -321,3 +337,41 @@ def test_threshold_description_and_labels_are_reported(
     lost = [m for m in messages if name in m]
     assert any("description" in m for m in lost)
     assert any("labels" in m for m in lost)
+
+
+def test_calibration_bins_srm_v1_cannot_carry_are_reported(tmp_path: Path) -> None:
+    """Defensive: common's lift always sets bins 10 (srm/v1 fixes them), so only
+    a hand-built threshold reaches this guard."""
+    import dataclasses
+
+    legacy = load_manifest(_legacy_ai_gate(tmp_path), suppress_deprecation_warning=True)
+    (calibration,) = [t for t in legacy.judgment_thresholds if t.type == "calibration"]
+    legacy.judgment_thresholds = [
+        dataclasses.replace(
+            calibration,
+            measurement=dataclasses.replace(calibration.measurement, bins=20),
+        )
+    ]
+    lost: list[str] = []
+
+    doc = _legacy_to_srm_v1(legacy, lost)
+
+    assert doc["spec"]["slos"]["calibration"]["target"] == 0.05
+    assert len(lost) == 1 and "calibration" in lost[0] and "bins=20" in lost[0]
+
+
+def test_feedback_latency_past_the_srm_v1_cap_is_reported(tmp_path: Path) -> None:
+    """Defensive: common's lift refuses a target over 2**53, so only a
+    hand-built threshold reaches this guard. 2**53 + 1 seconds is a Duration."""
+    import dataclasses
+
+    legacy = load_manifest(_legacy_ai_gate(tmp_path), suppress_deprecation_warning=True)
+    (latency,) = [t for t in legacy.judgment_thresholds if t.type == "feedback_latency"]
+    bound = f"{2**53 + 1}s"
+    legacy.judgment_thresholds = [dataclasses.replace(latency, bounds={"maximum_p50": bound})]
+    lost: list[str] = []
+
+    doc = _legacy_to_srm_v1(legacy, lost)
+
+    assert "slos" not in doc["spec"]
+    assert len(lost) == 1 and bound in lost[0]

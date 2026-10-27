@@ -12,6 +12,7 @@ All validation produces warnings (not errors) per spec.
 from __future__ import annotations
 
 import math
+import warnings
 from pathlib import Path
 
 import structlog
@@ -101,6 +102,7 @@ class ContractRegistry:
             is_manifest_file,
             load_manifest,
         )
+        from nthlayer_common.manifest.target_validation import TargetConventionWarning
 
         registry = cls()
         path = Path(directory)
@@ -114,7 +116,12 @@ class ContractRegistry:
                 if not is_manifest_file(file_path):
                     continue
                 try:
-                    manifest = load_manifest(file_path, suppress_deprecation_warning=True)
+                    # The registry only reads contracts; a target-convention
+                    # warning about a registry file is not about the file the
+                    # caller is validating.
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", TargetConventionWarning)
+                        manifest = load_manifest(file_path, suppress_deprecation_warning=True)
                     registry.register(manifest)
                 except (ManifestLoadError, FileNotFoundError, ValueError) as e:
                     logger.debug("Skipping %s: %s", file_path, e)

@@ -165,7 +165,10 @@ def validate_service_file(
                 valid=False,
                 errors=[str(e)],
             )
-        except (FileNotFoundError, ValueError) as e:
+        except (FileNotFoundError, ValueError, TypeError) as e:
+            # TypeError: common's v2 parser keeps a quoted ``availability``
+            # ("0.9995") as a string and the contract checks then compare it
+            # with a float.
             return ValidationResult(
                 valid=False,
                 errors=[str(e)],

@@ -1,5 +1,41 @@
 # Changelog
 
+## [3.0.0](https://github.com/rsionnach/nthlayer-generate/compare/v2.1.2...v3.0.0) (2026-10-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* nthlayer_generate.specs no longer exports load_manifest, ReliabilityManifest, SLODefinition or ManifestLoadError, and the modules specs.manifest, specs.loader and specs.opensrm_parser are removed. Import them from nthlayer_common.manifest. Every *_from_manifest function takes nthlayer_common's ReliabilityManifest. ContractRegistry.get_contract is replaced by get_contracts / promised_availability. srm/v1 SLOs declare PromQL under indicator.query; a top-level query is not read (opensrm-0i5h).
+
+### Features
+
+* **cli:** docs/backstage dry-run report common's ManifestLoadError (opensrm-wo62.1) ([1c84dc8](https://github.com/rsionnach/nthlayer-generate/commit/1c84dc897576daa773479efc9a4a0edbeb164850))
+* consume nthlayer-common's manifest model; retire generate's own (opensrm-wo62.1) ([a705e5a](https://github.com/rsionnach/nthlayer-generate/commit/a705e5a9a5aa55f046db969311a4a9627a1507ff))
+* **contracts:** compare v2 dependency expectations as ratios (opensrm-wo62.1) ([037b389](https://github.com/rsionnach/nthlayer-generate/commit/037b3894c585b538d396c07b3bc0af3f93ba59ab))
+* **recording-rules:** judgment threshold rules from common's JudgmentThreshold (opensrm-wo62.1) ([3ff55c8](https://github.com/rsionnach/nthlayer-generate/commit/3ff55c8e16fe1524f8e5b70d0a648ae9f938017e))
+* **specs:** generate-owned helpers over common's manifest model (opensrm-wo62.1) ([418050b](https://github.com/rsionnach/nthlayer-generate/commit/418050bed4ba72a57ae8bd9fa758c80c68d2ce81))
+
+
+### Bug Fixes
+
+* **migrate:** carry judgment thresholds into the migrated srm/v1 file (opensrm-wo62.1) ([db99e3c](https://github.com/rsionnach/nthlayer-generate/commit/db99e3c4d38b189217b04306453a916e28fbb09c))
+* **migrate:** feedback_latency thresholds round-trip exactly; report srm/v1-incompatible SLOs (opensrm-wo62.1) ([21bdbea](https://github.com/rsionnach/nthlayer-generate/commit/21bdbead354b0c5ffe3a9e7715d46b9a5f8cc27e))
+* **migrate:** no SLO type for judgment thresholds in migrated ai-gates (opensrm-wo62.1) ([c4c2d68](https://github.com/rsionnach/nthlayer-generate/commit/c4c2d68af540a45a760fba7b1b91baaae48e625f))
+* **migrate:** write the SLO type so common loads migrated manifests (opensrm-wo62.1) ([e074fc0](https://github.com/rsionnach/nthlayer-generate/commit/e074fc01e3a34bcc5521acd438340afed3c06675))
+* **sloth:** no malformed PromQL for latency SLOs without a query (opensrm-wo62.1) ([4d1ef8c](https://github.com/rsionnach/nthlayer-generate/commit/4d1ef8c28b8617f4b213e50f5950f80ebb8b203f))
+* **validate:** narrow the TypeError catch to contract checks (opensrm-wo62.1) ([ee48f7d](https://github.com/rsionnach/nthlayer-generate/commit/ee48f7d968df85284b735e0f3651f94580e5f7f8))
+
+
+### Dependencies
+
+* require nthlayer-common 5.5.0 (opensrm-wo62.1) ([03071ba](https://github.com/rsionnach/nthlayer-generate/commit/03071ba2df1395c1d0e4a4c844f8432aaf185065))
+
+
+### Documentation
+
+* complete the 3.0.0 upgrade notes; golden update flag truthiness (opensrm-wo62.1) ([a946c88](https://github.com/rsionnach/nthlayer-generate/commit/a946c88c72ca33f61e6edb6bf908cb2ec1ed441a))
+* generate reads manifests through nthlayer-common (opensrm-wo62.1) ([bb5a02f](https://github.com/rsionnach/nthlayer-generate/commit/bb5a02fbe3e3512de34c2ec2057894f2ca5046b2))
+
 ## [2.1.2](https://github.com/rsionnach/nthlayer-generate/compare/v2.1.1...v2.1.2) (2026-10-24)
 
 

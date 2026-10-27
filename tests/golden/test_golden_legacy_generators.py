@@ -41,6 +41,7 @@ from nthlayer_generate.loki.generator import generate_loki_alerts_for_service_fi
 from nthlayer_generate.metrics.recommender import recommend_metrics
 from nthlayer_generate.recording_rules.builder import build_recording_rules
 from nthlayer_generate.recording_rules.models import create_rule_groups
+from nthlayer_generate.specs.custom_templates import CustomTemplateLoader
 from nthlayer_generate.specs.parser import parse_service_file
 
 from ._corpus import EX, LEGACY, SRM_V1, V2, _error, manifest_id
@@ -216,12 +217,35 @@ def test_every_env_case_finds_an_overlay(tmp_path: Path) -> None:
         assert EnvironmentLoader.find_environment_file(target, case.environment), case.id
 
 
+def no_user_templates(mp: pytest.MonkeyPatch) -> None:
+    """Hide any .nthlayer/templates above the cwd.
+
+    CustomTemplateLoader.find_templates_directory walks up from the cwd
+    without limit (specs/custom_templates.py), so a templates dir above
+    TMPDIR or the checkout would change, and be pinned into, the goldens.
+    """
+    mp.setattr(CustomTemplateLoader, "find_templates_directory", staticmethod(lambda: None))
+
+
+def test_user_templates_above_the_cwd_are_hidden(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / ".nthlayer" / "templates").mkdir(parents=True)
+    (tmp_path / "work").mkdir()
+    monkeypatch.chdir(tmp_path / "work")
+    # Anti-vacuity: unpatched, the walk-up finds it.
+    assert CustomTemplateLoader.find_templates_directory() is not None
+    no_user_templates(monkeypatch)
+    assert CustomTemplateLoader.find_templates_directory() is None
+
+
 @pytest.mark.parametrize("cell", sorted(CELLS))
 @pytest.mark.parametrize(("mid", "path"), CASES, ids=IDS)
 def test_legacy(
     cell: str, mid: str, path: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.chdir(tmp_path)
+    no_user_templates(monkeypatch)
     _run(CELLS[cell], cell, mid, path, tmp_path, None)
 
 
@@ -231,5 +255,6 @@ def test_legacy_env(
     cell: str, case: EnvCase, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.chdir(tmp_path)
+    no_user_templates(monkeypatch)
     path = case.target(tmp_path)
     _run(ENV_CELLS[cell], cell, case.id, path, tmp_path, case.environment)

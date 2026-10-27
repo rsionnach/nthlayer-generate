@@ -70,6 +70,7 @@ from .test_golden_legacy_generators import (
     IDS,
     STAGING,
     EnvCase,
+    no_user_templates,
     rules_as_sets,
 )
 
@@ -80,6 +81,12 @@ CONSOLE_WIDTH = 10_000
 # Environment that could steer a command at a live system or a secret.
 SCRUBBED_ENV = (
     "PAGERDUTY_API_KEY",
+    # payment-api-pagerduty-demo.yaml writes ${PAGERDUTY_INTEGRATION_KEY} and
+    # ${PAGERDUTY_SRE_INTEGRATION_KEY}; specs/alerting.py fills ${VAR} from the
+    # environment, so a real key could otherwise be pinned once the manifest
+    # path is used.
+    "PAGERDUTY_INTEGRATION_KEY",
+    "PAGERDUTY_SRE_INTEGRATION_KEY",
     "PAGERDUTY_FROM_EMAIL",
     "PROMETHEUS_URL",
     "NTHLAYER_PROMETHEUS_URL",
@@ -214,6 +221,7 @@ class _StubPrometheusProvider:
 
 def _isolate(env: Env) -> None:
     mp = env.monkeypatch
+    no_user_templates(mp)
     for var in SCRUBBED_ENV:
         mp.delenv(var, raising=False)
     mp.setattr(ux, "has_gum", lambda: False)
@@ -611,3 +619,16 @@ def test_legacy_cli_singleton(
     env = Env(tmp_path, capsys, monkeypatch)
     _isolate(env)
     _check(cell, sid, lambda: SINGLETONS[cell][sid](env), tmp_path)
+
+
+def test_isolate_hides_user_templates_above_the_cwd(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """R5 edge-cases: a .nthlayer/templates above TMPDIR changed 141 cells."""
+    from nthlayer_generate.specs.custom_templates import CustomTemplateLoader
+
+    (tmp_path / ".nthlayer" / "templates").mkdir(parents=True)
+    work = tmp_path / "work"
+    work.mkdir()
+    _isolate(Env(work, capsys, monkeypatch))
+    assert CustomTemplateLoader.find_templates_directory() is None

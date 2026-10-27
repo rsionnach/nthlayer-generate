@@ -16,8 +16,8 @@ from typing import TYPE_CHECKING, Any
 import yaml
 from nthlayer_common.manifest import (
     SRM_V1_JUDGMENT_THRESHOLD_TYPES,
+    V2_JUDGMENT_THRESHOLD_TYPES,
     SourceFormat,
-    duration_seconds,
     load_manifest,
 )
 
@@ -34,6 +34,38 @@ if TYPE_CHECKING:
 _SRM_V1_CALIBRATION_BINS = 10
 _SRM_V1_FEEDBACK_LATENCY_WINDOW = "30d"
 
+# schema.json's Duration units (``^[0-9]+(ms|s|m|h|d|w)$``), ``ms`` before ``s``
+# and ``m`` so a suffix match takes the longest unit.
+_DURATION_UNITS = ("ms", "s", "m", "h", "d", "w")
+
+# common's lift caps an srm/v1 feedback_latency target at 2**53
+# (thresholds._srm_v1_feedback_latency_bound).
+_SRM_V1_MAX_WHOLE_TARGET = 2**53
+
+# SLO names srm/v1 refuses: its parser sends every V2_JUDGMENT_THRESHOLD_TYPES
+# name to thresholds.srm_v1_threshold (parser/v1.py), which lifts only
+# SRM_V1_JUDGMENT_THRESHOLD_TYPES and rejects the rest (segments, stability,
+# audit_backlog). common's legacy loader keeps these as classical SLOs.
+_SRM_V1_REJECTED_SLO_NAMES = V2_JUDGMENT_THRESHOLD_TYPES - SRM_V1_JUDGMENT_THRESHOLD_TYPES
+
+# Keys common's lift accepts on calibration/feedback_latency and then drops
+# (thresholds._SRM_V1_THRESHOLD_KEYS), so the JudgmentThreshold no longer has them.
+_LIFT_DROPPED_KEYS = ("description", "labels")
+
+
+def _split_duration(value: str) -> tuple[int, str] | None:
+    """``"90m"`` -> ``(90, "m")``: the inverse of common's ``f"{int(target)}{unit}"``.
+
+    None when *value* is not a Duration.
+    """
+    for unit in _DURATION_UNITS:
+        if value.endswith(unit):
+            digits = value[: -len(unit)]
+            if digits.isascii() and digits.isdigit():
+                return int(digits), unit
+            return None
+    return None
+
 
 def _threshold_to_srm_v1(
     threshold: JudgmentThreshold, lost: list[str]
@@ -47,6 +79,8 @@ def _threshold_to_srm_v1(
     kind = threshold.type
     bounds = dict(threshold.bounds)
     entry: dict[str, Any] | None = None
+    # A maximum_p50 already reported on its own needs no "no carriable bound".
+    p50_reported = False
     if kind == "calibration":
         ece = bounds.pop("maximum_expected_calibration_error", None)
         if ece is not None:
@@ -60,21 +94,50 @@ def _threshold_to_srm_v1(
                 )
     elif kind == "feedback_latency":
         p50 = bounds.pop("maximum_p50", None)
-        if isinstance(p50, str):
-            seconds = duration_seconds(p50)
-            if seconds.is_integer():
-                entry = {"target": int(seconds), "unit": "s"}
-            else:
-                entry = {"target": int(round(seconds * 1000)), "unit": "ms"}
+        # Digits and unit as written: common's lift emits
+        # f"{int(target)}{unit}", so this is its exact inverse. Re-spelling in
+        # seconds would change the bound ("90m" -> "5400s") and could pass the
+        # lift's 2**53 cap.
+        split = _split_duration(p50) if isinstance(p50, str) else None
+        if split is not None and split[0] <= _SRM_V1_MAX_WHOLE_TARGET:
+            entry = {"target": split[0], "unit": split[1]}
+        elif split is not None:
+            lost.append(
+                f"feedback_latency: maximum_p50={p50!r} (srm/v1 caps the target "
+                f"at 2**53)"
+            )
         elif p50 is not None:
             lost.append(f"feedback_latency: maximum_p50={p50!r} (not a Duration)")
+        p50_reported = p50 is not None and entry is None
     for bound in sorted(bounds):
         lost.append(f"{kind}: {bound}={bounds[bound]!r} (no srm/v1 form)")
-    if entry is None and kind in ("calibration", "feedback_latency") and not bounds:
-        lost.append(f"{kind}: no carriable bound")
     if kind not in ("calibration", "feedback_latency"):
         lost.append(f"{kind}: threshold type has no srm/v1 form")
+    elif entry is None and not bounds and not p50_reported:
+        lost.append(f"{kind}: no carriable bound")
     return entry
+
+
+def _lift_dropped_fields(raw: Any) -> list[str]:
+    """Messages for the keys common's lift dropped from legacy threshold resources.
+
+    The lift reads ``description`` and ``labels`` on a calibration or
+    feedback_latency SLO resource and keeps neither (_LIFT_DROPPED_KEYS), so
+    they are reported from the source document rather than from the manifest.
+    """
+    resources = raw.get("resources") if isinstance(raw, dict) else None
+    lost: list[str] = []
+    for resource in resources if isinstance(resources, list) else []:
+        if not isinstance(resource, dict) or resource.get("kind") != "SLO":
+            continue
+        name = resource.get("name")
+        spec = resource.get("spec")
+        if name not in SRM_V1_JUDGMENT_THRESHOLD_TYPES or not isinstance(spec, dict):
+            continue
+        for key in _LIFT_DROPPED_KEYS:
+            if key in spec:
+                lost.append(f"{name}: {key}={spec[key]!r} (dropped when loaded)")
+    return lost
 
 
 def _legacy_to_srm_v1(
@@ -122,17 +185,23 @@ def _legacy_to_srm_v1(
 
     if manifest.slos or manifest.judgment_thresholds:
         result["spec"]["slos"] = {}
+        threshold_lost: list[str] = []
         for slo in manifest.slos:
+            if slo.name in _SRM_V1_REJECTED_SLO_NAMES:
+                # Written as an SLO, srm/v1 would refuse the whole file.
+                threshold_lost.append(
+                    f"{slo.name}: SLO target={slo.target!r} window={slo.window!r} "
+                    f"(srm/v1 rejects '{slo.name}'; declare it in an "
+                    f"opensrm.nthlayer.io/v2 manifest under spec.judgment_threshold)"
+                )
+                continue
             # ``type`` always: common's srm/v1 parser infers it only from a
             # few names and indicator shapes, and rejects the file otherwise
             # (``_infer_slo_type``) — six shipped legacy examples included.
-            # Key order is the written file's order: ``type`` first.
-            slo_data: dict[str, Any] = {}
-            # Except the names srm/v1 lifts into JudgmentThresholds: it
-            # rejects an explicit ``type`` on those (nthlayer_common
-            # SRM_V1_JUDGMENT_THRESHOLD_TYPES; manifest/thresholds.py).
-            if slo.name not in SRM_V1_JUDGMENT_THRESHOLD_TYPES:
-                slo_data["type"] = slo.slo_type
+            # Key order is the written file's order: ``type`` first. The
+            # names srm/v1 lifts into thresholds (and rejects ``type`` on)
+            # never reach here: common's legacy loader lifts them too.
+            slo_data: dict[str, Any] = {"type": slo.slo_type}
             slo_data["target"] = slo.target
             slo_data["window"] = slo.window
             if slo.unit:
@@ -142,7 +211,6 @@ def _legacy_to_srm_v1(
             if slo.description:
                 slo_data["description"] = slo.description
             result["spec"]["slos"][slo.name] = slo_data
-        threshold_lost: list[str] = []
         for threshold in manifest.judgment_thresholds:
             entry = _threshold_to_srm_v1(threshold, threshold_lost)
             if entry is not None:
@@ -257,6 +325,8 @@ def migrate_command(
     # Convert to OpenSRM format
     lost: list[str] = []
     opensrm_data = _legacy_to_srm_v1(manifest, lost)
+    # The file loaded above, so it is readable YAML.
+    lost.extend(_lift_dropped_fields(yaml.safe_load(input_path.read_text(encoding="utf-8"))))
     for item in lost:
         warning(f"Judgment threshold not carried into srm/v1: {item}")
 

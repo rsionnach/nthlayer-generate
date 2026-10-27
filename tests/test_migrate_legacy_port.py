@@ -203,3 +203,121 @@ def test_threshold_srm_v1_cannot_carry_is_reported_not_dropped(tmp_path: Path):
     assert doc["spec"]["slos"]["feedback_latency"]["target"] == 3600
     assert len(lost) == 1
     assert "feedback_latency" in lost[0] and "maximum_p95" in lost[0]
+
+
+def _legacy_gate_with(tmp_path: Path, resources: list[dict[str, Any]]) -> Path:
+    """payment-api.yaml's legacy shape (service.type ai-gate), with *resources*
+    as its only ``kind: SLO`` resources."""
+    data = yaml.safe_load(
+        (REPO / "examples" / "services" / "payment-api.yaml").read_text(encoding="utf-8")
+    )
+    data["service"]["type"] = "ai-gate"
+    data["resources"] = resources
+    src = tmp_path / "gate.yaml"
+    src.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    return src
+
+
+# (target, unit) for a legacy feedback_latency resource. The unit is any of
+# schema.json's Duration units (``^[0-9]+(ms|s|m|h|d|w)$``), which common's
+# srm/v1 lift (thresholds._srm_v1_feedback_latency_bound) accepts and writes
+# back as ``f"{int(target)}{unit}"``; 10**15 d is under the lift's 2**53 cap
+# but 8.64e19 seconds, past it.
+_FEEDBACK_LATENCY_CASES = [(90, "m"), (1500, "ms"), (24, "h"), (1, "d"), (10**15, "d")]
+
+
+@pytest.mark.parametrize(("target", "unit"), _FEEDBACK_LATENCY_CASES)
+def test_feedback_latency_round_trips_in_its_own_unit(
+    tmp_path: Path, target: int, unit: str
+) -> None:
+    """R5 correctness (opensrm-wo62.1): migrate must invert the lift exactly,
+    so ``90m`` is written as target 90 unit m, not re-spelled as 5400s."""
+    src = _legacy_gate_with(
+        tmp_path,
+        [{"kind": "SLO", "name": "feedback_latency",
+          "spec": {"objective": target, "unit": unit, "window": "30d"}}],
+    )
+    legacy = load_manifest(src, suppress_deprecation_warning=True)
+    assert [t.bounds for t in legacy.judgment_thresholds] == [
+        {"maximum_p50": f"{target}{unit}"}
+    ], "fixture no longer yields the threshold"
+    lost: list[str] = []
+    out = tmp_path / "gate.reliability.yaml"
+    out.write_text(yaml.safe_dump(_legacy_to_srm_v1(legacy, lost), sort_keys=False), encoding="utf-8")
+
+    migrated = load_manifest(out)
+
+    assert lost == []
+    assert migrated.judgment_thresholds == legacy.judgment_thresholds
+
+
+@pytest.mark.parametrize("name", ["stability", "segments", "audit_backlog"])
+def test_slo_name_srm_v1_rejects_is_reported_and_omitted(tmp_path: Path, name: str) -> None:
+    """R5 correctness (opensrm-wo62.1): common's legacy loader keeps
+    stability/segments/audit_backlog as classical SLOs (loader.py
+    _extract_slos_from_resources), but srm/v1 routes every
+    V2_JUDGMENT_THRESHOLD_TYPES name to srm_v1_threshold, which rejects these
+    three (manifest/thresholds.py). Fixture: objective 0.02 / window 14d, the
+    ``max_increase`` and ``lookback`` of opensrm/spec/v1/specification.md §5.8."""
+    src = _legacy_gate_with(
+        tmp_path,
+        [
+            {"kind": "SLO", "name": name, "spec": {"objective": 0.02, "window": "14d"}},
+            {"kind": "SLO", "name": "feedback_latency",
+             "spec": {"objective": 3600, "window": "30d"}},
+        ],
+    )
+    legacy = load_manifest(src, suppress_deprecation_warning=True)
+    assert [s.name for s in legacy.slos] == [name], "fixture no longer yields the SLO"
+    lost: list[str] = []
+    doc = _legacy_to_srm_v1(legacy, lost)
+    out = tmp_path / "gate.reliability.yaml"
+    out.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+
+    migrated = load_manifest(out)
+
+    assert name not in doc["spec"]["slos"]
+    assert migrated.judgment_thresholds == legacy.judgment_thresholds
+    assert len(lost) == 1 and name in lost[0]
+
+
+def test_non_duration_maximum_p50_is_reported_once(tmp_path: Path) -> None:
+    import dataclasses
+
+    legacy = load_manifest(_legacy_ai_gate(tmp_path), suppress_deprecation_warning=True)
+    (latency,) = [t for t in legacy.judgment_thresholds if t.type == "feedback_latency"]
+    legacy.judgment_thresholds = [dataclasses.replace(latency, bounds={"maximum_p50": 3600})]
+    lost: list[str] = []
+
+    doc = _legacy_to_srm_v1(legacy, lost)
+
+    assert "slos" not in doc["spec"]
+    assert len(lost) == 1 and "maximum_p50" in lost[0]
+
+
+@pytest.mark.parametrize("name", ["calibration", "feedback_latency"])
+def test_threshold_description_and_labels_are_reported(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, name: str
+) -> None:
+    """common's lift accepts and drops ``description`` and ``labels``
+    (thresholds._SRM_V1_THRESHOLD_KEYS: "accepted and dropped"), so the
+    JudgmentThreshold migrate serialises no longer has them; migrate reports
+    them from the source. Fixture: _legacy_ai_gate's values, with the
+    description/labels keys every legacy SLO resource may carry."""
+    from nthlayer_generate.cli import migrate
+
+    objective = 0.05 if name == "calibration" else 3600
+    src = _legacy_gate_with(
+        tmp_path,
+        [{"kind": "SLO", "name": name,
+          "spec": {"objective": objective, "window": "30d",
+                   "description": "judgment quality", "labels": {"team": "payments"}}}],
+    )
+    messages: list[str] = []
+    monkeypatch.setattr(migrate, "warning", messages.append)
+
+    assert migrate.migrate_command(str(src), output_dir=str(tmp_path / "out")) == 0
+
+    lost = [m for m in messages if name in m]
+    assert any("description" in m for m in lost)
+    assert any("labels" in m for m in lost)

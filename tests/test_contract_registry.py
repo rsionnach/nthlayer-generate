@@ -144,6 +144,63 @@ def test_dependency_expectation_is_checked_against_the_weakest_promise(tmp_path:
     assert "exceeds provider contract" in warnings_[0]
 
 
+# --- opensrm/v2 expectations are Ratios, srm/v1 are percentages (wo62.1) ---
+# Spec: opensrm/spec/v2/schema.json `expected_availability` is a Ratio, stored
+# unconverted by common's parser; srm/v1 `slo.availability` is a percentage.
+API_FULL_V2 = REPO.parent / "opensrm" / "spec" / "v2" / "examples" / "migration" / "api-full-v2.yaml"
+
+
+def _v2_consumer_and_dep() -> tuple[ReliabilityManifest, str, float]:
+    assert API_FULL_V2.is_file(), API_FULL_V2
+    manifest = _load(API_FULL_V2)
+    dep = next(d for d in manifest.dependencies if d.slo and d.slo.availability is not None)
+    assert dep.slo is not None and dep.slo.availability is not None
+    assert 0 < dep.slo.availability <= 1  # a ratio, per the v2 example file
+    return manifest, dep.name, dep.slo.availability
+
+
+def _provider_promising(name: str, availability: float, tmp_path: Path) -> ReliabilityManifest:
+    # Provider built from the shipped srm/v1 example api-critical, with its
+    # contract availability and name edited in a tmp copy.
+    doc = _declared(API_CRITICAL)
+    doc["metadata"]["name"] = name
+    doc["spec"]["contract"]["availability"] = availability
+    path = tmp_path / f"{name}.reliability.yaml"
+    path.write_text(yaml.safe_dump(doc, sort_keys=False))
+    return _load(path)
+
+
+def test_v2_dependency_expectation_above_provider_promise_warns(tmp_path: Path) -> None:
+    consumer, dep_name, expected = _v2_consumer_and_dep()
+    provider = _provider_promising(dep_name, expected - 0.0004, tmp_path)
+    registry = ContractRegistry.from_manifests([provider])
+    warnings_ = validate_dependency_expectations(consumer, registry)
+    assert [w for w in warnings_ if "exceeds provider contract" in w and dep_name in w]
+
+
+def test_v2_dependency_expectation_within_provider_promise_is_silent(tmp_path: Path) -> None:
+    consumer, dep_name, expected = _v2_consumer_and_dep()
+    provider = _provider_promising(dep_name, min(expected + 0.0004, 0.99999), tmp_path)
+    registry = ContractRegistry.from_manifests([provider])
+    warnings_ = validate_dependency_expectations(consumer, registry)
+    assert not [w for w in warnings_ if "exceeds provider contract" in w]
+
+
+def test_v1_percentage_expectation_above_promise_keeps_message_format(tmp_path: Path) -> None:
+    provider = _provider_promising("payment-api", 0.99, tmp_path)
+    registry = ContractRegistry.from_manifests([provider])
+    consumer_doc = _declared(API_BASIC)
+    consumer_doc["spec"]["dependencies"] = [
+        {"name": "payment-api", "type": "api", "critical": True, "slo": {"availability": 99.5}}
+    ]
+    path = tmp_path / "consumer.reliability.yaml"
+    path.write_text(yaml.safe_dump(consumer_doc, sort_keys=False))
+    assert validate_dependency_expectations(_load(path), registry) == [
+        "Dependency 'payment-api': expected availability (99.5%) exceeds "
+        "provider contract (99.0%)"
+    ]
+
+
 # api-critical's critical dependencies: postgres-primary expects 99.99%
 # (ratio 0.9999); stripe-api declares nothing (unknown). The serial chain's
 # theoretical max is therefore 0.9999, computed here from the file.

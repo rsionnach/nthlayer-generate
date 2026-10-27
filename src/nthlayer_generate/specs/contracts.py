@@ -13,9 +13,10 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
+from typing import Any
 
 import structlog
-from nthlayer_common.manifest import ReliabilityContract, ReliabilityManifest
+from nthlayer_common.manifest import ReliabilityContract, ReliabilityManifest, SourceFormat
 
 logger = structlog.get_logger()
 
@@ -110,6 +111,26 @@ class ContractRegistry:
         return registry
 
 
+def _expected_ratio(manifest: ReliabilityManifest, dep: Any) -> float | None:
+    """A dependency's expected availability as a ratio, or None if undeclared.
+
+    opensrm/v2 stores ``expected_availability`` as a Ratio (0.9995, schema.json
+    ``expected_availability``) and common's parser keeps it unconverted; srm/v1
+    and legacy declare a percentage (99.95).
+    """
+    if not (dep.slo and dep.slo.availability is not None):
+        return None
+    value = float(dep.slo.availability)
+    if manifest.source_format == SourceFormat.OPENSRM_V2:
+        return value
+    return value / 100.0
+
+
+def _pct(ratio: float) -> float:
+    """Ratio as the percentage the warnings print, rounded to hide float noise."""
+    return round(ratio * 100, 10)
+
+
 def validate_dependency_expectations(
     manifest: ReliabilityManifest,
     registry: ContractRegistry,
@@ -128,19 +149,22 @@ def validate_dependency_expectations(
     for dep in manifest.dependencies:
         promised = registry.promised_availability(dep.name)
 
-        if dep.slo and dep.slo.availability is not None and promised is not None:
-            # dep.slo.availability is percentage (99.99),
-            # the promised availability is a ratio (0.9999)
-            contract_pct = promised * 100
-            if dep.slo.availability > contract_pct:
-                warnings.append(
-                    f"Dependency '{dep.name}': expected availability "
-                    f"({dep.slo.availability}%) exceeds provider contract "
-                    f"({contract_pct}%)"
-                )
+        expected = _expected_ratio(manifest, dep)
+        if (
+            expected is not None
+            and promised is not None
+            # rounded: 99.9 / 100 is 0.9990000000000001, which must not exceed 0.999
+            and round(expected, 12) > round(promised, 12)
+        ):
+            # Both are ratios here; the message prints percentages.
+            warnings.append(
+                f"Dependency '{dep.name}': expected availability "
+                f"({_pct(expected)}%) exceeds provider contract "
+                f"({_pct(promised)}%)"
+            )
 
         if dep.critical and not registry.has_contract(dep.name):
-            warnings.append(f"Critical dependency '{dep.name}' has no contract " f"in registry")
+            warnings.append(f"Critical dependency '{dep.name}' has no contract in registry")
 
     return warnings
 
@@ -181,9 +205,8 @@ def validate_transitive_feasibility(
         promised = registry.promised_availability(dep.name)
         if promised is not None:
             availabilities.append(promised)
-        elif dep.slo and dep.slo.availability is not None:
-            # dep.slo.availability is percentage, convert to ratio
-            availabilities.append(dep.slo.availability / 100.0)
+        elif (expected := _expected_ratio(manifest, dep)) is not None:
+            availabilities.append(expected)
         else:
             unknown_deps.append(dep.name)
 

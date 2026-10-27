@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.1.0](https://github.com/rsionnach/nthlayer-generate/compare/v3.0.0...v3.1.0) (2026-10-27)
+
+
+### Features
+
+* "Judgment thresholds" section in ai-gate api docs (opensrm-wo62.2) ([7f376b1](https://github.com/rsionnach/nthlayer-generate/commit/7f376b1bb210acadbdefd8e95c98a7b8ca5ac860))
+* breach and not-evaluable alerts on judgment-threshold bounds (opensrm-wo62.2) ([35c7727](https://github.com/rsionnach/nthlayer-generate/commit/35c77279fc4f8a33fdb4e4d1d99760ccf5c58976))
+* Brier and 30-day feedback-latency threshold recording rules (opensrm-wo62.2) ([e60c8e8](https://github.com/rsionnach/nthlayer-generate/commit/e60c8e89e74b69497d0a80dfe4c35497657bde49))
+* judgment-threshold recording rules, alerts and docs (opensrm-wo62.2) ([3ecd05b](https://github.com/rsionnach/nthlayer-generate/commit/3ecd05b8ada6fb5ca2ba38b6a38fd87fd43d0520))
+
 ## [3.0.0](https://github.com/rsionnach/nthlayer-generate/compare/v2.1.2...v3.0.0) (2026-10-27)
 
 

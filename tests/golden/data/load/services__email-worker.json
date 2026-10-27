@@ -14,7 +14,15 @@
   ],
   "error": null,
   "ok": true,
-  "slos": [],
+  "slos": [
+    [
+      "success-rate",
+      "availability",
+      99.0,
+      "30d",
+      true
+    ]
+  ],
   "source_format": "legacy",
   "type": "worker",
   "warnings": []

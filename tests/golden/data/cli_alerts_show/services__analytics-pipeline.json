@@ -4,6 +4,14 @@
       "enabled": true,
       "name": "budget-warning",
       "severity": "warning",
+      "slo": "success-rate",
+      "threshold": 0.8,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-warning",
+      "severity": "warning",
       "slo": "freshness-p95",
       "threshold": 0.8,
       "type": "budget_threshold"
@@ -20,6 +28,14 @@
       "enabled": true,
       "name": "budget-critical",
       "severity": "critical",
+      "slo": "success-rate",
+      "threshold": 0.95,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
       "slo": "freshness-p95",
       "threshold": 0.95,
       "type": "budget_threshold"
@@ -31,6 +47,14 @@
       "slo": "data-quality",
       "threshold": 0.95,
       "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "burn-rate-warning",
+      "severity": "warning",
+      "slo": "success-rate",
+      "threshold": 5.0,
+      "type": "burn_rate"
     },
     {
       "enabled": true,

@@ -9,6 +9,35 @@
     {
       "alerting": {
         "annotations": {
+          "summary": "SLO success-rate for analytics-pipeline"
+        },
+        "labels": {
+          "service": "analytics-pipeline",
+          "tier": "standard"
+        },
+        "name": "AnalyticsPipelineSuccessRate",
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on analytics-pipeline"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "95.0% success rate",
+      "name": "success-rate",
+      "objective": 95.0,
+      "sli": {
+        "events": {
+          "error_query": "sum(rate(pipeline_success_total{service=\"analytics-pipeline\"}[5m]))",
+          "total_query": "sum(rate(pipeline_runs_total{service=\"analytics-pipeline\"}[5m]))"
+        }
+      }
+    },
+    {
+      "alerting": {
+        "annotations": {
           "summary": "SLO freshness-p95 for analytics-pipeline"
         },
         "labels": {

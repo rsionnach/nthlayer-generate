@@ -47,7 +47,26 @@
         "tier": "standard",
         "type": "api"
       },
-      "slos": []
+      "slos": [
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "availability",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.5,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "latency-p95",
+          "sloType": "latency",
+          "status": null,
+          "target": 95.0,
+          "window": "30d"
+        }
+      ]
     }
   }
 }

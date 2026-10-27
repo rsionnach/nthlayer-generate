@@ -5,6 +5,40 @@
       "name": "mobile-api_slo_metrics",
       "rules": [
         {
+          "expr": "sum(increase(http_requests_total{service=\"mobile-api\"}[30d]))",
+          "labels": {
+            "service": "mobile-api",
+            "slo": "availability"
+          },
+          "record": "slo:requests_total:30d"
+        },
+        {
+          "expr": "sum(increase(http_requests_total{service=\"mobile-api\",status!~\"5..\"}[30d]))",
+          "labels": {
+            "service": "mobile-api",
+            "slo": "availability"
+          },
+          "record": "slo:requests_success:30d"
+        },
+        {
+          "expr": "slo:requests_success:30d{service=\"mobile-api\",slo=\"availability\"} / slo:requests_total:30d{service=\"mobile-api\",slo=\"availability\"}",
+          "labels": {
+            "objective": "99.9",
+            "service": "mobile-api",
+            "slo": "availability"
+          },
+          "record": "slo:availability:ratio"
+        },
+        {
+          "expr": "1 - ((1 - slo:availability:ratio{service=\"mobile-api\",slo=\"availability\"}) / (1 - 0.9990000000000001))",
+          "labels": {
+            "objective": "99.9",
+            "service": "mobile-api",
+            "slo": "availability"
+          },
+          "record": "slo:error_budget_remaining:ratio"
+        },
+        {
           "expr": "sum(increase(http_request_duration_seconds_count{service=\"mobile-api\"}[30d]))",
           "labels": {
             "service": "mobile-api",

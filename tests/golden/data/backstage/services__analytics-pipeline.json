@@ -48,6 +48,15 @@
     {
       "currentValue": null,
       "description": null,
+      "name": "success-rate",
+      "sloType": "availability",
+      "status": null,
+      "target": 95.0,
+      "window": "30d"
+    },
+    {
+      "currentValue": null,
+      "description": null,
       "name": "freshness-p95",
       "sloType": "availability",
       "status": null,

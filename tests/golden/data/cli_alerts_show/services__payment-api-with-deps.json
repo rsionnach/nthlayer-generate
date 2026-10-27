@@ -1,5 +1,70 @@
 {
-  "json": [],
+  "json": [
+    {
+      "enabled": true,
+      "name": "budget-warning",
+      "severity": "warning",
+      "slo": "availability",
+      "threshold": 0.5,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-warning",
+      "severity": "warning",
+      "slo": "latency-p95",
+      "threshold": 0.5,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
+      "slo": "availability",
+      "threshold": 0.75,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
+      "slo": "latency-p95",
+      "threshold": 0.75,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "burn-rate-warning",
+      "severity": "warning",
+      "slo": "availability",
+      "threshold": 2.0,
+      "type": "burn_rate"
+    },
+    {
+      "enabled": true,
+      "name": "burn-rate-warning",
+      "severity": "warning",
+      "slo": "latency-p95",
+      "threshold": 2.0,
+      "type": "burn_rate"
+    },
+    {
+      "enabled": true,
+      "name": "budget-exhaustion",
+      "severity": "critical",
+      "slo": "availability",
+      "threshold": 12.0,
+      "type": "budget_exhaustion"
+    },
+    {
+      "enabled": true,
+      "name": "budget-exhaustion",
+      "severity": "critical",
+      "slo": "latency-p95",
+      "threshold": 12.0,
+      "type": "budget_exhaustion"
+    }
+  ],
   "json_exit": 0,
   "table_exit": 0
 }

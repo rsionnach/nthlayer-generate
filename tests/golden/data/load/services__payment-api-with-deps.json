@@ -19,7 +19,22 @@
   ],
   "error": null,
   "ok": true,
-  "slos": [],
+  "slos": [
+    [
+      "availability",
+      "availability",
+      99.9,
+      "30d",
+      true
+    ],
+    [
+      "latency-p95",
+      "latency",
+      99.0,
+      "30d",
+      true
+    ]
+  ],
   "source_format": "legacy",
   "type": "api",
   "warnings": []

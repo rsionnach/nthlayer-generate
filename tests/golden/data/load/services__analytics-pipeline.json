@@ -21,6 +21,13 @@
   "ok": true,
   "slos": [
     [
+      "success-rate",
+      "availability",
+      95.0,
+      "30d",
+      true
+    ],
+    [
       "freshness-p95",
       "availability",
       90.0,

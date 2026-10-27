@@ -1,6 +1,56 @@
 {
-  "error": [
-    "ValueError",
-    "Service 'auth-api' has no availability SLO — required for simulation"
-  ]
+  "dependency_models": [
+    {
+      "critical": true,
+      "degradation_factor": 0.99,
+      "from_service": "auth-api",
+      "to_service": "auth-db"
+    },
+    {
+      "critical": true,
+      "degradation_factor": 0.99,
+      "from_service": "auth-api",
+      "to_service": "user-service"
+    }
+  ],
+  "failure_models": [
+    {
+      "availability_target": 0.9990000000000001,
+      "mtbf_distribution": "exponential",
+      "mtbf_hours": 999.0000000001102,
+      "mtbf_shape": 1.0,
+      "mttr_distribution": "lognormal",
+      "mttr_hours": 1.0,
+      "mttr_shape": 0.5,
+      "name": "auth-api"
+    }
+  ],
+  "result": {
+    "error_budget_forecast": {
+      "p50": 0.10217,
+      "p75": 0.562452,
+      "p95": 1.0
+    },
+    "exit_code": 1,
+    "horizon_days": 90,
+    "num_runs": 200,
+    "p_meeting_sla": 0.55,
+    "services": {
+      "auth-api": {
+        "availability_p50": 0.999102,
+        "availability_p95": 1.0,
+        "availability_p99": 1.0,
+        "downtime_contribution": 1.0,
+        "is_weakest_link": true,
+        "name": "auth-api",
+        "p_meeting_sla": 0.55,
+        "target": 0.999
+      }
+    },
+    "target_service": "auth-api",
+    "target_sla": 0.999,
+    "weakest_link": "auth-api",
+    "weakest_link_contribution": 1.0,
+    "what_if_results": []
+  }
 }

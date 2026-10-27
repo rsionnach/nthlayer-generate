@@ -1,6 +1,29 @@
 {
-  "alerts_triggered": 2,
+  "alerts_triggered": 3,
   "budgets": [
+    {
+      "budget": {
+        "burned_minutes": 21.59999999999762,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 21.59999999999762,
+        "total_minutes": 43.19999999999524
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "auth-api",
+      "slo_id": "auth-api-availability",
+      "status": "warning",
+      "updated_at": "<masked>"
+    },
     {
       "budget": {
         "burned_minutes": 108.0000000000001,
@@ -48,9 +71,26 @@
       "updated_at": "<masked>"
     }
   ],
-  "budgets_evaluated": 2,
+  "budgets_evaluated": 3,
   "errors": [],
   "events": [
+    {
+      "details": {
+        "budget_consumed_percent": 50.0,
+        "burned_minutes": 21.59999999999762,
+        "remaining_minutes": 21.59999999999762,
+        "status": "warning",
+        "threshold_percent": 50.0
+      },
+      "id": "<masked>",
+      "message": "⚠️ *Error Budget Alert*\n\n*Service:* `auth-api`\n*SLO:* `auth-api-availability`\n*Consumed:* 50.0% (threshold: 50%)\n*Remaining:* 21.6 minutes\n*Status:* WARNING\n\nℹ️ Budget threshold exceeded. Monitor closely.\n",
+      "rule_id": "auth-api-availability-budget-warning",
+      "service": "auth-api",
+      "severity": "warning",
+      "slo_id": "auth-api-availability",
+      "title": "Error Budget Alert: auth-api",
+      "triggered_at": "<masked>"
+    },
     {
       "details": {
         "budget_consumed_percent": 50.0,
@@ -88,6 +128,6 @@
   ],
   "explanations": [],
   "notifications_sent": 0,
-  "rules_evaluated": 8,
+  "rules_evaluated": 12,
   "service": "auth-api"
 }

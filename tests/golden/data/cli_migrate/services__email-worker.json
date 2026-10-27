@@ -1,6 +1,6 @@
 {
   "exit": 0,
   "files": {
-    "email-worker.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: email-worker.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: email-worker\n  team: notifications\n  tier: standard\nspec:\n  type: worker\n  dependencies:\n  - name: email-templates-db\n    type: database\n    critical: false\n  - name: email-queue\n    type: queue\n    critical: true\n  ownership:\n    team: notifications\n"
+    "email-worker.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: email-worker.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: email-worker\n  team: notifications\n  tier: standard\nspec:\n  type: worker\n  slos:\n    success-rate:\n      type: availability\n      target: 99.0\n      window: 30d\n  dependencies:\n  - name: email-templates-db\n    type: database\n    critical: false\n  - name: email-queue\n    type: queue\n    critical: true\n  ownership:\n    team: notifications\n"
   }
 }

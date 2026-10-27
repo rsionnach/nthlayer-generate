@@ -11,13 +11,6 @@
     },
     {
       "field_path": null,
-      "message": "Tier 'critical' requires at least 2 SLOs, found 0",
-      "rule_name": "critical-tier-requirements",
-      "rule_type": "tier_constraint",
-      "severity": "error"
-    },
-    {
-      "field_path": null,
       "message": "Tier 'critical' requires deployment gates",
       "rule_name": "critical-tier-requirements",
       "rule_type": "tier_constraint",

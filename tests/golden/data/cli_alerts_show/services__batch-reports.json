@@ -4,6 +4,22 @@
       "enabled": true,
       "name": "budget-critical",
       "severity": "critical",
+      "slo": "availability",
+      "threshold": 0.95,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
+      "slo": "latency-p95",
+      "threshold": 0.95,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
       "slo": "report-success-rate",
       "threshold": 0.95,
       "type": "budget_threshold"

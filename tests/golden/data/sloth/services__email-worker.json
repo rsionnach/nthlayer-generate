@@ -1,3 +1,40 @@
 {
-  "error": "No SLOs found in manifest"
+  "labels": {
+    "team": "notifications",
+    "tier": "standard",
+    "type": "worker"
+  },
+  "service": "email-worker",
+  "slos": [
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO success-rate for email-worker"
+        },
+        "labels": {
+          "service": "email-worker",
+          "tier": "standard"
+        },
+        "name": "EmailWorkerSuccessRate",
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on email-worker"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "99.0% success rate",
+      "name": "success-rate",
+      "objective": 99.0,
+      "sli": {
+        "events": {
+          "error_query": "sum(rate(job_success_total{service=\"email-worker\"}[5m]))",
+          "total_query": "sum(rate(job_total{service=\"email-worker\"}[5m]))"
+        }
+      }
+    }
+  ],
+  "version": "prometheus/v1"
 }

@@ -138,11 +138,11 @@ class Env:
         return lines
 
     def files(
-        self, root: Path | None = None, set_ordered: Callable[[str], bool] = lambda rel: False
+        self, root: Path | None = None, rules_unordered: Callable[[str], bool] = lambda rel: False
     ) -> dict[str, Any]:
         """Every file under ``root`` (default tmp/out), parsed where JSON/YAML.
 
-        YAML keeps its written order, except files ``set_ordered`` names:
+        YAML keeps its written order, except files ``rules_unordered`` names:
         their rules come from a ``list(set(...))`` extractor and are pinned
         with ``rules_as_sets``.
         """
@@ -159,7 +159,7 @@ class Env:
                 out[rel] = json.loads(text)
             elif p.suffix in (".yaml", ".yml"):
                 doc = yaml.safe_load(text)
-                out[rel] = rules_as_sets(doc) if set_ordered(rel) else doc
+                out[rel] = rules_as_sets(doc) if rules_unordered(rel) else doc
             else:
                 out[rel] = text
         return out
@@ -261,7 +261,7 @@ def generate_slo(path: Path, env: Env, environment: str | None) -> Any:
 def generate_alerts(path: Path, env: Env, environment: str | None) -> Any:
     out = env.tmp / "out" / "alerts.yaml"
     code = generate_alerts_command(str(path), output=str(out), environment=environment)
-    return {"exit": code, "files": env.files(set_ordered=lambda rel: True), "text": env.text()}
+    return {"exit": code, "files": env.files(rules_unordered=lambda rel: True), "text": env.text()}
 
 
 def generate_loki_alerts(path: Path, env: Env, environment: str | None) -> Any:
@@ -270,7 +270,7 @@ def generate_loki_alerts(path: Path, env: Env, environment: str | None) -> Any:
     code = generate_loki_command(str(path), output=str(out))
     return {
         "exit": code,
-        "files": env.files(set_ordered=lambda rel: True),
+        "files": env.files(rules_unordered=lambda rel: True),
         "text": _sorted_dependencies(env.text()),
     }
 
@@ -467,7 +467,9 @@ def apply(path: Path, env: Env, environment: str | None) -> Any:
         "exit": code,
         "json": json.loads(printed[start:]),
         "preamble": _lines(printed[:start]),
-        "files": env.files(set_ordered=lambda rel: rel == "alerts.yaml"),
+        # alerts.yaml comes from generators/alerts.py list(set(...)); the
+        # rest of apply's YAML keeps its written order.
+        "files": env.files(rules_unordered=lambda rel: rel == "alerts.yaml"),
         # Anything written outside the output dir (relative default paths).
         "stray": sorted(
             p.relative_to(env.tmp).as_posix()

@@ -1,7 +1,7 @@
 """Threshold recording rules added by opensrm-wo62.2.
 
 Brier calibration and the window-correct feedback-latency quantiles
-(``:p50_30d`` / ``:p90_30d``). Design:
+(``:p50_within_bound_30d`` / ``:p90_within_bound_30d``). Design:
 ``nthlayer/docs/superpowers/specs/2026-10-27-wo62-2-judgment-threshold-rules-design.md`` §4.
 
 Every expected value comes from somewhere other than the code under test:
@@ -53,8 +53,8 @@ FIXTURES = (ALL_FIVE, CALIBRATION_BOTH, P50_ONLY, SINGLE_BOUNDS, SEGMENTS)
 # OPENSRM-CORE-v2 §5.5.5: maximum_p50 bounds the median, maximum_p90 the 90th percentile.
 QUANTILE = {"maximum_p50": 0.5, "maximum_p90": 0.9}
 WINDOW_RECORD = {
-    "maximum_p50": "ai_gate:feedback_latency:p50_30d",
-    "maximum_p90": "ai_gate:feedback_latency:p90_30d",
+    "maximum_p50": "ai_gate:feedback_latency:p50_within_bound_30d",
+    "maximum_p90": "ai_gate:feedback_latency:p90_within_bound_30d",
 }
 
 
@@ -137,21 +137,32 @@ def _feedback_cases() -> list[tuple[Path, str]]:
 @pytest.mark.parametrize(
     "path,bound", _feedback_cases(), ids=lambda v: v.stem if isinstance(v, Path) else v
 )
-def test_declared_feedback_bound_emits_a_30_day_quantile_rule(path: Path, bound: str):
+def test_declared_feedback_bound_emits_a_30_day_within_bound_fraction(path: Path, bound: str):
+    """The fraction of arrivals within the bound, not a quantile (R5 pass 1, Rob: option A).
+
+    pq <= B exactly when that fraction is at least q, so the alert needs no
+    interpolation. Unlike histogram_quantile, a quantile in the +Inf bucket
+    cannot read as within bounds.
+    """
     declared = _bounds(path, "feedback_latency")[bound]
+    seconds = duration_seconds(declared)
     manifest = _load(path)
 
     rule = _rules(manifest)[WINDOW_RECORD[bound]]
 
+    selector = f'service="{manifest.name}"'
+    window = f"[{FEEDBACK_LATENCY_WINDOW}]"
     assert rule["expr"] == (
-        f"histogram_quantile({QUANTILE[bound]}, sum by (le) ("
-        f'increase(ai_gate_feedback_latency_seconds_bucket{{service="{manifest.name}"}}'
-        f"[{FEEDBACK_LATENCY_WINDOW}])))"
+        f'sum(increase(ai_gate_feedback_latency_seconds_bucket{{{selector},le="{seconds}"}}'
+        f"{window})) / sum(increase(ai_gate_feedback_latency_seconds_count{{{selector}}}"
+        f"{window}))"
     )
+    assert "histogram_quantile" not in rule["expr"]
     # E2: a Duration bound is carried in seconds.
     assert rule["labels"] == {
         "service": manifest.name,
-        "target": str(duration_seconds(declared)),
+        "target": str(seconds),
+        "quantile": str(QUANTILE[bound]),
         "slo": "feedback_latency",
     }
 

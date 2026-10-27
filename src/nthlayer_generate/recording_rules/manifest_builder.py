@@ -33,8 +33,8 @@ THRESHOLD_BOUND_RECORDS: dict[str, dict[str, str]] = {
         "maximum_brier_score": "ai_gate:calibration:brier",
     },
     "feedback_latency": {
-        "maximum_p50": f"ai_gate:feedback_latency:p50_{FEEDBACK_LATENCY_WINDOW}",
-        "maximum_p90": f"ai_gate:feedback_latency:p90_{FEEDBACK_LATENCY_WINDOW}",
+        "maximum_p50": f"ai_gate:feedback_latency:p50_within_bound_{FEEDBACK_LATENCY_WINDOW}",
+        "maximum_p90": f"ai_gate:feedback_latency:p90_within_bound_{FEEDBACK_LATENCY_WINDOW}",
     },
 }
 
@@ -425,10 +425,10 @@ class ManifestRecordingRuleBuilder:
     def _build_judgment_threshold_window_rules(
         self, threshold: JudgmentThreshold
     ) -> list[RecordingRule]:
-        """Build the 30-day ``:p50_30d`` / ``:p90_30d`` rule per declared bound.
+        """Build the 30-day within-bound fraction rule per declared p50/p90 bound.
 
-        These quantiles use the window §5.5.5 defines, and they are what the
-        threshold alerts compare against. Every other type emits nothing here.
+        These use the window §5.5.5 defines, and they are what the threshold
+        alerts compare against. Every other type emits nothing here.
         """
         if threshold.type != "feedback_latency":
             return []
@@ -714,22 +714,32 @@ class ManifestRecordingRuleBuilder:
     def _build_feedback_latency_window_rule(
         self, service: str, bound: str, quantile: float, target_seconds: float
     ) -> RecordingRule:
-        """Build one feedback-latency quantile over the §5.5.5 30-day window.
+        """Build the fraction of ground truth that arrived within the bound, over 30 days.
 
-        ``increase`` over the window, summed by ``le``: the quantile of the
-        decisions whose ground truth arrived in the window. With no arrivals
-        the result is NaN, which the NotEvaluable alert treats as E3.
+        The quantile is at most the bound exactly when this fraction is at
+        least ``quantile``, so the alert compares the fraction and needs no
+        interpolation. ``histogram_quantile`` is deliberately not used: it
+        reports a quantile in the +Inf bucket as the highest finite ``le``,
+        so a breach above the top bucket would read as within bounds (the
+        reason common's contract and workers' sampler avoid it too).
+
+        Needs a bucket at exactly ``le`` = the bound, as the ``:bucket`` rule
+        does. Without one the series is absent; with no arrivals it is NaN.
+        Either way the NotEvaluable alert fires (E3).
         """
+        selector = f'service="{service}"'
+        window = f"[{FEEDBACK_LATENCY_WINDOW}]"
         return RecordingRule(
             record=THRESHOLD_BOUND_RECORDS["feedback_latency"][bound],
             expr=(
-                f"histogram_quantile({quantile}, sum by (le) ("
-                f'increase(ai_gate_feedback_latency_seconds_bucket{{service="{service}"}}'
-                f"[{FEEDBACK_LATENCY_WINDOW}])))"
+                f'sum(increase(ai_gate_feedback_latency_seconds_bucket{{{selector},le="{target_seconds}"}}'
+                f"{window})) / sum(increase(ai_gate_feedback_latency_seconds_count{{{selector}}}"
+                f"{window}))"
             ),
             labels={
                 "service": service,
                 "target": str(target_seconds),
+                "quantile": str(quantile),
                 "slo": "feedback_latency",
             },
         )

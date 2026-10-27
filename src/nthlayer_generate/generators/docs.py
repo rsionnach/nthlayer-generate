@@ -652,9 +652,8 @@ def _judgment_thresholds_section(manifest: ReliabilityManifest) -> list[str]:
             else:
                 breach, not_evaluable = alert_names(threshold.type, bound)
                 evaluated_by = f"Prometheus: `{record}`; alerts `{breach}`, `{not_evaluable}`"
-            lines.append(
-                f"| {threshold.type} | {bound} | {value} | {evaluated_by} | {measurement} |"
-            )
+            cells = (threshold.type, bound, str(value), evaluated_by, measurement)
+            lines.append("| " + " | ".join(_table_cell(c) for c in cells) + " |")
     return lines
 
 
@@ -672,3 +671,8 @@ def _measurement_summary(measurement: ThresholdMeasurement) -> str:
             value = ", ".join(str(v) for v in value)
         parts.append(f"{f.name}: {value}")
     return "; ".join(parts) or "—"
+
+
+def _table_cell(text: str) -> str:
+    """Escape ``|`` so a declared value cannot split a Markdown table row."""
+    return text.replace("|", "\\|")

@@ -213,13 +213,14 @@
       "name": "fraud-detector_judgment_thresholds_30d",
       "rules": [
         {
-          "expr": "histogram_quantile(0.5, sum by (le) (increase(ai_gate_feedback_latency_seconds_bucket{service=\"fraud-detector\"}[30d])))",
+          "expr": "sum(increase(ai_gate_feedback_latency_seconds_bucket{service=\"fraud-detector\",le=\"3600.0\"}[30d])) / sum(increase(ai_gate_feedback_latency_seconds_count{service=\"fraud-detector\"}[30d]))",
           "labels": {
+            "quantile": "0.5",
             "service": "fraud-detector",
             "slo": "feedback_latency",
             "target": "3600.0"
           },
-          "record": "ai_gate:feedback_latency:p50_30d"
+          "record": "ai_gate:feedback_latency:p50_within_bound_30d"
         }
       ]
     },

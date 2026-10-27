@@ -52,6 +52,9 @@ SINGLE_BOUNDS = THRESHOLDS / "single-bounds.yaml"
 SEGMENTS = THRESHOLDS / "segments-two-dimensions.yaml"
 WITH_SOURCE = (ALL_FIVE, CALIBRATION_BOTH, P50_ONLY, SINGLE_BOUNDS)
 
+# OPENSRM-CORE-v2 §5.5.5: maximum_p50 caps the median, maximum_p90 the 90th percentile.
+QUANTILE = {"maximum_p50": 0.5, "maximum_p90": 0.9}
+
 # Design §2 D4 (Rob, 2026-10-27).
 BREACH = {"severity": "warning", "for": "15m"}
 NOT_EVALUABLE = {"severity": "info", "for": "1h"}
@@ -118,9 +121,12 @@ def test_every_bound_gets_a_breach_alert_strictly_above_the_bound(path: Path):
         record = rule["expr"].split("{", 1)[0]
         # The alert reads a record generate emits, with the bound as its target.
         assert (record, str(compared)) in records
-        assert rule["expr"] == (
-            f'{record}{{service="{manifest.name}",target="{compared}"}} > {compared}'
-        )
+        series = f'{record}{{service="{manifest.name}",target="{compared}"}}'
+        if bound in QUANTILE:
+            # E1: pq > B exactly when fewer than q of the arrivals are within B.
+            assert rule["expr"] == f"{series} < {QUANTILE[bound]}"
+        else:
+            assert rule["expr"] == f"{series} > {compared}"
         assert rule["for"] == BREACH["for"]
         assert rule["labels"]["severity"] == BREACH["severity"]
         assert rule["labels"]["threshold_type"] == threshold_type
@@ -134,18 +140,26 @@ def test_every_bound_gets_a_not_evaluable_alert_on_absent_or_nan(path: Path):
     for _threshold_type, bound, _value in _declared(path):
         (breach,) = [r for (n, b), r in alerts.items() if b == bound and n.endswith("Breach")]
         (rule,) = [r for (n, b), r in alerts.items() if b == bound and n.endswith("NotEvaluable")]
-        series = breach["expr"].split(" > ", 1)[0]
+        series = breach["expr"].rsplit(" ", 2)[0]
         assert rule["expr"] == f"absent({series}) or ({series} != {series})"
         assert rule["for"] == NOT_EVALUABLE["for"]
         assert rule["labels"]["severity"] == NOT_EVALUABLE["severity"]
 
 
 def test_e1_equality_is_within_bounds():
-    """§5.5.6 E1: a value equal to the bound is within bounds, so the operator is '>'."""
+    """§5.5.6 E1: a value equal to the bound is within bounds.
+
+    A ratio breaches on '> B'. A quantile breaches on 'fraction within B < q',
+    and the le="B" bucket counts a latency of exactly B as within.
+    """
     for alert in build_judgment_threshold_alerts(_load(ALL_FIVE)):
-        if alert.name.endswith("Breach"):
+        if not alert.name.endswith("Breach"):
+            continue
+        assert ">=" not in alert.expr and "<=" not in alert.expr
+        if alert.labels["bound"] in QUANTILE:
+            assert " < " in alert.expr
+        else:
             assert " > " in alert.expr
-            assert ">=" not in alert.expr
 
 
 def test_alert_names_name_the_type_and_bound():

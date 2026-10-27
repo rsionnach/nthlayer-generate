@@ -139,3 +139,22 @@ def test_no_thresholds_means_no_section():
     assert manifest.is_ai_gate()
 
     assert HEADING not in _api_docs_ai_gate(manifest).splitlines()
+
+
+def test_a_pipe_in_a_declared_value_does_not_split_the_row():
+    """R5 pass 1: an unescaped '|' would shift every later column."""
+    manifest = _load(THRESHOLDS / "segments-two-dimensions.yaml")
+    first = manifest.judgment_thresholds[0]
+    measurement = dataclasses.replace(first.measurement, segment_values=["a|b", "c"])
+    manifest = dataclasses.replace(
+        manifest,
+        judgment_thresholds=[dataclasses.replace(first, measurement=measurement)],
+    )
+
+    (row,) = [
+        line for line in _api_docs_ai_gate(manifest).splitlines() if line.startswith("| segments")
+    ]
+
+    # Five cells: the escaped pipe is not a separator.
+    assert len(row.replace("\\|", "").strip("|").split("|")) == 5
+    assert "a\\|b" in row

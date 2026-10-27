@@ -6,10 +6,10 @@
         {
           "alert": "AIGateFeedbackLatencyP90Breach",
           "annotations": {
-            "description": "ai_gate:feedback_latency:p90_30d is {{ $value }}, above the declared maximum_p90 of 86400.0 (OPENSRM-CORE-v2 §5.5.6 E1).",
+            "description": "Only {{ $value }} of ground truth arrived within 86400.0s, below 0.9, so the quantile exceeds the declared maximum_p90 (OPENSRM-CORE-v2 §5.5.6 E1).",
             "summary": "triage-agent: feedback_latency maximum_p90 breached"
           },
-          "expr": "ai_gate:feedback_latency:p90_30d{service=\"triage-agent\",target=\"86400.0\"} > 86400.0",
+          "expr": "ai_gate:feedback_latency:p90_within_bound_30d{service=\"triage-agent\",target=\"86400.0\"} < 0.9",
           "for": "15m",
           "labels": {
             "bound": "maximum_p90",
@@ -24,10 +24,10 @@
         {
           "alert": "AIGateFeedbackLatencyP90NotEvaluable",
           "annotations": {
-            "description": "ai_gate:feedback_latency:p90_30d has no value, so maximum_p90 cannot be evaluated. Not evaluable is not within bounds (OPENSRM-CORE-v2 §5.5.6 E3).",
+            "description": "ai_gate:feedback_latency:p90_within_bound_30d has no value, so maximum_p90 cannot be evaluated. Not evaluable is not within bounds (OPENSRM-CORE-v2 §5.5.6 E3).",
             "summary": "triage-agent: feedback_latency maximum_p90 not evaluable"
           },
-          "expr": "absent(ai_gate:feedback_latency:p90_30d{service=\"triage-agent\",target=\"86400.0\"}) or (ai_gate:feedback_latency:p90_30d{service=\"triage-agent\",target=\"86400.0\"} != ai_gate:feedback_latency:p90_30d{service=\"triage-agent\",target=\"86400.0\"})",
+          "expr": "absent(ai_gate:feedback_latency:p90_within_bound_30d{service=\"triage-agent\",target=\"86400.0\"}) or (ai_gate:feedback_latency:p90_within_bound_30d{service=\"triage-agent\",target=\"86400.0\"} != ai_gate:feedback_latency:p90_within_bound_30d{service=\"triage-agent\",target=\"86400.0\"})",
           "for": "1h",
           "labels": {
             "bound": "maximum_p90",

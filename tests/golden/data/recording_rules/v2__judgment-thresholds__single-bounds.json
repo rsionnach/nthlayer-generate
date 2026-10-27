@@ -68,13 +68,14 @@
       "name": "triage-agent_judgment_thresholds_30d",
       "rules": [
         {
-          "expr": "histogram_quantile(0.9, sum by (le) (increase(ai_gate_feedback_latency_seconds_bucket{service=\"triage-agent\"}[30d])))",
+          "expr": "sum(increase(ai_gate_feedback_latency_seconds_bucket{service=\"triage-agent\",le=\"86400.0\"}[30d])) / sum(increase(ai_gate_feedback_latency_seconds_count{service=\"triage-agent\"}[30d]))",
           "labels": {
+            "quantile": "0.9",
             "service": "triage-agent",
             "slo": "feedback_latency",
             "target": "86400.0"
           },
-          "record": "ai_gate:feedback_latency:p90_30d"
+          "record": "ai_gate:feedback_latency:p90_within_bound_30d"
         }
       ]
     },

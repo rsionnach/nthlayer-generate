@@ -87,6 +87,8 @@ SCRUBBED_ENV = (
     # path is used.
     "PAGERDUTY_INTEGRATION_KEY",
     "PAGERDUTY_SRE_INTEGRATION_KEY",
+    # examples/uat/payment-api.yaml: slack_webhook: "${NTHLAYER_SLACK_WEBHOOK_ALERT}".
+    "NTHLAYER_SLACK_WEBHOOK_ALERT",
     "PAGERDUTY_FROM_EMAIL",
     "PROMETHEUS_URL",
     "NTHLAYER_PROMETHEUS_URL",

@@ -158,3 +158,39 @@ def test_a_pipe_in_a_declared_value_does_not_split_the_row():
     # Five cells: the escaped pipe is not a separator.
     assert len(row.replace("\\|", "").strip("|").split("|")) == 5
     assert "a\\|b" in row
+
+
+def _entries(path: Path) -> list[dict[str, Any]]:
+    entries: list[dict[str, Any]] = yaml.safe_load(path.read_text())["spec"]["judgment_threshold"]
+    return entries
+
+
+def test_measurement_cells_render_each_kind_of_field_exactly(tmp_path: Path):
+    """R5 provenance: scalars, nested objects, lists and an empty measurement.
+
+    Expected cells are built from the spec YAML, in ThresholdMeasurement's field
+    order (bins, window, probe, segment_dimension, segment_values, metric,
+    source, confidence_threshold, outcome_signal).
+    """
+    all_five = {e["type"]: e for e in _entries(FIXTURES[0])}
+    calibration = all_five["calibration"]["measurement"]
+    probe = all_five["stability"]["probe"]
+    cells = {r[0]: r[4] for r in _rows(_section(_api_md(FIXTURES[0], tmp_path / "a")))}
+
+    assert cells["calibration"] == f"bins: {calibration['bins']}; window: {calibration['window']}"
+    assert cells["stability"] == (
+        f"probe: frozen_input_set={probe['frozen_input_set']}, frequency={probe['frequency']}"
+    )
+    assert cells["audit_backlog"] == "—"
+
+    segments = THRESHOLDS / "segments-two-dimensions.yaml"
+    outcomes = _entries(segments)[1]
+    signal = outcomes["outcome_signal"]
+    row = _rows(_section(_api_md(segments, tmp_path / "b")))[1]
+    assert row[4] == (
+        f"window: {outcomes['measurement']['window']}; "
+        f"segment_dimension: {outcomes['segment_dimension']}; "
+        f"segment_values: {', '.join(outcomes['segment_values'])}; "
+        f"metric: {outcomes['metric']}; "
+        f"outcome_signal: source={signal['source']}, window={signal['window']}"
+    )

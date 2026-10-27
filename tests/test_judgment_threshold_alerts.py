@@ -226,3 +226,41 @@ def test_duplicate_entries_do_not_duplicate_alerts():
     alerts = [(a.name, a.expr) for a in build_judgment_threshold_alerts(manifest)]
 
     assert alerts and len(alerts) == len(set(alerts))
+
+
+def test_no_dependencies_skips_the_template_path(monkeypatch: pytest.MonkeyPatch):
+    """R5 provenance: with thresholds and no dependencies the template path is not entered.
+
+    Entering it prints "No dependencies found", which contradicts the threshold
+    alerts written right after. Patched at alerts.py's own lookup.
+    """
+    import nthlayer_generate.generators.alerts as alerts_module
+
+    manifest = _load(ALL_FIVE)
+    assert not manifest.dependencies and manifest.judgment_thresholds
+    calls: list[Any] = []
+    monkeypatch.setattr(
+        alerts_module, "_load_and_customize_alerts", lambda **kw: calls.append(kw) or []
+    )
+
+    generate_alerts_from_manifest(manifest, quiet=True)
+
+    assert calls == []
+
+
+def test_threshold_alerts_carry_the_services_context_labels():
+    """R5 provenance: customize_for_service was pinned only by regenerated goldens."""
+    manifest = _load(ALL_FIVE)
+
+    threshold_alerts = [
+        a
+        for a in generate_alerts_from_manifest(manifest, quiet=True)
+        if a.technology == "judgment_threshold"
+    ]
+
+    assert threshold_alerts
+    for alert in threshold_alerts:
+        assert alert.labels["service"] == manifest.name
+        assert alert.labels["team"] == manifest.team
+        assert alert.labels["tier"] == str(manifest.tier)
+        assert alert.labels["routing"] == manifest.support_model

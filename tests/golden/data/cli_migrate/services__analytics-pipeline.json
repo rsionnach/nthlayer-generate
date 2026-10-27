@@ -1,0 +1,6 @@
+{
+  "exit": 0,
+  "files": {
+    "analytics-pipeline.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: analytics-pipeline.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: analytics-pipeline\n  team: data\n  tier: standard\nspec:\n  type: batch\n  slos:\n    freshness-p95:\n      type: availability\n      target: 90.0\n      window: 30d\n    data-quality:\n      type: availability\n      target: 99.0\n      window: 30d\n  dependencies:\n  - name: analytics-warehouse\n    type: database\n    critical: true\n  - name: raw-data-lake\n    type: database\n    critical: true\n  - name: user-service\n    type: api\n    critical: true\n  ownership:\n    team: data\n"
+  }
+}

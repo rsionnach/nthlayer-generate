@@ -174,8 +174,7 @@ VALID_TIERS = {
 
 # Service types are NOT defined here. nthlayer-common owns the rule: import
 # VALID_SERVICE_TYPES / resolve_service_type from
-# nthlayer_common.manifest.models, or from specs.manifest, which re-exports
-# them (opensrm-z3ab).
+# nthlayer_common.manifest (opensrm-z3ab).
 
 # Valid support models
 VALID_SUPPORT_MODELS = {

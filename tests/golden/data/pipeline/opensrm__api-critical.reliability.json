@@ -1,0 +1,133 @@
+{
+  "alerts_triggered": 3,
+  "budgets": [
+    {
+      "budget": {
+        "burned_minutes": 10.79999999999881,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 10.79999999999881,
+        "total_minutes": 21.59999999999762
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "payment-api",
+      "slo_id": "payment-api-availability",
+      "status": "warning",
+      "updated_at": "<masked>"
+    },
+    {
+      "budget": {
+        "burned_minutes": -21600.0,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 0.0,
+        "total_minutes": -43200.0
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "payment-api",
+      "slo_id": "payment-api-latency",
+      "status": "warning",
+      "updated_at": "<masked>"
+    },
+    {
+      "budget": {
+        "burned_minutes": 5034.96,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 5034.96,
+        "total_minutes": 10069.92
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "payment-api",
+      "slo_id": "payment-api-error_rate",
+      "status": "warning",
+      "updated_at": "<masked>"
+    }
+  ],
+  "budgets_evaluated": 3,
+  "errors": [],
+  "events": [
+    {
+      "details": {
+        "budget_consumed_percent": 50.0,
+        "burned_minutes": 10.79999999999881,
+        "remaining_minutes": 10.79999999999881,
+        "status": "warning",
+        "threshold_percent": 50.0
+      },
+      "id": "<masked>",
+      "message": "⚠️ *Error Budget Alert*\n\n*Service:* `payment-api`\n*SLO:* `payment-api-availability`\n*Consumed:* 50.0% (threshold: 50%)\n*Remaining:* 10.8 minutes\n*Status:* WARNING\n\nℹ️ Budget threshold exceeded. Monitor closely.\n",
+      "rule_id": "payment-api-availability-budget-warning",
+      "service": "payment-api",
+      "severity": "warning",
+      "slo_id": "payment-api-availability",
+      "title": "Error Budget Alert: payment-api",
+      "triggered_at": "<masked>"
+    },
+    {
+      "details": {
+        "budget_consumed_percent": 50.0,
+        "burned_minutes": -21600.0,
+        "remaining_minutes": 0.0,
+        "status": "warning",
+        "threshold_percent": 50.0
+      },
+      "id": "<masked>",
+      "message": "⚠️ *Error Budget Alert*\n\n*Service:* `payment-api`\n*SLO:* `payment-api-latency`\n*Consumed:* 50.0% (threshold: 50%)\n*Remaining:* 0.0 minutes\n*Status:* WARNING\n\nℹ️ Budget threshold exceeded. Monitor closely.\n",
+      "rule_id": "payment-api-latency-budget-warning",
+      "service": "payment-api",
+      "severity": "warning",
+      "slo_id": "payment-api-latency",
+      "title": "Error Budget Alert: payment-api",
+      "triggered_at": "<masked>"
+    },
+    {
+      "details": {
+        "budget_consumed_percent": 50.0,
+        "burned_minutes": 5034.96,
+        "remaining_minutes": 5034.96,
+        "status": "warning",
+        "threshold_percent": 50.0
+      },
+      "id": "<masked>",
+      "message": "⚠️ *Error Budget Alert*\n\n*Service:* `payment-api`\n*SLO:* `payment-api-error_rate`\n*Consumed:* 50.0% (threshold: 50%)\n*Remaining:* 5035.0 minutes\n*Status:* WARNING\n\nℹ️ Budget threshold exceeded. Monitor closely.\n",
+      "rule_id": "payment-api-error_rate-budget-warning",
+      "service": "payment-api",
+      "severity": "warning",
+      "slo_id": "payment-api-error_rate",
+      "title": "Error Budget Alert: payment-api",
+      "triggered_at": "<masked>"
+    }
+  ],
+  "explanations": [],
+  "notifications_sent": 0,
+  "rules_evaluated": 12,
+  "service": "payment-api"
+}

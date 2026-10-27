@@ -6,8 +6,7 @@ Provides utility functions used across multiple generators.
 from __future__ import annotations
 
 import structlog
-
-from nthlayer_generate.specs.manifest import ReliabilityManifest
+from nthlayer_common.manifest import ReliabilityManifest
 
 logger = structlog.get_logger()
 

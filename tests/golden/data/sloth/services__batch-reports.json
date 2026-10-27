@@ -1,0 +1,40 @@
+{
+  "labels": {
+    "team": "data",
+    "tier": "low",
+    "type": "api"
+  },
+  "service": "batch-reports",
+  "slos": [
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO report-success-rate for batch-reports"
+        },
+        "labels": {
+          "service": "batch-reports",
+          "tier": "low"
+        },
+        "name": "BatchReportsReportSuccessRate",
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on batch-reports"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "95.0% report success rate",
+      "name": "report-success-rate",
+      "objective": 95.0,
+      "sli": {
+        "events": {
+          "error_query": "sum(rate(reports_generated_total{service=\"batch-reports\",status=\"success\"}[5m]))",
+          "total_query": "sum(rate(reports_generated_total{service=\"batch-reports\"}[5m]))"
+        }
+      }
+    }
+  ],
+  "version": "prometheus/v1"
+}

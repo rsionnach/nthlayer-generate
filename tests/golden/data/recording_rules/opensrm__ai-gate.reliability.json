@@ -1,0 +1,260 @@
+{
+  "groups": [
+    {
+      "interval": "30s",
+      "name": "fraud-detector_slo_metrics",
+      "rules": [
+        {
+          "expr": "sum(increase(http_requests_total{service=\"fraud-detector\"}[30d]))",
+          "labels": {
+            "service": "fraud-detector",
+            "slo": "availability"
+          },
+          "record": "slo:requests_total:30d"
+        },
+        {
+          "expr": "sum(increase(http_requests_total{service=\"fraud-detector\",status!~\"5..\"}[30d]))",
+          "labels": {
+            "service": "fraud-detector",
+            "slo": "availability"
+          },
+          "record": "slo:requests_success:30d"
+        },
+        {
+          "expr": "slo:requests_success:30d{service=\"fraud-detector\",slo=\"availability\"} / slo:requests_total:30d{service=\"fraud-detector\",slo=\"availability\"}",
+          "labels": {
+            "objective": "99.9",
+            "service": "fraud-detector",
+            "slo": "availability"
+          },
+          "record": "slo:availability:ratio"
+        },
+        {
+          "expr": "1 - ((1 - slo:availability:ratio{service=\"fraud-detector\",slo=\"availability\"}) / (1 - 0.9990000000000001))",
+          "labels": {
+            "objective": "99.9",
+            "service": "fraud-detector",
+            "slo": "availability"
+          },
+          "record": "slo:error_budget_remaining:ratio"
+        },
+        {
+          "expr": "sum(increase(http_request_duration_seconds_count{service=\"fraud-detector\"}[30d]))",
+          "labels": {
+            "service": "fraud-detector",
+            "slo": "latency"
+          },
+          "record": "slo:latency_requests_total:30d"
+        },
+        {
+          "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"fraud-detector\",le=\"0.1\"}[30d]))",
+          "labels": {
+            "service": "fraud-detector",
+            "slo": "latency",
+            "threshold": "100.0ms"
+          },
+          "record": "slo:latency_requests_fast:30d"
+        },
+        {
+          "expr": "slo:latency_requests_fast:30d{service=\"fraud-detector\",slo=\"latency\"} / slo:latency_requests_total:30d{service=\"fraud-detector\",slo=\"latency\"}",
+          "labels": {
+            "objective": "100.0",
+            "service": "fraud-detector",
+            "slo": "latency"
+          },
+          "record": "slo:latency:ratio"
+        },
+        {
+          "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"fraud-detector\"}[5m]))",
+          "labels": {
+            "service": "fraud-detector",
+            "slo": "latency"
+          },
+          "record": "slo:http_request_duration_seconds:p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"fraud-detector\"}[5m]))",
+          "labels": {
+            "service": "fraud-detector",
+            "slo": "latency"
+          },
+          "record": "slo:http_request_duration_seconds:p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"fraud-detector\"}[5m]))",
+          "labels": {
+            "service": "fraud-detector",
+            "slo": "latency"
+          },
+          "record": "slo:http_request_duration_seconds:p99"
+        }
+      ]
+    },
+    {
+      "interval": "30s",
+      "name": "fraud-detector_judgment_metrics",
+      "rules": [
+        {
+          "expr": "sum(increase(ai_gate_decisions_total{service=\"fraud-detector\"}[7d]))",
+          "labels": {
+            "service": "fraud-detector"
+          },
+          "record": "ai_gate:decisions_total:7d"
+        },
+        {
+          "expr": "sum(increase(ai_gate_decisions_total{service=\"fraud-detector\",reversed=\"true\"}[7d]))",
+          "labels": {
+            "service": "fraud-detector"
+          },
+          "record": "ai_gate:decisions_reversed:7d"
+        },
+        {
+          "expr": "ai_gate:decisions_reversed:7d{service=\"fraud-detector\"} / ai_gate:decisions_total:7d{service=\"fraud-detector\"}",
+          "labels": {
+            "service": "fraud-detector",
+            "slo": "reversal_rate",
+            "target": "0.05"
+          },
+          "record": "ai_gate:reversal_rate:ratio"
+        },
+        {
+          "expr": "sum(increase(ai_gate_decisions_total{service=\"fraud-detector\",confidence_bucket=\"high\"}[7d]))",
+          "labels": {
+            "service": "fraud-detector"
+          },
+          "record": "ai_gate:high_confidence_decisions:7d"
+        },
+        {
+          "expr": "sum(increase(ai_gate_decisions_total{service=\"fraud-detector\",confidence_bucket=\"high\",outcome=\"incorrect\"}[7d]))",
+          "labels": {
+            "service": "fraud-detector"
+          },
+          "record": "ai_gate:high_confidence_failures:7d"
+        },
+        {
+          "expr": "ai_gate:high_confidence_failures:7d{service=\"fraud-detector\"} / ai_gate:high_confidence_decisions:7d{service=\"fraud-detector\"}",
+          "labels": {
+            "service": "fraud-detector",
+            "slo": "high_confidence_failure",
+            "target": "0.01"
+          },
+          "record": "ai_gate:high_confidence_failure:ratio"
+        },
+        {
+          "expr": "avg(ai_gate_calibration_error{service=\"fraud-detector\"})",
+          "labels": {
+            "service": "fraud-detector",
+            "slo": "calibration",
+            "target": "0.05"
+          },
+          "record": "ai_gate:calibration:ece"
+        },
+        {
+          "expr": "avg(ai_gate_calibration_error{service=\"fraud-detector\",confidence_bucket=\"low\"})",
+          "labels": {
+            "confidence_bucket": "low",
+            "service": "fraud-detector"
+          },
+          "record": "ai_gate:calibration_bucket:low"
+        },
+        {
+          "expr": "avg(ai_gate_calibration_error{service=\"fraud-detector\",confidence_bucket=\"medium\"})",
+          "labels": {
+            "confidence_bucket": "medium",
+            "service": "fraud-detector"
+          },
+          "record": "ai_gate:calibration_bucket:medium"
+        },
+        {
+          "expr": "avg(ai_gate_calibration_error{service=\"fraud-detector\",confidence_bucket=\"high\"})",
+          "labels": {
+            "confidence_bucket": "high",
+            "service": "fraud-detector"
+          },
+          "record": "ai_gate:calibration_bucket:high"
+        },
+        {
+          "expr": "histogram_quantile(0.5, rate(ai_gate_feedback_latency_seconds_bucket{service=\"fraud-detector\"}[5m]))",
+          "labels": {
+            "service": "fraud-detector",
+            "slo": "feedback_latency"
+          },
+          "record": "ai_gate:feedback_latency:p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(ai_gate_feedback_latency_seconds_bucket{service=\"fraud-detector\"}[5m]))",
+          "labels": {
+            "service": "fraud-detector",
+            "slo": "feedback_latency"
+          },
+          "record": "ai_gate:feedback_latency:p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(ai_gate_feedback_latency_seconds_bucket{service=\"fraud-detector\"}[5m]))",
+          "labels": {
+            "service": "fraud-detector",
+            "slo": "feedback_latency"
+          },
+          "record": "ai_gate:feedback_latency:p99"
+        },
+        {
+          "expr": "sum(rate(ai_gate_feedback_latency_seconds_bucket{service=\"fraud-detector\",le=\"3600.0\"}[5m])) / sum(rate(ai_gate_feedback_latency_seconds_count{service=\"fraud-detector\"}[5m]))",
+          "labels": {
+            "service": "fraud-detector",
+            "slo": "feedback_latency",
+            "target": "3600.0"
+          },
+          "record": "ai_gate:feedback_latency:bucket"
+        }
+      ]
+    },
+    {
+      "interval": "30s",
+      "name": "fraud-detector_health_metrics",
+      "rules": [
+        {
+          "expr": "sum(rate(ai_gate_decisions_total{service=\"fraud-detector\"}[5m]))",
+          "labels": {
+            "service": "fraud-detector"
+          },
+          "record": "service:ai_gate_decisions:rate5m"
+        },
+        {
+          "expr": "avg(ai_gate_confidence_score{service=\"fraud-detector\"})",
+          "labels": {
+            "service": "fraud-detector"
+          },
+          "record": "service:ai_gate_confidence:avg"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{service=\"fraud-detector\"}[5m]))",
+          "labels": {
+            "service": "fraud-detector"
+          },
+          "record": "service:http_requests:rate5m"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{service=\"fraud-detector\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"fraud-detector\"}[5m]))",
+          "labels": {
+            "service": "fraud-detector"
+          },
+          "record": "service:http_errors:rate5m"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"fraud-detector\"}[5m]))",
+          "labels": {
+            "service": "fraud-detector"
+          },
+          "record": "service:http_request_duration_seconds:p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"fraud-detector\"}[5m]))",
+          "labels": {
+            "service": "fraud-detector"
+          },
+          "record": "service:http_request_duration_seconds:p99"
+        }
+      ]
+    }
+  ]
+}

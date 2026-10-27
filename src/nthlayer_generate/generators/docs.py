@@ -13,9 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import structlog
-
-from nthlayer_generate.specs.loader import load_manifest
-from nthlayer_generate.specs.manifest import ReliabilityManifest
+from nthlayer_common.manifest import ReliabilityManifest, load_manifest
 
 logger = structlog.get_logger()
 

@@ -1,0 +1,38 @@
+{
+  "authored_type": "worker",
+  "dependencies": [
+    [
+      "notification_cache",
+      "database",
+      false
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "delivery-success",
+      "availability",
+      99.5,
+      "30d",
+      false
+    ],
+    [
+      "processing-latency-p95",
+      "latency",
+      98.0,
+      "30d",
+      false
+    ],
+    [
+      "queue-lag",
+      "availability",
+      99.0,
+      "30d",
+      false
+    ]
+  ],
+  "source_format": "legacy",
+  "type": "worker",
+  "warnings": []
+}

@@ -18,8 +18,9 @@ from nthlayer_generate.topology.models import (
 )
 
 if TYPE_CHECKING:
+    from nthlayer_common.manifest import ReliabilityManifest
+
     from nthlayer_generate.dependencies.models import DependencyGraph
-    from nthlayer_generate.specs.manifest import ReliabilityManifest
 
 
 def build_topology(

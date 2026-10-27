@@ -22,6 +22,6 @@ __all__ = [
     "LogQLAlert",
     "LOG_PATTERNS",
     "get_patterns_for_technology",
-    # New API (ReliabilityManifest)
+    # Manifest API (nthlayer_common.manifest.ReliabilityManifest)
     "generate_loki_alerts_from_manifest",
 ]

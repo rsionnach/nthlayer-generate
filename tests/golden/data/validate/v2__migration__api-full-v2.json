@@ -1,0 +1,7 @@
+{
+  "errors": [
+    "Filename mismatch: expected 'payment-api.yaml' for service 'payment-api', got 'api-full-v2.yaml'"
+  ],
+  "valid": false,
+  "warnings": []
+}

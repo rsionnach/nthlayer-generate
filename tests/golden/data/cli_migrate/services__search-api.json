@@ -1,0 +1,6 @@
+{
+  "exit": 0,
+  "files": {
+    "search-api.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: search-api.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: search-api\n  team: search\n  tier: high\nspec:\n  type: api\n  slos:\n    search-availability:\n      type: availability\n      target: 99.5\n      window: 30d\n    search-latency-p95:\n      type: latency\n      target: 99.0\n      window: 30d\n    search-quality:\n      type: custom\n      target: 95.0\n      window: 7d\n  dependencies:\n  - name: search-index\n    type: database\n    critical: true\n  - name: query-cache\n    type: cache\n    critical: false\n  - name: product-catalog\n    type: api\n    critical: true\n  - name: user-profile\n    type: api\n    critical: false\n  ownership:\n    team: search\n"
+  }
+}

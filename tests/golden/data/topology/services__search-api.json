@@ -1,0 +1,73 @@
+{
+  "edges": [
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "search-api",
+      "target": "search-index"
+    },
+    {
+      "confidence": 1.0,
+      "critical": false,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "search-api",
+      "target": "query-cache"
+    },
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "search-api",
+      "target": "product-catalog"
+    },
+    {
+      "confidence": 1.0,
+      "critical": false,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "search-api",
+      "target": "user-profile"
+    }
+  ],
+  "exported_at": "<masked>",
+  "metadata": {
+    "providers_used": []
+  },
+  "nodes": [
+    {
+      "name": "search-api",
+      "team": "search",
+      "tier": "high",
+      "type": "api"
+    },
+    {
+      "name": "search-index"
+    },
+    {
+      "name": "query-cache"
+    },
+    {
+      "name": "product-catalog"
+    },
+    {
+      "name": "user-profile"
+    }
+  ],
+  "stats": {
+    "edge_count": 4,
+    "node_count": 5
+  },
+  "version": "1.0"
+}

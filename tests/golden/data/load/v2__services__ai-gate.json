@@ -1,0 +1,13 @@
+{
+  "authored_type": null,
+  "dependencies": null,
+  "error": [
+    "ManifestLoadError",
+    "Judgment SLO missing metadata.name"
+  ],
+  "ok": false,
+  "slos": null,
+  "source_format": null,
+  "type": null,
+  "warnings": []
+}

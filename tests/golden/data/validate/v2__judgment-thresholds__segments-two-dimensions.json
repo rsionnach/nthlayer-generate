@@ -1,0 +1,7 @@
+{
+  "errors": [
+    "Filename mismatch: expected 'pricing-agent.yaml' for service 'pricing-agent', got 'segments-two-dimensions.yaml'"
+  ],
+  "valid": false,
+  "warnings": []
+}

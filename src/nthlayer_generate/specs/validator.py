@@ -1,7 +1,8 @@
 """
 Service definition validation.
 
-Supports both OpenSRM format (apiVersion: srm/v1) and legacy NthLayer format.
+Supports the OpenSRM formats (apiVersion: srm/v1 and opensrm.nthlayer.io/v2),
+loaded through nthlayer-common's manifest model, and the legacy NthLayer format.
 """
 
 from __future__ import annotations
@@ -11,23 +12,26 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from nthlayer_common.manifest import (
+    VALID_TIERS,
+    LegacyFormatWarning,
+    ManifestLoadError,
+    load_manifest,
+)
 from nthlayer_common.manifest.models import (
     resolve_service_type,
     valid_service_types_phrase,
 )
+from nthlayer_common.manifest.parser.v1 import is_srm_v1_format
+from nthlayer_common.manifest.parser.v2 import is_opensrm_v2_format
 
 from nthlayer_generate.specs.contracts import (
     ContractRegistry,
     validate_dependency_expectations,
     validate_transitive_feasibility,
 )
-from nthlayer_generate.specs.loader import (
-    LegacyFormatWarning,
-    ManifestLoadError,
-    load_manifest,
-)
-from nthlayer_generate.specs.manifest import VALID_TIERS, is_valid_service_name
 from nthlayer_generate.specs.models import VALID_RESOURCE_KINDS
+from nthlayer_generate.specs.names import is_valid_service_name
 from nthlayer_generate.specs.parser import ServiceParseError, parse_service_file
 from nthlayer_generate.specs.template import validate_template_variables
 
@@ -63,6 +67,47 @@ class ValidationResult:
                 lines.append(f"  ⚠️  {warning}")
 
         return "\n".join(lines)
+
+
+class _MockContext:
+    """The service fields validation reads, from an OpenSRM manifest."""
+
+    def __init__(self, m: Any) -> None:
+        self.name = m.name
+        self.team = m.team
+        self.tier = m.tier
+        self.type = m.type
+        self.template = m.template
+
+
+def _is_non_numeric(value: Any) -> bool:
+    """Whether *value* is a set availability that is not a number."""
+    return value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)))
+
+
+def _non_numeric_availability_error(
+    manifest: Any, registry: ContractRegistry | None
+) -> str | None:
+    """The error for a contract check that hit a non-numeric availability.
+
+    Names the service, contract and value: the manifest's own contracts first,
+    then the registry's. None when every availability is a number, so the
+    TypeError the caller caught is a bug, not bad input.
+    """
+    sources = [(manifest.name, manifest.contracts)]
+    if registry is not None:
+        sources += [(name, registry.get_contracts(name)) for name in registry.services]
+    for service, contracts in sources:
+        for contract in contracts:
+            value = contract.promise.availability
+            if _is_non_numeric(value):
+                where = "" if service == manifest.name else " (contract registry)"
+                return (
+                    f"Service '{service}' contract '{contract.name}'{where}: "
+                    f"promise.availability must be a number (a ratio such as "
+                    f"0.9995), got {value!r}"
+                )
+    return None
 
 
 def validate_service_file(
@@ -104,8 +149,6 @@ def validate_service_file(
     # First, detect the format to use appropriate parser
     import yaml
 
-    from nthlayer_generate.specs.opensrm_parser import is_opensrm_format
-
     try:
         with open(file_path) as f:
             raw_data = yaml.safe_load(f)
@@ -115,7 +158,11 @@ def validate_service_file(
             errors=[f"Failed to parse YAML: {e}"],
         )
 
-    use_opensrm = is_opensrm_format(raw_data) if isinstance(raw_data, dict) else False
+    # srm/v1 and v2 take the manifest path; legacy keeps parse_service_file,
+    # which preserves the resource list for validation (spec §5.2).
+    use_opensrm = isinstance(raw_data, dict) and (
+        is_srm_v1_format(raw_data) or is_opensrm_v2_format(raw_data)
+    )
 
     # Variables for the parsed service
     service_context: Any  # Either MockContext or ServiceContext
@@ -131,28 +178,29 @@ def validate_service_file(
                     file_path, environment=environment, suppress_deprecation_warning=True
                 )
 
-            # Create a mock service context for validation
-            class MockContext:
-                def __init__(self, m: Any) -> None:
-                    self.name = m.name
-                    self.team = m.team
-                    self.tier = m.tier
-                    self.type = m.type
-                    self.template = m.template
-
-            service_context = MockContext(manifest)
+            service_context = _MockContext(manifest)
             resources = []  # OpenSRM manifests have SLOs inline, not as resources
             resource_count = len(manifest.slos) + len(manifest.dependencies)
 
-            # Contract validation (OpenSRM only)
-            contract_warnings = manifest.validate_contracts()
-            warnings.extend(contract_warnings)
-
-            if contract_registry is not None:
-                dep_warnings = validate_dependency_expectations(manifest, contract_registry)
-                warnings.extend(dep_warnings)
-                trans_warnings = validate_transitive_feasibility(manifest, contract_registry)
-                warnings.extend(trans_warnings)
+            # Contract validation (OpenSRM only). TypeError here only: common's
+            # v2 parser keeps a quoted ``availability`` ("0.9995") as a string
+            # and these checks then compare it with a float. A TypeError
+            # anywhere else, or here with every availability a number, is a
+            # bug and propagates.
+            try:
+                warnings.extend(manifest.validate_contracts())
+                if contract_registry is not None:
+                    warnings.extend(
+                        validate_dependency_expectations(manifest, contract_registry)
+                    )
+                    warnings.extend(
+                        validate_transitive_feasibility(manifest, contract_registry)
+                    )
+            except TypeError:
+                message = _non_numeric_availability_error(manifest, contract_registry)
+                if message is None:
+                    raise
+                return ValidationResult(valid=False, errors=[message])
 
         except ManifestLoadError as e:
             return ValidationResult(
@@ -198,7 +246,7 @@ def validate_service_file(
                 )
 
     # Validate service name format
-    # Shared with cli/init.py's guard via specs/manifest (opensrm-t4rd). Two
+    # Shared with cli/init.py's guard via specs/names (opensrm-t4rd). Two
     # copies disagreed, so init exited 0 writing names this rejected.
     if not is_valid_service_name(service_context.name):
         errors.append(

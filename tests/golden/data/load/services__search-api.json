@@ -1,0 +1,53 @@
+{
+  "authored_type": "api",
+  "dependencies": [
+    [
+      "search-index",
+      "database",
+      true
+    ],
+    [
+      "query-cache",
+      "cache",
+      false
+    ],
+    [
+      "product-catalog",
+      "api",
+      true
+    ],
+    [
+      "user-profile",
+      "api",
+      false
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "search-availability",
+      "availability",
+      99.5,
+      "30d",
+      true
+    ],
+    [
+      "search-latency-p95",
+      "latency",
+      99.0,
+      "30d",
+      true
+    ],
+    [
+      "search-quality",
+      "custom",
+      95.0,
+      "7d",
+      true
+    ]
+  ],
+  "source_format": "legacy",
+  "type": "api",
+  "warnings": []
+}

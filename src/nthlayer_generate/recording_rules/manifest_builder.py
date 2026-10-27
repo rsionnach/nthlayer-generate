@@ -2,7 +2,9 @@
 
 This module provides recording rule generation for:
 - Standard SLOs (availability, latency, error_rate, throughput)
-- AI Gate judgment SLOs (reversal_rate, high_confidence_failure, calibration, feedback_latency)
+- AI Gate judgment SLOs (reversal_rate, high_confidence_failure)
+- AI Gate judgment thresholds (calibration, feedback_latency), from nthlayer-common's
+  JudgmentThreshold (opensrm-wo62.1, spec §5.3)
 
 The generated metrics are compatible with Backstage plugins:
 - SloCard expects: slo:error_budget_remaining:ratio{service="..."}
@@ -11,8 +13,14 @@ The generated metrics are compatible with Backstage plugins:
 
 from __future__ import annotations
 
+from nthlayer_common.manifest import (
+    JudgmentThreshold,
+    ReliabilityManifest,
+    SLODefinition,
+    duration_seconds,
+)
+
 from nthlayer_generate.recording_rules.models import RecordingRule, RecordingRuleGroup
-from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
 
 
 class ManifestRecordingRuleBuilder:
@@ -51,20 +59,20 @@ class ManifestRecordingRuleBuilder:
             if slo_group.rules:
                 groups.append(slo_group)
 
-        # AI gate judgment SLO metrics
+        # AI gate judgment metrics: judgment SLOs, then judgment thresholds
         if self.manifest.is_ai_gate():
-            judgment_slos = self.manifest.get_judgment_slos()
-            if judgment_slos:
-                judgment_group = RecordingRuleGroup(
-                    name=f"{self.manifest.name}_judgment_metrics",
-                    interval="30s",
-                )
-                for slo in judgment_slos:
-                    rules = self._build_judgment_slo_rules(slo)
-                    for rule in rules:
-                        judgment_group.add_rule(rule)
-                if judgment_group.rules:
-                    groups.append(judgment_group)
+            judgment_group = RecordingRuleGroup(
+                name=f"{self.manifest.name}_judgment_metrics",
+                interval="30s",
+            )
+            for slo in self.manifest.get_judgment_slos():
+                for rule in self._build_judgment_slo_rules(slo):
+                    judgment_group.add_rule(rule)
+            for threshold in self.manifest.get_judgment_thresholds():
+                for rule in self._build_judgment_threshold_rules(threshold):
+                    judgment_group.add_rule(rule)
+            if judgment_group.rules:
+                groups.append(judgment_group)
 
         # Service health metrics
         health_group = self._build_health_rules()
@@ -333,28 +341,55 @@ class ManifestRecordingRuleBuilder:
     def _build_judgment_slo_rules(self, slo: SLODefinition) -> list[RecordingRule]:
         """Build recording rules for AI gate judgment SLOs.
 
+        Dispatches on ``slo.judgment_type``: v2 judgment SLO names are
+        free-form (spec D12). Types without rules here emit nothing.
+
         These metrics are expected by Backstage JudgmentCard:
         - ai_gate:reversal_rate:ratio{service="..."}
         - ai_gate:high_confidence_failure:ratio{service="..."}
-        - ai_gate:calibration:ece{service="..."}
-        - ai_gate:feedback_latency:bucket{service="..."}
         """
-        rules: list[RecordingRule] = []
         service = self.manifest.name
-        slo_name = slo.name
         target = slo.target
         window = slo.window
+        # calibration and feedback_latency are JudgmentThresholds in common's
+        # model, never judgment SLOs: _build_judgment_threshold_rules owns them.
+        if slo.judgment_type == "reversal_rate":
+            return self._build_reversal_rate_rules(service, target, window)
+        if slo.judgment_type == "high_confidence_failure":
+            return self._build_high_confidence_failure_rules(service, target, window)
+        return []
 
-        if slo_name == "reversal_rate":
-            rules.extend(self._build_reversal_rate_rules(service, target, window))
-        elif slo_name == "high_confidence_failure":
-            rules.extend(self._build_high_confidence_failure_rules(service, target, window))
-        elif slo_name == "calibration":
-            rules.extend(self._build_calibration_rules(service, target, window))
-        elif slo_name == "feedback_latency":
-            rules.extend(self._build_feedback_latency_rules(service, target, window))
+    def _build_judgment_threshold_rules(self, threshold: JudgmentThreshold) -> list[RecordingRule]:
+        """Build recording rules for one judgment threshold (spec §5.3).
 
-        return rules
+        - calibration: emitted when ``maximum_expected_calibration_error`` is
+          declared; ``target`` is ``str(bound)``.
+        - feedback_latency: ``:p50/:p95/:p99`` always; ``:bucket`` when
+          ``maximum_p50`` is declared, with ``le`` and ``target`` both
+          ``str(duration_seconds(maximum_p50))``.
+
+        Brier-only calibration, p90-only feedback latency, and the segments,
+        stability and audit_backlog types emit nothing yet (opensrm-wo62.2).
+        """
+        service = self.manifest.name
+        bounds = threshold.bounds
+
+        if threshold.type == "calibration":
+            ece = bounds.get("maximum_expected_calibration_error")
+            if ece is None:
+                return []
+            return self._build_calibration_rules(service, float(ece))
+        if threshold.type == "feedback_latency":
+            p50 = bounds.get("maximum_p50")
+            target_seconds = None
+            if p50 is not None:
+                # A Duration string such as "1h" (validated by common); a
+                # float here must fail loudly, not stringify to "3600.0".
+                if not isinstance(p50, str):
+                    raise TypeError(f"maximum_p50 is not a Duration: {p50!r}")
+                target_seconds = duration_seconds(p50)
+            return self._build_feedback_latency_rules(service, target_seconds)
+        return []
 
     def _build_reversal_rate_rules(
         self, service: str, target: float, window: str
@@ -454,9 +489,7 @@ class ManifestRecordingRuleBuilder:
 
         return rules
 
-    def _build_calibration_rules(
-        self, service: str, target: float, window: str
-    ) -> list[RecordingRule]:
+    def _build_calibration_rules(self, service: str, target: float) -> list[RecordingRule]:
         """Build rules for calibration (Expected Calibration Error).
 
         Measures how well confidence scores match actual accuracy.
@@ -497,12 +530,13 @@ class ManifestRecordingRuleBuilder:
         return rules
 
     def _build_feedback_latency_rules(
-        self, service: str, target: float, window: str
+        self, service: str, target_seconds: float | None
     ) -> list[RecordingRule]:
         """Build rules for feedback latency (time to ground truth).
 
         Measures how long until we know if a decision was correct.
-        Important for model improvement and trust building.
+        Important for model improvement and trust building. The ``:bucket``
+        rule is emitted only when ``target_seconds`` is given.
         """
         rules = []
 
@@ -522,9 +556,11 @@ class ManifestRecordingRuleBuilder:
                 )
             )
 
+        if target_seconds is None:
+            return rules
+
         # Feedback latency bucket recording (for Backstage JudgmentCard)
         # Records what percentage of feedback arrives within target time
-        target_seconds = target
         rules.append(
             RecordingRule(
                 record="ai_gate:feedback_latency:bucket",
@@ -535,7 +571,7 @@ class ManifestRecordingRuleBuilder:
                 ),
                 labels={
                     "service": service,
-                    "target": str(target),
+                    "target": str(target_seconds),
                     "slo": "feedback_latency",
                 },
             )
@@ -625,7 +661,7 @@ def build_recording_rules_from_manifest(
         List of RecordingRuleGroup objects
 
     Example:
-        >>> from nthlayer_generate.specs import load_manifest
+        >>> from nthlayer_common.manifest import load_manifest
         >>> manifest = load_manifest("payment-api.yaml")
         >>> groups = build_recording_rules_from_manifest(manifest)
         >>> yaml_output = create_rule_groups(groups)

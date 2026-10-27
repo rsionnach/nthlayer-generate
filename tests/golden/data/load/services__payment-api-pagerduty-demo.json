@@ -1,0 +1,36 @@
+{
+  "authored_type": "api",
+  "dependencies": [
+    [
+      "payments-db",
+      "database",
+      true
+    ],
+    [
+      "session-cache",
+      "database",
+      false
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "availability",
+      "availability",
+      99.95,
+      "30d",
+      false
+    ],
+    [
+      "latency-p95",
+      "latency",
+      99.0,
+      "30d",
+      false
+    ]
+  ],
+  "source_format": "legacy",
+  "type": "api",
+  "warnings": []
+}

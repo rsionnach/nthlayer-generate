@@ -1,0 +1,81 @@
+{
+  "exit": 0,
+  "files": {
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": null,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/email-sender/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": "https://wiki/runbooks/email-sender",
+        "serviceManifest": "examples/opensrm/worker.reliability.yaml",
+        "slothSpec": "generated/email-sender/sloth/email-sender.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": "Processes email jobs from the notification queue",
+        "name": "email-sender",
+        "supportModel": "self",
+        "team": "notifications",
+        "tier": "standard",
+        "type": "worker"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": "Worker process availability",
+          "name": "availability",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.9,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": "Sustained processing rate",
+          "name": "throughput",
+          "sloType": "throughput",
+          "status": null,
+          "target": 100.0,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": "Job failure rate",
+          "name": "error_rate",
+          "sloType": "error_rate",
+          "status": null,
+          "target": 0.5,
+          "window": "7d"
+        }
+      ]
+    }
+  }
+}

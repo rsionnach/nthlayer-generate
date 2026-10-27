@@ -1,0 +1,18 @@
+{
+  "reports": [
+    {
+      "rules_evaluated": 4,
+      "service": "admin-dashboard-api",
+      "violations": [
+        {
+          "field_path": "ownership.runbook",
+          "message": "Required field 'ownership.runbook' is missing or empty",
+          "rule_name": "require-ownership",
+          "rule_type": "required_fields",
+          "severity": "error"
+        }
+      ]
+    }
+  ],
+  "rules_evaluated": 4
+}

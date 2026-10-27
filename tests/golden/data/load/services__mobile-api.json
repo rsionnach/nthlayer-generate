@@ -1,0 +1,53 @@
+{
+  "authored_type": "api",
+  "dependencies": [
+    [
+      "mobile-cache",
+      "database",
+      true
+    ],
+    [
+      "auth-api",
+      "api",
+      true
+    ],
+    [
+      "user-service",
+      "api",
+      true
+    ],
+    [
+      "content-api",
+      "api",
+      true
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "latency-p95",
+      "latency",
+      95.0,
+      "30d",
+      false
+    ],
+    [
+      "latency-p99",
+      "latency",
+      90.0,
+      "30d",
+      true
+    ],
+    [
+      "auth-success-rate",
+      "availability",
+      99.9,
+      "30d",
+      true
+    ]
+  ],
+  "source_format": "legacy",
+  "type": "api",
+  "warnings": []
+}

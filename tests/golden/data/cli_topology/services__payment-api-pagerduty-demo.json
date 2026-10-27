@@ -1,0 +1,50 @@
+{
+  "exit": 0,
+  "topology": {
+    "edges": [
+      {
+        "confidence": 1.0,
+        "critical": true,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "payment-api",
+        "target": "payments-db"
+      },
+      {
+        "confidence": 1.0,
+        "critical": false,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "payment-api",
+        "target": "session-cache"
+      }
+    ],
+    "exported_at": "<masked>",
+    "metadata": {
+      "providers_used": []
+    },
+    "nodes": [
+      {
+        "name": "payment-api",
+        "team": "payments",
+        "tier": "critical",
+        "type": "api"
+      },
+      {
+        "name": "payments-db"
+      },
+      {
+        "name": "session-cache"
+      }
+    ],
+    "stats": {
+      "edge_count": 2,
+      "node_count": 3
+    },
+    "version": "1.0"
+  }
+}

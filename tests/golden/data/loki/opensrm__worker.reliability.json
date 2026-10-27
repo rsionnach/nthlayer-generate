@@ -1,0 +1,114 @@
+{
+  "groups": [
+    {
+      "name": "email-sender",
+      "rules": [
+        {
+          "alert": "email-sender_ApplicationError",
+          "annotations": {
+            "description": "Error-level log entries detected in application logs.",
+            "summary": "[email-sender] Application errors detected"
+          },
+          "expr": "sum(count_over_time({app=\"email-sender\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+          "for": "5m",
+          "labels": {
+            "service": "email-sender",
+            "severity": "warning",
+            "source": "service",
+            "team": "notifications",
+            "technology": "worker",
+            "tier": "standard"
+          }
+        },
+        {
+          "alert": "email-sender_ApplicationHighErrorRate",
+          "annotations": {
+            "description": "Application is experiencing a high rate of errors.",
+            "summary": "[email-sender] High error rate in application"
+          },
+          "expr": "sum(count_over_time({app=\"email-sender\"} |~ \"(?i)error|exception\" [5m])) > 100",
+          "for": "5m",
+          "labels": {
+            "service": "email-sender",
+            "severity": "critical",
+            "source": "service",
+            "team": "notifications",
+            "technology": "worker",
+            "tier": "standard"
+          }
+        },
+        {
+          "alert": "email-sender_ApplicationPanic",
+          "annotations": {
+            "description": "Application appears to have crashed or panicked.",
+            "summary": "[email-sender] Application panic/crash detected"
+          },
+          "expr": "count_over_time({app=\"email-sender\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+          "for": "0m",
+          "labels": {
+            "service": "email-sender",
+            "severity": "critical",
+            "source": "service",
+            "team": "notifications",
+            "technology": "worker",
+            "tier": "standard"
+          }
+        },
+        {
+          "alert": "email-sender_sqs_ApplicationError",
+          "annotations": {
+            "description": "Error-level log entries detected in application logs.",
+            "summary": "[email-sender/sqs] Application errors detected"
+          },
+          "expr": "sum(count_over_time({app=\"sqs\", service=\"email-sender\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+          "for": "5m",
+          "labels": {
+            "dependency": "sqs",
+            "service": "email-sender",
+            "severity": "warning",
+            "source": "dependency",
+            "team": "notifications",
+            "technology": "sqs",
+            "tier": "standard"
+          }
+        },
+        {
+          "alert": "email-sender_sqs_ApplicationHighErrorRate",
+          "annotations": {
+            "description": "Application is experiencing a high rate of errors.",
+            "summary": "[email-sender/sqs] High error rate in application"
+          },
+          "expr": "sum(count_over_time({app=\"sqs\", service=\"email-sender\"} |~ \"(?i)error|exception\" [5m])) > 100",
+          "for": "5m",
+          "labels": {
+            "dependency": "sqs",
+            "service": "email-sender",
+            "severity": "critical",
+            "source": "dependency",
+            "team": "notifications",
+            "technology": "sqs",
+            "tier": "standard"
+          }
+        },
+        {
+          "alert": "email-sender_sqs_ApplicationPanic",
+          "annotations": {
+            "description": "Application appears to have crashed or panicked.",
+            "summary": "[email-sender/sqs] Application panic/crash detected"
+          },
+          "expr": "count_over_time({app=\"sqs\", service=\"email-sender\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+          "for": "0m",
+          "labels": {
+            "dependency": "sqs",
+            "service": "email-sender",
+            "severity": "critical",
+            "source": "dependency",
+            "team": "notifications",
+            "technology": "sqs",
+            "tier": "standard"
+          }
+        }
+      ]
+    }
+  ]
+}

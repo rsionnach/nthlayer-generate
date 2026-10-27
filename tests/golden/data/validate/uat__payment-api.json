@@ -1,0 +1,9 @@
+{
+  "errors": [
+    "Resource Alerts/alert-rules: Invalid kind 'Alerts'. Must be one of: Dependencies, DeploymentGate, Observability, PagerDuty, PolicyRules, SLO"
+  ],
+  "valid": false,
+  "warnings": [
+    "Resource 'Alerts/alert-rules': Uses unknown template variables: NTHLAYER_SLACK_WEBHOOK_ALERT"
+  ]
+}

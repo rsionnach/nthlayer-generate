@@ -1,0 +1,37 @@
+{
+  "exit": 0,
+  "topology": {
+    "edges": [
+      {
+        "confidence": 1.0,
+        "critical": false,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "notification-worker",
+        "target": "notification_cache"
+      }
+    ],
+    "exported_at": "<masked>",
+    "metadata": {
+      "providers_used": []
+    },
+    "nodes": [
+      {
+        "name": "notification-worker",
+        "team": "platform",
+        "tier": "high",
+        "type": "worker"
+      },
+      {
+        "name": "notification_cache"
+      }
+    ],
+    "stats": {
+      "edge_count": 1,
+      "node_count": 2
+    },
+    "version": "1.0"
+  }
+}

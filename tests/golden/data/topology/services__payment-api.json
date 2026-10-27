@@ -1,0 +1,73 @@
+{
+  "edges": [
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "payment-api",
+      "target": "payments-db"
+    },
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "payment-api",
+      "target": "user-service"
+    },
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "payment-api",
+      "target": "fraud-detection"
+    },
+    {
+      "confidence": 1.0,
+      "critical": false,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "payment-api",
+      "target": "inventory-service"
+    }
+  ],
+  "exported_at": "<masked>",
+  "metadata": {
+    "providers_used": []
+  },
+  "nodes": [
+    {
+      "name": "payment-api",
+      "team": "payments",
+      "tier": "critical",
+      "type": "api"
+    },
+    {
+      "name": "payments-db"
+    },
+    {
+      "name": "user-service"
+    },
+    {
+      "name": "fraud-detection"
+    },
+    {
+      "name": "inventory-service"
+    }
+  ],
+  "stats": {
+    "edge_count": 4,
+    "node_count": 5
+  },
+  "version": "1.0"
+}

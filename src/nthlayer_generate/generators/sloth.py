@@ -12,8 +12,8 @@ from typing import Any
 
 import structlog
 import yaml
+from nthlayer_common.manifest import ReliabilityManifest, SLODefinition
 
-from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
 from nthlayer_generate.specs.models import ServiceContext
 from nthlayer_generate.specs.parser import parse_service_file, render_resource_spec
 
@@ -358,6 +358,11 @@ def convert_indicator_to_sli(indicator: dict[str, Any]) -> dict[str, Any]:
     elif indicator_type == "latency":
         # For latency, query should return p95/p99 value
         # Sloth needs error (over threshold) and total queries
+        if not query:
+            # Nothing to translate: building from an empty query yields
+            # " > t" and ")", which are not PromQL. Empty queries match the
+            # generic branch and the warning logged for a missing query.
+            return {"events": {"error_query": "", "total_query": ""}}
         threshold_ms = indicator.get("threshold_ms", 1000)
         _percentile = indicator.get("percentile", 95)  # Reserved for future use
 

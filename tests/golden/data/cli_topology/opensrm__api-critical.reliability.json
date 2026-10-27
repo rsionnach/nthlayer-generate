@@ -1,0 +1,66 @@
+{
+  "exit": 0,
+  "topology": {
+    "edges": [
+      {
+        "confidence": 1.0,
+        "critical": true,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "slo_contract": {
+          "availability": 99.99
+        },
+        "source": "payment-api",
+        "target": "postgres-primary"
+      },
+      {
+        "confidence": 1.0,
+        "critical": false,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "payment-api",
+        "target": "redis-cache"
+      },
+      {
+        "confidence": 1.0,
+        "critical": true,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "payment-api",
+        "target": "stripe-api"
+      }
+    ],
+    "exported_at": "<masked>",
+    "metadata": {
+      "providers_used": []
+    },
+    "nodes": [
+      {
+        "name": "payment-api",
+        "team": "payments",
+        "tier": "critical",
+        "type": "api"
+      },
+      {
+        "name": "postgres-primary"
+      },
+      {
+        "name": "redis-cache"
+      },
+      {
+        "name": "stripe-api"
+      }
+    ],
+    "stats": {
+      "edge_count": 3,
+      "node_count": 4
+    },
+    "version": "1.0"
+  }
+}

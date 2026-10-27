@@ -1,0 +1,6 @@
+{
+  "exit": 0,
+  "files": {
+    "notification-worker.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: notification-worker.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: notification-worker\n  team: platform\n  tier: high\n  description: Background worker for email, SMS, and push notifications\nspec:\n  type: worker\n  slos:\n    delivery-success:\n      type: availability\n      target: 99.5\n      window: 30d\n    processing-latency-p95:\n      type: latency\n      target: 98.0\n      window: 30d\n    queue-lag:\n      type: availability\n      target: 99.0\n      window: 30d\n  dependencies:\n  - name: notification_cache\n    type: database\n    critical: false\n  ownership:\n    team: platform\n"
+  }
+}

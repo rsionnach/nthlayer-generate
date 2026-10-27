@@ -134,7 +134,7 @@ OpenSRM supports 7 service types, each with appropriate default SLOs and metric 
 | Cross-service validation | Not supported | `ContractRegistry` + `--registry-dir` |
 | Service types | api, worker, stream | api, worker, stream, ai-gate, batch, database, web |
 
-Both formats are fully supported. NthLayer auto-detects the format when loading files.
+Both formats are fully supported. NthLayer auto-detects the format when loading files. Manifests are read through `nthlayer_common.manifest` (since generate 3.0.0), which also accepts OpenSRM v2 manifests.
 
 ## Minimal Example
 

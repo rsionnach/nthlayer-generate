@@ -1,0 +1,13 @@
+{
+  "authored_type": null,
+  "dependencies": null,
+  "error": [
+    "ManifestLoadError",
+    "Error parsing OpenSLO documents: Cannot infer slo_type for OpenSLO 'reconciliation-success-rate'. The indicator shape is ambiguous. Add an opensrm.nthlayer.io/slo-type annotation."
+  ],
+  "ok": false,
+  "slos": null,
+  "source_format": null,
+  "type": null,
+  "warnings": []
+}

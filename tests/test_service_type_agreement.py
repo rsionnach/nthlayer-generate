@@ -22,6 +22,7 @@ from __future__ import annotations
 import pathlib
 
 import pytest
+from nthlayer_common.manifest import ReliabilityManifest
 from nthlayer_common.manifest.models import (
     SERVICE_TYPE_ALIASES,
     VALID_SERVICE_TYPES,
@@ -30,78 +31,13 @@ from nthlayer_common.manifest.models import (
 
 import nthlayer_generate
 from nthlayer_generate.cli.init import SERVICE_TYPES
-from nthlayer_generate.specs.manifest import ReliabilityManifest
 from nthlayer_generate.specs.validator import validate_service_file
 
-# Values that must behave identically on both sides. Canonical types and
-# extension types are valid; aliases resolve; everything else is rejected.
-_ACCEPTED = sorted(VALID_SERVICE_TYPES) + ["x-web", "x-ml"] + sorted(SERVICE_TYPE_ALIASES)
-# NOT "web": since opensrm-ih0v it is an ALIAS that resolves to x-web, so it
-# appears in _ACCEPTED via SERVICE_TYPE_ALIASES. What must be rejected is
-# generate STORING it — pinned by test_generate_stores_x_web_for_a_web_input.
-_REJECTED = ["ml", "Web", "x-", "x-Web", "nonsense", ""]
-
-
-@pytest.mark.parametrize("service_type", _ACCEPTED)
-def test_generate_accepts_what_common_accepts(service_type: str):
-    """Anything nthlayer-common resolves, generate must accept.
-
-    Includes aliases: generate has always accepted them and must keep
-    doing so, because they resolve before validation on both sides.
-    """
-    assert resolve_service_type(service_type) is not None, (
-        f"test premise broken: nthlayer-common no longer accepts {service_type!r}"
-    )
-
-    manifest = ReliabilityManifest(name="svc", team="t", tier="critical", type=service_type)
-
-    assert manifest.type == resolve_service_type(service_type), (
-        f"generate stored {manifest.type!r} for input {service_type!r}, but "
-        f"nthlayer-common resolves it to {resolve_service_type(service_type)!r}"
-    )
-
-
-@pytest.mark.parametrize("service_type", _REJECTED)
-def test_generate_rejects_what_common_rejects(service_type: str):
-    """And the converse — generate must not be WIDER than common either.
-
-    ``ml`` is the live one: cli/init.py offers it in its type menu, and
-    neither generate's own validator nor nthlayer-common accepts it. That
-    is a separate pre-existing defect (its own bead), but this test pins
-    the boundary so closing it cannot silently widen generate.
-    """
-    assert resolve_service_type(service_type) is None, (
-        f"test premise broken: nthlayer-common now accepts {service_type!r}"
-    )
-
-    with pytest.raises(ValueError):
-        ReliabilityManifest(name="svc", team="t", tier="critical", type=service_type)
-
-
-def test_generate_stores_x_web_for_a_web_input():
-    """The concrete incompatibility, pinned.
-
-    An author writing ``type: web`` gets ``x-web`` from nthlayer-common.
-    Generate previously stored ``web`` and then rejected ``x-web``, so a
-    manifest that round-tripped through common could not be read back.
-    """
-    manifest = ReliabilityManifest(name="svc", team="t", tier="critical", type="web")
-
-    assert manifest.type == "x-web"
-
-
-def test_generate_does_not_store_aliases():
-    """Aliases are input conveniences, never stored values.
-
-    generate's specs/models.py listed ``background-job`` and ``pipeline``
-    as VALID types rather than merely as aliases, so generate would have
-    accepted a manifest that *stored* one — which schema.json rejects and
-    nthlayer-common's design explicitly prevents.
-    """
-    for alias, canonical in SERVICE_TYPE_ALIASES.items():
-        manifest = ReliabilityManifest(name="svc", team="t", tier="critical", type=alias)
-        assert manifest.type == canonical
-        assert manifest.type not in SERVICE_TYPE_ALIASES
+# The accept/reject/stores-x-web/no-stored-alias tests that compared
+# generate's manifest model with nthlayer-common's were deleted with
+# generate's model (opensrm-wo62.1): generate now uses common's model, so
+# they compared common with itself. common pins that boundary in
+# tests/test_manifest_service_type.py.
 
 
 @pytest.mark.parametrize("service_type", ["x-web", "worker", "background-job"])
@@ -204,28 +140,6 @@ def test_init_emits_latency_slo_for_http_service_types(menu_type: str):
     assert "latency-p95" in yaml_out, f"--type {menu_type} produced a manifest with no latency SLO"
 
 
-def test_manifest_module_re_exports_the_whole_rule():
-    """specs/manifest.py is the import path consumers already use, so all
-    three parts of the rule must be reachable from it — the two sets and
-    the predicate that actually decides.
-
-    Asserted by importing, not by inspecting ``__all__``: this module does
-    not declare one, so an ``__all__``-based check would pass vacuously
-    while the symbols were missing.
-    """
-    from nthlayer_generate.specs.manifest import (
-        SERVICE_TYPE_ALIASES,
-        VALID_SERVICE_TYPES,
-        ReliabilityManifest,
-        is_valid_service_type,
-    )
-
-    assert is_valid_service_type("x-web")
-    assert "web" not in VALID_SERVICE_TYPES
-    assert SERVICE_TYPE_ALIASES["web"] == "x-web"
-    assert ReliabilityManifest is not None
-
-
 # =============================================================================
 # ${type} is a data-plane value, not a manifest field
 # =============================================================================
@@ -293,8 +207,9 @@ def test_sloth_indicator_query_keeps_the_authored_type(tmp_path, authored: str):
     manifest and checked ``authored_type``, which duplicated coverage
     above and left sloth.py itself untested.
     """
+    from nthlayer_common.manifest import SLODefinition
+
     from nthlayer_generate.generators.sloth import generate_sloth_from_manifest
-    from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
 
     manifest = ReliabilityManifest(
         name="shop",
@@ -328,15 +243,19 @@ def test_authored_type_survives_manifest_to_context_conversion():
     as_service_context() / to_service_context() built a ServiceContext from
     the RESOLVED type, so authored_type was recomputed from `x-web` and the
     authored `web` was destroyed — reopening the zero-series matcher bug on
-    exactly the path specs/loader.py:load_as_legacy uses.
+    exactly the path specs/loader.py:load_as_legacy used. Since
+    opensrm-wo62.1 the hop is specs/context.py:service_context_from_manifest
+    over nthlayer-common's model; ``to_dict()["type"]`` is what
+    to_service_context()["type"] returned.
     """
-    from nthlayer_generate.specs.manifest import ReliabilityManifest
+    from nthlayer_generate.specs.context import service_context_from_manifest
 
     manifest = ReliabilityManifest(name="shop", team="t", tier="critical", type="web")
 
     assert manifest.authored_type == "web"
-    assert manifest.as_service_context().authored_type == "web"
-    assert manifest.to_service_context()["type"] == "web"
+    context = service_context_from_manifest(manifest)
+    assert context.authored_type == "web"
+    assert context.to_dict()["type"] == "web"
 
 
 def test_authored_type_survives_dataclasses_replace():

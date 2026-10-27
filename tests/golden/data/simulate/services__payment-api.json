@@ -1,0 +1,68 @@
+{
+  "dependency_models": [
+    {
+      "critical": true,
+      "degradation_factor": 0.99,
+      "from_service": "payment-api",
+      "to_service": "payments-db"
+    },
+    {
+      "critical": true,
+      "degradation_factor": 0.99,
+      "from_service": "payment-api",
+      "to_service": "user-service"
+    },
+    {
+      "critical": true,
+      "degradation_factor": 0.99,
+      "from_service": "payment-api",
+      "to_service": "fraud-detection"
+    },
+    {
+      "critical": false,
+      "degradation_factor": 0.99,
+      "from_service": "payment-api",
+      "to_service": "inventory-service"
+    }
+  ],
+  "failure_models": [
+    {
+      "availability_target": 0.9995,
+      "mtbf_distribution": "exponential",
+      "mtbf_hours": 1999.0000000002203,
+      "mtbf_shape": 1.0,
+      "mttr_distribution": "lognormal",
+      "mttr_hours": 1.0,
+      "mttr_shape": 0.5,
+      "name": "payment-api"
+    }
+  ],
+  "result": {
+    "error_budget_forecast": {
+      "p50": 0.2807,
+      "p75": 1.0,
+      "p95": 1.0
+    },
+    "exit_code": 1,
+    "horizon_days": 90,
+    "num_runs": 200,
+    "p_meeting_sla": 0.605,
+    "services": {
+      "payment-api": {
+        "availability_p50": 0.99964,
+        "availability_p95": 1.0,
+        "availability_p99": 1.0,
+        "downtime_contribution": 1.0,
+        "is_weakest_link": true,
+        "name": "payment-api",
+        "p_meeting_sla": 0.605,
+        "target": 0.9995
+      }
+    },
+    "target_service": "payment-api",
+    "target_sla": 0.9995,
+    "weakest_link": "payment-api",
+    "weakest_link_contribution": 1.0,
+    "what_if_results": []
+  }
+}

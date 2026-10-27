@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 import pytest
+from nthlayer_common.manifest import (
+    Dependency,
+    ReliabilityManifest,
+    SLODefinition,
+)
 
 from nthlayer_generate.simulate.graph import (
     build_dependency_models,
     build_failure_models,
-)
-from nthlayer_generate.specs.manifest import (
-    Dependency,
-    ReliabilityManifest,
-    SLODefinition,
 )
 
 
@@ -25,7 +25,13 @@ def _make_manifest(
         team="test",
         tier="standard",
         type="api",
-        slos=[SLODefinition(name="availability", target=avail_target, window="30d")],
+        # slo_type: srm/v1 SLOs are keyed by type
+        # (opensrm spec/v1/schema.json @859424a /definitions/SLOs, additionalProperties: false)
+        slos=[
+            SLODefinition(
+                name="availability", target=avail_target, slo_type="availability", window="30d"
+            )
+        ],
         dependencies=deps or [],
     )
 

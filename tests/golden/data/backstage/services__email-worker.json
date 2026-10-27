@@ -1,0 +1,48 @@
+{
+  "deploymentGate": {
+    "blockingThreshold": null,
+    "budgetRemainingPercent": null,
+    "message": null,
+    "recommendations": [],
+    "status": "APPROVED",
+    "warningThreshold": 20.0
+  },
+  "errorBudget": {
+    "burnRate": null,
+    "consumedMinutes": null,
+    "remainingMinutes": null,
+    "remainingPercent": null,
+    "status": null,
+    "totalMinutes": null
+  },
+  "generatedAt": "<masked>",
+  "links": {
+    "alertsYaml": "generated/email-worker/alerts.yaml",
+    "grafanaDashboard": null,
+    "runbook": null,
+    "serviceManifest": "examples/services/email-worker.yaml",
+    "slothSpec": "generated/email-worker/sloth/email-worker.yaml"
+  },
+  "schemaVersion": "v1",
+  "score": {
+    "band": null,
+    "components": {
+      "deploySuccessRate": null,
+      "errorBudgetRemaining": null,
+      "incidentScore": null,
+      "sloCompliance": null
+    },
+    "grade": null,
+    "score": null,
+    "trend": null
+  },
+  "service": {
+    "description": null,
+    "name": "email-worker",
+    "supportModel": "self",
+    "team": "notifications",
+    "tier": "standard",
+    "type": "worker"
+  },
+  "slos": []
+}

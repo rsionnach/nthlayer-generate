@@ -138,6 +138,53 @@ $ nthlayer validate service.yaml --policies policies.yaml
 
 ---
 
+## ⚠️ Upgrading to 3.0.0: manifests load through `nthlayer-common`
+
+generate no longer carries its own manifest model. It reads manifests through
+[`nthlayer_common.manifest`](https://github.com/rsionnach/nthlayer-common), the
+same model the rest of the ecosystem uses, so **OpenSRM v2 manifests are
+accepted** alongside `srm/v1`.
+
+**Breaking, for code that imports generate:**
+
+- `nthlayer_generate.specs` no longer exports `load_manifest`,
+  `ReliabilityManifest`, `SLODefinition` or `ManifestLoadError`, and the
+  modules `specs.manifest`, `specs.loader` and `specs.opensrm_parser` are
+  removed. Import them from `nthlayer_common.manifest`.
+- Every `*_from_manifest` function takes `nthlayer_common`'s
+  `ReliabilityManifest`.
+- `ContractRegistry.get_contract` is replaced by `get_contracts` /
+  `promised_availability`.
+
+**Behaviour changes in manifests:**
+
+- srm/v1 SLOs declare PromQL under `indicator.query`. A top-level `query:` is
+  not read (opensrm-0i5h).
+- Legacy `service.pagerduty` is no longer mapped to ownership. Declare a
+  `kind: PagerDuty` resource instead (OpenSRM spec section 3).
+- `calibration` and `feedback_latency` are judgment thresholds. Recording-rule
+  names are unchanged; the rules are emitted only when
+  `maximum_expected_calibration_error` (calibration) or `maximum_p50`
+  (feedback latency) is declared.
+
+**`migrate` / `validate`:**
+
+- `migrate` treats srm/v1 and v2 files as already migrated; it never
+  downgrades a v2 manifest.
+- `migrate` prints `Not carried into srm/v1: ...` warnings for anything srm/v1
+  cannot express, and still exits 0 (see bead opensrm-us97).
+- Legacy-format ai-gate manifests need `nthlayer-common>=5.5.0` for their
+  judgment SLOs and thresholds; generate 3.0.0 requires it.
+- `validate` does not run contract checks on legacy files.
+- `ContractRegistry` exposes `get_contracts(service) -> list[ReliabilityContract]`
+  and `promised_availability(service) -> float | None` (the minimum over the
+  contracts that declare one):
+
+  ```python
+  contracts = registry.get_contracts("checkout")
+  promised = registry.promised_availability("checkout")  # e.g. 99.9, or None
+  ```
+
 ## ⚠️ Upgrading: `type: web` becomes `x-web`
 
 If any `service.yaml` declares `type: web`, read this before upgrading.
@@ -195,7 +242,7 @@ dependencies:
   - redis
 ```
 
-NthLayer also supports the [OpenSRM format](https://rsionnach.github.io/nthlayer/concepts/opensrm/) (`apiVersion: opensrm/v1`) for contracts, deployment gates, and more. See [full spec reference](https://rsionnach.github.io/nthlayer/reference/service-yaml/) for all options.
+NthLayer also supports the [OpenSRM format](https://rsionnach.github.io/nthlayer/concepts/opensrm/) (`apiVersion: srm/v1`) for contracts, deployment gates, and more. See [full spec reference](https://rsionnach.github.io/nthlayer/reference/service-yaml/) for all options.
 
 ---
 
@@ -260,7 +307,7 @@ Works with: **GitHub Actions**, **GitLab CI**, **ArgoCD**, **Tekton**, **Jenkins
 - [x] Monte Carlo SLO simulation
 - [x] Policy validation (build-time)
 - [x] Topology export (JSON, Mermaid, DOT)
-- [x] OpenSRM manifest format (`opensrm/v1`)
+- [x] OpenSRM manifest format (`srm/v1`)
 - [x] Identity resolution & ownership
 - [x] Backstage entity generation
 - [x] Service documentation generation

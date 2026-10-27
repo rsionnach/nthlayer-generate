@@ -1,0 +1,36 @@
+{
+  "authored_type": "api",
+  "dependencies": [
+    [
+      "auth-db",
+      "database",
+      true
+    ],
+    [
+      "user-service",
+      "api",
+      true
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "latency-p95",
+      "latency",
+      99.5,
+      "30d",
+      false
+    ],
+    [
+      "token-generation-latency",
+      "latency",
+      99.0,
+      "30d",
+      true
+    ]
+  ],
+  "source_format": "legacy",
+  "type": "api",
+  "warnings": []
+}

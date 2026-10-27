@@ -1,0 +1,53 @@
+{
+  "authored_type": "stream",
+  "dependencies": [
+    [
+      "kafka-cluster",
+      "queue",
+      true
+    ],
+    [
+      "clickhouse",
+      "database",
+      true
+    ],
+    [
+      "fulfillment-api",
+      "api",
+      true
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "availability",
+      "availability",
+      99.95,
+      "30d",
+      false
+    ],
+    [
+      "throughput",
+      "throughput",
+      5000.0,
+      "30d",
+      false
+    ],
+    [
+      "error_rate",
+      "error_rate",
+      0.01,
+      "7d",
+      false
+    ]
+  ],
+  "source_format": "srm_v1",
+  "type": "stream",
+  "warnings": [
+    [
+      "TargetConventionWarning",
+      "Service 'order-events-processor' SLO 'error_rate' has target=0.01 which looks like a ratio (0.0-1.0). This codebase uses 0-100 percentage canonical for SLO targets — write '1.0' for a error_rate SLO. The OpenSLO surface converts to ratio at the boundary; manifest values stay in percentage."
+    ]
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "exit": 1,
+  "json": {
+    "error_budget_forecast": {
+      "p50": 0.10217,
+      "p75": 0.562452,
+      "p95": 1.0
+    },
+    "exit_code": 1,
+    "horizon_days": 90,
+    "num_runs": 200,
+    "p_meeting_sla": 0.55,
+    "services": {
+      "email-sender": {
+        "availability_p50": 0.999102,
+        "availability_p95": 1.0,
+        "availability_p99": 1.0,
+        "downtime_contribution": 1.0,
+        "is_weakest_link": true,
+        "name": "email-sender",
+        "p_meeting_sla": 0.55,
+        "target": 0.999
+      }
+    },
+    "target_service": "email-sender",
+    "target_sla": 0.999,
+    "weakest_link": "email-sender",
+    "weakest_link_contribution": 1.0,
+    "what_if_results": []
+  }
+}

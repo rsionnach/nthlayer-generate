@@ -5,10 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import yaml
+from nthlayer_common.manifest import ReliabilityManifest, SLODefinition
 
 from nthlayer_generate.policies.engine import PolicyEngine, _parse_rules
 from nthlayer_generate.policies.models import PolicyRule, PolicySeverity, RuleType
-from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
 
 
 def _make_manifest(**overrides) -> ReliabilityManifest:
@@ -120,7 +120,8 @@ class TestPolicyEngineEvaluate:
     def test_evaluate_mixed_rules(self):
         manifest = _make_manifest(
             tier="critical",
-            slos=[SLODefinition(name="avail", target=99.9)],
+            # srm/v1 SLO key = type (opensrm spec/v1/schema.json @859424a /definitions/SLOs)
+            slos=[SLODefinition(name="availability", target=99.9, slo_type="availability")],
         )
         engine = PolicyEngine(
             rules=[

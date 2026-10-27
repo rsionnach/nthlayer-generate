@@ -11,7 +11,10 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from nthlayer_common.manifest import ReliabilityManifest
 
 
 @dataclass
@@ -170,6 +173,17 @@ def _resolve_env(value: str | None) -> str | None:
     if value is None:
         return None
     return _ENV_RE.sub(lambda m: os.environ.get(m.group(1), m.group(0)), value)
+
+
+def manifest_alerting(manifest: ReliabilityManifest) -> AlertingConfig | None:
+    """The manifest's ``alerting`` block, parsed (opensrm-wo62.1, D3).
+
+    nthlayer-common keeps ``alerting`` as the raw dict it read (srm/v1
+    ``spec.alerting``, or a legacy ``kind: Alerts`` resource's ``spec``);
+    the format is generate's, so generate parses it here, at the use site.
+    A malformed block therefore fails where it is used, not at load.
+    """
+    return parse_alerting_config(manifest.alerting)
 
 
 def parse_alerting_config(data: dict[str, Any] | None) -> AlertingConfig | None:

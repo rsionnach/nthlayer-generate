@@ -1,0 +1,93 @@
+{
+  "alerts_triggered": 2,
+  "budgets": [
+    {
+      "budget": {
+        "burned_minutes": 108.0000000000001,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 108.0000000000001,
+        "total_minutes": 216.0000000000002
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "auth-api",
+      "slo_id": "auth-api-latency-p95",
+      "status": "warning",
+      "updated_at": "<masked>"
+    },
+    {
+      "budget": {
+        "burned_minutes": 216.0000000000002,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 216.0000000000002,
+        "total_minutes": 432.0000000000004
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "auth-api",
+      "slo_id": "auth-api-token-generation-latency",
+      "status": "warning",
+      "updated_at": "<masked>"
+    }
+  ],
+  "budgets_evaluated": 2,
+  "errors": [],
+  "events": [
+    {
+      "details": {
+        "budget_consumed_percent": 50.0,
+        "burned_minutes": 108.0000000000001,
+        "remaining_minutes": 108.0000000000001,
+        "status": "warning",
+        "threshold_percent": 50.0
+      },
+      "id": "<masked>",
+      "message": "⚠️ *Error Budget Alert*\n\n*Service:* `auth-api`\n*SLO:* `auth-api-latency-p95`\n*Consumed:* 50.0% (threshold: 50%)\n*Remaining:* 108.0 minutes\n*Status:* WARNING\n\nℹ️ Budget threshold exceeded. Monitor closely.\n",
+      "rule_id": "auth-api-latency-p95-budget-warning",
+      "service": "auth-api",
+      "severity": "warning",
+      "slo_id": "auth-api-latency-p95",
+      "title": "Error Budget Alert: auth-api",
+      "triggered_at": "<masked>"
+    },
+    {
+      "details": {
+        "budget_consumed_percent": 50.0,
+        "burned_minutes": 216.0000000000002,
+        "remaining_minutes": 216.0000000000002,
+        "status": "warning",
+        "threshold_percent": 50.0
+      },
+      "id": "<masked>",
+      "message": "⚠️ *Error Budget Alert*\n\n*Service:* `auth-api`\n*SLO:* `auth-api-token-generation-latency`\n*Consumed:* 50.0% (threshold: 50%)\n*Remaining:* 216.0 minutes\n*Status:* WARNING\n\nℹ️ Budget threshold exceeded. Monitor closely.\n",
+      "rule_id": "auth-api-token-generation-latency-budget-warning",
+      "service": "auth-api",
+      "severity": "warning",
+      "slo_id": "auth-api-token-generation-latency",
+      "title": "Error Budget Alert: auth-api",
+      "triggered_at": "<masked>"
+    }
+  ],
+  "explanations": [],
+  "notifications_sent": 0,
+  "rules_evaluated": 8,
+  "service": "auth-api"
+}

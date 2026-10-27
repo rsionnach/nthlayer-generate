@@ -1,0 +1,6 @@
+{
+  "error": [
+    "ValueError",
+    "Service 'api-minimal' has no availability SLO — required for simulation"
+  ]
+}

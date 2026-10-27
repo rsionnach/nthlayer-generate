@@ -1,0 +1,50 @@
+{
+  "exit": 0,
+  "topology": {
+    "edges": [
+      {
+        "confidence": 1.0,
+        "critical": true,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "auth-api",
+        "target": "auth-db"
+      },
+      {
+        "confidence": 1.0,
+        "critical": true,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "auth-api",
+        "target": "user-service"
+      }
+    ],
+    "exported_at": "<masked>",
+    "metadata": {
+      "providers_used": []
+    },
+    "nodes": [
+      {
+        "name": "auth-api",
+        "team": "platform",
+        "tier": "critical",
+        "type": "api"
+      },
+      {
+        "name": "auth-db"
+      },
+      {
+        "name": "user-service"
+      }
+    ],
+    "stats": {
+      "edge_count": 2,
+      "node_count": 3
+    },
+    "version": "1.0"
+  }
+}

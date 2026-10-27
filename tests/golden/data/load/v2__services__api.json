@@ -1,0 +1,13 @@
+{
+  "authored_type": null,
+  "dependencies": null,
+  "error": [
+    "ManifestLoadError",
+    "Error parsing OpenSLO documents: $ref './slos/checkout-latency-p99.yaml' not found at <opensrm>/spec/v2/examples/services/slos/checkout-latency-p99.yaml"
+  ],
+  "ok": false,
+  "slos": null,
+  "source_format": null,
+  "type": null,
+  "warnings": []
+}

@@ -8,8 +8,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from nthlayer_common.manifest import ReliabilityManifest
+
 from nthlayer_generate.policies.models import PolicyRule, PolicyViolation, RuleType
-from nthlayer_generate.specs.manifest import ReliabilityManifest
 
 
 def evaluate_required_fields(

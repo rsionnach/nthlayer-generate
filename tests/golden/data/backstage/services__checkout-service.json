@@ -1,0 +1,76 @@
+{
+  "deploymentGate": {
+    "blockingThreshold": 10.0,
+    "budgetRemainingPercent": null,
+    "message": null,
+    "recommendations": [],
+    "status": "APPROVED",
+    "warningThreshold": 20.0
+  },
+  "errorBudget": {
+    "burnRate": null,
+    "consumedMinutes": null,
+    "remainingMinutes": null,
+    "remainingPercent": null,
+    "status": null,
+    "totalMinutes": null
+  },
+  "generatedAt": "<masked>",
+  "links": {
+    "alertsYaml": "generated/checkout-service/alerts.yaml",
+    "grafanaDashboard": null,
+    "runbook": null,
+    "serviceManifest": "examples/services/checkout-service.yaml",
+    "slothSpec": "generated/checkout-service/sloth/checkout-service.yaml"
+  },
+  "schemaVersion": "v1",
+  "score": {
+    "band": null,
+    "components": {
+      "deploySuccessRate": null,
+      "errorBudgetRemaining": null,
+      "incidentScore": null,
+      "sloCompliance": null
+    },
+    "grade": null,
+    "score": null,
+    "trend": null
+  },
+  "service": {
+    "description": "Order checkout and payment processing service",
+    "name": "checkout-service",
+    "supportModel": "self",
+    "team": "commerce",
+    "tier": "critical",
+    "type": "api"
+  },
+  "slos": [
+    {
+      "currentValue": null,
+      "description": null,
+      "name": "availability",
+      "sloType": "availability",
+      "status": null,
+      "target": 99.95,
+      "window": "30d"
+    },
+    {
+      "currentValue": null,
+      "description": null,
+      "name": "latency-p95",
+      "sloType": "latency",
+      "status": null,
+      "target": 99.0,
+      "window": "30d"
+    },
+    {
+      "currentValue": null,
+      "description": null,
+      "name": "latency-p99",
+      "sloType": "latency",
+      "status": null,
+      "target": 95.0,
+      "window": "30d"
+    }
+  ]
+}

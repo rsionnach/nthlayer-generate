@@ -1,0 +1,41 @@
+{
+  "authored_type": "pipeline",
+  "dependencies": [
+    [
+      "analytics-warehouse",
+      "database",
+      true
+    ],
+    [
+      "raw-data-lake",
+      "database",
+      true
+    ],
+    [
+      "user-service",
+      "api",
+      true
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "freshness-p95",
+      "availability",
+      90.0,
+      "30d",
+      false
+    ],
+    [
+      "data-quality",
+      "availability",
+      99.0,
+      "30d",
+      true
+    ]
+  ],
+  "source_format": "legacy",
+  "type": "batch",
+  "warnings": []
+}

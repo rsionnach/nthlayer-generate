@@ -1,0 +1,110 @@
+{
+  "json": [
+    {
+      "alerts_triggered": 0,
+      "budgets": [
+        {
+          "budget": {
+            "burned_minutes": 0.0,
+            "percent_consumed": 0.0,
+            "percent_remaining": 100.0,
+            "remaining_minutes": 43.19999999999524,
+            "total_minutes": 43.19999999999524
+          },
+          "burn_rate": 0.0,
+          "burn_sources": {
+            "deployments": 0.0,
+            "incidents": 0.0,
+            "slo_breaches": 0.0
+          },
+          "period": {
+            "end": "<masked>",
+            "start": "<masked>"
+          },
+          "service": "fraud-detector",
+          "slo_id": "fraud-detector-availability",
+          "status": "healthy",
+          "updated_at": "<masked>"
+        },
+        {
+          "budget": {
+            "burned_minutes": 0.0,
+            "percent_consumed": 0.0,
+            "percent_remaining": 100.0,
+            "remaining_minutes": 0.0,
+            "total_minutes": 0.0
+          },
+          "burn_rate": 0.0,
+          "burn_sources": {
+            "deployments": 0.0,
+            "incidents": 0.0,
+            "slo_breaches": 0.0
+          },
+          "period": {
+            "end": "<masked>",
+            "start": "<masked>"
+          },
+          "service": "fraud-detector",
+          "slo_id": "fraud-detector-latency",
+          "status": "healthy",
+          "updated_at": "<masked>"
+        },
+        {
+          "budget": {
+            "burned_minutes": 0.0,
+            "percent_consumed": 0.0,
+            "percent_remaining": 100.0,
+            "remaining_minutes": 10074.960000000001,
+            "total_minutes": 10074.960000000001
+          },
+          "burn_rate": 0.0,
+          "burn_sources": {
+            "deployments": 0.0,
+            "incidents": 0.0,
+            "slo_breaches": 0.0
+          },
+          "period": {
+            "end": "<masked>",
+            "start": "<masked>"
+          },
+          "service": "fraud-detector",
+          "slo_id": "fraud-detector-reversal_rate",
+          "status": "healthy",
+          "updated_at": "<masked>"
+        },
+        {
+          "budget": {
+            "burned_minutes": 0.0,
+            "percent_consumed": 0.0,
+            "percent_remaining": 100.0,
+            "remaining_minutes": 10078.992,
+            "total_minutes": 10078.992
+          },
+          "burn_rate": 0.0,
+          "burn_sources": {
+            "deployments": 0.0,
+            "incidents": 0.0,
+            "slo_breaches": 0.0
+          },
+          "period": {
+            "end": "<masked>",
+            "start": "<masked>"
+          },
+          "service": "fraud-detector",
+          "slo_id": "fraud-detector-high_confidence_failure",
+          "status": "healthy",
+          "updated_at": "<masked>"
+        }
+      ],
+      "budgets_evaluated": 4,
+      "errors": [],
+      "events": [],
+      "explanations": [],
+      "notifications_sent": 0,
+      "rules_evaluated": 16,
+      "service": "fraud-detector"
+    }
+  ],
+  "json_exit": 0,
+  "table_exit": 0
+}

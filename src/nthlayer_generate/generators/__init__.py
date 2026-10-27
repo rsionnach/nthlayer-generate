@@ -3,7 +3,8 @@ Code generators for various formats.
 
 Generates SLO configs, Prometheus rules, etc. from service definitions.
 
-Supports both legacy (ServiceContext, Resources) and new (ReliabilityManifest) APIs.
+Supports both legacy (ServiceContext, Resources) and manifest
+(nthlayer_common.manifest.ReliabilityManifest) APIs.
 """
 
 from nthlayer_generate.generators.alerts import generate_alerts_from_manifest
@@ -17,7 +18,7 @@ __all__ = [
     # Legacy API
     "generate_sloth_spec",
     "SlothGenerationResult",
-    # New API (ReliabilityManifest)
+    # Manifest API (nthlayer_common.manifest.ReliabilityManifest)
     "generate_sloth_from_manifest",
     "generate_alerts_from_manifest",
 ]

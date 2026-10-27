@@ -1,0 +1,60 @@
+{
+  "authored_type": "api",
+  "dependencies": [
+    [
+      "postgresql",
+      "api",
+      false
+    ],
+    [
+      "redis",
+      "api",
+      false
+    ],
+    [
+      "user-service",
+      "api",
+      false
+    ],
+    [
+      "stripe-api",
+      "api",
+      false
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "payment-api-availability",
+      "availability",
+      99.95,
+      "30d",
+      false
+    ],
+    [
+      "payment-api-latency",
+      "latency",
+      99.0,
+      "30d",
+      false
+    ],
+    [
+      "payment-api-error-rate",
+      "error_rate",
+      99.9,
+      "30d",
+      false
+    ],
+    [
+      "payment-api-throughput",
+      "throughput",
+      99.0,
+      "30d",
+      false
+    ]
+  ],
+  "source_format": "opensrm_v2",
+  "type": "api",
+  "warnings": []
+}

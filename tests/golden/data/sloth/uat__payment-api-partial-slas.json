@@ -1,0 +1,48 @@
+{
+  "labels": {
+    "team": "payments-team",
+    "tier": "critical",
+    "type": "api"
+  },
+  "service": "payment-api",
+  "slos": [
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO availability for payment-api"
+        },
+        "labels": {
+          "service": "payment-api",
+          "tier": "critical"
+        },
+        "name": "PaymentApiAvailability",
+        "page_alert": {
+          "annotations": {
+            "summary": "High error budget burn on payment-api"
+          },
+          "labels": {
+            "severity": "critical"
+          }
+        },
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on payment-api"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "99.5% availability",
+      "name": "availability",
+      "objective": 99.5,
+      "sli": {
+        "events": {
+          "error_query": "sum(rate(http_requests_total{service=\"payment-api\",status=~\"[1234]..\"}[5m]))",
+          "total_query": "sum(rate(http_requests_total{service=\"payment-api\"}[5m]))"
+        }
+      }
+    }
+  ],
+  "version": "prometheus/v1"
+}

@@ -1,0 +1,25 @@
+{
+  "reports": [
+    {
+      "rules_evaluated": 4,
+      "service": "payment-api",
+      "violations": [
+        {
+          "field_path": null,
+          "message": "Tier 'critical' requires deployment gates",
+          "rule_name": "critical-tier-requirements",
+          "rule_type": "tier_constraint",
+          "severity": "error"
+        },
+        {
+          "field_path": "dependencies.postgresql.slo",
+          "message": "Critical dependency 'postgresql' has no SLO expectations declared",
+          "rule_name": "critical-deps-need-slos",
+          "rule_type": "dependency_rule",
+          "severity": "warning"
+        }
+      ]
+    }
+  ],
+  "rules_evaluated": 4
+}

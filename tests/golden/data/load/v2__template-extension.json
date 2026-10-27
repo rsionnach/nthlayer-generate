@@ -1,0 +1,13 @@
+{
+  "authored_type": null,
+  "dependencies": null,
+  "error": [
+    "ManifestLoadError",
+    "Template 'template:default/payment-services-base' not found. Searched for 'payment-services-base.yaml' in <opensrm>/spec/v2/examples/templates/ and <opensrm>/spec/v2/examples/.nthlayer/templates/"
+  ],
+  "ok": false,
+  "slos": null,
+  "source_format": null,
+  "type": null,
+  "warnings": []
+}

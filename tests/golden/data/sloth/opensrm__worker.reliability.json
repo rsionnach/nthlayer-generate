@@ -1,0 +1,98 @@
+{
+  "labels": {
+    "team": "notifications",
+    "tier": "standard",
+    "type": "worker"
+  },
+  "service": "email-sender",
+  "slos": [
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO availability for email-sender"
+        },
+        "labels": {
+          "service": "email-sender",
+          "tier": "standard"
+        },
+        "name": "EmailSenderAvailability",
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on email-sender"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "Worker process availability",
+      "name": "availability",
+      "objective": 99.9,
+      "sli": {
+        "events": {
+          "error_query": "",
+          "total_query": ""
+        }
+      }
+    },
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO throughput for email-sender"
+        },
+        "labels": {
+          "service": "email-sender",
+          "tier": "standard"
+        },
+        "name": "EmailSenderThroughput",
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on email-sender"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "Sustained processing rate",
+      "name": "throughput",
+      "objective": 100.0,
+      "sli": {
+        "events": {
+          "error_query": "",
+          "total_query": ""
+        }
+      }
+    },
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO error_rate for email-sender"
+        },
+        "labels": {
+          "service": "email-sender",
+          "tier": "standard"
+        },
+        "name": "EmailSenderError_rate",
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on email-sender"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "Job failure rate",
+      "name": "error_rate",
+      "objective": 0.5,
+      "sli": {
+        "events": {
+          "error_query": "",
+          "total_query": ""
+        }
+      }
+    }
+  ],
+  "version": "prometheus/v1"
+}

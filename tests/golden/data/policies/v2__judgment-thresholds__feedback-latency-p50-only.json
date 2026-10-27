@@ -1,0 +1,27 @@
+{
+  "rules_evaluated": 4,
+  "service": "intake-agent",
+  "violations": [
+    {
+      "field_path": "ownership.runbook",
+      "message": "Required field 'ownership.runbook' is missing or empty",
+      "rule_name": "require-ownership",
+      "rule_type": "required_fields",
+      "severity": "error"
+    },
+    {
+      "field_path": null,
+      "message": "Tier 'critical' requires at least 2 SLOs, found 0",
+      "rule_name": "critical-tier-requirements",
+      "rule_type": "tier_constraint",
+      "severity": "error"
+    },
+    {
+      "field_path": null,
+      "message": "Tier 'critical' requires deployment gates",
+      "rule_name": "critical-tier-requirements",
+      "rule_type": "tier_constraint",
+      "severity": "error"
+    }
+  ]
+}

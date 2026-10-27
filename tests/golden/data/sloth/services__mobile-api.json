@@ -1,0 +1,122 @@
+{
+  "labels": {
+    "team": "mobile",
+    "tier": "critical",
+    "type": "api"
+  },
+  "service": "mobile-api",
+  "slos": [
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO latency-p95 for mobile-api"
+        },
+        "labels": {
+          "service": "mobile-api",
+          "tier": "critical"
+        },
+        "name": "MobileApiLatencyP95",
+        "page_alert": {
+          "annotations": {
+            "summary": "High error budget burn on mobile-api"
+          },
+          "labels": {
+            "severity": "critical"
+          }
+        },
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on mobile-api"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "95.0% latency p95",
+      "name": "latency-p95",
+      "objective": 95.0,
+      "sli": {
+        "events": {
+          "error_query": "",
+          "total_query": ""
+        }
+      }
+    },
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO latency-p99 for mobile-api"
+        },
+        "labels": {
+          "service": "mobile-api",
+          "tier": "critical"
+        },
+        "name": "MobileApiLatencyP99",
+        "page_alert": {
+          "annotations": {
+            "summary": "High error budget burn on mobile-api"
+          },
+          "labels": {
+            "severity": "critical"
+          }
+        },
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on mobile-api"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "90.0% latency p99",
+      "name": "latency-p99",
+      "objective": 90.0,
+      "sli": {
+        "events": {
+          "error_query": "histogram_quantile(0.99,\n  rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m])\n)\n > 0.09",
+          "total_query": "sum(rate(0.99,\n  rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m])\n)\n)"
+        }
+      }
+    },
+    {
+      "alerting": {
+        "annotations": {
+          "summary": "SLO auth-success-rate for mobile-api"
+        },
+        "labels": {
+          "service": "mobile-api",
+          "tier": "critical"
+        },
+        "name": "MobileApiAuthSuccessRate",
+        "page_alert": {
+          "annotations": {
+            "summary": "High error budget burn on mobile-api"
+          },
+          "labels": {
+            "severity": "critical"
+          }
+        },
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on mobile-api"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "99.9% auth success rate",
+      "name": "auth-success-rate",
+      "objective": 99.9,
+      "sli": {
+        "events": {
+          "error_query": "sum(rate(api_key_validations{service=\"mobile-api\",status=\"success\"}[5m]))",
+          "total_query": "sum(rate(api_key_validations{service=\"mobile-api\"}[5m]))"
+        }
+      }
+    }
+  ],
+  "version": "prometheus/v1"
+}

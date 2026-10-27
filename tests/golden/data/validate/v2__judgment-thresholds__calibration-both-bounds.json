@@ -1,0 +1,7 @@
+{
+  "errors": [
+    "Filename mismatch: expected 'investigation-agent.yaml' for service 'investigation-agent', got 'calibration-both-bounds.yaml'"
+  ],
+  "valid": false,
+  "warnings": []
+}

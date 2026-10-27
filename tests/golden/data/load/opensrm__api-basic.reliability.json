@@ -1,0 +1,25 @@
+{
+  "authored_type": "api",
+  "dependencies": [],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "availability",
+      "availability",
+      99.9,
+      "30d",
+      false
+    ],
+    [
+      "latency",
+      "latency",
+      200.0,
+      "30d",
+      false
+    ]
+  ],
+  "source_format": "srm_v1",
+  "type": "api",
+  "warnings": []
+}

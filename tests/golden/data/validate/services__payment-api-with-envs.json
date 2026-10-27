@@ -1,0 +1,9 @@
+{
+  "errors": [
+    "Filename mismatch: expected 'payment-api.yaml' for service 'payment-api', got 'payment-api-with-envs.yaml'"
+  ],
+  "valid": false,
+  "warnings": [
+    "Service uses template 'critical-api'. Ensure template exists and is valid."
+  ]
+}

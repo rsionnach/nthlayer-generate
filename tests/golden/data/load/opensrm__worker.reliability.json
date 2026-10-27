@@ -1,0 +1,48 @@
+{
+  "authored_type": "worker",
+  "dependencies": [
+    [
+      "sqs-queue",
+      "queue",
+      true
+    ],
+    [
+      "sendgrid-api",
+      "api",
+      true
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "availability",
+      "availability",
+      99.9,
+      "30d",
+      false
+    ],
+    [
+      "throughput",
+      "throughput",
+      100.0,
+      "30d",
+      false
+    ],
+    [
+      "error_rate",
+      "error_rate",
+      0.5,
+      "7d",
+      false
+    ]
+  ],
+  "source_format": "srm_v1",
+  "type": "worker",
+  "warnings": [
+    [
+      "TargetConventionWarning",
+      "Service 'email-sender' SLO 'error_rate' has target=0.5 which looks like a ratio (0.0-1.0). This codebase uses 0-100 percentage canonical for SLO targets — write '50.0' for a error_rate SLO. The OpenSLO surface converts to ratio at the boundary; manifest values stay in percentage."
+    ]
+  ]
+}

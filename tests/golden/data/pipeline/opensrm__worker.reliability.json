@@ -1,0 +1,81 @@
+{
+  "alerts_triggered": 0,
+  "budgets": [
+    {
+      "budget": {
+        "burned_minutes": 21.59999999999762,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 21.59999999999762,
+        "total_minutes": 43.19999999999524
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "email-sender",
+      "slo_id": "email-sender-availability",
+      "status": "warning",
+      "updated_at": "<masked>"
+    },
+    {
+      "budget": {
+        "burned_minutes": 0.0,
+        "percent_consumed": 0.0,
+        "percent_remaining": 100.0,
+        "remaining_minutes": 0.0,
+        "total_minutes": 0.0
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "email-sender",
+      "slo_id": "email-sender-throughput",
+      "status": "healthy",
+      "updated_at": "<masked>"
+    },
+    {
+      "budget": {
+        "burned_minutes": 5014.8,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 5014.8,
+        "total_minutes": 10029.6
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "email-sender",
+      "slo_id": "email-sender-error_rate",
+      "status": "warning",
+      "updated_at": "<masked>"
+    }
+  ],
+  "budgets_evaluated": 3,
+  "errors": [],
+  "events": [],
+  "explanations": [],
+  "notifications_sent": 0,
+  "rules_evaluated": 9,
+  "service": "email-sender"
+}

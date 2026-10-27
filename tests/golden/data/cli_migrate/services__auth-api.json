@@ -1,0 +1,6 @@
+{
+  "exit": 0,
+  "files": {
+    "auth-api.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: auth-api.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: auth-api\n  team: platform\n  tier: critical\nspec:\n  type: api\n  slos:\n    latency-p95:\n      type: latency\n      target: 99.5\n      window: 30d\n    token-generation-latency:\n      type: latency\n      target: 99.0\n      window: 30d\n  dependencies:\n  - name: auth-db\n    type: database\n    critical: true\n  - name: user-service\n    type: api\n    critical: true\n  ownership:\n    team: platform\n"
+  }
+}

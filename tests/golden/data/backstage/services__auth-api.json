@@ -1,0 +1,67 @@
+{
+  "deploymentGate": {
+    "blockingThreshold": 10.0,
+    "budgetRemainingPercent": null,
+    "message": null,
+    "recommendations": [],
+    "status": "APPROVED",
+    "warningThreshold": 20.0
+  },
+  "errorBudget": {
+    "burnRate": null,
+    "consumedMinutes": null,
+    "remainingMinutes": null,
+    "remainingPercent": null,
+    "status": null,
+    "totalMinutes": null
+  },
+  "generatedAt": "<masked>",
+  "links": {
+    "alertsYaml": "generated/auth-api/alerts.yaml",
+    "grafanaDashboard": null,
+    "runbook": null,
+    "serviceManifest": "examples/services/auth-api.yaml",
+    "slothSpec": "generated/auth-api/sloth/auth-api.yaml"
+  },
+  "schemaVersion": "v1",
+  "score": {
+    "band": null,
+    "components": {
+      "deploySuccessRate": null,
+      "errorBudgetRemaining": null,
+      "incidentScore": null,
+      "sloCompliance": null
+    },
+    "grade": null,
+    "score": null,
+    "trend": null
+  },
+  "service": {
+    "description": null,
+    "name": "auth-api",
+    "supportModel": "self",
+    "team": "platform",
+    "tier": "critical",
+    "type": "api"
+  },
+  "slos": [
+    {
+      "currentValue": null,
+      "description": null,
+      "name": "latency-p95",
+      "sloType": "latency",
+      "status": null,
+      "target": 99.5,
+      "window": "30d"
+    },
+    {
+      "currentValue": null,
+      "description": null,
+      "name": "token-generation-latency",
+      "sloType": "latency",
+      "status": null,
+      "target": 99.0,
+      "window": "30d"
+    }
+  ]
+}

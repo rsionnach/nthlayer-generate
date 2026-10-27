@@ -19,11 +19,15 @@ import json
 import os
 from pathlib import Path
 
+from nthlayer_common.manifest import load_manifest
 from rich.table import Table
 
 from nthlayer_generate.cli.ux import console, header
-from nthlayer_generate.specs.alerting import AlertingConfig, resolve_effective_rules
-from nthlayer_generate.specs.loader import load_manifest
+from nthlayer_generate.specs.alerting import (
+    AlertingConfig,
+    manifest_alerting,
+    resolve_effective_rules,
+)
 
 # -------------------------------------------------------------------------
 # Subcommand implementations
@@ -72,7 +76,7 @@ def alerts_show_command(
 ) -> int:
     """Show effective alert rules for a service (explicit + auto-generated)."""
     manifest = load_manifest(service_file, suppress_deprecation_warning=True)
-    alerting = manifest.alerting or AlertingConfig()
+    alerting = manifest_alerting(manifest) or AlertingConfig()
     slo_names = [s.name for s in manifest.slos]
     effective = resolve_effective_rules(alerting, manifest.tier, slo_names)
 
@@ -168,8 +172,9 @@ def alerts_test_command(
 
 def _evaluate_directory(pipeline: object, dir_path: str) -> list:
     """Load all manifest files from a directory and evaluate them."""
+    from nthlayer_common.manifest import is_manifest_file
+
     from nthlayer_generate.slos.pipeline import AlertPipeline, PipelineResult
-    from nthlayer_generate.specs.loader import is_manifest_file
 
     assert isinstance(pipeline, AlertPipeline)
     results: list[PipelineResult] = []

@@ -1,0 +1,26 @@
+{
+  "authored_type": "api",
+  "dependencies": [
+    [
+      "postgres-main",
+      "database",
+      true
+    ],
+    [
+      "redis-cache",
+      "database",
+      false
+    ],
+    [
+      "auth-service",
+      "api",
+      true
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [],
+  "source_format": "legacy",
+  "type": "api",
+  "warnings": []
+}

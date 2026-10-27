@@ -1,0 +1,48 @@
+{
+  "deploymentGate": {
+    "blockingThreshold": 10.0,
+    "budgetRemainingPercent": null,
+    "message": null,
+    "recommendations": [],
+    "status": "APPROVED",
+    "warningThreshold": 20.0
+  },
+  "errorBudget": {
+    "burnRate": null,
+    "consumedMinutes": null,
+    "remainingMinutes": null,
+    "remainingPercent": null,
+    "status": null,
+    "totalMinutes": null
+  },
+  "generatedAt": "<masked>",
+  "links": {
+    "alertsYaml": "generated/api-minimal/alerts.yaml",
+    "grafanaDashboard": null,
+    "runbook": null,
+    "serviceManifest": "examples/services/api-minimal.yaml",
+    "slothSpec": "generated/api-minimal/sloth/api-minimal.yaml"
+  },
+  "schemaVersion": "v1",
+  "score": {
+    "band": null,
+    "components": {
+      "deploySuccessRate": null,
+      "errorBudgetRemaining": null,
+      "incidentScore": null,
+      "sloCompliance": null
+    },
+    "grade": null,
+    "score": null,
+    "trend": null
+  },
+  "service": {
+    "description": null,
+    "name": "api-minimal",
+    "supportModel": "self",
+    "team": "platform",
+    "tier": "critical",
+    "type": "api"
+  },
+  "slos": []
+}

@@ -1,0 +1,6 @@
+{
+  "exit": 0,
+  "files": {
+    "admin-dashboard-api.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: admin-dashboard-api.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: admin-dashboard-api\n  team: platform\n  tier: standard\nspec:\n  type: api\n  ownership:\n    team: platform\n"
+  }
+}

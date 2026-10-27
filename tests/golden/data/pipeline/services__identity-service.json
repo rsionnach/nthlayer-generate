@@ -1,0 +1,133 @@
+{
+  "alerts_triggered": 3,
+  "budgets": [
+    {
+      "budget": {
+        "burned_minutes": 2.16000000000216,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 2.16000000000216,
+        "total_minutes": 4.32000000000432
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "identity-service",
+      "slo_id": "identity-service-availability",
+      "status": "warning",
+      "updated_at": "<masked>"
+    },
+    {
+      "budget": {
+        "burned_minutes": 108.0000000000001,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 108.0000000000001,
+        "total_minutes": 216.0000000000002
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "identity-service",
+      "slo_id": "identity-service-latency-p95",
+      "status": "warning",
+      "updated_at": "<masked>"
+    },
+    {
+      "budget": {
+        "burned_minutes": 432.0000000000004,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 432.0000000000004,
+        "total_minutes": 864.0000000000008
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "identity-service",
+      "slo_id": "identity-service-latency-p99",
+      "status": "warning",
+      "updated_at": "<masked>"
+    }
+  ],
+  "budgets_evaluated": 3,
+  "errors": [],
+  "events": [
+    {
+      "details": {
+        "budget_consumed_percent": 50.0,
+        "burned_minutes": 2.16000000000216,
+        "remaining_minutes": 2.16000000000216,
+        "status": "warning",
+        "threshold_percent": 50.0
+      },
+      "id": "<masked>",
+      "message": "⚠️ *Error Budget Alert*\n\n*Service:* `identity-service`\n*SLO:* `identity-service-availability`\n*Consumed:* 50.0% (threshold: 50%)\n*Remaining:* 2.2 minutes\n*Status:* WARNING\n\nℹ️ Budget threshold exceeded. Monitor closely.\n",
+      "rule_id": "identity-service-availability-budget-warning",
+      "service": "identity-service",
+      "severity": "warning",
+      "slo_id": "identity-service-availability",
+      "title": "Error Budget Alert: identity-service",
+      "triggered_at": "<masked>"
+    },
+    {
+      "details": {
+        "budget_consumed_percent": 50.0,
+        "burned_minutes": 108.0000000000001,
+        "remaining_minutes": 108.0000000000001,
+        "status": "warning",
+        "threshold_percent": 50.0
+      },
+      "id": "<masked>",
+      "message": "⚠️ *Error Budget Alert*\n\n*Service:* `identity-service`\n*SLO:* `identity-service-latency-p95`\n*Consumed:* 50.0% (threshold: 50%)\n*Remaining:* 108.0 minutes\n*Status:* WARNING\n\nℹ️ Budget threshold exceeded. Monitor closely.\n",
+      "rule_id": "identity-service-latency-p95-budget-warning",
+      "service": "identity-service",
+      "severity": "warning",
+      "slo_id": "identity-service-latency-p95",
+      "title": "Error Budget Alert: identity-service",
+      "triggered_at": "<masked>"
+    },
+    {
+      "details": {
+        "budget_consumed_percent": 50.0,
+        "burned_minutes": 432.0000000000004,
+        "remaining_minutes": 432.0000000000004,
+        "status": "warning",
+        "threshold_percent": 50.0
+      },
+      "id": "<masked>",
+      "message": "⚠️ *Error Budget Alert*\n\n*Service:* `identity-service`\n*SLO:* `identity-service-latency-p99`\n*Consumed:* 50.0% (threshold: 50%)\n*Remaining:* 432.0 minutes\n*Status:* WARNING\n\nℹ️ Budget threshold exceeded. Monitor closely.\n",
+      "rule_id": "identity-service-latency-p99-budget-warning",
+      "service": "identity-service",
+      "severity": "warning",
+      "slo_id": "identity-service-latency-p99",
+      "title": "Error Budget Alert: identity-service",
+      "triggered_at": "<masked>"
+    }
+  ],
+  "explanations": [],
+  "notifications_sent": 0,
+  "rules_evaluated": 12,
+  "service": "identity-service"
+}

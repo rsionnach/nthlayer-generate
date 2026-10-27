@@ -1,0 +1,43 @@
+{
+  "authored_type": "api",
+  "dependencies": [
+    [
+      "users_db",
+      "database",
+      false
+    ],
+    [
+      "session_cache",
+      "database",
+      false
+    ]
+  ],
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "availability",
+      "availability",
+      99.99,
+      "30d",
+      false
+    ],
+    [
+      "latency-p95",
+      "latency",
+      99.5,
+      "30d",
+      false
+    ],
+    [
+      "latency-p99",
+      "latency",
+      98.0,
+      "30d",
+      false
+    ]
+  ],
+  "source_format": "legacy",
+  "type": "api",
+  "warnings": []
+}

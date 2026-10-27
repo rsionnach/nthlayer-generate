@@ -1,0 +1,6 @@
+{
+  "error": [
+    "ValueError",
+    "Service 'investigation-agent' has no availability SLO — required for simulation"
+  ]
+}

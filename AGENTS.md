@@ -263,7 +263,7 @@ src/nthlayer/
 ├── discovery/     → Live Prometheus metric discovery
 ├── slos/          → SLO definitions and error budget tracking
 ├── alerts/        → Alert rule generation
-├── specs/         → Service specification models (ServiceContext, Resource)
+├── specs/         → Service specification models (ServiceContext, Resource); manifests load via nthlayer_common.manifest
 ├── recording_rules/ → Prometheus recording rule generation
 ├── orchestrator.py  → Unified plan/apply workflow
 └── demo.py        → CLI entrypoint (60KB, comprehensive demo)

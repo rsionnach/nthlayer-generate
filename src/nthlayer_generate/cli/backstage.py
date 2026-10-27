@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import structlog
+from nthlayer_common.manifest import ManifestLoadError
 
 from nthlayer_generate.cli.ux import console, error, header, success
 
@@ -61,7 +62,7 @@ def generate_backstage_command(
     try:
         if dry_run:
             # Generate without writing to see what would be created
-            from nthlayer_generate.specs.loader import load_manifest
+            from nthlayer_common.manifest import load_manifest
 
             manifest = load_manifest(
                 service_path,
@@ -115,7 +116,7 @@ def generate_backstage_command(
 
         return 0
 
-    except (FileNotFoundError, ValueError, KeyError, TypeError, OSError) as e:
+    except (ManifestLoadError, FileNotFoundError, ValueError, KeyError, TypeError, OSError) as e:
         error(f"Error generating Backstage entity: {e}")
         logger.error("backstage_generation_failed", err=str(e), exc_info=True)
         return 1

@@ -1,0 +1,86 @@
+{
+  "exit": 0,
+  "topology": {
+    "edges": [
+      {
+        "confidence": 1.0,
+        "critical": false,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "slo_contract": {
+          "availability": 0.9995
+        },
+        "source": "payment-api",
+        "target": "postgresql"
+      },
+      {
+        "confidence": 1.0,
+        "critical": false,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "source": "payment-api",
+        "target": "redis"
+      },
+      {
+        "confidence": 1.0,
+        "critical": false,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "slo_contract": {
+          "availability": 0.999,
+          "latency_p99": "100ms"
+        },
+        "source": "payment-api",
+        "target": "user-service"
+      },
+      {
+        "confidence": 1.0,
+        "critical": false,
+        "dep_type": "service",
+        "providers": [
+          "manifest"
+        ],
+        "slo_contract": {
+          "availability": 0.9999
+        },
+        "source": "payment-api",
+        "target": "stripe-api"
+      }
+    ],
+    "exported_at": "<masked>",
+    "metadata": {
+      "providers_used": []
+    },
+    "nodes": [
+      {
+        "name": "payment-api",
+        "team": "payments",
+        "tier": "critical",
+        "type": "api"
+      },
+      {
+        "name": "postgresql"
+      },
+      {
+        "name": "redis"
+      },
+      {
+        "name": "user-service"
+      },
+      {
+        "name": "stripe-api"
+      }
+    ],
+    "stats": {
+      "edge_count": 4,
+      "node_count": 5
+    },
+    "version": "1.0"
+  }
+}

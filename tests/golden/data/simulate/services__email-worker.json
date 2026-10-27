@@ -1,0 +1,6 @@
+{
+  "error": [
+    "ValueError",
+    "Service 'email-worker' has no availability SLO — required for simulation"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "errors": [],
+  "valid": true,
+  "warnings": [
+    "Judgment SLO 'reversal_rate' (0.05) is looser than contract 'fraud-detector-api' threshold (90.0)",
+    "Critical dependency 'feature-store' has no contract in registry"
+  ]
+}

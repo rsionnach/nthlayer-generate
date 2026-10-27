@@ -1,0 +1,95 @@
+{
+  "authored_type": "ai-gate",
+  "dependencies": [
+    [
+      "feature-store",
+      "database",
+      true
+    ],
+    [
+      "model-registry",
+      "api",
+      false
+    ]
+  ],
+  "error": null,
+  "judgment_thresholds": [
+    {
+      "bounds": {
+        "maximum_expected_calibration_error": 0.05
+      },
+      "measurement": {
+        "bins": 10,
+        "confidence_threshold": null,
+        "metric": null,
+        "outcome_signal": null,
+        "probe": null,
+        "segment_dimension": null,
+        "segment_values": [],
+        "source": null,
+        "window": "30d"
+      },
+      "type": "calibration"
+    },
+    {
+      "bounds": {
+        "maximum_p50": "3600s"
+      },
+      "measurement": {
+        "bins": null,
+        "confidence_threshold": null,
+        "metric": null,
+        "outcome_signal": null,
+        "probe": null,
+        "segment_dimension": null,
+        "segment_values": [],
+        "source": null,
+        "window": null
+      },
+      "type": "feedback_latency"
+    }
+  ],
+  "ok": true,
+  "slos": [
+    [
+      "availability",
+      "availability",
+      99.9,
+      "30d",
+      false
+    ],
+    [
+      "latency",
+      "latency",
+      100.0,
+      "30d",
+      false
+    ],
+    [
+      "reversal_rate",
+      "availability",
+      0.05,
+      "7d",
+      false
+    ],
+    [
+      "high_confidence_failure",
+      "availability",
+      0.01,
+      "7d",
+      false
+    ]
+  ],
+  "source_format": "srm_v1",
+  "type": "ai-gate",
+  "warnings": [
+    [
+      "TargetConventionWarning",
+      "Service 'fraud-detector' SLO 'reversal_rate' has target=0.05 which looks like a ratio (0.0-1.0). This codebase uses 0-100 percentage canonical for SLO targets — write '5.0' for a judgment SLO. The OpenSLO surface converts to ratio at the boundary; manifest values stay in percentage."
+    ],
+    [
+      "TargetConventionWarning",
+      "Service 'fraud-detector' SLO 'high_confidence_failure' has target=0.01 which looks like a ratio (0.0-1.0). This codebase uses 0-100 percentage canonical for SLO targets — write '1.0' for a judgment SLO. The OpenSLO surface converts to ratio at the boundary; manifest values stay in percentage."
+    ]
+  ]
+}

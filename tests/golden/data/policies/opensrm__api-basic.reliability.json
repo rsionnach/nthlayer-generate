@@ -1,0 +1,20 @@
+{
+  "rules_evaluated": 4,
+  "service": "user-api",
+  "violations": [
+    {
+      "field_path": "ownership.team",
+      "message": "Required field 'ownership.team' is missing or empty",
+      "rule_name": "require-ownership",
+      "rule_type": "required_fields",
+      "severity": "error"
+    },
+    {
+      "field_path": "ownership.runbook",
+      "message": "Required field 'ownership.runbook' is missing or empty",
+      "rule_name": "require-ownership",
+      "rule_type": "required_fields",
+      "severity": "error"
+    }
+  ]
+}

@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 import structlog
+from nthlayer_common.manifest import ReliabilityManifest
 
 from nthlayer_generate.slos.alerts import (
     AlertEvaluator,
@@ -27,9 +28,9 @@ from nthlayer_generate.slos.models import SLO, ErrorBudget, TimeWindow
 from nthlayer_generate.specs.alerting import (
     AlertingConfig,
     SpecAlertRule,
+    manifest_alerting,
     resolve_effective_rules,
 )
-from nthlayer_generate.specs.manifest import ReliabilityManifest
 
 logger = structlog.get_logger()
 
@@ -114,7 +115,7 @@ class AlertPipeline:
         result = PipelineResult(service=manifest.name)
 
         # 1. Resolve effective rules
-        alerting = manifest.alerting or AlertingConfig()
+        alerting = manifest_alerting(manifest) or AlertingConfig()
         slo_names = [s.name for s in manifest.slos]
         effective_rules = resolve_effective_rules(alerting, manifest.tier, slo_names)
         result.rules_evaluated = len(effective_rules)

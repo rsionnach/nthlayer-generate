@@ -1,0 +1,6 @@
+{
+  "error": [
+    "ValueError",
+    "Service 'auth-api' has no availability SLO — required for simulation"
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "groups": [
+    {
+      "name": "fraud-detector",
+      "rules": [
+        {
+          "alert": "fraud-detector_ApplicationError",
+          "annotations": {
+            "description": "Error-level log entries detected in application logs.",
+            "summary": "[fraud-detector] Application errors detected"
+          },
+          "expr": "sum(count_over_time({app=\"fraud-detector\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+          "for": "5m",
+          "labels": {
+            "service": "fraud-detector",
+            "severity": "warning",
+            "source": "service",
+            "team": "risk",
+            "technology": "ai-gate",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "fraud-detector_ApplicationHighErrorRate",
+          "annotations": {
+            "description": "Application is experiencing a high rate of errors.",
+            "summary": "[fraud-detector] High error rate in application"
+          },
+          "expr": "sum(count_over_time({app=\"fraud-detector\"} |~ \"(?i)error|exception\" [5m])) > 100",
+          "for": "5m",
+          "labels": {
+            "service": "fraud-detector",
+            "severity": "critical",
+            "source": "service",
+            "team": "risk",
+            "technology": "ai-gate",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "fraud-detector_ApplicationPanic",
+          "annotations": {
+            "description": "Application appears to have crashed or panicked.",
+            "summary": "[fraud-detector] Application panic/crash detected"
+          },
+          "expr": "count_over_time({app=\"fraud-detector\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+          "for": "0m",
+          "labels": {
+            "service": "fraud-detector",
+            "severity": "critical",
+            "source": "service",
+            "team": "risk",
+            "technology": "ai-gate",
+            "tier": "critical"
+          }
+        }
+      ]
+    }
+  ]
+}

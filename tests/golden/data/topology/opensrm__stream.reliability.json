@@ -1,0 +1,63 @@
+{
+  "edges": [
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "slo_contract": {
+        "availability": 99.99
+      },
+      "source": "order-events-processor",
+      "target": "kafka-cluster"
+    },
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "order-events-processor",
+      "target": "clickhouse"
+    },
+    {
+      "confidence": 1.0,
+      "critical": true,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "order-events-processor",
+      "target": "fulfillment-api"
+    }
+  ],
+  "exported_at": "<masked>",
+  "metadata": {
+    "providers_used": []
+  },
+  "nodes": [
+    {
+      "name": "order-events-processor",
+      "team": "orders",
+      "tier": "high",
+      "type": "stream"
+    },
+    {
+      "name": "kafka-cluster"
+    },
+    {
+      "name": "clickhouse"
+    },
+    {
+      "name": "fulfillment-api"
+    }
+  ],
+  "stats": {
+    "edge_count": 3,
+    "node_count": 4
+  },
+  "version": "1.0"
+}

@@ -3,6 +3,7 @@
 import json
 
 from nthlayer_common.gate_models import GateResult
+from nthlayer_common.manifest import ReliabilityManifest, SLODefinition
 
 from nthlayer_generate.generators.backstage import (
     BackstageGenerationResult,
@@ -12,7 +13,6 @@ from nthlayer_generate.generators.backstage import (
     gate_result_to_status,
     generate_backstage_from_manifest,
 )
-from nthlayer_generate.specs.manifest import ReliabilityManifest, SLODefinition
 
 
 def _make_manifest(**overrides) -> ReliabilityManifest:
@@ -21,7 +21,10 @@ def _make_manifest(**overrides) -> ReliabilityManifest:
         team="platform",
         tier="critical",
         type="api",
-        slos=[SLODefinition(name="avail", target=99.9, window="30d")],
+        # slo_type is incidental to what this test asserts (the name "avail" is
+        # asserted on, so it is kept); availability is the type an srm/v1
+        # availability SLO has (opensrm spec/v1/schema.json @859424a /definitions/SLOs).
+        slos=[SLODefinition(name="avail", target=99.9, slo_type="availability", window="30d")],
     )
     defaults.update(overrides)
     return ReliabilityManifest(**defaults)

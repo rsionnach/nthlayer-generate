@@ -1,0 +1,7 @@
+{
+  "errors": [
+    "Filename mismatch: expected 'credit-decision-agent.yaml' for service 'credit-decision-agent', got 'all-five-types.yaml'"
+  ],
+  "valid": false,
+  "warnings": []
+}

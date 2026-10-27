@@ -8,24 +8,22 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import yaml
-
-from nthlayer_generate.specs.contracts import (
-    ContractRegistry,
-    validate_dependency_expectations,
-    validate_transitive_feasibility,
-)
-from nthlayer_generate.specs.manifest import (
-    Contract,
+from nthlayer_common.manifest import (
     Dependency,
     DependencySLO,
     ReliabilityManifest,
     SLODefinition,
 )
-from nthlayer_generate.specs.opensrm_parser import (
-    _deep_merge_spec,
-    resolve_opensrm_template,
+from nthlayer_common.manifest.parser.v1 import _deep_merge_spec, resolve_template
+from nthlayer_common.manifest.v1_compat import convert_v1_contract
+
+from nthlayer_generate.specs.contracts import (
+    ContractRegistry,
+    validate_dependency_expectations,
+    validate_transitive_feasibility,
 )
 
 # =============================================================================
@@ -40,8 +38,21 @@ def _make_manifest(
     service_type: str = "api",
     slos: list[SLODefinition] | None = None,
     dependencies: list[Dependency] | None = None,
-    contract: Contract | None = None,
+    contract: dict[str, Any] | None = None,
 ) -> ReliabilityManifest:
+    """``contract`` is an srm/v1 ``spec.contract`` block; it becomes
+    ``contracts[0]`` exactly as common's srm/v1 parser builds it
+    (parser/v1.py -> v1_compat.convert_v1_contract)."""
+    contracts = []
+    if contract:
+        contracts.append(
+            convert_v1_contract(
+                service_name=name,
+                availability=contract.get("availability"),
+                latency=contract.get("latency"),
+                judgment=contract.get("judgment"),
+            )
+        )
     return ReliabilityManifest(
         name=name,
         team=team,
@@ -49,7 +60,7 @@ def _make_manifest(
         type=service_type,
         slos=slos or [],
         dependencies=dependencies or [],
-        contract=contract,
+        contracts=contracts,
     )
 
 
@@ -63,23 +74,26 @@ class TestContractRegistry:
         registry = ContractRegistry()
         manifest = _make_manifest(
             name="payment-api",
-            contract=Contract(availability=0.999),
+            contract={"availability": 0.999},
         )
         registry.register(manifest)
 
-        contract = registry.get_contract("payment-api")
-        assert contract is not None
-        assert contract.availability == 0.999
+        # get_contract was replaced by get_contracts / promised_availability
+        # (opensrm-wo62.1, spec §5.2, §5.5).
+        (contract,) = registry.get_contracts("payment-api")
+        assert contract.promise.availability == 0.999
+        assert registry.promised_availability("payment-api") == 0.999
 
     def test_missing_returns_none(self) -> None:
         registry = ContractRegistry()
-        assert registry.get_contract("nonexistent") is None
+        assert registry.get_contracts("nonexistent") == []
+        assert registry.promised_availability("nonexistent") is None
 
     def test_has_contract(self) -> None:
         registry = ContractRegistry()
         manifest = _make_manifest(
             name="svc-a",
-            contract=Contract(availability=0.99),
+            contract={"availability": 0.99},
         )
         registry.register(manifest)
 
@@ -88,8 +102,8 @@ class TestContractRegistry:
 
     def test_from_manifests(self) -> None:
         manifests = [
-            _make_manifest(name="svc-a", contract=Contract(availability=0.999)),
-            _make_manifest(name="svc-b", contract=Contract(availability=0.99)),
+            _make_manifest(name="svc-a", contract={"availability": 0.999}),
+            _make_manifest(name="svc-b", contract={"availability": 0.99}),
             _make_manifest(name="svc-c"),  # no contract
         ]
         registry = ContractRegistry.from_manifests(manifests)
@@ -100,8 +114,8 @@ class TestContractRegistry:
 
     def test_services_list(self) -> None:
         manifests = [
-            _make_manifest(name="svc-b", contract=Contract(availability=0.99)),
-            _make_manifest(name="svc-a", contract=Contract(availability=0.999)),
+            _make_manifest(name="svc-b", contract={"availability": 0.99}),
+            _make_manifest(name="svc-a", contract={"availability": 0.999}),
         ]
         registry = ContractRegistry.from_manifests(manifests)
 
@@ -228,7 +242,7 @@ class TestDependencyExpectationValidation:
             ],
         )
         registry = ContractRegistry.from_manifests(
-            [_make_manifest(name="db", contract=Contract(availability=0.9999))]
+            [_make_manifest(name="db", contract={"availability": 0.9999})]
         )
 
         warnings = validate_dependency_expectations(manifest, registry)
@@ -246,7 +260,7 @@ class TestDependencyExpectationValidation:
             ],
         )
         registry = ContractRegistry.from_manifests(
-            [_make_manifest(name="db", contract=Contract(availability=0.999))]
+            [_make_manifest(name="db", contract={"availability": 0.999})]
         )
 
         warnings = validate_dependency_expectations(manifest, registry)
@@ -282,7 +296,7 @@ class TestDependencyExpectationValidation:
             ],
         )
         registry = ContractRegistry.from_manifests(
-            [_make_manifest(name="db", contract=Contract(availability=0.999))]
+            [_make_manifest(name="db", contract={"availability": 0.999})]
         )
 
         warnings = validate_dependency_expectations(manifest, registry)
@@ -314,8 +328,8 @@ class TestDependencyExpectationValidation:
         )
         registry = ContractRegistry.from_manifests(
             [
-                _make_manifest(name="db", contract=Contract(availability=0.999)),
-                _make_manifest(name="api-svc", contract=Contract(availability=0.999)),
+                _make_manifest(name="db", contract={"availability": 0.999}),
+                _make_manifest(name="api-svc", contract={"availability": 0.999}),
             ]
         )
 
@@ -335,7 +349,7 @@ class TestDependencyExpectationValidation:
 class TestTransitiveFeasibility:
     def test_feasible_no_warning(self) -> None:
         manifest = _make_manifest(
-            contract=Contract(availability=0.99),
+            contract={"availability": 0.99},
             dependencies=[
                 Dependency(name="db", type="database", critical=True),
                 Dependency(name="cache", type="cache", critical=True),
@@ -343,8 +357,8 @@ class TestTransitiveFeasibility:
         )
         registry = ContractRegistry.from_manifests(
             [
-                _make_manifest(name="db", contract=Contract(availability=0.999)),
-                _make_manifest(name="cache", contract=Contract(availability=0.999)),
+                _make_manifest(name="db", contract={"availability": 0.999}),
+                _make_manifest(name="cache", contract={"availability": 0.999}),
             ]
         )
 
@@ -354,7 +368,7 @@ class TestTransitiveFeasibility:
 
     def test_infeasible_warns(self) -> None:
         manifest = _make_manifest(
-            contract=Contract(availability=0.9999),
+            contract={"availability": 0.9999},
             dependencies=[
                 Dependency(name="db", type="database", critical=True),
                 Dependency(name="queue", type="queue", critical=True),
@@ -362,8 +376,8 @@ class TestTransitiveFeasibility:
         )
         registry = ContractRegistry.from_manifests(
             [
-                _make_manifest(name="db", contract=Contract(availability=0.999)),
-                _make_manifest(name="queue", contract=Contract(availability=0.999)),
+                _make_manifest(name="db", contract={"availability": 0.999}),
+                _make_manifest(name="queue", contract={"availability": 0.999}),
             ]
         )
 
@@ -384,7 +398,7 @@ class TestTransitiveFeasibility:
 
     def test_no_critical_deps_skips(self) -> None:
         manifest = _make_manifest(
-            contract=Contract(availability=0.999),
+            contract={"availability": 0.999},
             dependencies=[
                 Dependency(name="cache", type="cache", critical=False),
             ],
@@ -396,7 +410,7 @@ class TestTransitiveFeasibility:
 
     def test_unknown_deps_warn(self) -> None:
         manifest = _make_manifest(
-            contract=Contract(availability=0.999),
+            contract={"availability": 0.999},
             dependencies=[
                 Dependency(name="mystery-svc", type="api", critical=True),
             ],
@@ -408,7 +422,7 @@ class TestTransitiveFeasibility:
 
     def test_fallback_to_expected_slo(self) -> None:
         manifest = _make_manifest(
-            contract=Contract(availability=0.99),
+            contract={"availability": 0.99},
             dependencies=[
                 Dependency(
                     name="db",
@@ -428,6 +442,11 @@ class TestTransitiveFeasibility:
 
 # =============================================================================
 # TestTemplateResolution
+#
+# srm/v1 template resolution moved to nthlayer-common with the manifest stack
+# (opensrm-wo62.1): generate's resolve_opensrm_template is common's
+# parser/v1.py resolve_template. nthlayer-common's suite has no test of it or
+# of _deep_merge_spec, so these stay here, pointed at common's functions.
 # =============================================================================
 
 
@@ -463,7 +482,7 @@ class TestTemplateResolution:
                 },
             }
 
-            resolved, warnings = resolve_opensrm_template(manifest_data, template_dir)
+            resolved, warnings = resolve_template(manifest_data, template_dir)
 
             assert len(warnings) == 0
             assert "availability" in resolved["spec"]["slos"]
@@ -503,7 +522,7 @@ class TestTemplateResolution:
                 },
             }
 
-            resolved, warnings = resolve_opensrm_template(manifest_data, template_dir)
+            resolved, warnings = resolve_template(manifest_data, template_dir)
 
             assert len(warnings) == 0
             # Service override wins
@@ -517,7 +536,7 @@ class TestTemplateResolution:
                 "spec": {"type": "api"},
             }
 
-            resolved, warnings = resolve_opensrm_template(manifest_data, tmpdir)
+            resolved, warnings = resolve_template(manifest_data, tmpdir)
 
             assert len(warnings) == 1
             assert "not found" in warnings[0]
@@ -544,7 +563,7 @@ class TestTemplateResolution:
                 "spec": {"type": "api"},
             }
 
-            resolved, warnings = resolve_opensrm_template(manifest_data, template_dir)
+            resolved, warnings = resolve_template(manifest_data, template_dir)
 
             assert len(warnings) == 1
             assert "chaining not allowed" in warnings[0]
@@ -557,7 +576,7 @@ class TestTemplateResolution:
             "spec": {"type": "api"},
         }
 
-        resolved, warnings = resolve_opensrm_template(manifest_data, None)
+        resolved, warnings = resolve_template(manifest_data, None)
 
         assert len(warnings) == 0
         assert resolved is manifest_data
@@ -568,7 +587,7 @@ class TestTemplateResolution:
             "spec": {"type": "api"},
         }
 
-        resolved, warnings = resolve_opensrm_template(manifest_data, None)
+        resolved, warnings = resolve_template(manifest_data, None)
 
         assert len(warnings) == 1
         assert "no template directory" in warnings[0]
@@ -584,7 +603,7 @@ class TestTemplateResolution:
                 "spec": {"type": "api"},
             }
 
-            resolved, warnings = resolve_opensrm_template(manifest_data, template_dir)
+            resolved, warnings = resolve_template(manifest_data, template_dir)
 
             assert len(warnings) == 1
             assert "Failed to load template" in warnings[0]
@@ -600,7 +619,7 @@ class TestTemplateResolution:
                 "spec": {"type": "api"},
             }
 
-            resolved, warnings = resolve_opensrm_template(manifest_data, template_dir)
+            resolved, warnings = resolve_template(manifest_data, template_dir)
 
             assert len(warnings) == 1
             assert "not a valid YAML object" in warnings[0]

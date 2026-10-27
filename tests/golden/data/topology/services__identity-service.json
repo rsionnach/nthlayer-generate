@@ -1,0 +1,47 @@
+{
+  "edges": [
+    {
+      "confidence": 1.0,
+      "critical": false,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "identity-service",
+      "target": "users_db"
+    },
+    {
+      "confidence": 1.0,
+      "critical": false,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "identity-service",
+      "target": "session_cache"
+    }
+  ],
+  "exported_at": "<masked>",
+  "metadata": {
+    "providers_used": []
+  },
+  "nodes": [
+    {
+      "name": "identity-service",
+      "team": "identity",
+      "tier": "critical",
+      "type": "api"
+    },
+    {
+      "name": "users_db"
+    },
+    {
+      "name": "session_cache"
+    }
+  ],
+  "stats": {
+    "edge_count": 2,
+    "node_count": 3
+  },
+  "version": "1.0"
+}

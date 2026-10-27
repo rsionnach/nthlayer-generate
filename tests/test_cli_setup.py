@@ -1113,7 +1113,7 @@ class TestTheNameRuleHasExactlyOneHome:
         from nthlayer_generate.cli.setup import (
             _is_valid_service_name as setup_guard,
         )
-        from nthlayer_generate.specs.manifest import is_valid_service_name
+        from nthlayer_generate.specs.names import is_valid_service_name
 
         assert SERVICE_NAME_CASES, "the shared table is empty, so this proves nothing"
         for name, expected in SERVICE_NAME_CASES:
@@ -1229,7 +1229,7 @@ class TestWizardNameIsNotImplicitlyRetyped:
 
     def test_every_value_is_accepted_by_the_name_rule(self):
         """They matter only because the rule admits them."""
-        from nthlayer_generate.specs.manifest import is_valid_service_name
+        from nthlayer_generate.specs.names import is_valid_service_name
 
         for name in self.RESOLVABLE:
             assert is_valid_service_name(name), (

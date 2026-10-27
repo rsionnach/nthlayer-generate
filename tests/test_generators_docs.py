@@ -1,16 +1,17 @@
 """Tests for nthlayer.generators.docs — service documentation generation."""
 
+from nthlayer_common.manifest import (
+    Dependency,
+    Ownership,
+    ReliabilityManifest,
+    SLODefinition,
+)
+
 from nthlayer_generate.generators.docs import (
     DocsGenerationResult,
     _generate_api_docs,
     _generate_readme,
     generate_docs_from_manifest,
-)
-from nthlayer_generate.specs.manifest import (
-    Dependency,
-    Ownership,
-    ReliabilityManifest,
-    SLODefinition,
 )
 
 
@@ -21,7 +22,10 @@ def _make_manifest(**overrides) -> ReliabilityManifest:
         tier="critical",
         type="api",
         description="Checkout service",
-        slos=[SLODefinition(name="avail", target=99.9, window="30d")],
+        # slo_type is incidental to what this test asserts (the name "avail" is
+        # asserted on, so it is kept); availability is the type an srm/v1
+        # availability SLO has (opensrm spec/v1/schema.json @859424a /definitions/SLOs).
+        slos=[SLODefinition(name="avail", target=99.9, slo_type="availability", window="30d")],
         dependencies=[Dependency(name="postgres", type="database", critical=True)],
     )
     defaults.update(overrides)

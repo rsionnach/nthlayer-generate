@@ -264,3 +264,34 @@ def test_threshold_alerts_carry_the_services_context_labels():
         assert alert.labels["team"] == manifest.team
         assert alert.labels["tier"] == str(manifest.tier)
         assert alert.labels["routing"] == manifest.support_model
+
+
+API_CRITICAL = (
+    Path(__file__).resolve().parents[1] / "examples" / "opensrm" / "api-critical.reliability.yaml"
+)
+
+
+def test_dependency_and_threshold_alerts_are_both_returned_and_written(tmp_path: Path):
+    """R5 provenance: a manifest with both kinds must keep both.
+
+    The dependencies come from generate's shipped api-critical example
+    (postgresql, redis), and the thresholds from the spec's all-five-types
+    ai-gate.
+    """
+    assert API_CRITICAL.is_file()
+    with_thresholds = dataclasses.replace(
+        _load(ALL_FIVE), dependencies=_load(API_CRITICAL).dependencies
+    )
+    without_thresholds = dataclasses.replace(with_thresholds, judgment_thresholds=[])
+    dependency_alerts = generate_alerts_from_manifest(without_thresholds, quiet=True)
+    threshold_alerts = build_judgment_threshold_alerts(with_thresholds)
+    # Anti-vacuity: both kinds exist, so neither half of the check is empty.
+    assert dependency_alerts and threshold_alerts
+    out = tmp_path / "alerts.yaml"
+
+    returned = generate_alerts_from_manifest(with_thresholds, output_file=out, quiet=True)
+
+    expected = [a.name for a in dependency_alerts] + [a.name for a in threshold_alerts]
+    assert [a.name for a in returned] == expected
+    doc = yaml.safe_load(out.read_text())
+    assert sorted(r["alert"] for g in doc["groups"] for r in g["rules"]) == sorted(expected)

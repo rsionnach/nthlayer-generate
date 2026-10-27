@@ -13,14 +13,35 @@ The generated metrics are compatible with Backstage plugins:
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from nthlayer_common.manifest import (
+    FEEDBACK_LATENCY_WINDOW,
     JudgmentThreshold,
     ReliabilityManifest,
     SLODefinition,
     duration_seconds,
 )
+from nthlayer_common.manifest.thresholds import DURATION, THRESHOLD_BOUNDS
 
 from nthlayer_generate.recording_rules.models import RecordingRule, RecordingRuleGroup
+
+# The recording rule a threshold bound's alerts compare against, per type and
+# bound (wo62.2). Only types with a data source in common's THRESHOLD_SERIES
+# appear; the alert builder reads the same table, so the two cannot drift.
+THRESHOLD_BOUND_RECORDS: dict[str, dict[str, str]] = {
+    "calibration": {
+        "maximum_expected_calibration_error": "ai_gate:calibration:ece",
+        "maximum_brier_score": "ai_gate:calibration:brier",
+    },
+    "feedback_latency": {
+        "maximum_p50": f"ai_gate:feedback_latency:p50_within_bound_{FEEDBACK_LATENCY_WINDOW}",
+        "maximum_p90": f"ai_gate:feedback_latency:p90_within_bound_{FEEDBACK_LATENCY_WINDOW}",
+    },
+}
+
+# OPENSRM-CORE-v2 §5.5.5: the quantile each feedback_latency bound caps.
+FEEDBACK_LATENCY_QUANTILES: dict[str, float] = {"maximum_p50": 0.5, "maximum_p90": 0.9}
 
 
 class ManifestRecordingRuleBuilder:
@@ -70,9 +91,21 @@ class ManifestRecordingRuleBuilder:
                     judgment_group.add_rule(rule)
             for threshold in self.manifest.get_judgment_thresholds():
                 for rule in self._build_judgment_threshold_rules(threshold):
-                    judgment_group.add_rule(rule)
+                    _add_unique(judgment_group, rule)
             if judgment_group.rules:
                 groups.append(judgment_group)
+
+            # 30-day within-bound fractions: 30-day range queries, so a
+            # slower interval than the 30s judgment group (wo62.2).
+            window_group = RecordingRuleGroup(
+                name=f"{self.manifest.name}_judgment_thresholds_{FEEDBACK_LATENCY_WINDOW}",
+                interval="5m",
+            )
+            for threshold in self.manifest.get_judgment_thresholds():
+                for rule in self._build_judgment_threshold_window_rules(threshold):
+                    _add_unique(window_group, rule)
+            if window_group.rules:
+                groups.append(window_group)
 
         # Service health metrics
         health_group = self._build_health_rules()
@@ -360,36 +393,56 @@ class ManifestRecordingRuleBuilder:
         return []
 
     def _build_judgment_threshold_rules(self, threshold: JudgmentThreshold) -> list[RecordingRule]:
-        """Build recording rules for one judgment threshold (spec §5.3).
+        """Build recording rules for one judgment threshold (spec §5.3, wo62.2 §4).
 
-        - calibration: emitted when ``maximum_expected_calibration_error`` is
-          declared; ``target`` is ``str(bound)``.
+        - calibration: the ECE rules when ``maximum_expected_calibration_error``
+          is declared, then ``:brier`` when ``maximum_brier_score`` is; each
+          rule's ``target`` is ``str(bound)``.
         - feedback_latency: ``:p50/:p95/:p99`` always; ``:bucket`` when
           ``maximum_p50`` is declared, with ``le`` and ``target`` both
-          ``str(duration_seconds(maximum_p50))``.
+          ``str(duration_seconds(maximum_p50))``. The 30-day within-bound fractions are
+          built separately, by ``_build_judgment_threshold_window_rules``.
 
-        Brier-only calibration, p90-only feedback latency, and the segments,
-        stability and audit_backlog types emit nothing yet (opensrm-wo62.2).
+        segments, stability and audit_backlog have no data source in
+        common's THRESHOLD_SERIES and emit nothing (wo62.2 ruling D2).
         """
         service = self.manifest.name
         bounds = threshold.bounds
 
         if threshold.type == "calibration":
+            rules: list[RecordingRule] = []
             ece = bounds.get("maximum_expected_calibration_error")
-            if ece is None:
-                return []
-            return self._build_calibration_rules(service, float(ece))
+            if ece is not None:
+                rules.extend(self._build_calibration_rules(service, float(ece)))
+            brier = bounds.get("maximum_brier_score")
+            if brier is not None:
+                rules.append(self._build_brier_rule(service, float(brier)))
+            return rules
         if threshold.type == "feedback_latency":
-            p50 = bounds.get("maximum_p50")
-            target_seconds = None
-            if p50 is not None:
-                # A Duration string such as "1h" (validated by common); a
-                # float here must fail loudly, not stringify to "3600.0".
-                if not isinstance(p50, str):
-                    raise TypeError(f"maximum_p50 is not a Duration: {p50!r}")
-                target_seconds = duration_seconds(p50)
-            return self._build_feedback_latency_rules(service, target_seconds)
+            return self._build_feedback_latency_rules(
+                service, _bound_seconds(bounds, "maximum_p50")
+            )
         return []
+
+    def _build_judgment_threshold_window_rules(
+        self, threshold: JudgmentThreshold
+    ) -> list[RecordingRule]:
+        """Build the 30-day within-bound fraction rule per declared p50/p90 bound.
+
+        These use the window §5.5.5 defines, and they are what the threshold
+        alerts compare against. Every other type emits nothing here.
+        """
+        if threshold.type != "feedback_latency":
+            return []
+        service = self.manifest.name
+        rules = []
+        for bound, quantile in FEEDBACK_LATENCY_QUANTILES.items():
+            seconds = _bound_seconds(threshold.bounds, bound)
+            if seconds is not None:
+                rules.append(
+                    self._build_feedback_latency_window_rule(service, bound, quantile, seconds)
+                )
+        return rules
 
     def _build_reversal_rate_rules(
         self, service: str, target: float, window: str
@@ -501,7 +554,7 @@ class ManifestRecordingRuleBuilder:
         # This creates a recording rule that aggregates pre-computed ECE
         rules.append(
             RecordingRule(
-                record="ai_gate:calibration:ece",
+                record=THRESHOLD_BOUND_RECORDS["calibration"]["maximum_expected_calibration_error"],
                 expr=(f'avg(ai_gate_calibration_error{{service="{service}"}})'),
                 labels={
                     "service": service,
@@ -528,6 +581,18 @@ class ManifestRecordingRuleBuilder:
             )
 
         return rules
+
+    def _build_brier_rule(self, service: str, target: float) -> RecordingRule:
+        """Build the Brier score rule; the source gauge is computed externally."""
+        return RecordingRule(
+            record=THRESHOLD_BOUND_RECORDS["calibration"]["maximum_brier_score"],
+            expr=f'avg(ai_gate_calibration_brier{{service="{service}"}})',
+            labels={
+                "service": service,
+                "target": str(target),
+                "slo": "calibration",
+            },
+        )
 
     def _build_feedback_latency_rules(
         self, service: str, target_seconds: float | None
@@ -566,7 +631,7 @@ class ManifestRecordingRuleBuilder:
                 record="ai_gate:feedback_latency:bucket",
                 expr=(
                     f'sum(rate(ai_gate_feedback_latency_seconds_bucket{{service="{service}",'
-                    f'le="{target_seconds}"}}[5m])) / '
+                    f'le="{prometheus_le(target_seconds)}"}}[5m])) / '
                     f'sum(rate(ai_gate_feedback_latency_seconds_count{{service="{service}"}}[5m]))'
                 ),
                 labels={
@@ -648,6 +713,39 @@ class ManifestRecordingRuleBuilder:
 
         return group
 
+    def _build_feedback_latency_window_rule(
+        self, service: str, bound: str, quantile: float, target_seconds: float
+    ) -> RecordingRule:
+        """Build the fraction of ground truth that arrived within the bound, over 30 days.
+
+        The quantile is at most the bound exactly when this fraction is at
+        least ``quantile``, so the alert compares the fraction and needs no
+        interpolation. ``histogram_quantile`` is deliberately not used: it
+        reports a quantile in the +Inf bucket as the highest finite ``le``,
+        so a breach above the top bucket would read as within bounds (the
+        reason common's contract and workers' sampler avoid it too).
+
+        Needs a bucket at exactly ``le`` = the bound, as the ``:bucket`` rule
+        does. Without one the series is absent; with no arrivals it is NaN.
+        Either way the NotEvaluable alert fires (E3).
+        """
+        selector = f'service="{service}"'
+        window = f"[{FEEDBACK_LATENCY_WINDOW}]"
+        return RecordingRule(
+            record=THRESHOLD_BOUND_RECORDS["feedback_latency"][bound],
+            expr=(
+                f'sum(increase(ai_gate_feedback_latency_seconds_bucket{{{selector},le="{prometheus_le(target_seconds)}"}}'
+                f"{window})) / sum(increase(ai_gate_feedback_latency_seconds_count{{{selector}}}"
+                f"{window}))"
+            ),
+            labels={
+                "service": service,
+                "target": str(target_seconds),
+                "quantile": str(quantile),
+                "slo": "feedback_latency",
+            },
+        )
+
 
 def build_recording_rules_from_manifest(
     manifest: ReliabilityManifest,
@@ -668,3 +766,59 @@ def build_recording_rules_from_manifest(
     """
     builder = ManifestRecordingRuleBuilder(manifest)
     return builder.build()
+
+
+def prometheus_le(value: float) -> str:
+    """``value`` as exporters write an ``le`` label, so a selector on it matches.
+
+    Go's shortest ``%g`` (exponent form below 1e-4 and from 1e6), plus ".0"
+    on a plain integer, which is what the Go and Python clients and
+    Prometheus 3's ``le`` normalisation produce: 3600 is "3600.0", but two
+    weeks is "1.2096e+06", not "1209600.0".
+    """
+    if value == 0:
+        return "0.0"
+    shortest = Decimal(repr(float(value)))
+    exponent = shortest.adjusted()
+    if -4 <= exponent < 6:
+        text = format(shortest, "f")
+        return text if "." in text else f"{text}.0"
+    digits = "".join(map(str, shortest.as_tuple().digits)).rstrip("0") or "0"
+    mantissa = digits[0] + (f".{digits[1:]}" if len(digits) > 1 else "")
+    return f"{mantissa}e{'+' if exponent >= 0 else '-'}{abs(exponent):02d}"
+
+
+def _add_unique(group: RecordingRuleGroup, rule: RecordingRule) -> None:
+    """Add ``rule`` unless an identical one is already there.
+
+    §5.5 lets a manifest repeat a threshold type; two identical rules in one
+    group would write the same series twice.
+    """
+    if rule not in group.rules:
+        group.add_rule(rule)
+
+
+def bound_comparison_value(bounds: dict[str, float | str], name: str) -> float:
+    """A declared bound as the rules compare it: a Ratio as declared, a Duration in seconds (E2).
+
+    Its ``str()`` is the ``target`` label of the bound's recording rule.
+    """
+    (threshold_type,) = [t for t, kinds in THRESHOLD_BOUNDS.items() if name in kinds]
+    if THRESHOLD_BOUNDS[threshold_type][name] == DURATION:
+        seconds = _bound_seconds(bounds, name)
+        if seconds is None:
+            raise KeyError(name)
+        return seconds
+    return float(bounds[name])
+
+
+def _bound_seconds(bounds: dict[str, float | str], name: str) -> float | None:
+    """A declared Duration bound in seconds (E2), or None when undeclared."""
+    value = bounds.get(name)
+    if value is None:
+        return None
+    # A Duration string such as "1h" (validated by common); a float here
+    # must fail loudly, not stringify to "3600.0".
+    if not isinstance(value, str):
+        raise TypeError(f"{name} is not a Duration: {value!r}")
+    return duration_seconds(value)

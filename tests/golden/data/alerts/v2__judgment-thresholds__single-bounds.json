@@ -1,1 +1,81 @@
-null
+{
+  "groups": [
+    {
+      "name": "triage-agent-judgment_threshold",
+      "rules": [
+        {
+          "alert": "AIGateFeedbackLatencyP90Breach",
+          "annotations": {
+            "description": "Only {{ $value }} of ground truth arrived within 86400.0s, below 0.9, so the quantile exceeds the declared maximum_p90 (OPENSRM-CORE-v2 §5.5.6 E1).",
+            "summary": "triage-agent: feedback_latency maximum_p90 breached"
+          },
+          "expr": "ai_gate:feedback_latency:p90_within_bound_30d{service=\"triage-agent\",target=\"86400.0\"} < 0.9",
+          "for": "15m",
+          "labels": {
+            "bound": "maximum_p90",
+            "routing": "self",
+            "service": "triage-agent",
+            "severity": "warning",
+            "team": "risk",
+            "threshold_type": "feedback_latency",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "AIGateFeedbackLatencyP90NotEvaluable",
+          "annotations": {
+            "description": "ai_gate:feedback_latency:p90_within_bound_30d has no value or is NaN, so maximum_p90 cannot be evaluated. Not evaluable is not within bounds (OPENSRM-CORE-v2 §5.5.6 E3).",
+            "summary": "triage-agent: feedback_latency maximum_p90 not evaluable"
+          },
+          "expr": "absent(ai_gate:feedback_latency:p90_within_bound_30d{service=\"triage-agent\",target=\"86400.0\"}) or (ai_gate:feedback_latency:p90_within_bound_30d{service=\"triage-agent\",target=\"86400.0\"} != ai_gate:feedback_latency:p90_within_bound_30d{service=\"triage-agent\",target=\"86400.0\"})",
+          "for": "1h",
+          "labels": {
+            "bound": "maximum_p90",
+            "routing": "self",
+            "service": "triage-agent",
+            "severity": "info",
+            "team": "risk",
+            "threshold_type": "feedback_latency",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "AIGateCalibrationECEBreach",
+          "annotations": {
+            "description": "ai_gate:calibration:ece is {{ $value }}, above the declared maximum_expected_calibration_error of 0.03 (OPENSRM-CORE-v2 §5.5.6 E1).",
+            "summary": "triage-agent: calibration maximum_expected_calibration_error breached"
+          },
+          "expr": "ai_gate:calibration:ece{service=\"triage-agent\",target=\"0.03\"} > 0.03",
+          "for": "15m",
+          "labels": {
+            "bound": "maximum_expected_calibration_error",
+            "routing": "self",
+            "service": "triage-agent",
+            "severity": "warning",
+            "team": "risk",
+            "threshold_type": "calibration",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "AIGateCalibrationECENotEvaluable",
+          "annotations": {
+            "description": "ai_gate:calibration:ece has no value or is NaN, so maximum_expected_calibration_error cannot be evaluated. Not evaluable is not within bounds (OPENSRM-CORE-v2 §5.5.6 E3).",
+            "summary": "triage-agent: calibration maximum_expected_calibration_error not evaluable"
+          },
+          "expr": "absent(ai_gate:calibration:ece{service=\"triage-agent\",target=\"0.03\"}) or (ai_gate:calibration:ece{service=\"triage-agent\",target=\"0.03\"} != ai_gate:calibration:ece{service=\"triage-agent\",target=\"0.03\"})",
+          "for": "1h",
+          "labels": {
+            "bound": "maximum_expected_calibration_error",
+            "routing": "self",
+            "service": "triage-agent",
+            "severity": "info",
+            "team": "risk",
+            "threshold_type": "calibration",
+            "tier": "critical"
+          }
+        }
+      ]
+    }
+  ]
+}

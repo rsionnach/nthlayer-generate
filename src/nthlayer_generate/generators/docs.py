@@ -9,11 +9,15 @@ Generates Markdown documentation from ReliabilityManifest metadata:
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import structlog
-from nthlayer_common.manifest import ReliabilityManifest, load_manifest
+from nthlayer_common.manifest import ReliabilityManifest, ThresholdMeasurement, load_manifest
+
+from nthlayer_generate.generators.judgment_threshold_alerts import alert_names
+from nthlayer_generate.recording_rules.manifest_builder import THRESHOLD_BOUND_RECORDS
 
 logger = structlog.get_logger()
 
@@ -607,6 +611,8 @@ def _api_docs_ai_gate(manifest: ReliabilityManifest) -> str:
     else:
         lines.append("<!-- TODO: Define judgment SLOs -->")
 
+    lines.extend(_judgment_thresholds_section(manifest))
+
     standard_slos = manifest.get_standard_slos()
     if standard_slos:
         lines.extend(["", "## Standard SLOs", ""])
@@ -615,3 +621,58 @@ def _api_docs_ai_gate(manifest: ReliabilityManifest) -> str:
 
     lines.append("")
     return "\n".join(lines)
+
+
+def _judgment_thresholds_section(manifest: ReliabilityManifest) -> list[str]:
+    """One table row per declared threshold bound (opensrm-wo62.2, design §6).
+
+    Empty when the manifest declares no thresholds. A bound with a recording
+    rule names the rule and its two alerts; segments, stability and
+    audit_backlog have no data source and are evaluated by nthlayer-workers.
+    """
+    thresholds = manifest.get_judgment_thresholds()
+    if not thresholds:
+        return []
+    lines = [
+        "",
+        "## Judgment thresholds",
+        "",
+        "A breach is a measured value strictly above a declared bound (OPENSRM-CORE-v2 §5.5.6).",
+        "",
+        "| Type | Bound | Value | Evaluated by | Measurement |",
+        "|---|---|---|---|---|",
+    ]
+    for threshold in thresholds:
+        records = THRESHOLD_BOUND_RECORDS.get(threshold.type, {})
+        measurement = _measurement_summary(threshold.measurement)
+        for bound, value in threshold.bounds.items():
+            record = records.get(bound)
+            if record is None:
+                evaluated_by = "nthlayer-workers; no Prometheus rule"
+            else:
+                breach, not_evaluable = alert_names(threshold.type, bound)
+                evaluated_by = f"Prometheus: `{record}`; alerts `{breach}`, `{not_evaluable}`"
+            cells = (threshold.type, bound, str(value), evaluated_by, measurement)
+            lines.append("| " + " | ".join(_table_cell(c) for c in cells) + " |")
+    return lines
+
+
+def _measurement_summary(measurement: ThresholdMeasurement) -> str:
+    """The declared measurement fields as ``name: value``, ``; ``-separated."""
+    parts = []
+    for f in dataclasses.fields(measurement):
+        value = getattr(measurement, f.name)
+        if value is None or value == []:
+            continue
+        if dataclasses.is_dataclass(value):
+            inner = dataclasses.asdict(value)  # type: ignore[arg-type]
+            value = ", ".join(f"{k}={v}" for k, v in inner.items() if v is not None)
+        elif isinstance(value, list):
+            value = ", ".join(str(v) for v in value)
+        parts.append(f"{f.name}: {value}")
+    return "; ".join(parts) or "—"
+
+
+def _table_cell(text: str) -> str:
+    """Escape ``|`` so a declared value cannot split a Markdown table row."""
+    return text.replace("|", "\\|")

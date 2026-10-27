@@ -57,16 +57,22 @@ def build_judgment_threshold_alerts(manifest: ReliabilityManifest) -> list[Alert
     return alerts
 
 
+def alert_names(threshold_type: str, bound: str) -> tuple[str, str]:
+    """The (Breach, NotEvaluable) alert names for one bound that has a recording rule."""
+    name = f"AIGate{_TYPE_NAMES[threshold_type]}{_BOUND_NAMES[bound]}"
+    return f"{name}Breach", f"{name}NotEvaluable"
+
+
 def _bound_alerts(
     service: str, threshold: JudgmentThreshold, bound: str, record: str
 ) -> list[AlertRule]:
     value = bound_comparison_value(threshold.bounds, bound)
     series = f'{record}{{service="{service}",target="{value}"}}'
-    name = f"AIGate{_TYPE_NAMES[threshold.type]}{_BOUND_NAMES[bound]}"
+    breach_name, not_evaluable_name = alert_names(threshold.type, bound)
     labels = {"threshold_type": threshold.type, "bound": bound}
     return [
         AlertRule(
-            name=f"{name}Breach",
+            name=breach_name,
             expr=f"{series} > {value}",
             duration=BREACH_FOR,
             severity=BREACH_SEVERITY,
@@ -82,7 +88,7 @@ def _bound_alerts(
             category="judgment",
         ),
         AlertRule(
-            name=f"{name}NotEvaluable",
+            name=not_evaluable_name,
             expr=f"absent({series}) or ({series} != {series})",
             duration=NOT_EVALUABLE_FOR,
             severity=NOT_EVALUABLE_SEVERITY,

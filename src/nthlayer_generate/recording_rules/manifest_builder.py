@@ -20,8 +20,26 @@ from nthlayer_common.manifest import (
     SLODefinition,
     duration_seconds,
 )
+from nthlayer_common.manifest.thresholds import DURATION, THRESHOLD_BOUNDS
 
 from nthlayer_generate.recording_rules.models import RecordingRule, RecordingRuleGroup
+
+# The recording rule a threshold bound's alerts compare against, per type and
+# bound (wo62.2). Only types with a data source in common's THRESHOLD_SERIES
+# appear; the alert builder reads the same table, so the two cannot drift.
+THRESHOLD_BOUND_RECORDS: dict[str, dict[str, str]] = {
+    "calibration": {
+        "maximum_expected_calibration_error": "ai_gate:calibration:ece",
+        "maximum_brier_score": "ai_gate:calibration:brier",
+    },
+    "feedback_latency": {
+        "maximum_p50": f"ai_gate:feedback_latency:p50_{FEEDBACK_LATENCY_WINDOW}",
+        "maximum_p90": f"ai_gate:feedback_latency:p90_{FEEDBACK_LATENCY_WINDOW}",
+    },
+}
+
+# OPENSRM-CORE-v2 §5.5.5: the quantile each feedback_latency bound caps.
+FEEDBACK_LATENCY_QUANTILES: dict[str, float] = {"maximum_p50": 0.5, "maximum_p90": 0.9}
 
 
 class ManifestRecordingRuleBuilder:
@@ -416,10 +434,12 @@ class ManifestRecordingRuleBuilder:
             return []
         service = self.manifest.name
         rules = []
-        for quantile, bound in ((0.5, "maximum_p50"), (0.9, "maximum_p90")):
+        for bound, quantile in FEEDBACK_LATENCY_QUANTILES.items():
             seconds = _bound_seconds(threshold.bounds, bound)
             if seconds is not None:
-                rules.append(self._build_feedback_latency_window_rule(service, quantile, seconds))
+                rules.append(
+                    self._build_feedback_latency_window_rule(service, bound, quantile, seconds)
+                )
         return rules
 
     def _build_reversal_rate_rules(
@@ -532,7 +552,7 @@ class ManifestRecordingRuleBuilder:
         # This creates a recording rule that aggregates pre-computed ECE
         rules.append(
             RecordingRule(
-                record="ai_gate:calibration:ece",
+                record=THRESHOLD_BOUND_RECORDS["calibration"]["maximum_expected_calibration_error"],
                 expr=(f'avg(ai_gate_calibration_error{{service="{service}"}})'),
                 labels={
                     "service": service,
@@ -563,7 +583,7 @@ class ManifestRecordingRuleBuilder:
     def _build_brier_rule(self, service: str, target: float) -> RecordingRule:
         """Build the Brier score rule; the source gauge is computed externally."""
         return RecordingRule(
-            record="ai_gate:calibration:brier",
+            record=THRESHOLD_BOUND_RECORDS["calibration"]["maximum_brier_score"],
             expr=f'avg(ai_gate_calibration_brier{{service="{service}"}})',
             labels={
                 "service": service,
@@ -692,7 +712,7 @@ class ManifestRecordingRuleBuilder:
         return group
 
     def _build_feedback_latency_window_rule(
-        self, service: str, quantile: float, target_seconds: float
+        self, service: str, bound: str, quantile: float, target_seconds: float
     ) -> RecordingRule:
         """Build one feedback-latency quantile over the §5.5.5 30-day window.
 
@@ -701,7 +721,7 @@ class ManifestRecordingRuleBuilder:
         the result is NaN, which the NotEvaluable alert treats as E3.
         """
         return RecordingRule(
-            record=f"ai_gate:feedback_latency:p{round(quantile * 100)}_{FEEDBACK_LATENCY_WINDOW}",
+            record=THRESHOLD_BOUND_RECORDS["feedback_latency"][bound],
             expr=(
                 f"histogram_quantile({quantile}, sum by (le) ("
                 f'increase(ai_gate_feedback_latency_seconds_bucket{{service="{service}"}}'
@@ -734,6 +754,20 @@ def build_recording_rules_from_manifest(
     """
     builder = ManifestRecordingRuleBuilder(manifest)
     return builder.build()
+
+
+def bound_comparison_value(bounds: dict[str, float | str], name: str) -> float:
+    """A declared bound as the rules compare it: a Ratio as declared, a Duration in seconds (E2).
+
+    Its ``str()`` is the ``target`` label of the bound's recording rule.
+    """
+    (threshold_type,) = [t for t, kinds in THRESHOLD_BOUNDS.items() if name in kinds]
+    if THRESHOLD_BOUNDS[threshold_type][name] == DURATION:
+        seconds = _bound_seconds(bounds, name)
+        if seconds is None:
+            raise KeyError(name)
+        return seconds
+    return float(bounds[name])
 
 
 def _bound_seconds(bounds: dict[str, float | str], name: str) -> float | None:

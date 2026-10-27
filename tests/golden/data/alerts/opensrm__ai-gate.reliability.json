@@ -1,1 +1,81 @@
-null
+{
+  "groups": [
+    {
+      "name": "fraud-detector-judgment_threshold",
+      "rules": [
+        {
+          "alert": "AIGateCalibrationECEBreach",
+          "annotations": {
+            "description": "ai_gate:calibration:ece is {{ $value }}, above the declared maximum_expected_calibration_error of 0.05 (OPENSRM-CORE-v2 §5.5.6 E1).",
+            "summary": "fraud-detector: calibration maximum_expected_calibration_error breached"
+          },
+          "expr": "ai_gate:calibration:ece{service=\"fraud-detector\",target=\"0.05\"} > 0.05",
+          "for": "15m",
+          "labels": {
+            "bound": "maximum_expected_calibration_error",
+            "routing": "self",
+            "service": "fraud-detector",
+            "severity": "warning",
+            "team": "risk",
+            "threshold_type": "calibration",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "AIGateCalibrationECENotEvaluable",
+          "annotations": {
+            "description": "ai_gate:calibration:ece has no value, so maximum_expected_calibration_error cannot be evaluated. Not evaluable is not within bounds (OPENSRM-CORE-v2 §5.5.6 E3).",
+            "summary": "fraud-detector: calibration maximum_expected_calibration_error not evaluable"
+          },
+          "expr": "absent(ai_gate:calibration:ece{service=\"fraud-detector\",target=\"0.05\"}) or (ai_gate:calibration:ece{service=\"fraud-detector\",target=\"0.05\"} != ai_gate:calibration:ece{service=\"fraud-detector\",target=\"0.05\"})",
+          "for": "1h",
+          "labels": {
+            "bound": "maximum_expected_calibration_error",
+            "routing": "self",
+            "service": "fraud-detector",
+            "severity": "info",
+            "team": "risk",
+            "threshold_type": "calibration",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "AIGateFeedbackLatencyP50Breach",
+          "annotations": {
+            "description": "ai_gate:feedback_latency:p50_30d is {{ $value }}, above the declared maximum_p50 of 3600.0 (OPENSRM-CORE-v2 §5.5.6 E1).",
+            "summary": "fraud-detector: feedback_latency maximum_p50 breached"
+          },
+          "expr": "ai_gate:feedback_latency:p50_30d{service=\"fraud-detector\",target=\"3600.0\"} > 3600.0",
+          "for": "15m",
+          "labels": {
+            "bound": "maximum_p50",
+            "routing": "self",
+            "service": "fraud-detector",
+            "severity": "warning",
+            "team": "risk",
+            "threshold_type": "feedback_latency",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "AIGateFeedbackLatencyP50NotEvaluable",
+          "annotations": {
+            "description": "ai_gate:feedback_latency:p50_30d has no value, so maximum_p50 cannot be evaluated. Not evaluable is not within bounds (OPENSRM-CORE-v2 §5.5.6 E3).",
+            "summary": "fraud-detector: feedback_latency maximum_p50 not evaluable"
+          },
+          "expr": "absent(ai_gate:feedback_latency:p50_30d{service=\"fraud-detector\",target=\"3600.0\"}) or (ai_gate:feedback_latency:p50_30d{service=\"fraud-detector\",target=\"3600.0\"} != ai_gate:feedback_latency:p50_30d{service=\"fraud-detector\",target=\"3600.0\"})",
+          "for": "1h",
+          "labels": {
+            "bound": "maximum_p50",
+            "routing": "self",
+            "service": "fraud-detector",
+            "severity": "info",
+            "team": "risk",
+            "threshold_type": "feedback_latency",
+            "tier": "critical"
+          }
+        }
+      ]
+    }
+  ]
+}

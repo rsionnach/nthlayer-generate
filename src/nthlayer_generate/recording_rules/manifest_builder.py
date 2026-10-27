@@ -385,7 +385,8 @@ class ManifestRecordingRuleBuilder:
             if p50 is not None:
                 # A Duration string such as "1h" (validated by common); a
                 # float here must fail loudly, not stringify to "3600.0".
-                assert isinstance(p50, str), f"maximum_p50 is not a Duration: {p50!r}"
+                if not isinstance(p50, str):
+                    raise TypeError(f"maximum_p50 is not a Duration: {p50!r}")
                 target_seconds = duration_seconds(p50)
             return self._build_feedback_latency_rules(service, target_seconds)
         return []

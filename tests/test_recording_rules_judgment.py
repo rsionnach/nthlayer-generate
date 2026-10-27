@@ -246,3 +246,19 @@ def test_srm_v1_feedback_latency_unit_minutes_gives_a_bucket_in_seconds(tmp_path
     assert bucket["labels"]["target"] == "3600.0"
     assert 'le="3600.0"' in bucket["expr"]
     assert 'le="60.0"' not in bucket["expr"]
+
+
+def test_non_duration_maximum_p50_raises_type_error():
+    import dataclasses
+
+    manifest = _load(P50_ONLY)
+    thresholds = manifest.get_judgment_thresholds()
+    bad = [
+        dataclasses.replace(t, bounds={**t.bounds, "maximum_p50": 3600.0})
+        if t.type == "feedback_latency"
+        else t
+        for t in thresholds
+    ]
+    manifest.get_judgment_thresholds = lambda: bad  # type: ignore[method-assign]
+    with pytest.raises(TypeError, match="maximum_p50 is not a Duration"):
+        build_recording_rules_from_manifest(manifest)

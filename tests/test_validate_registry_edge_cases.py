@@ -48,3 +48,41 @@ def test_registry_loads_do_not_emit_target_convention_warnings() -> None:
         return sum(issubclass(w.category, TargetConventionWarning) for w in caught)
 
     assert count(str(REPO / "examples" / "opensrm")) == count(None)
+
+
+def test_quoted_availability_error_names_the_field(tmp_path: Path) -> None:
+    """Same fixture as above, through validate_service_file: the error says
+    which value is not a number rather than echoing a comparison TypeError."""
+    from nthlayer_generate.specs.contracts import ContractRegistry
+    from nthlayer_generate.specs.validator import validate_service_file
+
+    data = yaml.safe_load(V2_EXAMPLE.read_text(encoding="utf-8"))
+    data["spec"]["contracts"][0]["promise"]["availability"] = "0.9995"
+    data["spec"]["dependencies"][0]["criticality"] = "critical"
+    manifest = tmp_path / "payment-api.yaml"
+    manifest.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    result = validate_service_file(manifest, contract_registry=ContractRegistry())
+
+    assert not result.valid
+    assert len(result.errors) == 1
+    assert "promise.availability" in result.errors[0]
+    assert "'0.9995'" in result.errors[0]
+
+
+def test_unrelated_type_error_propagates(monkeypatch, tmp_path: Path) -> None:
+    """A TypeError from generate's own code is a bug, not an invalid file.
+    Fixture: the unmodified api-full-v2.yaml, which validates."""
+    import pytest
+
+    from nthlayer_generate.specs import validator
+
+    def broken(_manifest: object) -> None:
+        raise TypeError("bug in generate")
+
+    monkeypatch.setattr(validator, "_MockContext", broken)
+    manifest = tmp_path / "payment-api.yaml"
+    manifest.write_text(V2_EXAMPLE.read_text(encoding="utf-8"), encoding="utf-8")
+
+    with pytest.raises(TypeError, match="bug in generate"):
+        validator.validate_service_file(manifest)

@@ -69,6 +69,37 @@ class ValidationResult:
         return "\n".join(lines)
 
 
+class _MockContext:
+    """The service fields validation reads, from an OpenSRM manifest."""
+
+    def __init__(self, m: Any) -> None:
+        self.name = m.name
+        self.team = m.team
+        self.tier = m.tier
+        self.type = m.type
+        self.template = m.template
+
+
+def _non_numeric_availability_error(manifest: Any, exc: TypeError) -> str:
+    """The error for a contract check that hit a non-numeric availability.
+
+    Names the manifest's first contract whose ``promise.availability`` is not
+    a number; otherwise the value came from a registry contract, which the
+    message says.
+    """
+    for contract in manifest.contracts:
+        value = contract.promise.availability
+        if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float))):
+            return (
+                f"Contract '{contract.name}' promise.availability must be a number "
+                f"(a ratio such as 0.9995), got {value!r}"
+            )
+    return (
+        "A contract's promise.availability in the contract registry is not a "
+        f"number (a ratio such as 0.9995): {exc}"
+    )
+
+
 def validate_service_file(
     file_path: str | Path,
     environment: str | None = None,
@@ -137,38 +168,35 @@ def validate_service_file(
                     file_path, environment=environment, suppress_deprecation_warning=True
                 )
 
-            # Create a mock service context for validation
-            class MockContext:
-                def __init__(self, m: Any) -> None:
-                    self.name = m.name
-                    self.team = m.team
-                    self.tier = m.tier
-                    self.type = m.type
-                    self.template = m.template
-
-            service_context = MockContext(manifest)
+            service_context = _MockContext(manifest)
             resources = []  # OpenSRM manifests have SLOs inline, not as resources
             resource_count = len(manifest.slos) + len(manifest.dependencies)
 
-            # Contract validation (OpenSRM only)
-            contract_warnings = manifest.validate_contracts()
-            warnings.extend(contract_warnings)
-
-            if contract_registry is not None:
-                dep_warnings = validate_dependency_expectations(manifest, contract_registry)
-                warnings.extend(dep_warnings)
-                trans_warnings = validate_transitive_feasibility(manifest, contract_registry)
-                warnings.extend(trans_warnings)
+            # Contract validation (OpenSRM only). TypeError here only: common's
+            # v2 parser keeps a quoted ``availability`` ("0.9995") as a string
+            # and these checks then compare it with a float. A TypeError
+            # anywhere else is a bug and propagates.
+            try:
+                warnings.extend(manifest.validate_contracts())
+                if contract_registry is not None:
+                    warnings.extend(
+                        validate_dependency_expectations(manifest, contract_registry)
+                    )
+                    warnings.extend(
+                        validate_transitive_feasibility(manifest, contract_registry)
+                    )
+            except TypeError as e:
+                return ValidationResult(
+                    valid=False,
+                    errors=[_non_numeric_availability_error(manifest, e)],
+                )
 
         except ManifestLoadError as e:
             return ValidationResult(
                 valid=False,
                 errors=[str(e)],
             )
-        except (FileNotFoundError, ValueError, TypeError) as e:
-            # TypeError: common's v2 parser keeps a quoted ``availability``
-            # ("0.9995") as a string and the contract checks then compare it
-            # with a float.
+        except (FileNotFoundError, ValueError) as e:
             return ValidationResult(
                 valid=False,
                 errors=[str(e)],

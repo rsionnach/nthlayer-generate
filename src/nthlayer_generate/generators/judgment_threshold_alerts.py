@@ -110,7 +110,7 @@ def _bound_alerts(
             annotations={
                 "summary": f"{service}: {threshold.type} {bound} not evaluable",
                 "description": (
-                    f"{record} has no value, so {bound} cannot be evaluated. "
+                    f"{record} has no value or is NaN, so {bound} cannot be evaluated. "
                     "Not evaluable is not within bounds (OPENSRM-CORE-v2 §5.5.6 E3)."
                 ),
             },

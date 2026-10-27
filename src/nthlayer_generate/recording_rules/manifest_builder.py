@@ -93,7 +93,7 @@ class ManifestRecordingRuleBuilder:
             if judgment_group.rules:
                 groups.append(judgment_group)
 
-            # Window-correct threshold quantiles: 30-day range queries, so a
+            # 30-day within-bound fractions: 30-day range queries, so a
             # slower interval than the 30s judgment group (wo62.2).
             window_group = RecordingRuleGroup(
                 name=f"{self.manifest.name}_judgment_thresholds_{FEEDBACK_LATENCY_WINDOW}",
@@ -398,7 +398,7 @@ class ManifestRecordingRuleBuilder:
           rule's ``target`` is ``str(bound)``.
         - feedback_latency: ``:p50/:p95/:p99`` always; ``:bucket`` when
           ``maximum_p50`` is declared, with ``le`` and ``target`` both
-          ``str(duration_seconds(maximum_p50))``. The 30-day quantiles are
+          ``str(duration_seconds(maximum_p50))``. The 30-day within-bound fractions are
           built separately, by ``_build_judgment_threshold_window_rules``.
 
         segments, stability and audit_backlog have no data source in

@@ -84,11 +84,11 @@ def _comparison(threshold_type: str, bound: str, value: Any) -> float:
     return float(value)
 
 
-def _emitted_records(manifest: ReliabilityManifest) -> dict[tuple[str, str], str]:
+def _emitted_records(manifest: ReliabilityManifest) -> set[tuple[str, str]]:
     """(record, target label) for every recording rule generate emits."""
     doc = yaml.safe_load(create_rule_groups(build_recording_rules_from_manifest(manifest)))
     return {
-        (r["record"], r.get("labels", {}).get("target", "")): r["record"]
+        (r["record"], r.get("labels", {}).get("target", ""))
         for g in doc["groups"]
         for r in g["rules"]
     }
@@ -200,7 +200,7 @@ def test_threshold_alerts_are_written_without_any_dependency_alerts(tmp_path: Pa
     assert written == {a.name for a in build_judgment_threshold_alerts(manifest)}
 
 
-def test_non_ai_gate_manifest_gets_no_threshold_alerts():
+def test_no_declared_thresholds_means_no_threshold_alerts():
     manifest = _load(ALL_FIVE)
     plain = dataclasses.replace(manifest, judgment_thresholds=[])
     assert build_judgment_threshold_alerts(plain) == []

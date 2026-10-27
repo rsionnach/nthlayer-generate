@@ -24,7 +24,7 @@
         {
           "alert": "AIGateFeedbackLatencyP50NotEvaluable",
           "annotations": {
-            "description": "ai_gate:feedback_latency:p50_within_bound_30d has no value, so maximum_p50 cannot be evaluated. Not evaluable is not within bounds (OPENSRM-CORE-v2 §5.5.6 E3).",
+            "description": "ai_gate:feedback_latency:p50_within_bound_30d has no value or is NaN, so maximum_p50 cannot be evaluated. Not evaluable is not within bounds (OPENSRM-CORE-v2 §5.5.6 E3).",
             "summary": "intake-agent: feedback_latency maximum_p50 not evaluable"
           },
           "expr": "absent(ai_gate:feedback_latency:p50_within_bound_30d{service=\"intake-agent\",target=\"3600.0\"}) or (ai_gate:feedback_latency:p50_within_bound_30d{service=\"intake-agent\",target=\"3600.0\"} != ai_gate:feedback_latency:p50_within_bound_30d{service=\"intake-agent\",target=\"3600.0\"})",

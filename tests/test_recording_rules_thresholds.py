@@ -1,6 +1,6 @@
 """Threshold recording rules added by opensrm-wo62.2.
 
-Brier calibration and the window-correct feedback-latency quantiles
+Brier calibration and the 30-day feedback-latency within-bound fractions
 (``:p50_within_bound_30d`` / ``:p90_within_bound_30d``). Design:
 ``nthlayer/docs/superpowers/specs/2026-10-27-wo62-2-judgment-threshold-rules-design.md`` §4.
 

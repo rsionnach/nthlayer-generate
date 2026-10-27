@@ -86,3 +86,58 @@ def test_unrelated_type_error_propagates(monkeypatch, tmp_path: Path) -> None:
 
     with pytest.raises(TypeError, match="bug in generate"):
         validator.validate_service_file(manifest)
+
+
+def test_contract_check_type_error_with_numeric_availabilities_propagates(
+    monkeypatch, tmp_path: Path
+) -> None:
+    """The TypeError catch is for non-numeric availability input only. With
+    every availability a number (the unmodified api-full-v2.yaml, an empty
+    registry), a TypeError from a contract check is a bug and propagates."""
+    import pytest
+
+    from nthlayer_generate.specs import validator
+    from nthlayer_generate.specs.contracts import ContractRegistry
+
+    def broken(*_args: object) -> list[str]:
+        raise TypeError("bug in a contract check")
+
+    monkeypatch.setattr(validator, "validate_dependency_expectations", broken)
+    manifest = tmp_path / "payment-api.yaml"
+    manifest.write_text(V2_EXAMPLE.read_text(encoding="utf-8"), encoding="utf-8")
+
+    with pytest.raises(TypeError, match="bug in a contract check"):
+        validator.validate_service_file(manifest, contract_registry=ContractRegistry())
+
+
+def test_quoted_availability_in_the_registry_names_its_service(tmp_path: Path) -> None:
+    """Fixture: api-full-v2.yaml twice. The provider is renamed ``postgresql``
+    (``metadata.name`` and ``spec.service.name``, which common's v2 parser reads)
+    after the example's first dependency, ``resource:default/postgresql``, with its
+    ``promise.availability`` quoted; the consumer is the example with that
+    dependency marked critical, as in the first test of this file."""
+    from nthlayer_common.manifest import load_manifest
+
+    from nthlayer_generate.specs.contracts import ContractRegistry
+    from nthlayer_generate.specs.validator import validate_service_file
+
+    provider = yaml.safe_load(V2_EXAMPLE.read_text(encoding="utf-8"))
+    provider["metadata"]["name"] = "postgresql"
+    provider["spec"]["service"]["name"] = "postgresql"
+    provider["spec"]["contracts"][0]["promise"]["availability"] = "0.9995"
+    provider_path = tmp_path / "postgresql.yaml"
+    provider_path.write_text(yaml.safe_dump(provider, sort_keys=False), encoding="utf-8")
+    registry = ContractRegistry()
+    registry.register(load_manifest(provider_path))
+
+    consumer = yaml.safe_load(V2_EXAMPLE.read_text(encoding="utf-8"))
+    consumer["spec"]["dependencies"][0]["criticality"] = "critical"
+    consumer_path = tmp_path / "payment-api.yaml"
+    consumer_path.write_text(yaml.safe_dump(consumer, sort_keys=False), encoding="utf-8")
+
+    result = validate_service_file(consumer_path, contract_registry=registry)
+
+    assert not result.valid
+    assert len(result.errors) == 1
+    assert "'postgresql'" in result.errors[0]
+    assert "'0.9995'" in result.errors[0]

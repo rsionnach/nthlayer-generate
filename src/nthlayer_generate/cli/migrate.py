@@ -67,6 +67,55 @@ def _split_duration(value: str) -> tuple[int, str] | None:
     return None
 
 
+# The next step for a bound or threshold srm/v1 has no form for.
+_V2_NEXT_STEP = "declare it in an opensrm.nthlayer.io/v2 manifest under spec.judgment_threshold"
+
+
+def _calibration_to_srm_v1(
+    threshold: JudgmentThreshold, bounds: dict[str, Any], lost: list[str]
+) -> dict[str, Any] | None:
+    """The srm/v1 entry for a calibration threshold; pops the bound it carries."""
+    ece = bounds.pop("maximum_expected_calibration_error", None)
+    if ece is None:
+        if not bounds:  # otherwise the leftover bounds are reported instead
+            lost.append("calibration: no carriable bound")
+        return None
+    entry: dict[str, Any] = {"target": ece}
+    if threshold.measurement.window:
+        entry["window"] = threshold.measurement.window
+    if threshold.measurement.bins != _SRM_V1_CALIBRATION_BINS:
+        lost.append(
+            f"calibration: bins={threshold.measurement.bins} (srm/v1 fixes "
+            f"{_SRM_V1_CALIBRATION_BINS})"
+        )
+    return entry
+
+
+def _feedback_latency_to_srm_v1(
+    bounds: dict[str, Any], lost: list[str]
+) -> dict[str, Any] | None:
+    """The srm/v1 entry for a feedback_latency threshold; pops the bound it carries.
+
+    Digits and unit as written: common's lift emits ``f"{int(target)}{unit}"``,
+    so this is its exact inverse. Re-spelling in seconds would change the bound
+    ("90m" -> "5400s") and could pass the lift's 2**53 cap.
+    """
+    p50 = bounds.pop("maximum_p50", None)
+    if p50 is None:
+        if not bounds:  # otherwise the leftover bounds are reported instead
+            lost.append("feedback_latency: no carriable bound")
+        return None
+    split = _split_duration(p50) if isinstance(p50, str) else None
+    if split is None:
+        lost.append(f"feedback_latency: maximum_p50={p50!r} (not a Duration)")
+        return None
+    target, unit = split
+    if target > _SRM_V1_MAX_WHOLE_TARGET:
+        lost.append(f"feedback_latency: maximum_p50={p50!r} (srm/v1 caps the target at 2**53)")
+        return None
+    return {"target": target, "unit": unit}
+
+
 def _threshold_to_srm_v1(
     threshold: JudgmentThreshold, lost: list[str]
 ) -> dict[str, Any] | None:
@@ -79,42 +128,15 @@ def _threshold_to_srm_v1(
     kind = threshold.type
     bounds = dict(threshold.bounds)
     entry: dict[str, Any] | None = None
-    # A maximum_p50 already reported on its own needs no "no carriable bound".
-    p50_reported = False
     if kind == "calibration":
-        ece = bounds.pop("maximum_expected_calibration_error", None)
-        if ece is not None:
-            entry = {"target": ece}
-            if threshold.measurement.window:
-                entry["window"] = threshold.measurement.window
-            if threshold.measurement.bins != _SRM_V1_CALIBRATION_BINS:
-                lost.append(
-                    f"calibration: bins={threshold.measurement.bins} (srm/v1 fixes "
-                    f"{_SRM_V1_CALIBRATION_BINS})"
-                )
+        entry = _calibration_to_srm_v1(threshold, bounds, lost)
     elif kind == "feedback_latency":
-        p50 = bounds.pop("maximum_p50", None)
-        # Digits and unit as written: common's lift emits
-        # f"{int(target)}{unit}", so this is its exact inverse. Re-spelling in
-        # seconds would change the bound ("90m" -> "5400s") and could pass the
-        # lift's 2**53 cap.
-        split = _split_duration(p50) if isinstance(p50, str) else None
-        if split is not None and split[0] <= _SRM_V1_MAX_WHOLE_TARGET:
-            entry = {"target": split[0], "unit": split[1]}
-        elif split is not None:
-            lost.append(
-                f"feedback_latency: maximum_p50={p50!r} (srm/v1 caps the target "
-                f"at 2**53)"
-            )
-        elif p50 is not None:
-            lost.append(f"feedback_latency: maximum_p50={p50!r} (not a Duration)")
-        p50_reported = p50 is not None and entry is None
+        entry = _feedback_latency_to_srm_v1(bounds, lost)
+    else:
+        lost.append(f"{kind}: threshold type has no srm/v1 form; {_V2_NEXT_STEP}")
+    # Whatever the per-type carry did not pop has no srm/v1 form.
     for bound in sorted(bounds):
-        lost.append(f"{kind}: {bound}={bounds[bound]!r} (no srm/v1 form)")
-    if kind not in ("calibration", "feedback_latency"):
-        lost.append(f"{kind}: threshold type has no srm/v1 form")
-    elif entry is None and not bounds and not p50_reported:
-        lost.append(f"{kind}: no carriable bound")
+        lost.append(f"{kind}: {bound}={bounds[bound]!r} (no srm/v1 form); {_V2_NEXT_STEP}")
     return entry
 
 
@@ -183,16 +205,16 @@ def _legacy_to_srm_v1(
     if manifest.annotations:
         result["metadata"]["annotations"] = manifest.annotations
 
+    if lost is None:
+        lost = []  # the caller does not want them
     if manifest.slos or manifest.judgment_thresholds:
         result["spec"]["slos"] = {}
-        threshold_lost: list[str] = []
         for slo in manifest.slos:
             if slo.name in _SRM_V1_REJECTED_SLO_NAMES:
                 # Written as an SLO, srm/v1 would refuse the whole file.
-                threshold_lost.append(
+                lost.append(
                     f"{slo.name}: SLO target={slo.target!r} window={slo.window!r} "
-                    f"(srm/v1 rejects '{slo.name}'; declare it in an "
-                    f"opensrm.nthlayer.io/v2 manifest under spec.judgment_threshold)"
+                    f"(srm/v1 rejects '{slo.name}'); {_V2_NEXT_STEP}"
                 )
                 continue
             # ``type`` always: common's srm/v1 parser infers it only from a
@@ -201,9 +223,11 @@ def _legacy_to_srm_v1(
             # Key order is the written file's order: ``type`` first. The
             # names srm/v1 lifts into thresholds (and rejects ``type`` on)
             # never reach here: common's legacy loader lifts them too.
-            slo_data: dict[str, Any] = {"type": slo.slo_type}
-            slo_data["target"] = slo.target
-            slo_data["window"] = slo.window
+            slo_data: dict[str, Any] = {
+                "type": slo.slo_type,
+                "target": slo.target,
+                "window": slo.window,
+            }
             if slo.unit:
                 slo_data["unit"] = slo.unit
             if slo.percentile:
@@ -212,11 +236,9 @@ def _legacy_to_srm_v1(
                 slo_data["description"] = slo.description
             result["spec"]["slos"][slo.name] = slo_data
         for threshold in manifest.judgment_thresholds:
-            entry = _threshold_to_srm_v1(threshold, threshold_lost)
+            entry = _threshold_to_srm_v1(threshold, lost)
             if entry is not None:
                 result["spec"]["slos"][threshold.type] = entry
-        if lost is not None:
-            lost.extend(threshold_lost)
         if not result["spec"]["slos"]:
             del result["spec"]["slos"]
 
@@ -325,10 +347,12 @@ def migrate_command(
     # Convert to OpenSRM format
     lost: list[str] = []
     opensrm_data = _legacy_to_srm_v1(manifest, lost)
-    # The file loaded above, so it is readable YAML.
+    # common's lift drops description/labels from legacy calibration and
+    # feedback_latency resources, so the manifest no longer has them: read
+    # them from the source (which load_manifest has already parsed).
     lost.extend(_lift_dropped_fields(yaml.safe_load(input_path.read_text(encoding="utf-8"))))
     for item in lost:
-        warning(f"Judgment threshold not carried into srm/v1: {item}")
+        warning(f"Not carried into srm/v1: {item}")
 
     # Generate output YAML
     yaml_output = yaml.dump(

@@ -80,24 +80,34 @@ class _MockContext:
         self.template = m.template
 
 
-def _non_numeric_availability_error(manifest: Any, exc: TypeError) -> str:
+def _is_non_numeric(value: Any) -> bool:
+    """Whether *value* is a set availability that is not a number."""
+    return value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)))
+
+
+def _non_numeric_availability_error(
+    manifest: Any, registry: ContractRegistry | None
+) -> str | None:
     """The error for a contract check that hit a non-numeric availability.
 
-    Names the manifest's first contract whose ``promise.availability`` is not
-    a number; otherwise the value came from a registry contract, which the
-    message says.
+    Names the service, contract and value: the manifest's own contracts first,
+    then the registry's. None when every availability is a number, so the
+    TypeError the caller caught is a bug, not bad input.
     """
-    for contract in manifest.contracts:
-        value = contract.promise.availability
-        if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float))):
-            return (
-                f"Contract '{contract.name}' promise.availability must be a number "
-                f"(a ratio such as 0.9995), got {value!r}"
-            )
-    return (
-        "A contract's promise.availability in the contract registry is not a "
-        f"number (a ratio such as 0.9995): {exc}"
-    )
+    sources = [(manifest.name, manifest.contracts)]
+    if registry is not None:
+        sources += [(name, registry.get_contracts(name)) for name in registry.services]
+    for service, contracts in sources:
+        for contract in contracts:
+            value = contract.promise.availability
+            if _is_non_numeric(value):
+                where = "" if service == manifest.name else " (contract registry)"
+                return (
+                    f"Service '{service}' contract '{contract.name}'{where}: "
+                    f"promise.availability must be a number (a ratio such as "
+                    f"0.9995), got {value!r}"
+                )
+    return None
 
 
 def validate_service_file(
@@ -175,7 +185,8 @@ def validate_service_file(
             # Contract validation (OpenSRM only). TypeError here only: common's
             # v2 parser keeps a quoted ``availability`` ("0.9995") as a string
             # and these checks then compare it with a float. A TypeError
-            # anywhere else is a bug and propagates.
+            # anywhere else, or here with every availability a number, is a
+            # bug and propagates.
             try:
                 warnings.extend(manifest.validate_contracts())
                 if contract_registry is not None:
@@ -185,11 +196,11 @@ def validate_service_file(
                     warnings.extend(
                         validate_transitive_feasibility(manifest, contract_registry)
                     )
-            except TypeError as e:
-                return ValidationResult(
-                    valid=False,
-                    errors=[_non_numeric_availability_error(manifest, e)],
-                )
+            except TypeError:
+                message = _non_numeric_availability_error(manifest, contract_registry)
+                if message is None:
+                    raise
+                return ValidationResult(valid=False, errors=[message])
 
         except ManifestLoadError as e:
             return ValidationResult(

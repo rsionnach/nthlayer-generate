@@ -200,6 +200,7 @@ def _run(fn: Cell, cell: str, mid: str, path: Path, tmp: Path, environment: str 
 
 def test_corpus_and_env_cases_are_non_empty() -> None:
     # A zero-case parametrise would leave these cells green and empty.
+    assert CASES
     assert len(CASES) == len(SRM_V1) + len(LEGACY) + len(V2)
     assert len(ENV_CASES) == 9
     assert all(c.base.is_file() for c in ENV_CASES)

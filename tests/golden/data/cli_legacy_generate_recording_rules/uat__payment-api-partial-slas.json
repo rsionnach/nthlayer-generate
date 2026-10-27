@@ -5,8 +5,62 @@
       "groups": [
         {
           "interval": "30s",
+          "name": "payment-api_slo_metrics",
+          "rules": [
+            {
+              "expr": "sum(increase(http_requests_total{service=\"payment-api\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"payment-api\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"payment-api\",slo=\"availability\"} / slo:requests_total:30d{service=\"payment-api\",slo=\"availability\"}",
+              "labels": {
+                "objective": "99.5",
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"payment-api\",slo=\"availability\"}) / (1 - 0.995))",
+              "labels": {
+                "objective": "99.5",
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
           "name": "payment-api_health_metrics",
           "rules": [
+            {
+              "expr": "sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_requests:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"payment-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_errors:rate5m"
+            },
             {
               "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
               "labels": {
@@ -20,60 +74,6 @@
                 "service": "payment-api"
               },
               "record": "service:http_request_duration_seconds:p99"
-            },
-            {
-              "expr": "sum(rate(http_requests_total{service=\"payment-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
-              "labels": {
-                "service": "payment-api"
-              },
-              "record": "service:http_errors:rate5m"
-            },
-            {
-              "expr": "sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
-              "labels": {
-                "service": "payment-api"
-              },
-              "record": "service:http_requests:rate5m"
-            }
-          ]
-        },
-        {
-          "interval": "30s",
-          "name": "payment-api_slo_metrics",
-          "rules": [
-            {
-              "expr": "1 - ((1 - slo:availability:ratio{service=\"payment-api\",slo=\"availability\"}) / (1 - 0.995))",
-              "labels": {
-                "objective": "99.5",
-                "service": "payment-api",
-                "slo": "availability"
-              },
-              "record": "slo:error_budget_remaining:ratio"
-            },
-            {
-              "expr": "slo:requests_success:30d{service=\"payment-api\",slo=\"availability\"} / slo:requests_total:30d{service=\"payment-api\",slo=\"availability\"}",
-              "labels": {
-                "objective": "99.5",
-                "service": "payment-api",
-                "slo": "availability"
-              },
-              "record": "slo:availability:ratio"
-            },
-            {
-              "expr": "sum(increase(http_requests_total{service=\"payment-api\",status!~\"5..\"}[30d]))",
-              "labels": {
-                "service": "payment-api",
-                "slo": "availability"
-              },
-              "record": "slo:requests_success:30d"
-            },
-            {
-              "expr": "sum(increase(http_requests_total{service=\"payment-api\"}[30d]))",
-              "labels": {
-                "service": "payment-api",
-                "slo": "availability"
-              },
-              "record": "slo:requests_total:30d"
             }
           ]
         }

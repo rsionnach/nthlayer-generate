@@ -18,7 +18,8 @@ No cell reaches a network:
   without a key, and with ``PagerDutyClient`` replaced at its use site
   (cli/pagerduty.py imports it by name) by a recorder, so the arguments the
   command would send are pinned. plan/apply's ``PagerDutyResourceManager``
-  is replaced by a stub that fails the cell if it is ever constructed.
+  and ``EventOrchestrationManager`` are replaced by stubs that fail the cell
+  if either is ever constructed.
 * Grafana — ``push_grafana`` is off and ``GrafanaProvider`` (imported in the
   function body, so patched at its source) fails the cell if constructed.
 * Prometheus — no URL in the environment; ``slo collect`` and
@@ -98,7 +99,12 @@ STUB_SLI = 0.9995
 
 
 class Env:
-    """What a cell may use: the temp dir, captured stdout and monkeypatch."""
+    """What a cell may use: the temp dir, captured stdout and monkeypatch.
+
+    Not test_golden_cli.Env: ``files`` defaults to ``tmp/out`` and parses
+    YAML as well as JSON; ``text`` collapses console-width padding; and
+    ``stdout_json`` reads one JSON document.
+    """
 
     def __init__(
         self,
@@ -131,8 +137,15 @@ class Env:
             lines.append(re.sub(r" {3,}", "  ", line))
         return lines
 
-    def files(self, root: Path | None = None) -> dict[str, Any]:
-        """Every file under ``root`` (default tmp/out), parsed where JSON/YAML."""
+    def files(
+        self, root: Path | None = None, set_ordered: Callable[[str], bool] = lambda rel: False
+    ) -> dict[str, Any]:
+        """Every file under ``root`` (default tmp/out), parsed where JSON/YAML.
+
+        YAML keeps its written order, except files ``set_ordered`` names:
+        their rules come from a ``list(set(...))`` extractor and are pinned
+        with ``rules_as_sets``.
+        """
         root = root or self.tmp / "out"
         out: dict[str, Any] = {}
         if not root.is_dir():
@@ -145,7 +158,8 @@ class Env:
             if p.suffix == ".json":
                 out[rel] = json.loads(text)
             elif p.suffix in (".yaml", ".yml"):
-                out[rel] = rules_as_sets(yaml.safe_load(text))
+                doc = yaml.safe_load(text)
+                out[rel] = rules_as_sets(doc) if set_ordered(rel) else doc
             else:
                 out[rel] = text
         return out
@@ -247,14 +261,18 @@ def generate_slo(path: Path, env: Env, environment: str | None) -> Any:
 def generate_alerts(path: Path, env: Env, environment: str | None) -> Any:
     out = env.tmp / "out" / "alerts.yaml"
     code = generate_alerts_command(str(path), output=str(out), environment=environment)
-    return {"exit": code, "files": env.files(), "text": env.text()}
+    return {"exit": code, "files": env.files(set_ordered=lambda rel: True), "text": env.text()}
 
 
 def generate_loki_alerts(path: Path, env: Env, environment: str | None) -> Any:
     assert environment is None, "generate-loki-alerts takes no --env"
     out = env.tmp / "out" / "loki-alerts.yaml"
     code = generate_loki_command(str(path), output=str(out))
-    return {"exit": code, "files": env.files(), "text": _sorted_dependencies(env.text())}
+    return {
+        "exit": code,
+        "files": env.files(set_ordered=lambda rel: True),
+        "text": _sorted_dependencies(env.text()),
+    }
 
 
 def _sorted_dependencies(lines: list[str]) -> list[str]:
@@ -449,7 +467,7 @@ def apply(path: Path, env: Env, environment: str | None) -> Any:
         "exit": code,
         "json": json.loads(printed[start:]),
         "preamble": _lines(printed[:start]),
-        "files": env.files(),
+        "files": env.files(set_ordered=lambda rel: rel == "alerts.yaml"),
         # Anything written outside the output dir (relative default paths).
         "stray": sorted(
             p.relative_to(env.tmp).as_posix()

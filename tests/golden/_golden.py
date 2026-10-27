@@ -70,7 +70,8 @@ MASK: frozenset[str] = frozenset(
         "updated_at",
         # topology: TopologyGraph.exported_at, datetime.now.
         "exported_at",
-        # cli_legacy_plan: the JSON report's timestamp, datetime.now
+        # Like "id", these mask by key name in EVERY cell, not only the one
+        # named. cli_legacy_plan: the JSON report's timestamp, datetime.now
         # (cli/formatters/json_fmt.py:55).
         "timestamp",
         # cli_legacy_apply: ApplyResult.duration_seconds, wall-clock time

@@ -51,12 +51,18 @@ _BOUND_NAMES = {
 def build_judgment_threshold_alerts(manifest: ReliabilityManifest) -> list[AlertRule]:
     """Build the Breach and NotEvaluable alerts for every declared bound, in manifest order."""
     alerts: list[AlertRule] = []
+    seen: set[tuple[str, str]] = set()
     for threshold in manifest.get_judgment_thresholds():
         records = THRESHOLD_BOUND_RECORDS.get(threshold.type, {})
         for bound in threshold.bounds:
             record = records.get(bound)
-            if record is not None:
-                alerts.extend(_bound_alerts(manifest.name, threshold, bound, record))
+            if record is None:
+                continue
+            # §5.5 lets a type repeat; identical bounds would duplicate alerts.
+            for alert in _bound_alerts(manifest.name, threshold, bound, record):
+                if (alert.name, alert.expr) not in seen:
+                    seen.add((alert.name, alert.expr))
+                    alerts.append(alert)
     return alerts
 
 

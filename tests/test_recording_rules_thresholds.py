@@ -223,3 +223,38 @@ def test_no_feedback_bound_means_no_30_day_group():
     assert "feedback_latency" not in {t.type for t in manifest.get_judgment_thresholds()}
 
     assert not [n for n in _groups(manifest) if "judgment_thresholds" in n]
+
+
+@pytest.mark.parametrize("duration", ["0s", "500ms", "1h", "24h", "11d", "12d", "2w", "30d"])
+def test_le_matches_the_exporters_label_text(duration: str):
+    """R5 edge-cases: le must be written as exporters write it, or the series never matches.
+
+    The expected text comes from prometheus_client's own formatter, which
+    mirrors Go's: from 1e6 seconds (about 11.6 days) it is exponent notation,
+    for example "1.2096e+06", not "1209600.0".
+    """
+    from prometheus_client.utils import floatToGoString
+
+    manifest = _load(P50_ONLY)
+    (threshold,) = manifest.judgment_thresholds
+    manifest = dataclasses.replace(
+        manifest,
+        judgment_thresholds=[dataclasses.replace(threshold, bounds={"maximum_p50": duration})],
+    )
+    expected = f'le="{floatToGoString(duration_seconds(duration))}"'
+
+    rules = _rules(manifest)
+
+    assert expected in rules[WINDOW_RECORD["maximum_p50"]]["expr"]
+    assert expected in rules["ai_gate:feedback_latency:bucket"]["expr"]
+
+
+def test_duplicate_entries_do_not_duplicate_rules():
+    """§5.5 lets a manifest repeat a type; identical rules would clash in Prometheus."""
+    manifest = _load(CALIBRATION_BOTH)
+    (threshold,) = manifest.judgment_thresholds
+    manifest = dataclasses.replace(manifest, judgment_thresholds=[threshold, threshold])
+
+    for group in _groups(manifest).values():
+        keys = [(r["record"], tuple(sorted(r.get("labels", {}).items()))) for r in group["rules"]]
+        assert len(keys) == len(set(keys)), group["name"]

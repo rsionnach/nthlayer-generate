@@ -13,6 +13,8 @@ The generated metrics are compatible with Backstage plugins:
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from nthlayer_common.manifest import (
     FEEDBACK_LATENCY_WINDOW,
     JudgmentThreshold,
@@ -89,7 +91,7 @@ class ManifestRecordingRuleBuilder:
                     judgment_group.add_rule(rule)
             for threshold in self.manifest.get_judgment_thresholds():
                 for rule in self._build_judgment_threshold_rules(threshold):
-                    judgment_group.add_rule(rule)
+                    _add_unique(judgment_group, rule)
             if judgment_group.rules:
                 groups.append(judgment_group)
 
@@ -101,7 +103,7 @@ class ManifestRecordingRuleBuilder:
             )
             for threshold in self.manifest.get_judgment_thresholds():
                 for rule in self._build_judgment_threshold_window_rules(threshold):
-                    window_group.add_rule(rule)
+                    _add_unique(window_group, rule)
             if window_group.rules:
                 groups.append(window_group)
 
@@ -629,7 +631,7 @@ class ManifestRecordingRuleBuilder:
                 record="ai_gate:feedback_latency:bucket",
                 expr=(
                     f'sum(rate(ai_gate_feedback_latency_seconds_bucket{{service="{service}",'
-                    f'le="{target_seconds}"}}[5m])) / '
+                    f'le="{prometheus_le(target_seconds)}"}}[5m])) / '
                     f'sum(rate(ai_gate_feedback_latency_seconds_count{{service="{service}"}}[5m]))'
                 ),
                 labels={
@@ -732,7 +734,7 @@ class ManifestRecordingRuleBuilder:
         return RecordingRule(
             record=THRESHOLD_BOUND_RECORDS["feedback_latency"][bound],
             expr=(
-                f'sum(increase(ai_gate_feedback_latency_seconds_bucket{{{selector},le="{target_seconds}"}}'
+                f'sum(increase(ai_gate_feedback_latency_seconds_bucket{{{selector},le="{prometheus_le(target_seconds)}"}}'
                 f"{window})) / sum(increase(ai_gate_feedback_latency_seconds_count{{{selector}}}"
                 f"{window}))"
             ),
@@ -764,6 +766,36 @@ def build_recording_rules_from_manifest(
     """
     builder = ManifestRecordingRuleBuilder(manifest)
     return builder.build()
+
+
+def prometheus_le(value: float) -> str:
+    """``value`` as exporters write an ``le`` label, so a selector on it matches.
+
+    Go's shortest ``%g`` (exponent form below 1e-4 and from 1e6), plus ".0"
+    on a plain integer, which is what the Go and Python clients and
+    Prometheus 3's ``le`` normalisation produce: 3600 is "3600.0", but two
+    weeks is "1.2096e+06", not "1209600.0".
+    """
+    if value == 0:
+        return "0.0"
+    shortest = Decimal(repr(float(value)))
+    exponent = shortest.adjusted()
+    if -4 <= exponent < 6:
+        text = format(shortest, "f")
+        return text if "." in text else f"{text}.0"
+    digits = "".join(map(str, shortest.as_tuple().digits)).rstrip("0") or "0"
+    mantissa = digits[0] + (f".{digits[1:]}" if len(digits) > 1 else "")
+    return f"{mantissa}e{'+' if exponent >= 0 else '-'}{abs(exponent):02d}"
+
+
+def _add_unique(group: RecordingRuleGroup, rule: RecordingRule) -> None:
+    """Add ``rule`` unless an identical one is already there.
+
+    §5.5 lets a manifest repeat a threshold type; two identical rules in one
+    group would write the same series twice.
+    """
+    if rule not in group.rules:
+        group.add_rule(rule)
 
 
 def bound_comparison_value(bounds: dict[str, float | str], name: str) -> float:

@@ -216,3 +216,13 @@ def test_alerting_for_duration_overrides_do_not_apply_to_threshold_alerts():
     for alert in generate_alerts_from_manifest(manifest, quiet=True):
         if alert.technology == "judgment_threshold":
             assert alert.duration == expected[alert.severity]
+
+
+def test_duplicate_entries_do_not_duplicate_alerts():
+    manifest = _load(CALIBRATION_BOTH)
+    (threshold,) = manifest.judgment_thresholds
+    manifest = dataclasses.replace(manifest, judgment_thresholds=[threshold, threshold])
+
+    alerts = [(a.name, a.expr) for a in build_judgment_threshold_alerts(manifest)]
+
+    assert alerts and len(alerts) == len(set(alerts))

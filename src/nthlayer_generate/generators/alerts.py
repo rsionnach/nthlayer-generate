@@ -130,20 +130,25 @@ def generate_alerts_from_manifest(
         )
         for alert in build_judgment_threshold_alerts(manifest)
     ]
-    dependency_alerts = _load_and_customize_alerts(
-        service_name=manifest.name,
-        team=manifest.team,
-        tier=manifest.tier,
-        dependencies=deps,
-        # Written below, once the threshold alerts are appended.
-        output_file=output_file if not threshold_alerts else None,
-        runbook_url=runbook_url,
-        notification_channel=notification_channel,
-        routing=alert_routing,
-        grafana_url=grafana_url,
-        quiet=quiet,
-        alerting_config=manifest_alerting(manifest),
-    )
+    if threshold_alerts and not deps:
+        # Skip the template path: its "no dependencies found" warning would
+        # contradict the threshold alerts written below.
+        dependency_alerts: List[AlertRule] = []
+    else:
+        dependency_alerts = _load_and_customize_alerts(
+            service_name=manifest.name,
+            team=manifest.team,
+            tier=manifest.tier,
+            dependencies=deps,
+            # Written below, once the threshold alerts are appended.
+            output_file=output_file if not threshold_alerts else None,
+            runbook_url=runbook_url,
+            notification_channel=notification_channel,
+            routing=alert_routing,
+            grafana_url=grafana_url,
+            quiet=quiet,
+            alerting_config=manifest_alerting(manifest),
+        )
     if not threshold_alerts:
         return dependency_alerts
 

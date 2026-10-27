@@ -209,6 +209,21 @@
       ]
     },
     {
+      "interval": "5m",
+      "name": "fraud-detector_judgment_thresholds_30d",
+      "rules": [
+        {
+          "expr": "histogram_quantile(0.5, sum by (le) (increase(ai_gate_feedback_latency_seconds_bucket{service=\"fraud-detector\"}[30d])))",
+          "labels": {
+            "service": "fraud-detector",
+            "slo": "feedback_latency",
+            "target": "3600.0"
+          },
+          "record": "ai_gate:feedback_latency:p50_30d"
+        }
+      ]
+    },
+    {
       "interval": "30s",
       "name": "fraud-detector_health_metrics",
       "rules": [

@@ -157,22 +157,26 @@ def test_ece_only_calibration_emits_ece_from_its_bound():
         assert f"ai_gate:calibration_bucket:{bucket}" in rules
 
 
-def test_all_five_types_emits_only_the_ported_families():
+def test_all_five_types_emits_rules_only_for_bounds_with_a_data_source():
     declared = yaml.safe_load(ALL_FIVE.read_text())["spec"]["judgment_threshold"]
     calibration = next(t for t in declared if t["type"] == "calibration")
     # The fixture is the case under test: Brier only, no ECE bound.
-    assert "maximum_expected_calibration_error" not in calibration["bounds"]
+    assert set(calibration["bounds"]) == {"maximum_brier_score"}
     assert {t["type"] for t in declared} >= {"segments", "stability", "audit_backlog"}
 
     manifest = _load(ALL_FIVE)
     rules = _by_record(_judgment_rules(manifest))
 
-    assert not [r for r in rules if r.startswith("ai_gate:calibration")]
+    assert rules["ai_gate:calibration:brier"]["labels"]["target"] == str(
+        calibration["bounds"]["maximum_brier_score"]
+    )
     feedback = _declared_bounds(ALL_FIVE, "feedback_latency")
     expected_seconds = str(duration_seconds(feedback["maximum_p50"]))
     assert rules["ai_gate:feedback_latency:bucket"]["labels"]["target"] == expected_seconds
-    # segments / stability / audit_backlog: nothing emitted (wo62.2).
+    # segments / stability / audit_backlog have no data source in common's
+    # THRESHOLD_SERIES, so they emit nothing (wo62.2 ruling D2).
     assert set(rules) == {
+        "ai_gate:calibration:brier",
         "ai_gate:feedback_latency:p50",
         "ai_gate:feedback_latency:p95",
         "ai_gate:feedback_latency:p99",

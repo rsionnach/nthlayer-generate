@@ -36,6 +36,15 @@
             "service": "investigation-agent"
           },
           "record": "ai_gate:calibration_bucket:high"
+        },
+        {
+          "expr": "avg(ai_gate_calibration_brier{service=\"investigation-agent\"})",
+          "labels": {
+            "service": "investigation-agent",
+            "slo": "calibration",
+            "target": "0.05"
+          },
+          "record": "ai_gate:calibration:brier"
         }
       ]
     },

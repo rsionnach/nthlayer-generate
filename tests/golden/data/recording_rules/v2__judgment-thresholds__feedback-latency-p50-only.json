@@ -40,6 +40,21 @@
       ]
     },
     {
+      "interval": "5m",
+      "name": "intake-agent_judgment_thresholds_30d",
+      "rules": [
+        {
+          "expr": "histogram_quantile(0.5, sum by (le) (increase(ai_gate_feedback_latency_seconds_bucket{service=\"intake-agent\"}[30d])))",
+          "labels": {
+            "service": "intake-agent",
+            "slo": "feedback_latency",
+            "target": "3600.0"
+          },
+          "record": "ai_gate:feedback_latency:p50_30d"
+        }
+      ]
+    },
+    {
       "interval": "30s",
       "name": "intake-agent_health_metrics",
       "rules": [

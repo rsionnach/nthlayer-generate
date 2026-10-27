@@ -1,0 +1,42 @@
+# TEST-ONLY golden fixture (opensrm-wo62.4.2) — not a shipped example.
+#
+# Exists to reach: src/nthlayer_generate/orchestrator.py:79, the
+# `index["Observability"]` arm of `if index["Observability"] or
+# self._has_dependencies(index):` in ResourceDetector.detect. Every shipped
+# example that declares an Observability resource also declares
+# Dependencies, so the dashboard is always reached through the second arm and
+# the first can be deleted with every golden still green. This file has an
+# Observability resource and no Dependencies resource: `dashboard` is planned
+# and applied only because of that arm (and `alerts` is not planned at all).
+#
+# Adapted from examples/services/notification-worker.yaml (service block, SLO
+# and Observability specs), with the Dependencies and PagerDuty resources
+# removed.
+
+service:
+  name: notification-observability-only
+  team: platform
+  tier: high
+  type: worker
+  description: Background worker for email, SMS, and push notifications
+  owner: platform-team@company.com
+
+resources:
+  - kind: SLO
+    name: delivery-success
+    spec:
+      objective: 99.5
+      window: 30d
+      indicators:
+        - type: availability
+          success_ratio:
+            total_query: sum(rate(notifications_sent_total{service="notification-observability-only"}[5m]))
+            good_query: sum(rate(notifications_sent_total{service="notification-observability-only",status="delivered"}[5m]))
+
+  - kind: Observability
+    name: observability
+    spec:
+      metrics:
+        - notifications_sent_total
+        - notifications_failed_total
+        - notification_processing_duration_seconds

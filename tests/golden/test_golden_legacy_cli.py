@@ -464,10 +464,22 @@ def plan(path: Path, env: Env, environment: str | None) -> Any:
     }
 
 
-def apply(path: Path, env: Env, environment: str | None) -> Any:
+def apply(
+    path: Path,
+    env: Env,
+    environment: str | None,
+    *,
+    skip: list[str] | None = None,
+    only: list[str] | None = None,
+) -> Any:
     env.discard_output()
     code = apply_command(
-        str(path), env=environment, output_dir=str(env.tmp / "out"), output_format="json"
+        str(path),
+        env=environment,
+        output_dir=str(env.tmp / "out"),
+        output_format="json",
+        skip=skip,
+        only=only,
     )
     printed = env.capsys.readouterr().out
     # Handlers print progress lines before the JSON; the JSON is the last
@@ -577,7 +589,32 @@ def _validate_env_dir(directory: Path) -> Callable[[Env], Any]:
     return cell
 
 
+# apply's --skip / --only filter (orchestrator.py:234-237). Every CELLS run
+# passes neither, so without these the filter is unpinned. plan takes no
+# filter. checkout-service plans slos, recording-rules, backstage, alerts,
+# dashboard and pagerduty, so each filter visibly drops resources and files.
+APPLY_FILTER_SERVICE = EX / "services" / "checkout-service.yaml"
+
+
+def apply_skip(env: Env) -> Any:
+    return apply(APPLY_FILTER_SERVICE, env, None, skip=["alerts", "dashboard"])
+
+
+def apply_only(env: Env) -> Any:
+    return apply(APPLY_FILTER_SERVICE, env, None, only=["slos", "pagerduty"])
+
+
+def apply_only_and_skip(env: Env) -> Any:
+    # only narrows first, then skip removes from what is left.
+    return apply(APPLY_FILTER_SERVICE, env, None, only=["slos", "alerts"], skip=["alerts"])
+
+
 SINGLETONS: dict[str, dict[str, Callable[[Env], Any]]] = {
+    "cli_legacy_apply_filter": {
+        "checkout-service__skip": apply_skip,
+        "checkout-service__only": apply_only,
+        "checkout-service__only_and_skip": apply_only_and_skip,
+    },
     "cli_legacy_slo_list": {"repo": slo_list},
     "cli_legacy_validate_env_dir": {
         "examples": _validate_env_dir(EX),

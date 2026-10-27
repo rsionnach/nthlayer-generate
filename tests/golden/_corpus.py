@@ -101,6 +101,7 @@ LEGACY_FIXTURES: tuple[Path, ...] = tuple(
     for n in (
         "checkout-db-deps.yaml",
         "checkout-env-vars.yaml",
+        "notification-observability-only.yaml",
     )
 )
 

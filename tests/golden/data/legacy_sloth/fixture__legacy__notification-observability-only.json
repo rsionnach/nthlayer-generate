@@ -1,0 +1,43 @@
+{
+  "slo_count": 1,
+  "spec": {
+    "labels": {
+      "team": "platform",
+      "tier": "high",
+      "type": "worker"
+    },
+    "service": "notification-observability-only",
+    "slos": [
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO delivery-success for notification-observability-only"
+          },
+          "labels": {
+            "service": "notification-observability-only",
+            "tier": "high"
+          },
+          "name": "NotificationObservabilityOnlyDeliverySuccess",
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on notification-observability-only"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "99.5% delivery success",
+        "name": "delivery-success",
+        "objective": 99.5,
+        "sli": {
+          "events": {
+            "error_query": "",
+            "total_query": ""
+          }
+        }
+      }
+    ],
+    "version": "prometheus/v1"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "exit": 0,
+  "queries": [],
+  "text": [
+    "",
+    "============================================================",
+    "  Error Budget Status: notification-observability-only",
+    "============================================================",
+    "",
+    "Prometheus: http://prometheus.invalid",
+    "",
+    "[-] SLO: delivery-success (99.5%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "------------------------------------------------------------",
+    "Summary: 0/1 SLOs healthy",
+    ""
+  ]
+}

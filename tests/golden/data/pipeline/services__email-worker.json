@@ -1,13 +1,35 @@
 {
   "alerts_triggered": 0,
-  "budgets": [],
-  "budgets_evaluated": 0,
-  "errors": [
-    "No SLOs defined in manifest"
+  "budgets": [
+    {
+      "budget": {
+        "burned_minutes": 216.0000000000002,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 216.0000000000002,
+        "total_minutes": 432.0000000000004
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "email-worker",
+      "slo_id": "email-worker-success-rate",
+      "status": "warning",
+      "updated_at": "<masked>"
+    }
   ],
+  "budgets_evaluated": 1,
+  "errors": [],
   "events": [],
   "explanations": [],
   "notifications_sent": 0,
-  "rules_evaluated": 0,
+  "rules_evaluated": 3,
   "service": "email-worker"
 }

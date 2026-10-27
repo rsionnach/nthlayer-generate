@@ -16,6 +16,71 @@
         },
         "id": "<masked>",
         "panels": [],
+        "title": "SLO Metrics",
+        "type": "row"
+      },
+      {
+        "description": "Target: 99.9%",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 1
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{service=\"payment-api\",code!~\"5..\"}[5m]))\n/\nsum(rate(http_requests_total{service=\"payment-api\"}[5m]))\n",
+            "legendFormat": "availability",
+            "refId": "A"
+          }
+        ],
+        "title": "availability",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Target: 99.0%",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 1
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])\n)\n",
+            "legendFormat": "latency-p95",
+            "refId": "A"
+          }
+        ],
+        "title": "latency-p95",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 10
+        },
+        "id": "<masked>",
+        "panels": [],
         "title": "Service Health",
         "type": "row"
       },
@@ -29,7 +94,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 1
+          "y": 11
         },
         "options": null,
         "repeatDirection": "h",
@@ -55,7 +120,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 1
+          "y": 11
         },
         "options": null,
         "repeatDirection": "h",
@@ -81,7 +146,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 10
+          "y": 20
         },
         "options": null,
         "repeatDirection": "h",
@@ -103,7 +168,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 19
+          "y": 29
         },
         "id": "<masked>",
         "panels": [],
@@ -120,7 +185,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 20
+          "y": 30
         },
         "options": null,
         "repeatDirection": "h",
@@ -151,7 +216,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 20
+          "y": 30
         },
         "options": null,
         "repeatDirection": "h",
@@ -177,7 +242,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 29
+          "y": 39
         },
         "options": null,
         "repeatDirection": "h",
@@ -203,7 +268,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 29
+          "y": 39
         },
         "options": null,
         "repeatDirection": "h",
@@ -234,7 +299,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 38
+          "y": 48
         },
         "options": null,
         "repeatDirection": "h",
@@ -260,7 +325,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 38
+          "y": 48
         },
         "options": null,
         "repeatDirection": "h",
@@ -286,7 +351,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 47
+          "y": 57
         },
         "options": null,
         "repeatDirection": "h",
@@ -312,7 +377,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 47
+          "y": 57
         },
         "options": null,
         "repeatDirection": "h",
@@ -338,7 +403,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 56
+          "y": 66
         },
         "options": null,
         "repeatDirection": "h",
@@ -364,7 +429,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 56
+          "y": 66
         },
         "options": null,
         "repeatDirection": "h",
@@ -390,7 +455,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 65
+          "y": 75
         },
         "options": null,
         "repeatDirection": "h",
@@ -416,7 +481,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 65
+          "y": 75
         },
         "options": null,
         "repeatDirection": "h",
@@ -442,7 +507,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 74
+          "y": 84
         },
         "options": null,
         "repeatDirection": "h",
@@ -468,7 +533,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 74
+          "y": 84
         },
         "options": null,
         "repeatDirection": "h",
@@ -499,7 +564,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 83
+          "y": 93
         },
         "options": null,
         "repeatDirection": "h",
@@ -525,7 +590,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 83
+          "y": 93
         },
         "options": null,
         "repeatDirection": "h",
@@ -551,7 +616,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 92
+          "y": 102
         },
         "options": null,
         "repeatDirection": "h",
@@ -577,7 +642,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 92
+          "y": 102
         },
         "options": null,
         "repeatDirection": "h",

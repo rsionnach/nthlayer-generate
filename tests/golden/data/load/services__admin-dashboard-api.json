@@ -3,7 +3,22 @@
   "dependencies": [],
   "error": null,
   "ok": true,
-  "slos": [],
+  "slos": [
+    [
+      "availability",
+      "availability",
+      99.5,
+      "30d",
+      true
+    ],
+    [
+      "latency-p95",
+      "latency",
+      95.0,
+      "30d",
+      true
+    ]
+  ],
   "source_format": "legacy",
   "type": "api",
   "warnings": []

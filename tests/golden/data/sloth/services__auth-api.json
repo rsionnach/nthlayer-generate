@@ -9,6 +9,43 @@
     {
       "alerting": {
         "annotations": {
+          "summary": "SLO availability for auth-api"
+        },
+        "labels": {
+          "service": "auth-api",
+          "tier": "critical"
+        },
+        "name": "AuthApiAvailability",
+        "page_alert": {
+          "annotations": {
+            "summary": "High error budget burn on auth-api"
+          },
+          "labels": {
+            "severity": "critical"
+          }
+        },
+        "ticket_alert": {
+          "annotations": {
+            "summary": "Error budget burn on auth-api"
+          },
+          "labels": {
+            "severity": "warning"
+          }
+        }
+      },
+      "description": "99.9% availability",
+      "name": "availability",
+      "objective": 99.9,
+      "sli": {
+        "events": {
+          "error_query": "sum(rate(http_requests_total{service=\"auth-api\",code=~\"5..\"}[5m]))",
+          "total_query": "sum(rate(http_requests_total{service=\"auth-api\"}[5m]))"
+        }
+      }
+    },
+    {
+      "alerting": {
+        "annotations": {
           "summary": "SLO latency-p95 for auth-api"
         },
         "labels": {

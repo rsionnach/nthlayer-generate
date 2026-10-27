@@ -1,6 +1,29 @@
 {
-  "alerts_triggered": 3,
+  "alerts_triggered": 4,
   "budgets": [
+    {
+      "budget": {
+        "burned_minutes": 21.59999999999762,
+        "percent_consumed": 50.0,
+        "percent_remaining": 50.0,
+        "remaining_minutes": 21.59999999999762,
+        "total_minutes": 43.19999999999524
+      },
+      "burn_rate": 1.0,
+      "burn_sources": {
+        "deployments": 0.0,
+        "incidents": 0.0,
+        "slo_breaches": 0.0
+      },
+      "period": {
+        "end": "<masked>",
+        "start": "<masked>"
+      },
+      "service": "mobile-api",
+      "slo_id": "mobile-api-availability",
+      "status": "warning",
+      "updated_at": "<masked>"
+    },
     {
       "budget": {
         "burned_minutes": 1080.000000000001,
@@ -71,9 +94,26 @@
       "updated_at": "<masked>"
     }
   ],
-  "budgets_evaluated": 3,
+  "budgets_evaluated": 4,
   "errors": [],
   "events": [
+    {
+      "details": {
+        "budget_consumed_percent": 50.0,
+        "burned_minutes": 21.59999999999762,
+        "remaining_minutes": 21.59999999999762,
+        "status": "warning",
+        "threshold_percent": 50.0
+      },
+      "id": "<masked>",
+      "message": "⚠️ *Error Budget Alert*\n\n*Service:* `mobile-api`\n*SLO:* `mobile-api-availability`\n*Consumed:* 50.0% (threshold: 50%)\n*Remaining:* 21.6 minutes\n*Status:* WARNING\n\nℹ️ Budget threshold exceeded. Monitor closely.\n",
+      "rule_id": "mobile-api-availability-budget-warning",
+      "service": "mobile-api",
+      "severity": "warning",
+      "slo_id": "mobile-api-availability",
+      "title": "Error Budget Alert: mobile-api",
+      "triggered_at": "<masked>"
+    },
     {
       "details": {
         "budget_consumed_percent": 50.0,
@@ -128,6 +168,6 @@
   ],
   "explanations": [],
   "notifications_sent": 0,
-  "rules_evaluated": 12,
+  "rules_evaluated": 16,
   "service": "mobile-api"
 }

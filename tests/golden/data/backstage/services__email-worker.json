@@ -44,5 +44,15 @@
     "tier": "standard",
     "type": "worker"
   },
-  "slos": []
+  "slos": [
+    {
+      "currentValue": null,
+      "description": null,
+      "name": "success-rate",
+      "sloType": "availability",
+      "status": null,
+      "target": 99.0,
+      "window": "30d"
+    }
+  ]
 }

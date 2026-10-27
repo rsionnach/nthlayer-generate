@@ -8,6 +8,29 @@
             "burned_minutes": 0.0,
             "percent_consumed": 0.0,
             "percent_remaining": 100.0,
+            "remaining_minutes": 2160.000000000002,
+            "total_minutes": 2160.000000000002
+          },
+          "burn_rate": 0.0,
+          "burn_sources": {
+            "deployments": 0.0,
+            "incidents": 0.0,
+            "slo_breaches": 0.0
+          },
+          "period": {
+            "end": "<masked>",
+            "start": "<masked>"
+          },
+          "service": "analytics-pipeline",
+          "slo_id": "analytics-pipeline-success-rate",
+          "status": "healthy",
+          "updated_at": "<masked>"
+        },
+        {
+          "budget": {
+            "burned_minutes": 0.0,
+            "percent_consumed": 0.0,
+            "percent_remaining": 100.0,
             "remaining_minutes": 4319.999999999999,
             "total_minutes": 4319.999999999999
           },
@@ -50,12 +73,12 @@
           "updated_at": "<masked>"
         }
       ],
-      "budgets_evaluated": 2,
+      "budgets_evaluated": 3,
       "errors": [],
       "events": [],
       "explanations": [],
       "notifications_sent": 0,
-      "rules_evaluated": 6,
+      "rules_evaluated": 9,
       "service": "analytics-pipeline"
     }
   ],

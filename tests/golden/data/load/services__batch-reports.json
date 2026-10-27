@@ -16,6 +16,20 @@
   "ok": true,
   "slos": [
     [
+      "availability",
+      "availability",
+      99.0,
+      "30d",
+      true
+    ],
+    [
+      "latency-p95",
+      "latency",
+      90.0,
+      "30d",
+      true
+    ],
+    [
       "report-success-rate",
       "availability",
       95.0,

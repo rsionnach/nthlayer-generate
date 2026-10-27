@@ -2,6 +2,46 @@
   "groups": [
     {
       "interval": "30s",
+      "name": "email-worker_slo_metrics",
+      "rules": [
+        {
+          "expr": "sum(increase(http_requests_total{service=\"email-worker\"}[30d]))",
+          "labels": {
+            "service": "email-worker",
+            "slo": "success-rate"
+          },
+          "record": "slo:requests_total:30d"
+        },
+        {
+          "expr": "sum(increase(http_requests_total{service=\"email-worker\",status!~\"5..\"}[30d]))",
+          "labels": {
+            "service": "email-worker",
+            "slo": "success-rate"
+          },
+          "record": "slo:requests_success:30d"
+        },
+        {
+          "expr": "slo:requests_success:30d{service=\"email-worker\",slo=\"success-rate\"} / slo:requests_total:30d{service=\"email-worker\",slo=\"success-rate\"}",
+          "labels": {
+            "objective": "99.0",
+            "service": "email-worker",
+            "slo": "success-rate"
+          },
+          "record": "slo:availability:ratio"
+        },
+        {
+          "expr": "1 - ((1 - slo:availability:ratio{service=\"email-worker\",slo=\"success-rate\"}) / (1 - 0.99))",
+          "labels": {
+            "objective": "99.0",
+            "service": "email-worker",
+            "slo": "success-rate"
+          },
+          "record": "slo:error_budget_remaining:ratio"
+        }
+      ]
+    },
+    {
+      "interval": "30s",
       "name": "email-worker_health_metrics",
       "rules": [
         {

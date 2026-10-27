@@ -262,3 +262,66 @@ def test_non_duration_maximum_p50_raises_type_error():
     manifest.get_judgment_thresholds = lambda: bad  # type: ignore[method-assign]
     with pytest.raises(TypeError, match="maximum_p50 is not a Duration"):
         build_recording_rules_from_manifest(manifest)
+
+
+def test_legacy_ai_gate_keeps_its_judgment_rules(tmp_path: Path):
+    """A legacy-format ai-gate manifest yields the srm/v1 judgment rules (opensrm-wo62.1).
+
+    Before nthlayer-common 5.5.0 the legacy parser loaded these SLOs as
+    classical, so generate dropped the whole judgment group without error.
+    """
+    # Provenance: the resource shape is examples/services/*.yaml's legacy
+    # `kind: SLO` resource (name + spec.objective/window); the SLO names and
+    # objectives/windows are examples/opensrm/ai-gate.reliability.yaml's.
+    legacy = tmp_path / "fraud-detector.yaml"
+    legacy.write_text(
+        """\
+apiVersion: nthlayer.dev/v1
+kind: Service
+
+service:
+  name: fraud-detector   # ai-gate.reliability.yaml metadata.name
+  team: risk             # metadata.team
+  tier: critical         # metadata.tier
+  type: ai-gate          # spec.type
+
+resources:
+  - kind: SLO
+    name: reversal_rate            # ai-gate.reliability.yaml: target 0.05, 7d
+    spec:
+      objective: 0.05
+      window: 7d
+  - kind: SLO
+    name: high_confidence_failure  # target 0.01, 7d
+    spec:
+      objective: 0.01
+      window: 7d
+  - kind: SLO
+    name: calibration              # target 0.05, 30d
+    spec:
+      objective: 0.05
+      window: 30d
+  - kind: SLO
+    name: feedback_latency         # target 3600, 30d
+    spec:
+      objective: 3600
+      window: 30d
+"""
+    )
+
+    expected = _by_record(_judgment_rules(_load(AI_GATE)))
+    actual = _by_record(_judgment_rules(_load(legacy)))
+
+    # Anti-vacuity: the srm/v1 run produces all four families.
+    for prefix in (
+        "ai_gate:reversal_rate:",
+        "ai_gate:high_confidence_failure:",
+        "ai_gate:calibration:ece",
+        "ai_gate:feedback_latency:",
+    ):
+        assert any(r.startswith(prefix) for r in expected), prefix
+
+    assert set(actual) == set(expected)
+    assert {r: rule["labels"] for r, rule in actual.items()} == {
+        r: rule["labels"] for r, rule in expected.items()
+    }

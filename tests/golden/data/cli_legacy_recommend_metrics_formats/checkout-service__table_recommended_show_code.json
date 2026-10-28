@@ -1,0 +1,32 @@
+{
+  "exit": 0,
+  "text": [
+    "",
+    "╭──╮",
+    "│ Metric Recommendations  │",
+    "╰──╯",
+    "",
+    "Service: checkout-service",
+    "Type: api",
+    "Tier: critical",
+    "",
+    "Standard: OpenTelemetry Semantic Conventions",
+    "",
+    "RECOMMENDED",
+    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┓",
+    "┃ Metric  ┃ Type  ┃ Unit  ┃",
+    "┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━┩",
+    "│ http.server.active_requests │ updown_counter │ {request} │",
+    "│ http.server.request.size  │ histogram  │ bytes  │",
+    "│ http.server.response.size  │ histogram  │ bytes  │",
+    "└──┴──┴──┘",
+    "",
+    "SUMMARY",
+    "  Required:  1 metrics",
+    "  Recommended: 3 metrics",
+    "",
+    "Run with --check to validate against live Prometheus",
+    "",
+    "✓ All checked metrics are present!"
+  ]
+}

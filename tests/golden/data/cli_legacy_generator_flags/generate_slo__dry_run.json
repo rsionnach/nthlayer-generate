@@ -1,0 +1,15 @@
+{
+  "exit": 0,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "ℹ DRY RUN MODE - No files will be written",
+    "",
+    "Would generate Sloth spec to: <tmp>/out/sloth",
+    ""
+  ]
+}

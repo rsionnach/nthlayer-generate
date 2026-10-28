@@ -1,0 +1,28 @@
+{
+  "exit": 0,
+  "text": [
+    "",
+    "╭──╮",
+    "│ Metric Recommendations  │",
+    "╰──╯",
+    "",
+    "Service: checkout-service",
+    "Type: api",
+    "Tier: critical",
+    "",
+    "Standard: OpenTelemetry Semantic Conventions",
+    "",
+    "REQUIRED (SLO-critical)",
+    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━┓",
+    "┃ Metric  ┃ Type  ┃ Unit  ┃",
+    "┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━┩",
+    "│ http.server.request.duration │ histogram │ seconds │",
+    "└──┴──┴──┘",
+    "",
+    "SUMMARY",
+    "  Required:  1 metrics",
+    "  Recommended: 3 metrics",
+    "",
+    "Run with --check to validate against live Prometheus"
+  ]
+}

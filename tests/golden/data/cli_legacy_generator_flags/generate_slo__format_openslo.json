@@ -1,0 +1,14 @@
+{
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✗ Unsupported format: openslo",
+    "  Supported formats: sloth",
+    ""
+  ]
+}

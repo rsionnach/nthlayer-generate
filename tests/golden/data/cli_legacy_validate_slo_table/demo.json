@@ -1,0 +1,21 @@
+{
+  "exit": 1,
+  "text": [
+    "",
+    "",
+    "╭──╮",
+    "│ SLO Metric Validation: payment-api  │",
+    "╰──╯",
+    "",
+    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
+    "┃ SLO  ┃ Metrics  ┃ Status  ┃",
+    "┡━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩",
+    "│ payment-api-availability │ http_requests_total  │ Found  │",
+    "│ payment-api-latency  │ http_request_duration_seconds_bucket  │ Found  │",
+    "│ payment-api-error-rate  │ http_errors_total, http_requests_total │ Missing: http_errors_total │",
+    "└──┴──┴──┘",
+    "",
+    "2/3 SLOs have valid metrics",
+    ""
+  ]
+}

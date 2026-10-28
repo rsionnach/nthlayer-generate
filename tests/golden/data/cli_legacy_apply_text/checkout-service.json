@@ -1,0 +1,15 @@
+{
+  "exit": 0,
+  "text": [
+    "",
+    "  ✓ SLOs  3 created",
+    "  ✓ Recording  20 rules",
+    "  ✓ Backstage  1 created",
+    "  ✓ Alerts  26 generated",
+    "  ✓ Dashboard  1 generated",
+    "  ✓ PagerDuty  configured",
+    "",
+    "Applied 52 resources in <duration> → <tmp>/out/",
+    ""
+  ]
+}

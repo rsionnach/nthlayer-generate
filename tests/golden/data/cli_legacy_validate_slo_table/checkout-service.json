@@ -1,0 +1,21 @@
+{
+  "exit": 0,
+  "text": [
+    "",
+    "",
+    "╭──╮",
+    "│ SLO Metric Validation: checkout-service  │",
+    "╰──╯",
+    "",
+    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
+    "┃ SLO  ┃ Metrics ┃ Status  ┃",
+    "┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩",
+    "│ checkout-service-availability │ none  │ ! No metrics found in query │",
+    "│ checkout-service-latency-p95  │ none  │ ! No metrics found in query │",
+    "│ checkout-service-latency-p99  │ none  │ ! No metrics found in query │",
+    "└──┴──┴──┘",
+    "",
+    "3/3 SLOs have valid metrics",
+    ""
+  ]
+}

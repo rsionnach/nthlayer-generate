@@ -1,0 +1,27 @@
+{
+  "exit": 0,
+  "text": [
+    "",
+    "",
+    "╭──╮",
+    "│ Ownership: payment-api  │",
+    "╰──╯",
+    "",
+    "┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┓",
+    "┃ Source  ┃ Owner  ┃ Confidence ┃ Details  ┃",
+    "┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━┩",
+    "│ declared  │ payments-team  │ ██████████ │ service.yaml (team)  │",
+    "│ pagerduty  │ payments-team  │ █████████░ │ via payments-escalation │",
+    "│ backstage  │ team-payments  │ █████████░ │ catalog owner  │",
+    "│ codeowners │ @acme/payments │ ████████░░ │ .github/CODEOWNERS  │",
+    "│ kubernetes │ payments  │ ███████░░░ │ label: team=payments  │",
+    "└──┴──┴──┴──┘",
+    "",
+    "Resolved: payments-team (declared, confidence: 100%)",
+    "",
+    "Contact:",
+    "  PagerDuty: payments-escalation",
+    "  Slack: #team-payments",
+    ""
+  ]
+}

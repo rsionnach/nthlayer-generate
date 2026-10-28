@@ -276,3 +276,25 @@ def test_manifest_model_rejection_exits_1(service_body, tmp_path):
 
     assert generate_slo_command(str(service_file), output_dir=str(output_dir)) == 1
     assert not output_dir.exists()
+
+
+# A path load_manifest cannot read, and a legacy resource whose spec is not a
+# mapping (generate's legacy parser and common's loader both read spec as one).
+# Before wo62.4.3 generate-slo reported both as a failure; the switch must not
+# turn them into tracebacks.
+def _malformed_spec(tmp_path):
+    path = tmp_path / "bad-service.yaml"
+    path.write_text(
+        "service:\n  name: bad-service\n  team: platform\n  tier: standard\n  type: api\n"
+        "resources:\n  - kind: SLO\n    name: availability\n    spec: 5\n"
+    )
+    return path
+
+
+@pytest.mark.parametrize(
+    "make_input", [lambda p: p, _malformed_spec], ids=["directory", "spec-not-a-mapping"]
+)
+def test_unloadable_input_exits_1(make_input, tmp_path):
+    service_file = make_input(tmp_path)
+
+    assert generate_slo_command(str(service_file), output_dir=str(tmp_path / "out")) == 1

@@ -63,8 +63,11 @@ def generate_slo_command(
             manifest = load_manifest(
                 service_file, environment=environment, suppress_deprecation_warning=True
             )
-        except (FileNotFoundError, ManifestLoadError, ValueError) as e:
-            # ValueError: the manifest model's own checks (tier, type).
+        except (OSError, ManifestLoadError, ValueError, AttributeError, TypeError) as e:
+            # OSError covers FileNotFoundError and a directory or unreadable
+            # path. ValueError: the manifest model's own checks (tier, type).
+            # AttributeError/TypeError: common's legacy loader on a
+            # non-mapping resource spec (opensrm-wo62.4.10).
             error(f"Generation failed: {e}")
             console.print()
             return 1

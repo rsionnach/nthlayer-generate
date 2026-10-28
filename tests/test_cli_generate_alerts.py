@@ -343,3 +343,16 @@ class TestGenerateAlertsCommand:
         rules = [rule for group in data["groups"] for rule in group["rules"]]
         assert rules
         assert all("alert" in rule and "expr" in rule for rule in rules)
+
+
+def test_spec_not_a_mapping_exits_1(tmp_path):
+    """A legacy resource spec that is not a mapping; before wo62.4.3 the legacy
+    parser's error was reported, and the switch must not turn it into a
+    traceback (opensrm-wo62.4.10)."""
+    path = tmp_path / "bad-service.yaml"
+    path.write_text(
+        "service:\n  name: bad-service\n  team: platform\n  tier: standard\n  type: api\n"
+        "resources:\n  - kind: SLO\n    name: availability\n    spec: 5\n"
+    )
+
+    assert generate_alerts_command(str(path), output=str(tmp_path / "alerts.yaml")) == 1

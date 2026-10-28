@@ -46,9 +46,11 @@ CASES = _migrated_goldens()
 
 
 def test_every_legacy_golden_is_covered() -> None:
-    # 19 loadable legacy examples (checkpoint-B-coverage.md §1); guards
-    # against a moved golden directory silently emptying the parametrisation.
-    assert len(CASES) == 19
+    # 20 loadable legacy examples: checkpoint-B-coverage.md §1's 19, plus
+    # analytics-stream since nthlayer-common 5.7.0 aliased stream-processor
+    # (opensrm-wo62.4.7 R3). Guards against a moved golden directory silently
+    # emptying the parametrisation.
+    assert len(CASES) == 20
 
 
 @pytest.mark.parametrize(("mid", "path", "golden"), CASES, ids=[c[0] for c in CASES])

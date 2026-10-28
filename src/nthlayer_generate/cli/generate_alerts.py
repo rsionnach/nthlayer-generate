@@ -125,6 +125,9 @@ def generate_alerts_command(
         KeyError,
         TypeError,
         OSError,
+        # common's legacy loader on a non-mapping resource spec
+        # (opensrm-wo62.4.10).
+        AttributeError,
     ) as e:
         error(f"Error generating alerts: {e}")
         logger.error("alert_generation_failed", err=str(e), exc_info=True)

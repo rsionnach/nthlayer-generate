@@ -846,7 +846,8 @@ def generate_dashboard_dry_run(env: Env) -> Any:
     env.discard_output()
     code = generate_dashboard_command(str(APPLY_FILTER_SERVICE), dry_run=True)
     printed = env.capsys.readouterr().out
-    # Raw stdout, not env.text(): its padding collapse would rewrite the JSON.
+    # Raw stdout: the slice needs the unsplit text, and env.text() would collapse
+    # runs of spaces inside JSON string values.
     start = printed.index("\n{") + 1
     end = printed.rindex("}") + 1
     return {

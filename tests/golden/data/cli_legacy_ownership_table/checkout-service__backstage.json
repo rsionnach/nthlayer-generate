@@ -1,0 +1,23 @@
+{
+  "exit": 0,
+  "text": [
+    "",
+    "",
+    "╭──╮",
+    "│ Ownership: checkout-service  │",
+    "╰──╯",
+    "",
+    "┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┓",
+    "┃ Source  ┃ Owner  ┃ Confidence ┃ Details  ┃",
+    "┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━┩",
+    "│ declared  │ commerce  │ ██████████ │ service.yaml (team) │",
+    "│ backstage │ group:default/commerce │ █████████░ │ catalog owner  │",
+    "└──┴──┴──┴──┘",
+    "",
+    "Resolved: commerce (declared, confidence: 100%)",
+    "",
+    "Contact:",
+    "  Slack: #team-commerce",
+    ""
+  ]
+}

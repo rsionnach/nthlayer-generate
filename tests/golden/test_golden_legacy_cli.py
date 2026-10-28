@@ -609,12 +609,44 @@ def apply_only_and_skip(env: Env) -> Any:
     return apply(APPLY_FILTER_SERVICE, env, None, only=["slos", "alerts"], skip=["alerts"])
 
 
+def ownership_table_backstage(env: Env) -> Any:
+    """The default table output, with a Backstage signal (R5 provenance).
+
+    The corpus cell pins only --format json, and no fixture yields a
+    Backstage signal (its env vars are scrubbed), so _print_ownership_table
+    and its per-source details (ownership.py ~185-200) were unpinned. The
+    provider is imported in the function body, so its get_owner is patched
+    on the class at its source; generate's backstage module re-exports it.
+    """
+    from nthlayer_common.identity.ownership import OwnershipSignal, OwnershipSource
+
+    async def backstage_owner(self: Any, service: str) -> OwnershipSignal:
+        return OwnershipSignal(
+            source=OwnershipSource.BACKSTAGE, owner="group:default/commerce", confidence=0.9
+        )
+
+    env.monkeypatch.setattr(
+        "nthlayer_common.identity.ownership_providers.backstage."
+        "BackstageOwnershipProvider.get_owner",
+        backstage_owner,
+    )
+    env.discard_output()
+    code = ownership_command(
+        str(APPLY_FILTER_SERVICE),
+        output_format="table",
+        backstage_url="http://backstage.invalid",
+        codeowners_root=str(env.tmp),
+    )
+    return {"exit": code, "text": env.text()}
+
+
 SINGLETONS: dict[str, dict[str, Callable[[Env], Any]]] = {
     "cli_legacy_apply_filter": {
         "checkout-service__skip": apply_skip,
         "checkout-service__only": apply_only,
         "checkout-service__only_and_skip": apply_only_and_skip,
     },
+    "cli_legacy_ownership_table": {"checkout-service__backstage": ownership_table_backstage},
     "cli_legacy_slo_list": {"repo": slo_list},
     "cli_legacy_validate_env_dir": {
         "examples": _validate_env_dir(EX),

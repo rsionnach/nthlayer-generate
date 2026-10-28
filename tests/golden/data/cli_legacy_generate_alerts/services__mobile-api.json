@@ -1,0 +1,231 @@
+{
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "mobile-api-redis",
+          "rules": [
+            {
+              "alert": "RedisClusterFlapping",
+              "annotations": {
+                "description": "Changes have been detected in Redis replica connection. This can occur when replica nodes lose connection to the master and reconnect (a.k.a flapping).\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis cluster flapping (instance {{ $labels.instance }})"
+              },
+              "expr": "changes(redis_connected_slaves[1m]) > 1",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisDisconnectedSlaves",
+              "annotations": {
+                "description": "Redis not replicating for all slaves. Consider reviewing the redis replication status.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis disconnected slaves (instance [instance unavailable])"
+              },
+              "expr": "count without (instance, job) (redis_connected_slaves) - sum without (instance, job) (redis_connected_slaves) - 1 > 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisDown",
+              "annotations": {
+                "description": "Redis instance is down\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis down (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_up == 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisMissingBackup",
+              "annotations": {
+                "description": "Redis has not been backuped for 24 hours\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis missing backup (instance {{ $labels.instance }})"
+              },
+              "expr": "time() - redis_rdb_last_save_timestamp_seconds > 60 * 60 * 24",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisMissingMaster",
+              "annotations": {
+                "description": "Redis cluster has no node marked as master.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis missing master (instance [instance unavailable])"
+              },
+              "expr": "(count(redis_instance_info{role=\"master\"}) or vector(0)) < 1",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisNotEnoughConnections",
+              "annotations": {
+                "description": "Redis instance should have more connections (> 5)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis not enough connections (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_connected_clients < 5",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "warning",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisOutOfConfiguredMaxmemory",
+              "annotations": {
+                "description": "Redis is running out of configured maxmemory (> 90%)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis out of configured maxmemory (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_memory_used_bytes / redis_memory_max_bytes * 100 > 90 and on(instance) redis_memory_max_bytes > 0",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "warning",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisOutOfSystemMemory",
+              "annotations": {
+                "description": "Redis is running out of system memory (> 90%)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis out of system memory (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_memory_used_bytes / redis_total_system_memory_bytes * 100 > 90",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "warning",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisRejectedConnections",
+              "annotations": {
+                "description": "Some connections to Redis has been rejected\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis rejected connections (instance {{ $labels.instance }})"
+              },
+              "expr": "increase(redis_rejected_connections_total[1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisReplicationBroken",
+              "annotations": {
+                "description": "Redis instance lost a slave\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis replication broken (instance {{ $labels.instance }})"
+              },
+              "expr": "delta(redis_connected_slaves[1m]) < 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisTooManyConnections",
+              "annotations": {
+                "description": "Redis is running out of connections (> 90% used)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis too many connections (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_connected_clients / redis_config_maxclients * 100 > 90",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "warning",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisTooManyMasters",
+              "annotations": {
+                "description": "Redis cluster has too many nodes marked as master.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis too many masters (instance [instance unavailable])"
+              },
+              "expr": "count(redis_instance_info{role=\"master\"}) > 1",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "mobile-api",
+                "severity": "critical",
+                "team": "mobile",
+                "tier": "critical"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/mobile-api.yaml",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "📊 Loading alerts for dependencies: redis",
+    "  ✓ redis: 12 alerts (7 fixed)",
+    "",
+    "✅ Generated 12 total alerts",
+    "  Breakdown: redis=12",
+    "  Written to: <tmp>/out/alerts.yaml",
+    "",
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✗ Generation failed: Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/segments-two-dimensions.yaml",
+    ""
+  ]
+}

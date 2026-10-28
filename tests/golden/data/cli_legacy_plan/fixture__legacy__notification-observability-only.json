@@ -1,0 +1,121 @@
+{
+  "json": {
+    "checks": {
+      "dashboard_generation": {
+        "dashboard_count": 1,
+        "message": "1 dashboards will be generated",
+        "status": "pass"
+      },
+      "recording_rules": {
+        "message": "7 recording rules will be generated",
+        "rule_count": 7,
+        "status": "pass"
+      },
+      "slo_definition": {
+        "message": "1 SLOs defined",
+        "slo_count": 1,
+        "status": "pass"
+      }
+    },
+    "command": "plan",
+    "metadata": {
+      "resources": {
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "notification-observability-only",
+            "slo_count": 1,
+            "team": "platform",
+            "tier": "high",
+            "type": "backstage_entity"
+          }
+        ],
+        "dashboard": [
+          {
+            "description": "Auto-generated monitoring dashboard",
+            "name": "notification-observability-only-dashboard",
+            "panels": "12+"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 3,
+            "interval": "30s",
+            "type": "notification-observability-only_slo_metrics"
+          },
+          {
+            "count": 4,
+            "interval": "30s",
+            "type": "notification-observability-only_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "delivery-success",
+            "objective": 99.5,
+            "window": "30d"
+          }
+        ]
+      },
+      "service_yaml": "tests/golden/fixtures/legacy/notification-observability-only.yaml"
+    },
+    "service": "notification-observability-only",
+    "summary": {
+      "errors": 0,
+      "passed": 3,
+      "status": "pass",
+      "total": 3,
+      "total_resources": 5,
+      "warnings": 0
+    },
+    "timestamp": "<masked>",
+    "version": "1.0"
+  },
+  "json_exit": 0,
+  "plan": {
+    "errors": [],
+    "resources": {
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "notification-observability-only",
+          "slo_count": 1,
+          "team": "platform",
+          "tier": "high",
+          "type": "backstage_entity"
+        }
+      ],
+      "dashboard": [
+        {
+          "description": "Auto-generated monitoring dashboard",
+          "name": "notification-observability-only-dashboard",
+          "panels": "12+"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 3,
+          "interval": "30s",
+          "type": "notification-observability-only_slo_metrics"
+        },
+        {
+          "count": 4,
+          "interval": "30s",
+          "type": "notification-observability-only_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "delivery-success",
+          "objective": 99.5,
+          "window": "30d"
+        }
+      ]
+    },
+    "service_name": "notification-observability-only",
+    "service_yaml": "tests/golden/fixtures/legacy/notification-observability-only.yaml",
+    "warnings": []
+  },
+  "success": true,
+  "total_resources": 5
+}

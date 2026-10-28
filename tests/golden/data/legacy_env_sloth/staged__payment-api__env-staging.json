@@ -1,0 +1,101 @@
+{
+  "slo_count": 3,
+  "spec": {
+    "labels": {
+      "team": "payments",
+      "tier": "standard",
+      "type": "api"
+    },
+    "service": "payment-api",
+    "slos": [
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO availability for payment-api"
+          },
+          "labels": {
+            "service": "payment-api",
+            "tier": "standard"
+          },
+          "name": "PaymentApiAvailability",
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on payment-api"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "99.95% availability",
+        "name": "availability",
+        "objective": 99.95,
+        "sli": {
+          "events": {
+            "error_query": "sum(rate(http_requests{service=\"payment-api\",code=~\"5..\"}[5m]))",
+            "total_query": "sum(rate(http_requests{service=\"payment-api\"}[5m]))"
+          }
+        }
+      },
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO latency-p95 for payment-api"
+          },
+          "labels": {
+            "service": "payment-api",
+            "tier": "standard"
+          },
+          "name": "PaymentApiLatencyP95",
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on payment-api"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "99.0% latency p95",
+        "name": "latency-p95",
+        "objective": 99.0,
+        "sli": {
+          "events": {
+            "error_query": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])\n)\n > 0.5",
+            "total_query": "sum(rate(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])\n)\n)"
+          }
+        }
+      },
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO latency-p99 for payment-api"
+          },
+          "labels": {
+            "service": "payment-api",
+            "tier": "standard"
+          },
+          "name": "PaymentApiLatencyP99",
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on payment-api"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "95.0% latency p99",
+        "name": "latency-p99",
+        "objective": 95.0,
+        "sli": {
+          "events": {
+            "error_query": "",
+            "total_query": ""
+          }
+        }
+      }
+    ],
+    "version": "prometheus/v1"
+  }
+}

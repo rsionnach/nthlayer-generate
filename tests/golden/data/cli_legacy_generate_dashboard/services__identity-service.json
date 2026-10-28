@@ -1,0 +1,738 @@
+{
+  "exit": 0,
+  "files": {
+    "dashboard.json": {
+      "dashboard": {
+        "annotations": {},
+        "description": "Auto-generated dashboard for identity-service service",
+        "editable": true,
+        "fiscalYearStartMonth": 0,
+        "graphTooltip": 0,
+        "panels": [
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 0
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "SLO Metrics",
+            "type": "row"
+          },
+          {
+            "description": "Target: 99.99%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"identity-service\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "availability",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 99.5%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"identity-service\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "latency-p95",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 98.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 10
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"identity-service\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "latency-p99",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 19
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Service Health",
+            "type": "row"
+          },
+          {
+            "description": "Total requests per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"identity-service\"}[5m]))",
+                "legendFormat": "{{http}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Request Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Percentage of requests returning 5xx errors",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"identity-service\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"identity-service\"}[5m])) * 100",
+                "legendFormat": "error %",
+                "refId": "A"
+              }
+            ],
+            "title": "Error Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "95th percentile request duration",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 29
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{service=\"identity-service\"}[5m])))",
+                "legendFormat": "{{http}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Request Latency (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 38
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Dependencies",
+            "type": "row"
+          },
+          {
+            "description": "Active database connections vs max connections limit",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 39
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_stat_database_numbackends{service=\"postgresql\"}",
+                "legendFormat": "{{datname}} connections",
+                "refId": "A"
+              },
+              {
+                "expr": "pg_settings_max_connections{service=\"postgresql\"}",
+                "legendFormat": "Max connections",
+                "refId": "B"
+              }
+            ],
+            "title": "PostgreSQL Connections",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Number of currently executing queries",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 39
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_stat_activity_count{service=\"postgresql\",state=\"active\"}",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Active Queries",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Buffer cache hit ratio - should be >99% for good performance",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 48
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(pg_stat_database_blks_hit{service=\"postgresql\"}) /\n(sum(pg_stat_database_blks_hit{service=\"postgresql\"}) + sum(pg_stat_database_blks_read{service=\"postgresql\"})) * 100",
+                "legendFormat": "Cache hit %",
+                "refId": "A"
+              }
+            ],
+            "title": "Cache Hit Ratio",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "Transaction commits and rollbacks per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 48
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(pg_stat_database_xact_commit{service=\"postgresql\"}[5m])",
+                "legendFormat": "{{datname}} commits/sec",
+                "refId": "A"
+              },
+              {
+                "expr": "rate(pg_stat_database_xact_rollback{service=\"postgresql\"}[5m])",
+                "legendFormat": "{{datname}} rollbacks/sec",
+                "refId": "B"
+              }
+            ],
+            "title": "Transaction Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Total database size",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 57
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_database_size_bytes{service=\"postgresql\"}",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Database Size",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "Query execution time (95th percentile)",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 57
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(pg_stat_statements_mean_exec_time_seconds_bucket{service=\"postgresql\"}[5m])))",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Query Duration (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Deadlocks per second - should be near zero",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 66
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(pg_stat_database_deadlocks{service=\"postgresql\"}[5m])",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Deadlocks",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Replication lag in seconds",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 66
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_replication_lag_seconds{service=\"postgresql\"}",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Replication Lag",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Dead tuples indicating table bloat - vacuum if high",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 75
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(pg_stat_user_tables_n_dead_tup{service=\"postgresql\"}) by (relname)",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Table Bloat (Dead Tuples)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Connection pool utilization percentage",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 75
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_stat_database_numbackends{service=\"postgresql\"} /\non() group_left pg_settings_max_connections{service=\"postgresql\"} * 100",
+                "legendFormat": "Pool usage %",
+                "refId": "A"
+              }
+            ],
+            "title": "Connection Pool Utilization",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "Redis memory consumption",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 84
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "redis_memory_used_bytes{service=\"redis\"}",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Redis Memory Usage",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Cache hit rate - should be >90% for good performance",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 84
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(cache_hits_total{service=\"redis\"}[5m])) /\n(sum(rate(cache_hits_total{service=\"redis\"}[5m])) +\nsum(rate(cache_misses_total{service=\"redis\"}[5m]))) * 100",
+                "legendFormat": "Hit rate %",
+                "refId": "A"
+              }
+            ],
+            "title": "Cache Hit Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "Number of connected clients",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 93
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "redis_connected_clients{service=\"redis\"}",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Connected Clients",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Cache hits and misses per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 93
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(cache_hits_total{service=\"redis\"}[5m])",
+                "legendFormat": "Hits/sec",
+                "refId": "A"
+              },
+              {
+                "expr": "rate(cache_misses_total{service=\"redis\"}[5m])",
+                "legendFormat": "Misses/sec",
+                "refId": "B"
+              }
+            ],
+            "title": "Cache Hits vs Misses",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Keys evicted due to memory pressure - should be zero",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 102
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_evicted_keys_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Evicted Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Keys expired per second due to TTL",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 102
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_expired_keys_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Expired Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Redis commands processed per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 111
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_commands_processed_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Commands/sec",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Total number of keys in database",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 111
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(redis_db_keys{service=\"redis\"})",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Total Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          }
+        ],
+        "schemaVersion": 36,
+        "style": "dark",
+        "tags": [
+          "identity",
+          "critical",
+          "api"
+        ],
+        "templating": {},
+        "time": {
+          "from": "now-6h",
+          "to": "now"
+        },
+        "timezone": "browser",
+        "title": "identity-service - Service Dashboard",
+        "uid": "identity-service-overview"
+      },
+      "message": "Auto-generated dashboard for identity-service",
+      "overwrite": true
+    }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/identity-service.yaml",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "  Service: identity-service",
+    "  Team: identity",
+    "  Tier: critical",
+    "  Type: api",
+    "  Resources: 6 defined",
+    "",
+    "  SLOs: 3",
+    "  Dependencies: 1",
+    "",
+    "Building dashboard...",
+    "  Mode: Overview panels (key metrics)",
+    "  Title: identity-service",
+    "  UID: identity-service-overview",
+    "  Panels: 0",
+    "",
+    "Writing dashboard to <tmp>/out/dashboard.json...",
+    "",
+    "Dashboard generated successfully!",
+    ""
+  ]
+}

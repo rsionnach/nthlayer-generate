@@ -1,0 +1,324 @@
+{
+  "check_exit": 2,
+  "check_json": [
+    {
+      "recommended": [
+        {
+          "description": "Number of active HTTP server requests",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.active_requests",
+          "requirement_level": "recommended",
+          "slo_usage": [
+            "saturation"
+          ],
+          "status": "missing",
+          "type": "updown_counter",
+          "unit": "{request}"
+        },
+        {
+          "description": "Size of HTTP server request bodies",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.request.size",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "histogram",
+          "unit": "bytes"
+        },
+        {
+          "description": "Size of HTTP server response bodies",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.response.size",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "histogram",
+          "unit": "bytes"
+        }
+      ],
+      "required": [
+        {
+          "description": "Duration of HTTP server requests",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.request.duration",
+          "requirement_level": "required",
+          "slo_usage": [
+            "latency",
+            "availability"
+          ],
+          "status": "missing",
+          "type": "histogram",
+          "unit": "seconds"
+        }
+      ],
+      "runtime": "node",
+      "runtime_metrics": [
+        {
+          "description": "Node.js heap memory used",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.memory.heap.used",
+          "requirement_level": "recommended",
+          "slo_usage": [
+            "saturation"
+          ],
+          "status": "missing",
+          "type": "gauge",
+          "unit": "bytes"
+        },
+        {
+          "description": "Node.js total heap memory",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.memory.heap.total",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "gauge",
+          "unit": "bytes"
+        },
+        {
+          "description": "Node.js external memory (C++ objects bound to V8)",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.memory.external",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "gauge",
+          "unit": "bytes"
+        },
+        {
+          "description": "Node.js ArrayBuffer memory",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.memory.array_buffers",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "gauge",
+          "unit": "bytes"
+        },
+        {
+          "description": "Event loop lag (delay between scheduled and executed callbacks)",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.event_loop.lag",
+          "requirement_level": "recommended",
+          "slo_usage": [
+            "latency"
+          ],
+          "status": "missing",
+          "type": "gauge",
+          "unit": "seconds"
+        },
+        {
+          "description": "Event loop utilization (0.0 to 1.0)",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.event_loop.utilization",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "gauge",
+          "unit": "1"
+        },
+        {
+          "description": "Number of active handles (sockets, timers, etc.)",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.active_handles",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "gauge",
+          "unit": "{handle}"
+        },
+        {
+          "description": "Number of active async requests",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.active_requests",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "gauge",
+          "unit": "{request}"
+        }
+      ],
+      "service": "mobile-api",
+      "service_type": "api",
+      "summary": {
+        "recommended_coverage": 0.0,
+        "required_coverage": 0.0,
+        "slo_ready": false
+      },
+      "tier": "critical"
+    }
+  ],
+  "json": [
+    {
+      "recommended": [
+        {
+          "description": "Number of active HTTP server requests",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.active_requests",
+          "requirement_level": "recommended",
+          "slo_usage": [
+            "saturation"
+          ],
+          "status": "unknown",
+          "type": "updown_counter",
+          "unit": "{request}"
+        },
+        {
+          "description": "Size of HTTP server request bodies",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.request.size",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "histogram",
+          "unit": "bytes"
+        },
+        {
+          "description": "Size of HTTP server response bodies",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.response.size",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "histogram",
+          "unit": "bytes"
+        }
+      ],
+      "required": [
+        {
+          "description": "Duration of HTTP server requests",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.request.duration",
+          "requirement_level": "required",
+          "slo_usage": [
+            "latency",
+            "availability"
+          ],
+          "status": "unknown",
+          "type": "histogram",
+          "unit": "seconds"
+        }
+      ],
+      "runtime": "node",
+      "runtime_metrics": [
+        {
+          "description": "Node.js heap memory used",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.memory.heap.used",
+          "requirement_level": "recommended",
+          "slo_usage": [
+            "saturation"
+          ],
+          "status": "unknown",
+          "type": "gauge",
+          "unit": "bytes"
+        },
+        {
+          "description": "Node.js total heap memory",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.memory.heap.total",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "gauge",
+          "unit": "bytes"
+        },
+        {
+          "description": "Node.js external memory (C++ objects bound to V8)",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.memory.external",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "gauge",
+          "unit": "bytes"
+        },
+        {
+          "description": "Node.js ArrayBuffer memory",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.memory.array_buffers",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "gauge",
+          "unit": "bytes"
+        },
+        {
+          "description": "Event loop lag (delay between scheduled and executed callbacks)",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.event_loop.lag",
+          "requirement_level": "recommended",
+          "slo_usage": [
+            "latency"
+          ],
+          "status": "unknown",
+          "type": "gauge",
+          "unit": "seconds"
+        },
+        {
+          "description": "Event loop utilization (0.0 to 1.0)",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.event_loop.utilization",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "gauge",
+          "unit": "1"
+        },
+        {
+          "description": "Number of active handles (sockets, timers, etc.)",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.active_handles",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "gauge",
+          "unit": "{handle}"
+        },
+        {
+          "description": "Number of active async requests",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.nodejs.active_requests",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "gauge",
+          "unit": "{request}"
+        }
+      ],
+      "service": "mobile-api",
+      "service_type": "api",
+      "summary": {
+        "recommended_coverage": 0.0,
+        "required_coverage": 0.0,
+        "slo_ready": false
+      },
+      "tier": "critical"
+    }
+  ],
+  "json_exit": 0
+}

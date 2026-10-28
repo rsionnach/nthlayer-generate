@@ -1,0 +1,136 @@
+{
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "batch-reports-postgresql",
+          "rules": [
+            {
+              "alert": "PostgresqlCommitRateLow",
+              "annotations": {
+                "description": "Postgresql seems to be processing very few transactions\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql commit rate low (instance {{ $labels.instance }})"
+              },
+              "expr": "rate(pg_stat_database_xact_commit[1m]) < 10",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "critical",
+                "team": "data",
+                "tier": "low"
+              }
+            },
+            {
+              "alert": "PostgresqlDown",
+              "annotations": {
+                "description": "Postgresql instance is down\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql down (instance {{ $labels.instance }})"
+              },
+              "expr": "pg_up == 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "critical",
+                "team": "data",
+                "tier": "low"
+              }
+            },
+            {
+              "alert": "PostgresqlExporterError",
+              "annotations": {
+                "description": "Postgresql exporter is showing errors. A query may be buggy in query.yaml\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql exporter error (instance {{ $labels.instance }})"
+              },
+              "expr": "pg_exporter_last_scrape_error > 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "critical",
+                "team": "data",
+                "tier": "low"
+              }
+            },
+            {
+              "alert": "PostgresqlHighRateDeadlock",
+              "annotations": {
+                "description": "Postgres detected deadlocks\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql high rate deadlock (instance {{ $labels.instance }})"
+              },
+              "expr": "increase(postgresql_errors_total{type=\"deadlock_detected\"}[1m]) > 1",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "critical",
+                "team": "data",
+                "tier": "low"
+              }
+            },
+            {
+              "alert": "PostgresqlHighRateStatementTimeout",
+              "annotations": {
+                "description": "Postgres transactions are showing high rate of statement timeouts\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql high rate statement timeout (instance {{ $labels.instance }})"
+              },
+              "expr": "rate(postgresql_errors_total{type=\"statement_timeout\"}[1m]) > 3",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "critical",
+                "team": "data",
+                "tier": "low"
+              }
+            },
+            {
+              "alert": "PostgresqlRestarted",
+              "annotations": {
+                "description": "Postgresql restarted\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql restarted (instance {{ $labels.instance }})"
+              },
+              "expr": "time() - pg_postmaster_start_time_seconds < 60",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "critical",
+                "team": "data",
+                "tier": "low"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/batch-reports.yaml",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "📊 Loading alerts for dependencies: postgresql, s3",
+    "  ✓ postgresql: 6 alerts (5 fixed)",
+    "  ⚠️  s3: No alerts found",
+    "",
+    "✅ Generated 6 total alerts",
+    "  Breakdown: postgresql=6",
+    "  Written to: <tmp>/out/alerts.yaml",
+    "",
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
+  ]
+}

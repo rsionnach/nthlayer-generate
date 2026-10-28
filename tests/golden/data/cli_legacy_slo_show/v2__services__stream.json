@@ -1,0 +1,12 @@
+{
+  "exit": 1,
+  "text": [
+    "",
+    "",
+    "╭──╮",
+    "│ SLO Status: stream  │",
+    "╰──╯",
+    "",
+    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/services/stream.yaml"
+  ]
+}

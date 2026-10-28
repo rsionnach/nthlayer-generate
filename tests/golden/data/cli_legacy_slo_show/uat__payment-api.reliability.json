@@ -1,0 +1,12 @@
+{
+  "exit": 1,
+  "text": [
+    "",
+    "",
+    "╭──╮",
+    "│ SLO Status: payment-api.reliability  │",
+    "╰──╯",
+    "",
+    "Error parsing service file: Missing required 'service' section in examples/uat/payment-api.reliability.yaml"
+  ]
+}

@@ -1,0 +1,157 @@
+{
+  "dashboard": {
+    "annotations": {},
+    "description": "Auto-generated dashboard for notification-observability-only service",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "panels": [
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": "<masked>",
+        "panels": [],
+        "title": "SLO Metrics",
+        "type": "row"
+      },
+      {
+        "description": "Target: 99.5%",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 1
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(notifications_sent_total{service=\"notification-observability-only\"}[5m]))",
+            "refId": "A"
+          }
+        ],
+        "title": "delivery-success",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 10
+        },
+        "id": "<masked>",
+        "panels": [],
+        "title": "Service Health",
+        "type": "row"
+      },
+      {
+        "description": "Notifications sent per second",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 11
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(notifications_sent_total{service=\"notification-observability-only\"}[5m]))",
+            "legendFormat": "notifications/sec",
+            "refId": "A"
+          }
+        ],
+        "title": "Notification Rate",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "Percentage of notifications failing",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 11
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "sum(rate(notifications_sent_total{service=\"notification-observability-only\",status=\"failed\"}[5m])) / sum(rate(notifications_sent_total{service=\"notification-observability-only\"}[5m])) * 100",
+            "legendFormat": "error %",
+            "refId": "A"
+          }
+        ],
+        "title": "Error Rate",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      },
+      {
+        "description": "95th percentile notification processing duration",
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 20
+        },
+        "options": null,
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(notification_processing_duration_seconds_bucket{service=\"notification-observability-only\"}[5m])))",
+            "legendFormat": "p95 latency",
+            "refId": "A"
+          }
+        ],
+        "title": "Processing Latency (p95)",
+        "transformations": [],
+        "transparent": false,
+        "type": "timeseries"
+      }
+    ],
+    "schemaVersion": 36,
+    "style": "dark",
+    "tags": [
+      "platform",
+      "high",
+      "worker"
+    ],
+    "templating": {},
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timezone": "browser",
+    "title": "notification-observability-only - Service Dashboard",
+    "uid": "notification-observability-only-overview"
+  },
+  "message": "Auto-generated dashboard for notification-observability-only",
+  "overwrite": true
+}

@@ -1,0 +1,15 @@
+{
+  "exit": 0,
+  "files": {},
+  "json": {
+    "duration_seconds": "<masked>",
+    "errors": [],
+    "output_dir": "<tmp>/out",
+    "resources_created": {},
+    "service_name": "stream.reliability",
+    "success": true,
+    "total_resources": 0
+  },
+  "preamble": [],
+  "stray": []
+}

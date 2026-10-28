@@ -1,0 +1,31 @@
+{
+  "exit": 0,
+  "text": [
+    "",
+    "",
+    "╭──╮",
+    "│ SLO Status: checkout-env-vars  │",
+    "╰──╯",
+    "",
+    "SLO: availability-${env}",
+    "  Objective: 99.95%",
+    "  Window: 30d",
+    "  Error Budget: 21.6 minutes (0.05%)",
+    "",
+    "  Indicator: custom",
+    "",
+    "SLO: latency-p95-${team}",
+    "  Objective: 99.0%",
+    "  Window: 30d",
+    "  Error Budget: 432.0 minutes (1.00%)",
+    "",
+    "  Indicator: custom",
+    "",
+    "──",
+    "Total: 2 SLO(s) defined",
+    "",
+    "To collect metrics and calculate actual budget:",
+    "  nthlayer slo collect checkout-env-vars",
+    ""
+  ]
+}

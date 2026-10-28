@@ -1,0 +1,12 @@
+{
+  "exit": 1,
+  "text": [
+    "",
+    "",
+    "╭──╮",
+    "│ SLO Status: single-bounds  │",
+    "╰──╯",
+    "",
+    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/single-bounds.yaml"
+  ]
+}

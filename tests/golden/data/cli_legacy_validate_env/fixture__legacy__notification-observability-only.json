@@ -1,0 +1,77 @@
+{
+  "dev": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: dev",
+      "Service: tests/golden/fixtures/legacy/notification-observability-only.yaml",
+      "",
+      "✗ Environment file not found: dev",
+      "",
+      "Searched for:",
+      "  • notification-observability-only-dev.yaml",
+      "  • notification-observability-only-dev.yml",
+      "  • dev.yaml",
+      "  • dev.yml",
+      ""
+    ]
+  },
+  "prod": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: prod",
+      "Service: tests/golden/fixtures/legacy/notification-observability-only.yaml",
+      "",
+      "✗ Environment file not found: prod",
+      "",
+      "Searched for:",
+      "  • notification-observability-only-prod.yaml",
+      "  • notification-observability-only-prod.yml",
+      "  • prod.yaml",
+      "  • prod.yml",
+      ""
+    ]
+  },
+  "staging": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: staging",
+      "Service: tests/golden/fixtures/legacy/notification-observability-only.yaml",
+      "",
+      "✗ Environment file not found: staging",
+      "",
+      "Searched for:",
+      "  • notification-observability-only-staging.yaml",
+      "  • notification-observability-only-staging.yml",
+      "  • staging.yaml",
+      "  • staging.yml",
+      ""
+    ]
+  }
+}

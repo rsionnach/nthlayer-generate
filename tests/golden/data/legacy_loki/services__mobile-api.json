@@ -1,0 +1,171 @@
+{
+  "count": 9,
+  "file": {
+    "groups": [
+      {
+        "name": "mobile-api",
+        "rules": [
+          {
+            "alert": "mobile-api_ApplicationError",
+            "annotations": {
+              "description": "Error-level log entries detected in application logs.",
+              "summary": "[mobile-api] Application errors detected"
+            },
+            "expr": "sum(count_over_time({app=\"mobile-api\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+            "for": "5m",
+            "labels": {
+              "service": "mobile-api",
+              "severity": "warning",
+              "source": "service",
+              "team": "mobile",
+              "technology": "api",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "mobile-api_ApplicationHighErrorRate",
+            "annotations": {
+              "description": "Application is experiencing a high rate of errors.",
+              "summary": "[mobile-api] High error rate in application"
+            },
+            "expr": "sum(count_over_time({app=\"mobile-api\"} |~ \"(?i)error|exception\" [5m])) > 100",
+            "for": "5m",
+            "labels": {
+              "service": "mobile-api",
+              "severity": "critical",
+              "source": "service",
+              "team": "mobile",
+              "technology": "api",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "mobile-api_ApplicationPanic",
+            "annotations": {
+              "description": "Application appears to have crashed or panicked.",
+              "summary": "[mobile-api] Application panic/crash detected"
+            },
+            "expr": "count_over_time({app=\"mobile-api\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+            "for": "0m",
+            "labels": {
+              "service": "mobile-api",
+              "severity": "critical",
+              "source": "service",
+              "team": "mobile",
+              "technology": "api",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "mobile-api_redis_RedisClusterDown",
+            "annotations": {
+              "description": "Redis cluster is in a down state. Some slots may not be covered.",
+              "summary": "[mobile-api/redis] Redis cluster down"
+            },
+            "expr": "count_over_time({app=\"redis\", service=\"mobile-api\"} |~ \"CLUSTERDOWN|cluster.*down|slots.*not covered\" [1m]) > 0",
+            "for": "0m",
+            "labels": {
+              "dependency": "redis",
+              "service": "mobile-api",
+              "severity": "critical",
+              "source": "dependency",
+              "team": "mobile",
+              "technology": "redis",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "mobile-api_redis_RedisConnectionRefused",
+            "annotations": {
+              "description": "Applications cannot connect to Redis. Check if Redis is running and acce...",
+              "summary": "[mobile-api/redis] Redis connection refused"
+            },
+            "expr": "count_over_time({app=\"redis\", service=\"mobile-api\"} |~ \"Connection refused|ECONNREFUSED\" [1m]) > 0",
+            "for": "1m",
+            "labels": {
+              "dependency": "redis",
+              "service": "mobile-api",
+              "severity": "critical",
+              "source": "dependency",
+              "team": "mobile",
+              "technology": "redis",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "mobile-api_redis_RedisOutOfMemory",
+            "annotations": {
+              "description": "Redis is out of memory. Consider increasing maxmemory or reviewing evict...",
+              "summary": "[mobile-api/redis] Redis out of memory"
+            },
+            "expr": "count_over_time({app=\"redis\", service=\"mobile-api\"} |~ \"OOM|out of memory|Can't save\" [1m]) > 0",
+            "for": "0m",
+            "labels": {
+              "dependency": "redis",
+              "service": "mobile-api",
+              "severity": "critical",
+              "source": "dependency",
+              "team": "mobile",
+              "technology": "redis",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "mobile-api_redis_RedisRDBSaveFailed",
+            "annotations": {
+              "description": "Redis background save (RDB) failed. Check disk space and permissions.",
+              "summary": "[mobile-api/redis] Redis RDB save failed"
+            },
+            "expr": "count_over_time({app=\"redis\", service=\"mobile-api\"} |~ \"MISCONF|Background saving|RDB\" [1m]) > 0",
+            "for": "0m",
+            "labels": {
+              "dependency": "redis",
+              "service": "mobile-api",
+              "severity": "warning",
+              "source": "dependency",
+              "team": "mobile",
+              "technology": "redis",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "mobile-api_redis_RedisReplicationBroken",
+            "annotations": {
+              "description": "Redis replication to master is broken. Check network connectivity and ma...",
+              "summary": "[mobile-api/redis] Redis replication broken"
+            },
+            "expr": "count_over_time({app=\"redis\", service=\"mobile-api\"} |~ \"MASTER aborted|Disconnected from MASTER|replication\" [1m]) > 0",
+            "for": "1m",
+            "labels": {
+              "dependency": "redis",
+              "service": "mobile-api",
+              "severity": "critical",
+              "source": "dependency",
+              "team": "mobile",
+              "technology": "redis",
+              "tier": "critical"
+            }
+          },
+          {
+            "alert": "mobile-api_redis_RedisSlowlog",
+            "annotations": {
+              "description": "Slow Redis commands detected. Review command patterns and consider optim...",
+              "summary": "[mobile-api/redis] Redis slow commands detected"
+            },
+            "expr": "sum(count_over_time({app=\"redis\", service=\"mobile-api\"} |~ \"Slow|slowlog\" [5m])) > 10",
+            "for": "5m",
+            "labels": {
+              "dependency": "redis",
+              "service": "mobile-api",
+              "severity": "warning",
+              "source": "dependency",
+              "team": "mobile",
+              "technology": "redis",
+              "tier": "critical"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

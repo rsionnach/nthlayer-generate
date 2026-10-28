@@ -1,0 +1,345 @@
+{
+  "exit": 0,
+  "files": {
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": null,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/notification-observability-only/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": null,
+        "serviceManifest": "tests/golden/fixtures/legacy/notification-observability-only.yaml",
+        "slothSpec": "generated/notification-observability-only/sloth/notification-observability-only.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": "Background worker for email, SMS, and push notifications",
+        "name": "notification-observability-only",
+        "supportModel": "self",
+        "team": "platform",
+        "tier": "high",
+        "type": "worker"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "delivery-success",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.5,
+          "window": "30d"
+        }
+      ]
+    },
+    "dashboard.json": {
+      "dashboard": {
+        "annotations": {},
+        "description": "Auto-generated dashboard for notification-observability-only service",
+        "editable": true,
+        "fiscalYearStartMonth": 0,
+        "graphTooltip": 0,
+        "panels": [
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 0
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "SLO Metrics",
+            "type": "row"
+          },
+          {
+            "description": "Target: 99.5%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(notifications_sent_total{service=\"notification-observability-only\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "delivery-success",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 10
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Service Health",
+            "type": "row"
+          },
+          {
+            "description": "Jobs/notifications processed per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 11
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(notifications_sent_total{service=\"notification-observability-only\"}[5m]))",
+                "legendFormat": "{{notifications}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Notification Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Percentage of jobs/notifications failing",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 11
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(notifications_sent_total{service=\"notification-observability-only\",status=\"failed\"}[5m])) / sum(rate(notifications_sent_total{service=\"notification-observability-only\"}[5m])) * 100",
+                "legendFormat": "error %",
+                "refId": "A"
+              }
+            ],
+            "title": "Error Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "95th percentile processing duration",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(notification_processing_duration_seconds_bucket{service=\"notification-observability-only\"}[5m])))",
+                "legendFormat": "{{notification}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Processing Latency (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          }
+        ],
+        "schemaVersion": 36,
+        "style": "dark",
+        "tags": [
+          "platform",
+          "high",
+          "worker"
+        ],
+        "templating": {},
+        "time": {
+          "from": "now-6h",
+          "to": "now"
+        },
+        "timezone": "browser",
+        "title": "notification-observability-only - Service Dashboard",
+        "uid": "notification-observability-only-overview"
+      },
+      "message": "Auto-generated dashboard for notification-observability-only",
+      "overwrite": true
+    },
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "notification-observability-only_slo_metrics",
+          "rules": [
+            {
+              "expr": "sum(increase(http_requests_total{service=\"notification-observability-only\"}[30d]))",
+              "labels": {
+                "service": "notification-observability-only",
+                "slo": "delivery-success"
+              },
+              "record": "slo:error_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"notification-observability-only\",status=~\"5..\"}[30d]))",
+              "labels": {
+                "service": "notification-observability-only",
+                "slo": "delivery-success"
+              },
+              "record": "slo:error_requests_failed:30d"
+            },
+            {
+              "expr": "slo:error_requests_failed:30d{service=\"notification-observability-only\",slo=\"delivery-success\"} / slo:error_requests_total:30d{service=\"notification-observability-only\",slo=\"delivery-success\"}",
+              "labels": {
+                "objective": "99.5",
+                "service": "notification-observability-only",
+                "slo": "delivery-success"
+              },
+              "record": "slo:error_rate:ratio"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "notification-observability-only_health_metrics",
+          "rules": [
+            {
+              "expr": "sum(rate(http_requests_total{service=\"notification-observability-only\"}[5m]))",
+              "labels": {
+                "service": "notification-observability-only"
+              },
+              "record": "service:http_requests:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"notification-observability-only\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"notification-observability-only\"}[5m]))",
+              "labels": {
+                "service": "notification-observability-only"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"notification-observability-only\"}[5m]))",
+              "labels": {
+                "service": "notification-observability-only"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"notification-observability-only\"}[5m]))",
+              "labels": {
+                "service": "notification-observability-only"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            }
+          ]
+        }
+      ]
+    },
+    "sloth/notification-observability-only.yaml": {
+      "labels": {
+        "team": "platform",
+        "tier": "high",
+        "type": "worker"
+      },
+      "service": "notification-observability-only",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO delivery-success for notification-observability-only"
+            },
+            "labels": {
+              "service": "notification-observability-only",
+              "tier": "high"
+            },
+            "name": "NotificationObservabilityOnlyDeliverySuccess",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on notification-observability-only"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.5% delivery success",
+          "name": "delivery-success",
+          "objective": 99.5,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
+  "json": {
+    "duration_seconds": "<masked>",
+    "errors": [],
+    "output_dir": "<tmp>/out",
+    "resources_created": {
+      "backstage": 1,
+      "dashboard": 1,
+      "recording-rules": 7,
+      "slos": 1
+    },
+    "service_name": "notification-observability-only",
+    "success": true,
+    "total_resources": 10
+  },
+  "preamble": [],
+  "stray": []
+}

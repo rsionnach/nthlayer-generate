@@ -1,0 +1,320 @@
+{
+  "check_exit": 2,
+  "check_json": [
+    {
+      "recommended": [
+        {
+          "description": "Number of active HTTP server requests",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.active_requests",
+          "requirement_level": "recommended",
+          "slo_usage": [
+            "saturation"
+          ],
+          "status": "missing",
+          "type": "updown_counter",
+          "unit": "{request}"
+        },
+        {
+          "description": "Size of HTTP server request bodies",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.request.size",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "histogram",
+          "unit": "bytes"
+        },
+        {
+          "description": "Size of HTTP server response bodies",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.response.size",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "histogram",
+          "unit": "bytes"
+        }
+      ],
+      "required": [
+        {
+          "description": "Duration of HTTP server requests",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.request.duration",
+          "requirement_level": "required",
+          "slo_usage": [
+            "latency",
+            "availability"
+          ],
+          "status": "missing",
+          "type": "histogram",
+          "unit": "seconds"
+        }
+      ],
+      "runtime": "go",
+      "runtime_metrics": [
+        {
+          "description": "Number of goroutines",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.goroutines",
+          "requirement_level": "recommended",
+          "slo_usage": [
+            "saturation"
+          ],
+          "status": "missing",
+          "type": "updown_counter",
+          "unit": "{goroutine}"
+        },
+        {
+          "description": "Total GC pause time",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.gc.pause_total",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "counter",
+          "unit": "seconds"
+        },
+        {
+          "description": "Number of completed GC cycles",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.gc.count",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "counter",
+          "unit": "{gc}"
+        },
+        {
+          "description": "Heap memory allocated and in use",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.mem.heap_alloc",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "updown_counter",
+          "unit": "bytes"
+        },
+        {
+          "description": "Heap memory waiting to be used",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.mem.heap_idle",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "updown_counter",
+          "unit": "bytes"
+        },
+        {
+          "description": "Heap memory in use",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.mem.heap_inuse",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "updown_counter",
+          "unit": "bytes"
+        },
+        {
+          "description": "Heap memory released to the OS",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.mem.heap_released",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "updown_counter",
+          "unit": "bytes"
+        },
+        {
+          "description": "Stack memory in use",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.mem.stack_inuse",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "missing",
+          "type": "updown_counter",
+          "unit": "bytes"
+        }
+      ],
+      "service": "auth-api",
+      "service_type": "api",
+      "summary": {
+        "recommended_coverage": 0.0,
+        "required_coverage": 0.0,
+        "slo_ready": false
+      },
+      "tier": "critical"
+    }
+  ],
+  "json": [
+    {
+      "recommended": [
+        {
+          "description": "Number of active HTTP server requests",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.active_requests",
+          "requirement_level": "recommended",
+          "slo_usage": [
+            "saturation"
+          ],
+          "status": "unknown",
+          "type": "updown_counter",
+          "unit": "{request}"
+        },
+        {
+          "description": "Size of HTTP server request bodies",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.request.size",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "histogram",
+          "unit": "bytes"
+        },
+        {
+          "description": "Size of HTTP server response bodies",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.response.size",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "histogram",
+          "unit": "bytes"
+        }
+      ],
+      "required": [
+        {
+          "description": "Duration of HTTP server requests",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "http.server.request.duration",
+          "requirement_level": "required",
+          "slo_usage": [
+            "latency",
+            "availability"
+          ],
+          "status": "unknown",
+          "type": "histogram",
+          "unit": "seconds"
+        }
+      ],
+      "runtime": "go",
+      "runtime_metrics": [
+        {
+          "description": "Number of goroutines",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.goroutines",
+          "requirement_level": "recommended",
+          "slo_usage": [
+            "saturation"
+          ],
+          "status": "unknown",
+          "type": "updown_counter",
+          "unit": "{goroutine}"
+        },
+        {
+          "description": "Total GC pause time",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.gc.pause_total",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "counter",
+          "unit": "seconds"
+        },
+        {
+          "description": "Number of completed GC cycles",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.gc.count",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "counter",
+          "unit": "{gc}"
+        },
+        {
+          "description": "Heap memory allocated and in use",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.mem.heap_alloc",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "updown_counter",
+          "unit": "bytes"
+        },
+        {
+          "description": "Heap memory waiting to be used",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.mem.heap_idle",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "updown_counter",
+          "unit": "bytes"
+        },
+        {
+          "description": "Heap memory in use",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.mem.heap_inuse",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "updown_counter",
+          "unit": "bytes"
+        },
+        {
+          "description": "Heap memory released to the OS",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.mem.heap_released",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "updown_counter",
+          "unit": "bytes"
+        },
+        {
+          "description": "Stack memory in use",
+          "found_as": null,
+          "match_confidence": 0.0,
+          "name": "process.runtime.go.mem.stack_inuse",
+          "requirement_level": "recommended",
+          "slo_usage": [],
+          "status": "unknown",
+          "type": "updown_counter",
+          "unit": "bytes"
+        }
+      ],
+      "service": "auth-api",
+      "service_type": "api",
+      "summary": {
+        "recommended_coverage": 0.0,
+        "required_coverage": 0.0,
+        "slo_ready": false
+      },
+      "tier": "critical"
+    }
+  ],
+  "json_exit": 0
+}

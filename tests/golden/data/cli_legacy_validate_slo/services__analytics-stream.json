@@ -1,0 +1,36 @@
+{
+  "exit": 0,
+  "json": {
+    "all_valid": true,
+    "results": [
+      {
+        "all_found": true,
+        "error": "No metrics found in query",
+        "found_metrics": [],
+        "metrics": [],
+        "missing_metrics": [],
+        "query": "",
+        "slo_name": "analytics-stream-processing-availability"
+      },
+      {
+        "all_found": true,
+        "error": "No metrics found in query",
+        "found_metrics": [],
+        "metrics": [],
+        "missing_metrics": [],
+        "query": "",
+        "slo_name": "analytics-stream-stream-lag"
+      },
+      {
+        "all_found": true,
+        "error": "No metrics found in query",
+        "found_metrics": [],
+        "metrics": [],
+        "missing_metrics": [],
+        "query": "",
+        "slo_name": "analytics-stream-event-latency-p99"
+      }
+    ],
+    "service": "analytics-stream"
+  }
+}

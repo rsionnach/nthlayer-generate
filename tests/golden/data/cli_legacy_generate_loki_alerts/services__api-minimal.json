@@ -1,0 +1,92 @@
+{
+  "exit": 0,
+  "files": {
+    "loki-alerts.yaml": {
+      "groups": [
+        {
+          "name": "api-minimal",
+          "rules": [
+            {
+              "alert": "api-minimal_ApplicationError",
+              "annotations": {
+                "description": "Error-level log entries detected in application logs.",
+                "summary": "[api-minimal] Application errors detected"
+              },
+              "expr": "sum(count_over_time({app=\"api-minimal\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "service": "api-minimal",
+                "severity": "warning",
+                "source": "service",
+                "team": "platform",
+                "technology": "api",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "api-minimal_ApplicationHighErrorRate",
+              "annotations": {
+                "description": "Application is experiencing a high rate of errors.",
+                "summary": "[api-minimal] High error rate in application"
+              },
+              "expr": "sum(count_over_time({app=\"api-minimal\"} |~ \"(?i)error|exception\" [5m])) > 100",
+              "for": "5m",
+              "labels": {
+                "service": "api-minimal",
+                "severity": "critical",
+                "source": "service",
+                "team": "platform",
+                "technology": "api",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "api-minimal_ApplicationPanic",
+              "annotations": {
+                "description": "Application appears to have crashed or panicked.",
+                "summary": "[api-minimal] Application panic/crash detected"
+              },
+              "expr": "count_over_time({app=\"api-minimal\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "service": "api-minimal",
+                "severity": "critical",
+                "source": "service",
+                "team": "platform",
+                "technology": "api",
+                "tier": "critical"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/api-minimal.yaml",
+    "",
+    "Service: api-minimal",
+    "Type: api",
+    "Tier: critical",
+    "Dependencies: none",
+    "",
+    "✓ Generated 3 Loki alerts",
+    "",
+    "Alert breakdown:",
+    "  Service alerts: 3",
+    "  Dependency alerts: 0",
+    "",
+    "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
+    "",
+    "✓ Done!"
+  ]
+}

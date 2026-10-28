@@ -1,0 +1,22 @@
+# TEST-ONLY golden fixture (opensrm-wo62.4.2) — overlay for
+# ../checkout-env-vars.yaml, found by the service-specific lookup
+# {service_dir}/environments/{stem}-{env}.yaml (specs/environments.py:84).
+#
+# Exists so the parse-time substitution at
+# src/nthlayer_generate/specs/parser.py:104-112 runs on a merged document: the
+# override below is keyed by the UNSUBSTITUTED name availability-${env}
+# (overlays merge before substitution), and its own ${env} reaches the merged
+# resource name only through that substitution.
+#
+# Adapted from examples/services/environments/prod.yaml.
+
+environment: prod
+
+service:
+  tier: critical
+
+resources:
+  - kind: SLO
+    name: availability-${env}
+    spec:
+      objective: 99.99

@@ -1,0 +1,7 @@
+{
+  "exit": 2,
+  "json": null,
+  "text": [
+    "✗ Error parsing service file: Missing required 'service' section in examples/opensrm/api-critical.reliability.yaml"
+  ]
+}

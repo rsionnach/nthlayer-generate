@@ -1,0 +1,112 @@
+{
+  "json": {
+    "checks": {
+      "recording_rules": {
+        "message": "14 recording rules will be generated",
+        "rule_count": 14,
+        "status": "pass"
+      },
+      "slo_definition": {
+        "message": "2 SLOs defined",
+        "slo_count": 2,
+        "status": "pass"
+      }
+    },
+    "command": "plan",
+    "metadata": {
+      "resources": {
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "checkout-env-vars",
+            "slo_count": 2,
+            "team": "commerce",
+            "tier": "critical",
+            "type": "backstage_entity"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 10,
+            "interval": "30s",
+            "type": "checkout-env-vars_slo_metrics"
+          },
+          {
+            "count": 4,
+            "interval": "30s",
+            "type": "checkout-env-vars_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "availability-${env}",
+            "objective": 99.95,
+            "window": "30d"
+          },
+          {
+            "name": "latency-p95-${team}",
+            "objective": 99.0,
+            "window": "30d"
+          }
+        ]
+      },
+      "service_yaml": "tests/golden/fixtures/legacy/checkout-env-vars.yaml"
+    },
+    "service": "checkout-env-vars",
+    "summary": {
+      "errors": 0,
+      "passed": 2,
+      "status": "pass",
+      "total": 2,
+      "total_resources": 5,
+      "warnings": 0
+    },
+    "timestamp": "<masked>",
+    "version": "1.0"
+  },
+  "json_exit": 0,
+  "plan": {
+    "errors": [],
+    "resources": {
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "checkout-env-vars",
+          "slo_count": 2,
+          "team": "commerce",
+          "tier": "critical",
+          "type": "backstage_entity"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 10,
+          "interval": "30s",
+          "type": "checkout-env-vars_slo_metrics"
+        },
+        {
+          "count": 4,
+          "interval": "30s",
+          "type": "checkout-env-vars_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "availability-${env}",
+          "objective": 99.95,
+          "window": "30d"
+        },
+        {
+          "name": "latency-p95-${team}",
+          "objective": 99.0,
+          "window": "30d"
+        }
+      ]
+    },
+    "service_name": "checkout-env-vars",
+    "service_yaml": "tests/golden/fixtures/legacy/checkout-env-vars.yaml",
+    "warnings": []
+  },
+  "success": true,
+  "total_resources": 5
+}

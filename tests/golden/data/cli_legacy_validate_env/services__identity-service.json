@@ -1,0 +1,77 @@
+{
+  "dev": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: dev",
+      "Service: examples/services/identity-service.yaml",
+      "",
+      "✓ Found: dev.yaml",
+      "",
+      "Testing with service file...",
+      "✓ Successfully merged with identity-service.yaml",
+      "  Result: tier=low, 7 resource(s)",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  },
+  "prod": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: prod",
+      "Service: examples/services/identity-service.yaml",
+      "",
+      "✓ Found: prod.yaml",
+      "",
+      "Testing with service file...",
+      "✓ Successfully merged with identity-service.yaml",
+      "  Result: tier=critical, 7 resource(s)",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  },
+  "staging": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: staging",
+      "Service: examples/services/identity-service.yaml",
+      "",
+      "✓ Found: staging.yaml",
+      "",
+      "Testing with service file...",
+      "✓ Successfully merged with identity-service.yaml",
+      "  Result: tier=standard, 7 resource(s)",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  }
+}

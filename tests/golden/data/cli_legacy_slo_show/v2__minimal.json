@@ -1,0 +1,12 @@
+{
+  "exit": 1,
+  "text": [
+    "",
+    "",
+    "╭──╮",
+    "│ SLO Status: minimal  │",
+    "╰──╯",
+    "",
+    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/minimal.yaml"
+  ]
+}

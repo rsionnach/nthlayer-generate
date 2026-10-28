@@ -1,0 +1,12 @@
+{
+  "exit": 1,
+  "queries": [],
+  "text": [
+    "",
+    "============================================================",
+    "  Error Budget Status: template-extension",
+    "============================================================",
+    "",
+    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/template-extension.yaml"
+  ]
+}

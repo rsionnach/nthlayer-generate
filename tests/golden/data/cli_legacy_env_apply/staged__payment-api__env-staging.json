@@ -1,0 +1,1051 @@
+{
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "payment-api-postgresql",
+          "rules": [
+            {
+              "alert": "PostgresqlCommitRateLow",
+              "annotations": {
+                "description": "Postgresql seems to be processing very few transactions\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql commit rate low (instance {{ $labels.instance }})"
+              },
+              "expr": "rate(pg_stat_database_xact_commit[1m]) < 10",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "PostgresqlDeadLocks",
+              "annotations": {
+                "description": "PostgreSQL has dead-locks\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql dead locks (instance {{ $labels.instance }})"
+              },
+              "expr": "increase(pg_stat_database_deadlocks{datname!~\"template.*|postgres\"}[1m]) > 5",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "PostgresqlDown",
+              "annotations": {
+                "description": "Postgresql instance is down\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql down (instance {{ $labels.instance }})"
+              },
+              "expr": "pg_up == 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "PostgresqlExporterError",
+              "annotations": {
+                "description": "Postgresql exporter is showing errors. A query may be buggy in query.yaml\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql exporter error (instance {{ $labels.instance }})"
+              },
+              "expr": "pg_exporter_last_scrape_error > 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "PostgresqlHighRateDeadlock",
+              "annotations": {
+                "description": "Postgres detected deadlocks\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql high rate deadlock (instance {{ $labels.instance }})"
+              },
+              "expr": "increase(postgresql_errors_total{type=\"deadlock_detected\"}[1m]) > 1",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "PostgresqlHighRateStatementTimeout",
+              "annotations": {
+                "description": "Postgres transactions are showing high rate of statement timeouts\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql high rate statement timeout (instance {{ $labels.instance }})"
+              },
+              "expr": "rate(postgresql_errors_total{type=\"statement_timeout\"}[1m]) > 3",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "PostgresqlHighRollbackRate",
+              "annotations": {
+                "description": "Ratio of transactions being aborted compared to committed is > 2 %\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql high rollback rate (instance [instance unavailable])"
+              },
+              "expr": "sum by (namespace,datname) ((rate(pg_stat_database_xact_rollback{datname!~\"template.*|postgres\",datid!=\"0\"}[3m])) / ((rate(pg_stat_database_xact_rollback{datname!~\"template.*|postgres\",datid!=\"0\"}[3m])) + (rate(pg_stat_database_xact_commit{datname!~\"template.*|postgres\",datid!=\"0\"}[3m])))) > 0.02",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "PostgresqlLowXidConsumption",
+              "annotations": {
+                "description": "Postgresql seems to be consuming transaction IDs very slowly\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql low XID consumption (instance {{ $labels.instance }})"
+              },
+              "expr": "rate(pg_txid_current[1m]) < 5",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "PostgresqlNotEnoughConnections",
+              "annotations": {
+                "description": "PostgreSQL instance should have more connections (> 5)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql not enough connections (instance {{ $labels.instance }})"
+              },
+              "expr": "sum by (instance, job, server) (pg_stat_activity_count) < 5",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "PostgresqlRestarted",
+              "annotations": {
+                "description": "Postgresql restarted\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql restarted (instance {{ $labels.instance }})"
+              },
+              "expr": "time() - pg_postmaster_start_time_seconds < 60",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "PostgresqlTableNotAutoAnalyzed",
+              "annotations": {
+                "description": "Table {{ $labels.relname }} has not been auto analyzed for 10 days\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql table not auto analyzed (instance {{ $labels.instance }})"
+              },
+              "expr": "(pg_stat_user_tables_last_autoanalyze > 0) and (time() - pg_stat_user_tables_last_autoanalyze) > 60 * 60 * 24 * 10",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "PostgresqlTableNotAutoVacuumed",
+              "annotations": {
+                "description": "Table {{ $labels.relname }} has not been auto vacuumed for 10 days\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql table not auto vacuumed (instance {{ $labels.instance }})"
+              },
+              "expr": "(pg_stat_user_tables_last_autovacuum > 0) and (time() - pg_stat_user_tables_last_autovacuum) > 60 * 60 * 24 * 10",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "PostgresqlTooManyConnections",
+              "annotations": {
+                "description": "PostgreSQL instance has too many connections (> 80%).\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql too many connections (instance {{ $labels.instance }})"
+              },
+              "expr": "sum by (instance, job, server) (pg_stat_activity_count) > min by (instance, job, server) (pg_settings_max_connections * 0.8)",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "PostgresqlTooManyDeadTuples",
+              "annotations": {
+                "description": "PostgreSQL dead tuples is too large\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql too many dead tuples (instance {{ $labels.instance }})"
+              },
+              "expr": "((pg_stat_user_tables_n_dead_tup > 10000) / (pg_stat_user_tables_n_live_tup + pg_stat_user_tables_n_dead_tup)) >= 0.1",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "PostgresqlUnusedReplicationSlot",
+              "annotations": {
+                "description": "Unused Replication Slots\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql unused replication slot (instance {{ $labels.instance }})"
+              },
+              "expr": "pg_replication_slots_active == 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "standard"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": null,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/payment-api/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": null,
+        "serviceManifest": "<tmp>/_staged/services/payment-api.yaml",
+        "slothSpec": "generated/payment-api/sloth/payment-api.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": null,
+        "name": "payment-api",
+        "supportModel": "self",
+        "team": "payments",
+        "tier": "standard",
+        "type": "api"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "availability",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.95,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "latency-p95",
+          "sloType": "latency",
+          "status": null,
+          "target": 99.0,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "latency-p99",
+          "sloType": "latency",
+          "status": null,
+          "target": 95.0,
+          "window": "30d"
+        }
+      ]
+    },
+    "dashboard.json": {
+      "dashboard": {
+        "annotations": {},
+        "description": "Auto-generated dashboard for payment-api service",
+        "editable": true,
+        "fiscalYearStartMonth": 0,
+        "graphTooltip": 0,
+        "panels": [
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 0
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "SLO Metrics",
+            "type": "row"
+          },
+          {
+            "description": "Target: 99.95%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests{service=\"payment-api\",code!~\"5..\"}[5m]))\n/\nsum(rate(http_requests{service=\"payment-api\"}[5m]))\n",
+                "legendFormat": "availability",
+                "refId": "A"
+              }
+            ],
+            "title": "availability",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 99.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])\n)\n",
+                "legendFormat": "latency-p95",
+                "refId": "A"
+              }
+            ],
+            "title": "latency-p95",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 95.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 10
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "latency-p99",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 19
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Service Health",
+            "type": "row"
+          },
+          {
+            "description": "### Request Rate - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `http.requests_total`: No metric found for http.requests_total. Add instrumentation to your application.\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  http.requests_total: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Add metrics: http.requests_total"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 20
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Request Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "### Error Rate - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `http.requests_total`: No metric found for http.requests_total. Add instrumentation to your application.\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  http.requests_total: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Add metrics: http.requests_total"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 20
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Error Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "### Request Latency (p95) - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `http.request_duration`: No metric found for http.request_duration. Add instrumentation to your application.\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  http.request_duration: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Add metrics: http.request_duration"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 29
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Request Latency (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 38
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Dependencies",
+            "type": "row"
+          },
+          {
+            "description": "### PostgreSQL Connections - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.connections`: No metric found for postgresql.connections. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n- `postgresql.max_connections`: No metric found for postgresql.max_connections. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.connections: your_custom_metric\n  postgresql.max_connections: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 39
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "PostgreSQL Connections",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "### Active Queries - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.active_queries`: No metric found for postgresql.active_queries. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.active_queries: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 39
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Active Queries",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "### Cache Hit Ratio - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.cache_hit`: No metric found for postgresql.cache_hit. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.cache_hit: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 48
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Cache Hit Ratio",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "### Transaction Rate - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.transactions_committed`: No metric found for postgresql.transactions_committed. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n- `postgresql.transactions_rolled_back`: No metric found for postgresql.transactions_rolled_back. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.transactions_committed: your_custom_metric\n  postgresql.transactions_rolled_back: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 48
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Transaction Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "### Database Size - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.database_size`: No metric found for postgresql.database_size. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.database_size: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 57
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Database Size",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "### Deadlocks - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.deadlocks`: No metric found for postgresql.deadlocks. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.deadlocks: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 57
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Deadlocks",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "### Table Bloat (Dead Tuples) - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.table_bloat`: No metric found for postgresql.table_bloat. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.table_bloat: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 66
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Table Bloat (Dead Tuples)",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "### Connection Pool Utilization - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.connections`: No metric found for postgresql.connections. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.connections: your_custom_metric\n```",
+            "fieldConfig": {
+              "defaults": {
+                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 66
+            },
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none"
+            },
+            "repeatDirection": "h",
+            "title": "Connection Pool Utilization",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          }
+        ],
+        "schemaVersion": 36,
+        "style": "dark",
+        "tags": [
+          "payments",
+          "standard",
+          "api",
+          "staging"
+        ],
+        "templating": {},
+        "time": {
+          "from": "now-6h",
+          "to": "now"
+        },
+        "timezone": "browser",
+        "title": "payment-api - Service Dashboard",
+        "uid": "payment-api-overview"
+      },
+      "message": "Auto-generated dashboard for payment-api",
+      "overwrite": true
+    },
+    "pagerduty-config.json": {
+      "note": "Set PAGERDUTY_API_KEY to create resources in PagerDuty",
+      "resources_to_create": {
+        "escalation_policy": "payments-escalation",
+        "schedules": [
+          "payments-primary",
+          "payments-secondary",
+          "payments-manager"
+        ],
+        "service": "payment-api",
+        "team": "payments"
+      },
+      "service_name": "payment-api",
+      "support_model": "self",
+      "team": "payments",
+      "tier": "critical",
+      "timezone": "America/New_York"
+    },
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "payment-api_slo_metrics",
+          "rules": [
+            {
+              "expr": "sum(increase(http_requests_total{service=\"payment-api\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"payment-api\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"payment-api\",slo=\"availability\"} / slo:requests_total:30d{service=\"payment-api\",slo=\"availability\"}",
+              "labels": {
+                "objective": "99.95",
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"payment-api\",slo=\"availability\"}) / (1 - 0.9995))",
+              "labels": {
+                "objective": "99.95",
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_count{service=\"payment-api\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:latency_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"0.5\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p95",
+                "threshold": "500ms"
+              },
+              "record": "slo:latency_requests_fast:30d"
+            },
+            {
+              "expr": "slo:latency_requests_fast:30d{service=\"payment-api\",slo=\"latency-p95\"} / slo:latency_requests_total:30d{service=\"payment-api\",slo=\"latency-p95\"}",
+              "labels": {
+                "objective": "99.0",
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_count{service=\"payment-api\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p99"
+              },
+              "record": "slo:latency_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"0.5\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p99",
+                "threshold": "500ms"
+              },
+              "record": "slo:latency_requests_fast:30d"
+            },
+            {
+              "expr": "slo:latency_requests_fast:30d{service=\"payment-api\",slo=\"latency-p99\"} / slo:latency_requests_total:30d{service=\"payment-api\",slo=\"latency-p99\"}",
+              "labels": {
+                "objective": "95.0",
+                "service": "payment-api",
+                "slo": "latency-p99"
+              },
+              "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p99"
+              },
+              "record": "slo:http_request_duration_seconds:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p99"
+              },
+              "record": "slo:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p99"
+              },
+              "record": "slo:http_request_duration_seconds:p99"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "payment-api_health_metrics",
+          "rules": [
+            {
+              "expr": "sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_requests:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"payment-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            }
+          ]
+        }
+      ]
+    },
+    "sloth/payment-api.yaml": {
+      "labels": {
+        "team": "payments",
+        "tier": "standard",
+        "type": "api"
+      },
+      "service": "payment-api",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO availability for payment-api"
+            },
+            "labels": {
+              "service": "payment-api",
+              "tier": "standard"
+            },
+            "name": "PaymentApiAvailability",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on payment-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.95% availability",
+          "name": "availability",
+          "objective": 99.95,
+          "sli": {
+            "events": {
+              "error_query": "sum(rate(http_requests{service=\"payment-api\",code=~\"5..\"}[5m]))",
+              "total_query": "sum(rate(http_requests{service=\"payment-api\"}[5m]))"
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO latency-p95 for payment-api"
+            },
+            "labels": {
+              "service": "payment-api",
+              "tier": "standard"
+            },
+            "name": "PaymentApiLatencyP95",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on payment-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.0% latency p95",
+          "name": "latency-p95",
+          "objective": 99.0,
+          "sli": {
+            "events": {
+              "error_query": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])\n)\n > 0.5",
+              "total_query": "sum(rate(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])\n)\n)"
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO latency-p99 for payment-api"
+            },
+            "labels": {
+              "service": "payment-api",
+              "tier": "standard"
+            },
+            "name": "PaymentApiLatencyP99",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on payment-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "95.0% latency p99",
+          "name": "latency-p99",
+          "objective": 95.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
+  "json": {
+    "duration_seconds": "<masked>",
+    "errors": [],
+    "output_dir": "<tmp>/out",
+    "resources_created": {
+      "alerts": 15,
+      "backstage": 1,
+      "dashboard": 1,
+      "pagerduty": 1,
+      "recording-rules": 20,
+      "slos": 3
+    },
+    "service_name": "payment-api",
+    "success": true,
+    "total_resources": 41
+  },
+  "preamble": [],
+  "stray": []
+}

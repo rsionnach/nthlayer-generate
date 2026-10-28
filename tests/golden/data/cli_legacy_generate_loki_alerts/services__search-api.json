@@ -1,0 +1,164 @@
+{
+  "exit": 0,
+  "files": {
+    "loki-alerts.yaml": {
+      "groups": [
+        {
+          "name": "search-api",
+          "rules": [
+            {
+              "alert": "search-api_ApplicationError",
+              "annotations": {
+                "description": "Error-level log entries detected in application logs.",
+                "summary": "[search-api] Application errors detected"
+              },
+              "expr": "sum(count_over_time({app=\"search-api\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "service": "search-api",
+                "severity": "warning",
+                "source": "service",
+                "team": "search",
+                "technology": "api",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "search-api_ApplicationHighErrorRate",
+              "annotations": {
+                "description": "Application is experiencing a high rate of errors.",
+                "summary": "[search-api] High error rate in application"
+              },
+              "expr": "sum(count_over_time({app=\"search-api\"} |~ \"(?i)error|exception\" [5m])) > 100",
+              "for": "5m",
+              "labels": {
+                "service": "search-api",
+                "severity": "critical",
+                "source": "service",
+                "team": "search",
+                "technology": "api",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "search-api_ApplicationPanic",
+              "annotations": {
+                "description": "Application appears to have crashed or panicked.",
+                "summary": "[search-api] Application panic/crash detected"
+              },
+              "expr": "count_over_time({app=\"search-api\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "service": "search-api",
+                "severity": "critical",
+                "source": "service",
+                "team": "search",
+                "technology": "api",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "search-api_elasticsearch_ElasticsearchClusterRed",
+              "annotations": {
+                "description": "Elasticsearch cluster is in RED state. Some primary shards are unallocated.",
+                "summary": "[search-api/elasticsearch] Elasticsearch cluster status RED"
+              },
+              "expr": "count_over_time({app=\"elasticsearch\", service=\"search-api\"} |~ \"cluster.*red|RED.*status\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "elasticsearch",
+                "service": "search-api",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "search",
+                "technology": "elasticsearch",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "search-api_elasticsearch_ElasticsearchClusterYellow",
+              "annotations": {
+                "description": "Elasticsearch cluster is YELLOW. Replica shards are unallocated.",
+                "summary": "[search-api/elasticsearch] Elasticsearch cluster status YELLOW"
+              },
+              "expr": "count_over_time({app=\"elasticsearch\", service=\"search-api\"} |~ \"cluster.*yellow|YELLOW.*status\" [1m]) > 0",
+              "for": "10m",
+              "labels": {
+                "dependency": "elasticsearch",
+                "service": "search-api",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "search",
+                "technology": "elasticsearch",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "search-api_elasticsearch_ElasticsearchOutOfMemory",
+              "annotations": {
+                "description": "Elasticsearch is experiencing memory issues. Consider increasing heap size.",
+                "summary": "[search-api/elasticsearch] Elasticsearch out of memory"
+              },
+              "expr": "count_over_time({app=\"elasticsearch\", service=\"search-api\"} |~ \"OutOfMemoryError|heap.*space|CircuitBreakingException\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "elasticsearch",
+                "service": "search-api",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "search",
+                "technology": "elasticsearch",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "search-api_elasticsearch_ElasticsearchShardFailure",
+              "annotations": {
+                "description": "Elasticsearch shard allocation failure detected.",
+                "summary": "[search-api/elasticsearch] Elasticsearch shard failure"
+              },
+              "expr": "count_over_time({app=\"elasticsearch\", service=\"search-api\"} |~ \"shard.*fail|ShardNotFound|unassigned.*shard\" [1m]) > 0",
+              "for": "5m",
+              "labels": {
+                "dependency": "elasticsearch",
+                "service": "search-api",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "search",
+                "technology": "elasticsearch",
+                "tier": "high"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/search-api.yaml",
+    "",
+    "Service: search-api",
+    "Type: api",
+    "Tier: high",
+    "Dependencies: elasticsearch",
+    "",
+    "✓ Generated 7 Loki alerts",
+    "",
+    "Alert breakdown:",
+    "  Service alerts: 3",
+    "  Dependency alerts: 4",
+    "",
+    "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
+    "",
+    "✓ Done!"
+  ]
+}

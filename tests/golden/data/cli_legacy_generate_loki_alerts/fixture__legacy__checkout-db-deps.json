@@ -1,0 +1,344 @@
+{
+  "exit": 0,
+  "files": {
+    "loki-alerts.yaml": {
+      "groups": [
+        {
+          "name": "checkout-db-deps",
+          "rules": [
+            {
+              "alert": "checkout-db-deps_ApplicationError",
+              "annotations": {
+                "description": "Error-level log entries detected in application logs.",
+                "summary": "[checkout-db-deps] Application errors detected"
+              },
+              "expr": "sum(count_over_time({app=\"checkout-db-deps\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "service": "checkout-db-deps",
+                "severity": "warning",
+                "source": "service",
+                "team": "commerce",
+                "technology": "api",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_ApplicationHighErrorRate",
+              "annotations": {
+                "description": "Application is experiencing a high rate of errors.",
+                "summary": "[checkout-db-deps] High error rate in application"
+              },
+              "expr": "sum(count_over_time({app=\"checkout-db-deps\"} |~ \"(?i)error|exception\" [5m])) > 100",
+              "for": "5m",
+              "labels": {
+                "service": "checkout-db-deps",
+                "severity": "critical",
+                "source": "service",
+                "team": "commerce",
+                "technology": "api",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_ApplicationPanic",
+              "annotations": {
+                "description": "Application appears to have crashed or panicked.",
+                "summary": "[checkout-db-deps] Application panic/crash detected"
+              },
+              "expr": "count_over_time({app=\"checkout-db-deps\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "service": "checkout-db-deps",
+                "severity": "critical",
+                "source": "service",
+                "team": "commerce",
+                "technology": "api",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_mysql_MysqlConnectionRefused",
+              "annotations": {
+                "description": "Applications cannot connect to MySQL.",
+                "summary": "[checkout-db-deps/mysql] MySQL connection error"
+              },
+              "expr": "count_over_time({app=\"mysql\", service=\"checkout-db-deps\"} |~ \"Connection refused|Can't connect|Access denied\" [1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "dependency": "mysql",
+                "service": "checkout-db-deps",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "mysql",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_mysql_MysqlDeadlock",
+              "annotations": {
+                "description": "A deadlock was detected in MySQL.",
+                "summary": "[checkout-db-deps/mysql] MySQL deadlock detected"
+              },
+              "expr": "count_over_time({app=\"mysql\", service=\"checkout-db-deps\"} |~ \"Deadlock found|deadlock\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "mysql",
+                "service": "checkout-db-deps",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "mysql",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_mysql_MysqlError",
+              "annotations": {
+                "description": "MySQL logged an ERROR level message.",
+                "summary": "[checkout-db-deps/mysql] MySQL error detected"
+              },
+              "expr": "count_over_time({app=\"mysql\", service=\"checkout-db-deps\"} |~ \"\\\\[ERROR\\\\]\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "mysql",
+                "service": "checkout-db-deps",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "mysql",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_mysql_MysqlReplicationError",
+              "annotations": {
+                "description": "MySQL replication is experiencing errors.",
+                "summary": "[checkout-db-deps/mysql] MySQL replication error"
+              },
+              "expr": "count_over_time({app=\"mysql\", service=\"checkout-db-deps\"} |~ \"Slave.*error|replication.*error|Got fatal error\" [1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "dependency": "mysql",
+                "service": "checkout-db-deps",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "mysql",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_mysql_MysqlSlowQuery",
+              "annotations": {
+                "description": "Slow queries being logged. Review query performance.",
+                "summary": "[checkout-db-deps/mysql] MySQL slow queries detected"
+              },
+              "expr": "sum(count_over_time({app=\"mysql\", service=\"checkout-db-deps\"} |~ \"slow query|Query_time:\" [5m])) > 5",
+              "for": "5m",
+              "labels": {
+                "dependency": "mysql",
+                "service": "checkout-db-deps",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "mysql",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_mysql_MysqlTableCorruption",
+              "annotations": {
+                "description": "MySQL table corruption detected. Immediate action required.",
+                "summary": "[checkout-db-deps/mysql] MySQL table corruption detected"
+              },
+              "expr": "count_over_time({app=\"mysql\", service=\"checkout-db-deps\"} |~ \"Table.*corrupt|Incorrect key file|crashed\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "mysql",
+                "service": "checkout-db-deps",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "mysql",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_mysql_MysqlTooManyConnections",
+              "annotations": {
+                "description": "MySQL has reached max_connections limit.",
+                "summary": "[checkout-db-deps/mysql] MySQL too many connections"
+              },
+              "expr": "count_over_time({app=\"mysql\", service=\"checkout-db-deps\"} |= \"Too many connections\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "mysql",
+                "service": "checkout-db-deps",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "mysql",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_postgres_PostgresqlConnectionRefused",
+              "annotations": {
+                "description": "Applications are unable to connect to PostgreSQL. Check if the database ...",
+                "summary": "[checkout-db-deps/postgres] PostgreSQL connection refused"
+              },
+              "expr": "count_over_time({app=\"postgres\", service=\"checkout-db-deps\"} |~ \"connection refused|could not connect\" [1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "dependency": "postgres",
+                "service": "checkout-db-deps",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "postgres",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_postgres_PostgresqlDeadlock",
+              "annotations": {
+                "description": "A deadlock was detected in PostgreSQL. This may indicate application log...",
+                "summary": "[checkout-db-deps/postgres] PostgreSQL deadlock detected"
+              },
+              "expr": "count_over_time({app=\"postgres\", service=\"checkout-db-deps\"} |= \"deadlock detected\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "postgres",
+                "service": "checkout-db-deps",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "postgres",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_postgres_PostgresqlFatalError",
+              "annotations": {
+                "description": "PostgreSQL logged a FATAL error which typically indicates a serious issu...",
+                "summary": "[checkout-db-deps/postgres] PostgreSQL FATAL error detected"
+              },
+              "expr": "count_over_time({app=\"postgres\", service=\"checkout-db-deps\"} |= \"FATAL\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "postgres",
+                "service": "checkout-db-deps",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "postgres",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_postgres_PostgresqlOutOfConnections",
+              "annotations": {
+                "description": "PostgreSQL has reached its maximum connection limit. Consider increasing...",
+                "summary": "[checkout-db-deps/postgres] PostgreSQL out of connections"
+              },
+              "expr": "count_over_time({app=\"postgres\", service=\"checkout-db-deps\"} |= \"too many connections\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "postgres",
+                "service": "checkout-db-deps",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "postgres",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_postgres_PostgresqlPanicError",
+              "annotations": {
+                "description": "PostgreSQL logged a PANIC error - the database may have crashed or be in...",
+                "summary": "[checkout-db-deps/postgres] PostgreSQL PANIC error detected"
+              },
+              "expr": "count_over_time({app=\"postgres\", service=\"checkout-db-deps\"} |= \"PANIC\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "postgres",
+                "service": "checkout-db-deps",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "postgres",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_postgres_PostgresqlReplicationLag",
+              "annotations": {
+                "description": "Replication lag detected between primary and replica. Check network and ...",
+                "summary": "[checkout-db-deps/postgres] PostgreSQL replication lag detected"
+              },
+              "expr": "count_over_time({app=\"postgres\", service=\"checkout-db-deps\"} |~ \"replication.*lag|recovery.*behind\" [1m]) > 0",
+              "for": "5m",
+              "labels": {
+                "dependency": "postgres",
+                "service": "checkout-db-deps",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "postgres",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-db-deps_postgres_PostgresqlSlowQuery",
+              "annotations": {
+                "description": "Slow queries (>1s) are being logged. Review query performance and consid...",
+                "summary": "[checkout-db-deps/postgres] PostgreSQL slow queries detected"
+              },
+              "expr": "sum(count_over_time({app=\"postgres\", service=\"checkout-db-deps\"} |= \"duration:\" |~ \"duration: [0-9]{4,}\" [5m])) > 5",
+              "for": "5m",
+              "labels": {
+                "dependency": "postgres",
+                "service": "checkout-db-deps",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "commerce",
+                "technology": "postgres",
+                "tier": "critical"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "Service: tests/golden/fixtures/legacy/checkout-db-deps.yaml",
+    "",
+    "Service: checkout-db-deps",
+    "Type: api",
+    "Tier: critical",
+    "Dependencies: mysql, postgres",
+    "",
+    "✓ Generated 17 Loki alerts",
+    "",
+    "Alert breakdown:",
+    "  Service alerts: 3",
+    "  Dependency alerts: 14",
+    "",
+    "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
+    "",
+    "✓ Done!"
+  ]
+}

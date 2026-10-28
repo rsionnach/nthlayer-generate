@@ -1,0 +1,15 @@
+{
+  "dry_run_exit": 1,
+  "dry_run_text": [
+    "",
+    "╭──╮",
+    "│ Setup PagerDuty Integration  │",
+    "╰──╯",
+    "",
+    "✗ Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/services/batch.yaml",
+    ""
+  ],
+  "no_key_exit": 1,
+  "setup_service_calls": [],
+  "stubbed_exit": 1
+}

@@ -1,0 +1,267 @@
+{
+  "exit": 0,
+  "files": {
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": null,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/analytics-pipeline/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": null,
+        "serviceManifest": "examples/services/analytics-pipeline.yaml",
+        "slothSpec": "generated/analytics-pipeline/sloth/analytics-pipeline.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": null,
+        "name": "analytics-pipeline",
+        "supportModel": "self",
+        "team": "data",
+        "tier": "standard",
+        "type": "batch"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "success-rate",
+          "sloType": "availability",
+          "status": null,
+          "target": 95.0,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "freshness-p95",
+          "sloType": "availability",
+          "status": null,
+          "target": 90.0,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "data-quality",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.0,
+          "window": "30d"
+        }
+      ]
+    },
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "analytics-pipeline_slo_metrics",
+          "rules": [
+            {
+              "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\"}[30d]))",
+              "labels": {
+                "service": "analytics-pipeline",
+                "slo": "success-rate"
+              },
+              "record": "slo:error_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\",status=~\"5..\"}[30d]))",
+              "labels": {
+                "service": "analytics-pipeline",
+                "slo": "success-rate"
+              },
+              "record": "slo:error_requests_failed:30d"
+            },
+            {
+              "expr": "slo:error_requests_failed:30d{service=\"analytics-pipeline\",slo=\"success-rate\"} / slo:error_requests_total:30d{service=\"analytics-pipeline\",slo=\"success-rate\"}",
+              "labels": {
+                "objective": "95.0",
+                "service": "analytics-pipeline",
+                "slo": "success-rate"
+              },
+              "record": "slo:error_rate:ratio"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "analytics-pipeline_health_metrics",
+          "rules": [
+            {
+              "expr": "sum(rate(http_requests_total{service=\"analytics-pipeline\"}[5m]))",
+              "labels": {
+                "service": "analytics-pipeline"
+              },
+              "record": "service:http_requests:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"analytics-pipeline\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"analytics-pipeline\"}[5m]))",
+              "labels": {
+                "service": "analytics-pipeline"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"analytics-pipeline\"}[5m]))",
+              "labels": {
+                "service": "analytics-pipeline"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"analytics-pipeline\"}[5m]))",
+              "labels": {
+                "service": "analytics-pipeline"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            }
+          ]
+        }
+      ]
+    },
+    "sloth/analytics-pipeline.yaml": {
+      "labels": {
+        "team": "data",
+        "tier": "standard",
+        "type": "batch"
+      },
+      "service": "analytics-pipeline",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO success-rate for analytics-pipeline"
+            },
+            "labels": {
+              "service": "analytics-pipeline",
+              "tier": "standard"
+            },
+            "name": "AnalyticsPipelineSuccessRate",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on analytics-pipeline"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "95.0% success rate",
+          "name": "success-rate",
+          "objective": 95.0,
+          "sli": {
+            "events": {
+              "error_query": "sum(rate(pipeline_success_total{service=\"analytics-pipeline\"}[5m]))",
+              "total_query": "sum(rate(pipeline_runs_total{service=\"analytics-pipeline\"}[5m]))"
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO freshness-p95 for analytics-pipeline"
+            },
+            "labels": {
+              "service": "analytics-pipeline",
+              "tier": "standard"
+            },
+            "name": "AnalyticsPipelineFreshnessP95",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on analytics-pipeline"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "90.0% freshness p95",
+          "name": "freshness-p95",
+          "objective": 90.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO data-quality for analytics-pipeline"
+            },
+            "labels": {
+              "service": "analytics-pipeline",
+              "tier": "standard"
+            },
+            "name": "AnalyticsPipelineDataQuality",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on analytics-pipeline"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.0% data quality",
+          "name": "data-quality",
+          "objective": 99.0,
+          "sli": {
+            "events": {
+              "error_query": "sum(rate(pipeline_valid_records_total{service=\"analytics-pipeline\"}[5m]))",
+              "total_query": "sum(rate(pipeline_processed_records_total{service=\"analytics-pipeline\"}[5m]))"
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
+  "json": {
+    "duration_seconds": "<masked>",
+    "errors": [],
+    "output_dir": "<tmp>/out",
+    "resources_created": {
+      "alerts": 0,
+      "backstage": 1,
+      "dashboard": 1,
+      "recording-rules": 7,
+      "slos": 3
+    },
+    "service_name": "analytics-pipeline",
+    "success": true,
+    "total_resources": 12
+  },
+  "preamble": [
+    "✗ Error generating dashboard: 'No template found for technology: bigquery'"
+  ],
+  "stray": []
+}

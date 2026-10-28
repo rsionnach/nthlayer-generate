@@ -1,0 +1,77 @@
+{
+  "dev": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: dev",
+      "Service: examples/services/payment-api-pagerduty-demo.yaml",
+      "",
+      "✓ Found: dev.yaml",
+      "",
+      "Testing with service file...",
+      "✓ Successfully merged with payment-api-pagerduty-demo.yaml",
+      "  Result: tier=low, 4 resource(s)",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  },
+  "prod": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: prod",
+      "Service: examples/services/payment-api-pagerduty-demo.yaml",
+      "",
+      "✓ Found: prod.yaml",
+      "",
+      "Testing with service file...",
+      "✓ Successfully merged with payment-api-pagerduty-demo.yaml",
+      "  Result: tier=critical, 4 resource(s)",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  },
+  "staging": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: staging",
+      "Service: examples/services/payment-api-pagerduty-demo.yaml",
+      "",
+      "✓ Found: staging.yaml",
+      "",
+      "Testing with service file...",
+      "✓ Successfully merged with payment-api-pagerduty-demo.yaml",
+      "  Result: tier=standard, 4 resource(s)",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  }
+}

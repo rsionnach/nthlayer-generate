@@ -1,0 +1,148 @@
+{
+  "exit": 0,
+  "files": {
+    "sloth/auth-api.yaml": {
+      "labels": {
+        "team": "platform",
+        "tier": "critical",
+        "type": "api"
+      },
+      "service": "auth-api",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO availability for auth-api"
+            },
+            "labels": {
+              "service": "auth-api",
+              "tier": "critical"
+            },
+            "name": "AuthApiAvailability",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on auth-api"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on auth-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.9% availability",
+          "name": "availability",
+          "objective": 99.9,
+          "sli": {
+            "events": {
+              "error_query": "sum(rate(http_requests_total{service=\"auth-api\",code=~\"5..\"}[5m]))",
+              "total_query": "sum(rate(http_requests_total{service=\"auth-api\"}[5m]))"
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO latency-p95 for auth-api"
+            },
+            "labels": {
+              "service": "auth-api",
+              "tier": "critical"
+            },
+            "name": "AuthApiLatencyP95",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on auth-api"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on auth-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.5% latency p95",
+          "name": "latency-p95",
+          "objective": 99.5,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO token-generation-latency for auth-api"
+            },
+            "labels": {
+              "service": "auth-api",
+              "tier": "critical"
+            },
+            "name": "AuthApiTokenGenerationLatency",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on auth-api"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on auth-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.0% token generation latency",
+          "name": "token-generation-latency",
+          "objective": 99.0,
+          "sli": {
+            "events": {
+              "error_query": "histogram_quantile(0.95,\n  rate(token_generation_duration_seconds_bucket{service=\"auth-api\"}[5m])\n)\n > 0.1",
+              "total_query": "sum(rate(0.95,\n  rate(token_generation_duration_seconds_bucket{service=\"auth-api\"}[5m])\n)\n)"
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✓ Generated SLOs for auth-api",
+    "  SLO count: 3",
+    "  Output: <tmp>/out/sloth/auth-api.yaml",
+    "",
+    "Generated SLOs:",
+    "  • auth-api-availability (99.9%)",
+    "  • auth-api-latency-p95 (99.5%)",
+    "  • auth-api-token-generation-latency (99.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/auth-api.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/auth-api.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
+}

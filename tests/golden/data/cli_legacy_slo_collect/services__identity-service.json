@@ -1,0 +1,28 @@
+{
+  "exit": 0,
+  "queries": [],
+  "text": [
+    "",
+    "============================================================",
+    "  Error Budget Status: identity-service",
+    "============================================================",
+    "",
+    "Prometheus: http://prometheus.invalid",
+    "",
+    "[-] SLO: availability (99.99%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "[-] SLO: latency-p95 (99.5%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "[-] SLO: latency-p99 (98.0%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "------------------------------------------------------------",
+    "Summary: 0/3 SLOs healthy",
+    ""
+  ]
+}

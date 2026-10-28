@@ -1,0 +1,77 @@
+{
+  "dev": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: dev",
+      "Service: examples/services/batch-reports.yaml",
+      "",
+      "✓ Found: dev.yaml",
+      "",
+      "Testing with service file...",
+      "✓ Successfully merged with batch-reports.yaml",
+      "  Result: tier=low, 5 resource(s)",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  },
+  "prod": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: prod",
+      "Service: examples/services/batch-reports.yaml",
+      "",
+      "✓ Found: prod.yaml",
+      "",
+      "Testing with service file...",
+      "✓ Successfully merged with batch-reports.yaml",
+      "  Result: tier=critical, 5 resource(s)",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  },
+  "staging": {
+    "exit": 0,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: staging",
+      "Service: examples/services/batch-reports.yaml",
+      "",
+      "✓ Found: staging.yaml",
+      "",
+      "Testing with service file...",
+      "✓ Successfully merged with batch-reports.yaml",
+      "  Result: tier=standard, 5 resource(s)",
+      "",
+      "✓ Validation passed",
+      ""
+    ]
+  }
+}

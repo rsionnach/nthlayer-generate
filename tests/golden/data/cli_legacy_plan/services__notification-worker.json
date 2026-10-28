@@ -1,0 +1,214 @@
+{
+  "json": {
+    "checks": {
+      "alert_generation": {
+        "alert_count": 12,
+        "message": "12 alerts will be generated",
+        "status": "pass"
+      },
+      "dashboard_generation": {
+        "dashboard_count": 1,
+        "message": "1 dashboards will be generated",
+        "status": "pass"
+      },
+      "recording_rules": {
+        "message": "13 recording rules will be generated",
+        "rule_count": 13,
+        "status": "pass"
+      },
+      "slo_definition": {
+        "message": "3 SLOs defined",
+        "slo_count": 3,
+        "status": "pass"
+      }
+    },
+    "command": "plan",
+    "metadata": {
+      "resources": {
+        "alerts": [
+          {
+            "count": 8,
+            "severity": "critical"
+          },
+          {
+            "count": 4,
+            "severity": "warning"
+          }
+        ],
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "notification-worker",
+            "slo_count": 3,
+            "team": "platform",
+            "tier": "high",
+            "type": "backstage_entity"
+          }
+        ],
+        "dashboard": [
+          {
+            "description": "Auto-generated monitoring dashboard",
+            "name": "notification-worker-dashboard",
+            "panels": "12+"
+          }
+        ],
+        "pagerduty": [
+          {
+            "name": "platform",
+            "type": "team"
+          },
+          {
+            "names": [
+              "platform-primary",
+              "platform-secondary",
+              "platform-manager"
+            ],
+            "type": "schedules"
+          },
+          {
+            "name": "platform-escalation",
+            "type": "escalation_policy"
+          },
+          {
+            "name": "notification-worker",
+            "support_model": "self",
+            "tier": "high",
+            "type": "service"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 9,
+            "interval": "30s",
+            "type": "notification-worker_slo_metrics"
+          },
+          {
+            "count": 4,
+            "interval": "30s",
+            "type": "notification-worker_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "delivery-success",
+            "objective": 99.5,
+            "window": "30d"
+          },
+          {
+            "name": "processing-latency-p95",
+            "objective": 98.0,
+            "window": "30d"
+          },
+          {
+            "name": "queue-lag",
+            "objective": 99.0,
+            "window": "30d"
+          }
+        ]
+      },
+      "service_yaml": "examples/services/notification-worker.yaml"
+    },
+    "service": "notification-worker",
+    "summary": {
+      "errors": 0,
+      "passed": 4,
+      "status": "pass",
+      "total": 4,
+      "total_resources": 13,
+      "warnings": 0
+    },
+    "timestamp": "<masked>",
+    "version": "1.0"
+  },
+  "json_exit": 0,
+  "plan": {
+    "errors": [],
+    "resources": {
+      "alerts": [
+        {
+          "count": 8,
+          "severity": "critical"
+        },
+        {
+          "count": 4,
+          "severity": "warning"
+        }
+      ],
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "notification-worker",
+          "slo_count": 3,
+          "team": "platform",
+          "tier": "high",
+          "type": "backstage_entity"
+        }
+      ],
+      "dashboard": [
+        {
+          "description": "Auto-generated monitoring dashboard",
+          "name": "notification-worker-dashboard",
+          "panels": "12+"
+        }
+      ],
+      "pagerduty": [
+        {
+          "name": "platform",
+          "type": "team"
+        },
+        {
+          "names": [
+            "platform-primary",
+            "platform-secondary",
+            "platform-manager"
+          ],
+          "type": "schedules"
+        },
+        {
+          "name": "platform-escalation",
+          "type": "escalation_policy"
+        },
+        {
+          "name": "notification-worker",
+          "support_model": "self",
+          "tier": "high",
+          "type": "service"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 9,
+          "interval": "30s",
+          "type": "notification-worker_slo_metrics"
+        },
+        {
+          "count": 4,
+          "interval": "30s",
+          "type": "notification-worker_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "delivery-success",
+          "objective": 99.5,
+          "window": "30d"
+        },
+        {
+          "name": "processing-latency-p95",
+          "objective": 98.0,
+          "window": "30d"
+        },
+        {
+          "name": "queue-lag",
+          "objective": 99.0,
+          "window": "30d"
+        }
+      ]
+    },
+    "service_name": "notification-worker",
+    "service_yaml": "examples/services/notification-worker.yaml",
+    "warnings": []
+  },
+  "success": true,
+  "total_resources": 13
+}

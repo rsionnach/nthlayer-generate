@@ -1,0 +1,24 @@
+{
+  "exit": 0,
+  "text": [
+    "",
+    "",
+    "╭──╮",
+    "│ SLO Status: checkout-db-deps  │",
+    "╰──╯",
+    "",
+    "SLO: availability",
+    "  Objective: 99.95%",
+    "  Window: 30d",
+    "  Error Budget: 21.6 minutes (0.05%)",
+    "",
+    "  Indicator: custom",
+    "",
+    "──",
+    "Total: 1 SLO(s) defined",
+    "",
+    "To collect metrics and calculate actual budget:",
+    "  nthlayer slo collect checkout-db-deps",
+    ""
+  ]
+}

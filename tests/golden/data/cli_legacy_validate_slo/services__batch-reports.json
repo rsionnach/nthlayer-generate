@@ -1,0 +1,36 @@
+{
+  "exit": 0,
+  "json": {
+    "all_valid": true,
+    "results": [
+      {
+        "all_found": true,
+        "error": "No metrics found in query",
+        "found_metrics": [],
+        "metrics": [],
+        "missing_metrics": [],
+        "query": "",
+        "slo_name": "batch-reports-availability"
+      },
+      {
+        "all_found": true,
+        "error": "No metrics found in query",
+        "found_metrics": [],
+        "metrics": [],
+        "missing_metrics": [],
+        "query": "",
+        "slo_name": "batch-reports-latency-p95"
+      },
+      {
+        "all_found": true,
+        "error": "No metrics found in query",
+        "found_metrics": [],
+        "metrics": [],
+        "missing_metrics": [],
+        "query": "",
+        "slo_name": "batch-reports-report-success-rate"
+      }
+    ],
+    "service": "batch-reports"
+  }
+}

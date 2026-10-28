@@ -1,0 +1,27 @@
+{
+  "exit": 0,
+  "json": {
+    "confidence": 1.0,
+    "contact": {
+      "email": null,
+      "opsgenie_team": null,
+      "pagerduty_escalation": null,
+      "slack_channel": "#team-notifications"
+    },
+    "owner": "notifications",
+    "owner_type": "team",
+    "service": "email-worker",
+    "signals": [
+      {
+        "confidence": 1.0,
+        "metadata": {
+          "field": "team"
+        },
+        "owner": "notifications",
+        "owner_type": "team",
+        "source": "declared"
+      }
+    ],
+    "source": "declared"
+  }
+}

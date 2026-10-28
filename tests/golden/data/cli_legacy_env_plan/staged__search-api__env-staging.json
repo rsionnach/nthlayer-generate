@@ -1,0 +1,214 @@
+{
+  "json": {
+    "checks": {
+      "alert_generation": {
+        "alert_count": 17,
+        "message": "17 alerts will be generated",
+        "status": "pass"
+      },
+      "dashboard_generation": {
+        "dashboard_count": 1,
+        "message": "1 dashboards will be generated",
+        "status": "pass"
+      },
+      "recording_rules": {
+        "message": "14 recording rules will be generated",
+        "rule_count": 14,
+        "status": "pass"
+      },
+      "slo_definition": {
+        "message": "3 SLOs defined",
+        "slo_count": 3,
+        "status": "pass"
+      }
+    },
+    "command": "plan",
+    "metadata": {
+      "resources": {
+        "alerts": [
+          {
+            "count": 6,
+            "severity": "critical"
+          },
+          {
+            "count": 11,
+            "severity": "warning"
+          }
+        ],
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "search-api",
+            "slo_count": 3,
+            "team": "search",
+            "tier": "high",
+            "type": "backstage_entity"
+          }
+        ],
+        "dashboard": [
+          {
+            "description": "Auto-generated monitoring dashboard",
+            "name": "search-api-dashboard",
+            "panels": "12+"
+          }
+        ],
+        "pagerduty": [
+          {
+            "name": "search",
+            "type": "team"
+          },
+          {
+            "names": [
+              "search-primary",
+              "search-secondary",
+              "search-manager"
+            ],
+            "type": "schedules"
+          },
+          {
+            "name": "search-escalation",
+            "type": "escalation_policy"
+          },
+          {
+            "name": "search-api",
+            "support_model": "self",
+            "tier": "high",
+            "type": "service"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 10,
+            "interval": "30s",
+            "type": "search-api_slo_metrics"
+          },
+          {
+            "count": 4,
+            "interval": "30s",
+            "type": "search-api_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "search-availability",
+            "objective": 99.5,
+            "window": "30d"
+          },
+          {
+            "name": "search-latency-p95",
+            "objective": 99.0,
+            "window": "30d"
+          },
+          {
+            "name": "search-quality",
+            "objective": 95.0,
+            "window": "7d"
+          }
+        ]
+      },
+      "service_yaml": "<tmp>/_staged/services/search-api.yaml"
+    },
+    "service": "search-api",
+    "summary": {
+      "errors": 0,
+      "passed": 4,
+      "status": "pass",
+      "total": 4,
+      "total_resources": 13,
+      "warnings": 0
+    },
+    "timestamp": "<masked>",
+    "version": "1.0"
+  },
+  "json_exit": 0,
+  "plan": {
+    "errors": [],
+    "resources": {
+      "alerts": [
+        {
+          "count": 6,
+          "severity": "critical"
+        },
+        {
+          "count": 11,
+          "severity": "warning"
+        }
+      ],
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "search-api",
+          "slo_count": 3,
+          "team": "search",
+          "tier": "high",
+          "type": "backstage_entity"
+        }
+      ],
+      "dashboard": [
+        {
+          "description": "Auto-generated monitoring dashboard",
+          "name": "search-api-dashboard",
+          "panels": "12+"
+        }
+      ],
+      "pagerduty": [
+        {
+          "name": "search",
+          "type": "team"
+        },
+        {
+          "names": [
+            "search-primary",
+            "search-secondary",
+            "search-manager"
+          ],
+          "type": "schedules"
+        },
+        {
+          "name": "search-escalation",
+          "type": "escalation_policy"
+        },
+        {
+          "name": "search-api",
+          "support_model": "self",
+          "tier": "high",
+          "type": "service"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 10,
+          "interval": "30s",
+          "type": "search-api_slo_metrics"
+        },
+        {
+          "count": 4,
+          "interval": "30s",
+          "type": "search-api_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "search-availability",
+          "objective": 99.5,
+          "window": "30d"
+        },
+        {
+          "name": "search-latency-p95",
+          "objective": 99.0,
+          "window": "30d"
+        },
+        {
+          "name": "search-quality",
+          "objective": 95.0,
+          "window": "7d"
+        }
+      ]
+    },
+    "service_name": "search-api",
+    "service_yaml": "<tmp>/_staged/services/search-api.yaml",
+    "warnings": []
+  },
+  "success": true,
+  "total_resources": 13
+}

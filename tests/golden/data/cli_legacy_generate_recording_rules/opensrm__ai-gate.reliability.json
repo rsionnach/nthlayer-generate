@@ -1,0 +1,16 @@
+{
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Prometheus Recording Rules  │",
+    "╰──╯",
+    "",
+    "Service: examples/opensrm/ai-gate.reliability.yaml",
+    "Output: <tmp>/out/recording-rules.yaml",
+    "",
+    "Parsing service specification...",
+    "✗ Error generating recording rules: Missing required 'service' section in examples/opensrm/ai-gate.reliability.yaml"
+  ]
+}

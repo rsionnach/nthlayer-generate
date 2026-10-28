@@ -1,0 +1,51 @@
+{
+  "slo_count": 1,
+  "spec": {
+    "labels": {
+      "team": "commerce",
+      "tier": "critical",
+      "type": "api"
+    },
+    "service": "checkout-db-deps",
+    "slos": [
+      {
+        "alerting": {
+          "annotations": {
+            "summary": "SLO availability for checkout-db-deps"
+          },
+          "labels": {
+            "service": "checkout-db-deps",
+            "tier": "critical"
+          },
+          "name": "CheckoutDbDepsAvailability",
+          "page_alert": {
+            "annotations": {
+              "summary": "High error budget burn on checkout-db-deps"
+            },
+            "labels": {
+              "severity": "critical"
+            }
+          },
+          "ticket_alert": {
+            "annotations": {
+              "summary": "Error budget burn on checkout-db-deps"
+            },
+            "labels": {
+              "severity": "warning"
+            }
+          }
+        },
+        "description": "99.95% availability",
+        "name": "availability",
+        "objective": 99.95,
+        "sli": {
+          "events": {
+            "error_query": "",
+            "total_query": ""
+          }
+        }
+      }
+    ],
+    "version": "prometheus/v1"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "json": {
+    "checks": {
+      "resource_detection": {
+        "message": "No resources detected in service definition",
+        "status": "warn"
+      },
+      "warning": {
+        "message": "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources.",
+        "status": "warn"
+      }
+    },
+    "command": "plan",
+    "metadata": {
+      "resources": {},
+      "service_yaml": "examples/services/admin-dashboard-api.yaml"
+    },
+    "service": "admin-dashboard-api",
+    "summary": {
+      "errors": 0,
+      "passed": 0,
+      "status": "warn",
+      "total": 2,
+      "total_resources": 0,
+      "warnings": 2
+    },
+    "timestamp": "<masked>",
+    "version": "1.0"
+  },
+  "json_exit": 0,
+  "plan": {
+    "errors": [],
+    "resources": {},
+    "service_name": "admin-dashboard-api",
+    "service_yaml": "examples/services/admin-dashboard-api.yaml",
+    "warnings": [
+      "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources."
+    ]
+  },
+  "success": true,
+  "total_resources": 0
+}

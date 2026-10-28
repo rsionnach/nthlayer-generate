@@ -1,0 +1,65 @@
+{
+  "dev": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: dev",
+      "Service: examples/uat/payment-api-with-slas.yaml",
+      "",
+      "✗ No environments directory found",
+      "",
+      "Expected: examples/uat/environments",
+      ""
+    ]
+  },
+  "prod": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: prod",
+      "Service: examples/uat/payment-api-with-slas.yaml",
+      "",
+      "✗ No environments directory found",
+      "",
+      "Expected: examples/uat/environments",
+      ""
+    ]
+  },
+  "staging": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Environment: staging",
+      "Service: examples/uat/payment-api-with-slas.yaml",
+      "",
+      "✗ No environments directory found",
+      "",
+      "Expected: examples/uat/environments",
+      ""
+    ]
+  }
+}

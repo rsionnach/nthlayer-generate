@@ -1,0 +1,92 @@
+{
+  "exit": 0,
+  "files": {
+    "loki-alerts.yaml": {
+      "groups": [
+        {
+          "name": "checkout-env-vars",
+          "rules": [
+            {
+              "alert": "checkout-env-vars_ApplicationError",
+              "annotations": {
+                "description": "Error-level log entries detected in application logs.",
+                "summary": "[checkout-env-vars] Application errors detected"
+              },
+              "expr": "sum(count_over_time({app=\"checkout-env-vars\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "service": "checkout-env-vars",
+                "severity": "warning",
+                "source": "service",
+                "team": "commerce",
+                "technology": "api",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-env-vars_ApplicationHighErrorRate",
+              "annotations": {
+                "description": "Application is experiencing a high rate of errors.",
+                "summary": "[checkout-env-vars] High error rate in application"
+              },
+              "expr": "sum(count_over_time({app=\"checkout-env-vars\"} |~ \"(?i)error|exception\" [5m])) > 100",
+              "for": "5m",
+              "labels": {
+                "service": "checkout-env-vars",
+                "severity": "critical",
+                "source": "service",
+                "team": "commerce",
+                "technology": "api",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "checkout-env-vars_ApplicationPanic",
+              "annotations": {
+                "description": "Application appears to have crashed or panicked.",
+                "summary": "[checkout-env-vars] Application panic/crash detected"
+              },
+              "expr": "count_over_time({app=\"checkout-env-vars\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "service": "checkout-env-vars",
+                "severity": "critical",
+                "source": "service",
+                "team": "commerce",
+                "technology": "api",
+                "tier": "critical"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "Service: tests/golden/fixtures/legacy/checkout-env-vars.yaml",
+    "",
+    "Service: checkout-env-vars",
+    "Type: api",
+    "Tier: critical",
+    "Dependencies: none",
+    "",
+    "✓ Generated 3 Loki alerts",
+    "",
+    "Alert breakdown:",
+    "  Service alerts: 3",
+    "  Dependency alerts: 0",
+    "",
+    "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
+    "",
+    "✓ Done!"
+  ]
+}

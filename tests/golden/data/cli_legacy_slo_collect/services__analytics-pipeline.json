@@ -1,0 +1,41 @@
+{
+  "exit": 0,
+  "queries": [
+    "sum(rate(pipeline_success_total{service=\"analytics-pipeline\"}[5m]))\n/\nsum(rate(pipeline_runs_total{service=\"analytics-pipeline\"}[5m]))\n",
+    "sum(rate(pipeline_valid_records_total{service=\"analytics-pipeline\"}[5m]))\n/\nsum(rate(pipeline_processed_records_total{service=\"analytics-pipeline\"}[5m]))\n"
+  ],
+  "text": [
+    "",
+    "============================================================",
+    "  Error Budget Status: analytics-pipeline",
+    "============================================================",
+    "",
+    "Prometheus: http://prometheus.invalid",
+    "",
+    "[OK] SLO: success-rate (95.0%)",
+    "  Window: 30d rolling",
+    "  Current SLI: 99.95%",
+    "",
+    "  Error Budget:",
+    "  Total: 2160.0 min",
+    "  Burned: 21.6 min (1%)",
+    "  Status: HEALTHY",
+    "",
+    "[-] SLO: freshness-p95 (90.0%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "[OK] SLO: data-quality (99.0%)",
+    "  Window: 30d rolling",
+    "  Current SLI: 99.95%",
+    "",
+    "  Error Budget:",
+    "  Total: 432.0 min",
+    "  Burned: 21.6 min (5%)",
+    "  Status: HEALTHY",
+    "",
+    "------------------------------------------------------------",
+    "Summary: 2/3 SLOs healthy",
+    ""
+  ]
+}

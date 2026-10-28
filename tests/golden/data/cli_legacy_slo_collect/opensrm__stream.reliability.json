@@ -1,0 +1,12 @@
+{
+  "exit": 1,
+  "queries": [],
+  "text": [
+    "",
+    "============================================================",
+    "  Error Budget Status: stream.reliability",
+    "============================================================",
+    "",
+    "Error parsing service file: Missing required 'service' section in examples/opensrm/stream.reliability.yaml"
+  ]
+}

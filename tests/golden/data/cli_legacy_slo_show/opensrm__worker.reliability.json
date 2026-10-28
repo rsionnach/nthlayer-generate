@@ -1,0 +1,12 @@
+{
+  "exit": 1,
+  "text": [
+    "",
+    "",
+    "╭──╮",
+    "│ SLO Status: worker.reliability  │",
+    "╰──╯",
+    "",
+    "Error parsing service file: Missing required 'service' section in examples/opensrm/worker.reliability.yaml"
+  ]
+}

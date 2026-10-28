@@ -1,0 +1,27 @@
+{
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/batch-reports.yaml",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "  Service: batch-reports",
+    "  Team: data",
+    "  Tier: low",
+    "  Type: api",
+    "  Resources: 4 defined",
+    "",
+    "  SLOs: 3",
+    "  Dependencies: 1",
+    "",
+    "Building dashboard...",
+    "  Mode: Overview panels (key metrics)",
+    "✗ Error generating dashboard: 'No template found for technology: s3'"
+  ]
+}

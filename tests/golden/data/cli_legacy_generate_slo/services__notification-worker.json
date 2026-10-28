@@ -1,0 +1,124 @@
+{
+  "exit": 0,
+  "files": {
+    "sloth/notification-worker.yaml": {
+      "labels": {
+        "team": "platform",
+        "tier": "high",
+        "type": "worker"
+      },
+      "service": "notification-worker",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO delivery-success for notification-worker"
+            },
+            "labels": {
+              "service": "notification-worker",
+              "tier": "high"
+            },
+            "name": "NotificationWorkerDeliverySuccess",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on notification-worker"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.5% delivery success",
+          "name": "delivery-success",
+          "objective": 99.5,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO processing-latency-p95 for notification-worker"
+            },
+            "labels": {
+              "service": "notification-worker",
+              "tier": "high"
+            },
+            "name": "NotificationWorkerProcessingLatencyP95",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on notification-worker"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "98.0% processing latency p95",
+          "name": "processing-latency-p95",
+          "objective": 98.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO queue-lag for notification-worker"
+            },
+            "labels": {
+              "service": "notification-worker",
+              "tier": "high"
+            },
+            "name": "NotificationWorkerQueueLag",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on notification-worker"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.0% queue lag",
+          "name": "queue-lag",
+          "objective": 99.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate SLOs  │",
+    "╰──╯",
+    "",
+    "✓ Generated SLOs for notification-worker",
+    "  SLO count: 3",
+    "  Output: <tmp>/out/sloth/notification-worker.yaml",
+    "",
+    "Generated SLOs:",
+    "  • notification-worker-delivery-success (99.5%)",
+    "  • notification-worker-processing-latency-p95 (98.0%)",
+    "  • notification-worker-queue-lag (99.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/notification-worker.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/notification-worker.yaml",
+    "  3. Deploy rules to Prometheus",
+    ""
+  ]
+}

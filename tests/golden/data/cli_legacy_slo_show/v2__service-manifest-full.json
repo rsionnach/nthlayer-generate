@@ -1,0 +1,12 @@
+{
+  "exit": 1,
+  "text": [
+    "",
+    "",
+    "╭──╮",
+    "│ SLO Status: service-manifest-full  │",
+    "╰──╯",
+    "",
+    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/service-manifest-full.yaml"
+  ]
+}

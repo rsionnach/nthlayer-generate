@@ -1,0 +1,27 @@
+{
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: tests/golden/fixtures/legacy/checkout-db-deps.yaml",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "  Service: checkout-db-deps",
+    "  Team: commerce",
+    "  Tier: critical",
+    "  Type: api",
+    "  Resources: 2 defined",
+    "",
+    "  SLOs: 1",
+    "  Dependencies: 1",
+    "",
+    "Building dashboard...",
+    "  Mode: Overview panels (key metrics)",
+    "✗ Error generating dashboard: 'No template found for technology: unknown'"
+  ]
+}

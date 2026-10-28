@@ -1,0 +1,456 @@
+{
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "batch-reports-postgresql",
+          "rules": [
+            {
+              "alert": "PostgresqlCommitRateLow",
+              "annotations": {
+                "description": "Postgresql seems to be processing very few transactions\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql commit rate low (instance {{ $labels.instance }})"
+              },
+              "expr": "rate(pg_stat_database_xact_commit[1m]) < 10",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "critical",
+                "team": "data",
+                "tier": "low"
+              }
+            },
+            {
+              "alert": "PostgresqlDown",
+              "annotations": {
+                "description": "Postgresql instance is down\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql down (instance {{ $labels.instance }})"
+              },
+              "expr": "pg_up == 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "critical",
+                "team": "data",
+                "tier": "low"
+              }
+            },
+            {
+              "alert": "PostgresqlExporterError",
+              "annotations": {
+                "description": "Postgresql exporter is showing errors. A query may be buggy in query.yaml\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql exporter error (instance {{ $labels.instance }})"
+              },
+              "expr": "pg_exporter_last_scrape_error > 0",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "critical",
+                "team": "data",
+                "tier": "low"
+              }
+            },
+            {
+              "alert": "PostgresqlHighRateDeadlock",
+              "annotations": {
+                "description": "Postgres detected deadlocks\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql high rate deadlock (instance {{ $labels.instance }})"
+              },
+              "expr": "increase(postgresql_errors_total{type=\"deadlock_detected\"}[1m]) > 1",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "critical",
+                "team": "data",
+                "tier": "low"
+              }
+            },
+            {
+              "alert": "PostgresqlHighRateStatementTimeout",
+              "annotations": {
+                "description": "Postgres transactions are showing high rate of statement timeouts\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql high rate statement timeout (instance {{ $labels.instance }})"
+              },
+              "expr": "rate(postgresql_errors_total{type=\"statement_timeout\"}[1m]) > 3",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "critical",
+                "team": "data",
+                "tier": "low"
+              }
+            },
+            {
+              "alert": "PostgresqlRestarted",
+              "annotations": {
+                "description": "Postgresql restarted\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql restarted (instance {{ $labels.instance }})"
+              },
+              "expr": "time() - pg_postmaster_start_time_seconds < 60",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "critical",
+                "team": "data",
+                "tier": "low"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": null,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 30.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/batch-reports/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": null,
+        "serviceManifest": "examples/services/batch-reports.yaml",
+        "slothSpec": "generated/batch-reports/sloth/batch-reports.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": null,
+        "name": "batch-reports",
+        "supportModel": "self",
+        "team": "data",
+        "tier": "low",
+        "type": "api"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "availability",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.0,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "latency-p95",
+          "sloType": "latency",
+          "status": null,
+          "target": 90.0,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "report-success-rate",
+          "sloType": "availability",
+          "status": null,
+          "target": 95.0,
+          "window": "30d"
+        }
+      ]
+    },
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "batch-reports_slo_metrics",
+          "rules": [
+            {
+              "expr": "sum(increase(http_requests_total{service=\"batch-reports\"}[30d]))",
+              "labels": {
+                "service": "batch-reports",
+                "slo": "availability"
+              },
+              "record": "slo:requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"batch-reports\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "batch-reports",
+                "slo": "availability"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"batch-reports\",slo=\"availability\"} / slo:requests_total:30d{service=\"batch-reports\",slo=\"availability\"}",
+              "labels": {
+                "objective": "99.0",
+                "service": "batch-reports",
+                "slo": "availability"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"batch-reports\",slo=\"availability\"}) / (1 - 0.99))",
+              "labels": {
+                "objective": "99.0",
+                "service": "batch-reports",
+                "slo": "availability"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_count{service=\"batch-reports\"}[30d]))",
+              "labels": {
+                "service": "batch-reports",
+                "slo": "latency-p95"
+              },
+              "record": "slo:latency_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"batch-reports\",le=\"0.5\"}[30d]))",
+              "labels": {
+                "service": "batch-reports",
+                "slo": "latency-p95",
+                "threshold": "500ms"
+              },
+              "record": "slo:latency_requests_fast:30d"
+            },
+            {
+              "expr": "slo:latency_requests_fast:30d{service=\"batch-reports\",slo=\"latency-p95\"} / slo:latency_requests_total:30d{service=\"batch-reports\",slo=\"latency-p95\"}",
+              "labels": {
+                "objective": "90.0",
+                "service": "batch-reports",
+                "slo": "latency-p95"
+              },
+              "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"batch-reports\"}[5m]))",
+              "labels": {
+                "service": "batch-reports",
+                "slo": "latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"batch-reports\"}[5m]))",
+              "labels": {
+                "service": "batch-reports",
+                "slo": "latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"batch-reports\"}[5m]))",
+              "labels": {
+                "service": "batch-reports",
+                "slo": "latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"batch-reports\"}[30d]))",
+              "labels": {
+                "service": "batch-reports",
+                "slo": "report-success-rate"
+              },
+              "record": "slo:error_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"batch-reports\",status=~\"5..\"}[30d]))",
+              "labels": {
+                "service": "batch-reports",
+                "slo": "report-success-rate"
+              },
+              "record": "slo:error_requests_failed:30d"
+            },
+            {
+              "expr": "slo:error_requests_failed:30d{service=\"batch-reports\",slo=\"report-success-rate\"} / slo:error_requests_total:30d{service=\"batch-reports\",slo=\"report-success-rate\"}",
+              "labels": {
+                "objective": "95.0",
+                "service": "batch-reports",
+                "slo": "report-success-rate"
+              },
+              "record": "slo:error_rate:ratio"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "batch-reports_health_metrics",
+          "rules": [
+            {
+              "expr": "sum(rate(http_requests_total{service=\"batch-reports\"}[5m]))",
+              "labels": {
+                "service": "batch-reports"
+              },
+              "record": "service:http_requests:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"batch-reports\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"batch-reports\"}[5m]))",
+              "labels": {
+                "service": "batch-reports"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"batch-reports\"}[5m]))",
+              "labels": {
+                "service": "batch-reports"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"batch-reports\"}[5m]))",
+              "labels": {
+                "service": "batch-reports"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            }
+          ]
+        }
+      ]
+    },
+    "sloth/batch-reports.yaml": {
+      "labels": {
+        "team": "data",
+        "tier": "low",
+        "type": "api"
+      },
+      "service": "batch-reports",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO availability for batch-reports"
+            },
+            "labels": {
+              "service": "batch-reports",
+              "tier": "low"
+            },
+            "name": "BatchReportsAvailability",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on batch-reports"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.0% availability",
+          "name": "availability",
+          "objective": 99.0,
+          "sli": {
+            "events": {
+              "error_query": "sum(rate(http_requests_total{service=\"batch-reports\",code=~\"5..\"}[5m]))",
+              "total_query": "sum(rate(http_requests_total{service=\"batch-reports\"}[5m]))"
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO latency-p95 for batch-reports"
+            },
+            "labels": {
+              "service": "batch-reports",
+              "tier": "low"
+            },
+            "name": "BatchReportsLatencyP95",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on batch-reports"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "90.0% latency p95",
+          "name": "latency-p95",
+          "objective": 90.0,
+          "sli": {
+            "events": {
+              "error_query": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"batch-reports\"}[5m])\n)\n > 2.0",
+              "total_query": "sum(rate(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"batch-reports\"}[5m])\n)\n)"
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO report-success-rate for batch-reports"
+            },
+            "labels": {
+              "service": "batch-reports",
+              "tier": "low"
+            },
+            "name": "BatchReportsReportSuccessRate",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on batch-reports"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "95.0% report success rate",
+          "name": "report-success-rate",
+          "objective": 95.0,
+          "sli": {
+            "events": {
+              "error_query": "sum(rate(reports_generated_total{service=\"batch-reports\",status=\"success\"}[5m]))",
+              "total_query": "sum(rate(reports_generated_total{service=\"batch-reports\"}[5m]))"
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
+  "json": {
+    "duration_seconds": "<masked>",
+    "errors": [],
+    "output_dir": "<tmp>/out",
+    "resources_created": {
+      "alerts": 6,
+      "backstage": 1,
+      "dashboard": 1,
+      "recording-rules": 17,
+      "slos": 3
+    },
+    "service_name": "batch-reports",
+    "success": true,
+    "total_resources": 28
+  },
+  "preamble": [
+    "✗ Error generating dashboard: 'No template found for technology: s3'"
+  ],
+  "stray": []
+}

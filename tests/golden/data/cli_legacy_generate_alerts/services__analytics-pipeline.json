@@ -1,0 +1,32 @@
+{
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/services/analytics-pipeline.yaml",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "📊 Loading alerts for dependencies: bigquery, s3",
+    "  ⚠️  bigquery: No alerts found",
+    "  ⚠️  s3: No alerts found",
+    "",
+    "⚠️  No alerts generated",
+    "",
+    "Tip: Add a Dependencies resource to your service YAML:",
+    "  resources:",
+    "  - kind: Dependencies",
+    "  name: upstream",
+    "  spec:",
+    "  databases:",
+    "  - type: postgres",
+    "  - type: redis"
+  ]
+}

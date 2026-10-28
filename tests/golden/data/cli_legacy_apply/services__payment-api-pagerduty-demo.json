@@ -1,0 +1,1445 @@
+{
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "payment-api-postgresql",
+          "rules": [
+            {
+              "alert": "PostgresqlCommitRateLow",
+              "annotations": {
+                "description": "Postgresql seems to be processing very few transactions\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql commit rate low (instance {{ $labels.instance }})"
+              },
+              "expr": "rate(pg_stat_database_xact_commit[1m]) < 10",
+              "for": "2m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "PostgresqlDeadLocks",
+              "annotations": {
+                "description": "PostgreSQL has dead-locks\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql dead locks (instance {{ $labels.instance }})"
+              },
+              "expr": "increase(pg_stat_database_deadlocks{datname!~\"template.*|postgres\"}[1m]) > 5",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "PostgresqlDown",
+              "annotations": {
+                "description": "Postgresql instance is down\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql down (instance {{ $labels.instance }})"
+              },
+              "expr": "pg_up == 0",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "PostgresqlExporterError",
+              "annotations": {
+                "description": "Postgresql exporter is showing errors. A query may be buggy in query.yaml\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql exporter error (instance {{ $labels.instance }})"
+              },
+              "expr": "pg_exporter_last_scrape_error > 0",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "PostgresqlHighRateDeadlock",
+              "annotations": {
+                "description": "Postgres detected deadlocks\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql high rate deadlock (instance {{ $labels.instance }})"
+              },
+              "expr": "increase(postgresql_errors_total{type=\"deadlock_detected\"}[1m]) > 1",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "PostgresqlHighRateStatementTimeout",
+              "annotations": {
+                "description": "Postgres transactions are showing high rate of statement timeouts\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql high rate statement timeout (instance {{ $labels.instance }})"
+              },
+              "expr": "rate(postgresql_errors_total{type=\"statement_timeout\"}[1m]) > 3",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "PostgresqlHighRollbackRate",
+              "annotations": {
+                "description": "Ratio of transactions being aborted compared to committed is > 2 %\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql high rollback rate (instance [instance unavailable])"
+              },
+              "expr": "sum by (namespace,datname) ((rate(pg_stat_database_xact_rollback{datname!~\"template.*|postgres\",datid!=\"0\"}[3m])) / ((rate(pg_stat_database_xact_rollback{datname!~\"template.*|postgres\",datid!=\"0\"}[3m])) + (rate(pg_stat_database_xact_commit{datname!~\"template.*|postgres\",datid!=\"0\"}[3m])))) > 0.02",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "PostgresqlLowXidConsumption",
+              "annotations": {
+                "description": "Postgresql seems to be consuming transaction IDs very slowly\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql low XID consumption (instance {{ $labels.instance }})"
+              },
+              "expr": "rate(pg_txid_current[1m]) < 5",
+              "for": "2m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "PostgresqlNotEnoughConnections",
+              "annotations": {
+                "description": "PostgreSQL instance should have more connections (> 5)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql not enough connections (instance {{ $labels.instance }})"
+              },
+              "expr": "sum by (instance, job, server) (pg_stat_activity_count) < 5",
+              "for": "2m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "PostgresqlRestarted",
+              "annotations": {
+                "description": "Postgresql restarted\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql restarted (instance {{ $labels.instance }})"
+              },
+              "expr": "time() - pg_postmaster_start_time_seconds < 60",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "PostgresqlTableNotAutoAnalyzed",
+              "annotations": {
+                "description": "Table {{ $labels.relname }} has not been auto analyzed for 10 days\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql table not auto analyzed (instance {{ $labels.instance }})"
+              },
+              "expr": "(pg_stat_user_tables_last_autoanalyze > 0) and (time() - pg_stat_user_tables_last_autoanalyze) > 60 * 60 * 24 * 10",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "PostgresqlTableNotAutoVacuumed",
+              "annotations": {
+                "description": "Table {{ $labels.relname }} has not been auto vacuumed for 10 days\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql table not auto vacuumed (instance {{ $labels.instance }})"
+              },
+              "expr": "(pg_stat_user_tables_last_autovacuum > 0) and (time() - pg_stat_user_tables_last_autovacuum) > 60 * 60 * 24 * 10",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "PostgresqlTooManyConnections",
+              "annotations": {
+                "description": "PostgreSQL instance has too many connections (> 80%).\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql too many connections (instance {{ $labels.instance }})"
+              },
+              "expr": "sum by (instance, job, server) (pg_stat_activity_count) > min by (instance, job, server) (pg_settings_max_connections * 0.8)",
+              "for": "2m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "PostgresqlTooManyDeadTuples",
+              "annotations": {
+                "description": "PostgreSQL dead tuples is too large\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql too many dead tuples (instance {{ $labels.instance }})"
+              },
+              "expr": "((pg_stat_user_tables_n_dead_tup > 10000) / (pg_stat_user_tables_n_live_tup + pg_stat_user_tables_n_dead_tup)) >= 0.1",
+              "for": "2m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "PostgresqlUnusedReplicationSlot",
+              "annotations": {
+                "description": "Unused Replication Slots\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Postgresql unused replication slot (instance {{ $labels.instance }})"
+              },
+              "expr": "pg_replication_slots_active == 0",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "critical"
+              }
+            }
+          ]
+        },
+        {
+          "name": "payment-api-redis",
+          "rules": [
+            {
+              "alert": "RedisClusterFlapping",
+              "annotations": {
+                "description": "Changes have been detected in Redis replica connection. This can occur when replica nodes lose connection to the master and reconnect (a.k.a flapping).\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis cluster flapping (instance {{ $labels.instance }})"
+              },
+              "expr": "changes(redis_connected_slaves[1m]) > 1",
+              "for": "2m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisDisconnectedSlaves",
+              "annotations": {
+                "description": "Redis not replicating for all slaves. Consider reviewing the redis replication status.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis disconnected slaves (instance [instance unavailable])"
+              },
+              "expr": "count without (instance, job) (redis_connected_slaves) - sum without (instance, job) (redis_connected_slaves) - 1 > 0",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisDown",
+              "annotations": {
+                "description": "Redis instance is down\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis down (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_up == 0",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisMissingBackup",
+              "annotations": {
+                "description": "Redis has not been backuped for 24 hours\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis missing backup (instance {{ $labels.instance }})"
+              },
+              "expr": "time() - redis_rdb_last_save_timestamp_seconds > 60 * 60 * 24",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisMissingMaster",
+              "annotations": {
+                "description": "Redis cluster has no node marked as master.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis missing master (instance [instance unavailable])"
+              },
+              "expr": "(count(redis_instance_info{role=\"master\"}) or vector(0)) < 1",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisNotEnoughConnections",
+              "annotations": {
+                "description": "Redis instance should have more connections (> 5)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis not enough connections (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_connected_clients < 5",
+              "for": "2m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisOutOfConfiguredMaxmemory",
+              "annotations": {
+                "description": "Redis is running out of configured maxmemory (> 90%)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis out of configured maxmemory (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_memory_used_bytes / redis_memory_max_bytes * 100 > 90 and on(instance) redis_memory_max_bytes > 0",
+              "for": "2m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisOutOfSystemMemory",
+              "annotations": {
+                "description": "Redis is running out of system memory (> 90%)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis out of system memory (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_memory_used_bytes / redis_total_system_memory_bytes * 100 > 90",
+              "for": "2m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisRejectedConnections",
+              "annotations": {
+                "description": "Some connections to Redis has been rejected\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis rejected connections (instance {{ $labels.instance }})"
+              },
+              "expr": "increase(redis_rejected_connections_total[1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisReplicationBroken",
+              "annotations": {
+                "description": "Redis instance lost a slave\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis replication broken (instance {{ $labels.instance }})"
+              },
+              "expr": "delta(redis_connected_slaves[1m]) < 0",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisTooManyConnections",
+              "annotations": {
+                "description": "Redis is running out of connections (> 90% used)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis too many connections (instance {{ $labels.instance }})"
+              },
+              "expr": "redis_connected_clients / redis_config_maxclients * 100 > 90",
+              "for": "2m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "warning",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "RedisTooManyMasters",
+              "annotations": {
+                "description": "Redis cluster has too many nodes marked as master.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "Redis too many masters (instance [instance unavailable])"
+              },
+              "expr": "count(redis_instance_info{role=\"master\"}) > 1",
+              "for": "1m",
+              "labels": {
+                "routing": "shared",
+                "service": "payment-api",
+                "severity": "critical",
+                "team": "payments",
+                "tier": "critical"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": 10.0,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/payment-api/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": null,
+        "serviceManifest": "examples/services/payment-api-pagerduty-demo.yaml",
+        "slothSpec": "generated/payment-api/sloth/payment-api.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": null,
+        "name": "payment-api",
+        "supportModel": "shared",
+        "team": "payments",
+        "tier": "critical",
+        "type": "api"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "availability",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.95,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "latency-p95",
+          "sloType": "latency",
+          "status": null,
+          "target": 99.0,
+          "window": "30d"
+        }
+      ]
+    },
+    "dashboard.json": {
+      "dashboard": {
+        "annotations": {},
+        "description": "Auto-generated dashboard for payment-api service",
+        "editable": true,
+        "fiscalYearStartMonth": 0,
+        "graphTooltip": 0,
+        "panels": [
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 0
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "SLO Metrics",
+            "type": "row"
+          },
+          {
+            "description": "Target: 99.95%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "availability",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 99.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "latency-p95",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 10
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Service Health",
+            "type": "row"
+          },
+          {
+            "description": "Total requests per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 11
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+                "legendFormat": "{{http}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Request Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Percentage of requests returning 5xx errors",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 11
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"payment-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"payment-api\"}[5m])) * 100",
+                "legendFormat": "error %",
+                "refId": "A"
+              }
+            ],
+            "title": "Error Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "95th percentile request duration",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])))",
+                "legendFormat": "{{http}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Request Latency (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 29
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Dependencies",
+            "type": "row"
+          },
+          {
+            "description": "Active database connections vs max connections limit",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 30
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_stat_database_numbackends{service=\"postgresql\"}",
+                "legendFormat": "{{datname}} connections",
+                "refId": "A"
+              },
+              {
+                "expr": "pg_settings_max_connections{service=\"postgresql\"}",
+                "legendFormat": "Max connections",
+                "refId": "B"
+              }
+            ],
+            "title": "PostgreSQL Connections",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Number of currently executing queries",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 30
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_stat_activity_count{service=\"postgresql\",state=\"active\"}",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Active Queries",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Buffer cache hit ratio - should be >99% for good performance",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 39
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(pg_stat_database_blks_hit{service=\"postgresql\"}) /\n(sum(pg_stat_database_blks_hit{service=\"postgresql\"}) + sum(pg_stat_database_blks_read{service=\"postgresql\"})) * 100",
+                "legendFormat": "Cache hit %",
+                "refId": "A"
+              }
+            ],
+            "title": "Cache Hit Ratio",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "Transaction commits and rollbacks per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 39
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(pg_stat_database_xact_commit{service=\"postgresql\"}[5m])",
+                "legendFormat": "{{datname}} commits/sec",
+                "refId": "A"
+              },
+              {
+                "expr": "rate(pg_stat_database_xact_rollback{service=\"postgresql\"}[5m])",
+                "legendFormat": "{{datname}} rollbacks/sec",
+                "refId": "B"
+              }
+            ],
+            "title": "Transaction Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Total database size",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 48
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_database_size_bytes{service=\"postgresql\"}",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Database Size",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          },
+          {
+            "description": "Query execution time (95th percentile)",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 48
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(pg_stat_statements_mean_exec_time_seconds_bucket{service=\"postgresql\"}[5m])))",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Query Duration (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Deadlocks per second - should be near zero",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 57
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(pg_stat_database_deadlocks{service=\"postgresql\"}[5m])",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Deadlocks",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Replication lag in seconds",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 57
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_replication_lag_seconds{service=\"postgresql\"}",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Replication Lag",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Dead tuples indicating table bloat - vacuum if high",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 66
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(pg_stat_user_tables_n_dead_tup{service=\"postgresql\"}) by (relname)",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Table Bloat (Dead Tuples)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Connection pool utilization percentage",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 66
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_stat_database_numbackends{service=\"postgresql\"} /\non() group_left pg_settings_max_connections{service=\"postgresql\"} * 100",
+                "legendFormat": "Pool usage %",
+                "refId": "A"
+              }
+            ],
+            "title": "Connection Pool Utilization",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "Redis memory consumption",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 75
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "redis_memory_used_bytes{service=\"redis\"}",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Redis Memory Usage",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Cache hit rate - should be >90% for good performance",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 75
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(cache_hits_total{service=\"redis\"}[5m])) /\n(sum(rate(cache_hits_total{service=\"redis\"}[5m])) +\nsum(rate(cache_misses_total{service=\"redis\"}[5m]))) * 100",
+                "legendFormat": "Hit rate %",
+                "refId": "A"
+              }
+            ],
+            "title": "Cache Hit Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "Number of connected clients",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 84
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "redis_connected_clients{service=\"redis\"}",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Connected Clients",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Cache hits and misses per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 84
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(cache_hits_total{service=\"redis\"}[5m])",
+                "legendFormat": "Hits/sec",
+                "refId": "A"
+              },
+              {
+                "expr": "rate(cache_misses_total{service=\"redis\"}[5m])",
+                "legendFormat": "Misses/sec",
+                "refId": "B"
+              }
+            ],
+            "title": "Cache Hits vs Misses",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Keys evicted due to memory pressure - should be zero",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 93
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_evicted_keys_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Evicted Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Keys expired per second due to TTL",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 93
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_expired_keys_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Expired Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Redis commands processed per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 102
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_commands_processed_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Commands/sec",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Total number of keys in database",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 102
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(redis_db_keys{service=\"redis\"})",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Total Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
+          }
+        ],
+        "schemaVersion": 36,
+        "style": "dark",
+        "tags": [
+          "payments",
+          "critical",
+          "api"
+        ],
+        "templating": {},
+        "time": {
+          "from": "now-6h",
+          "to": "now"
+        },
+        "timezone": "browser",
+        "title": "payment-api - Service Dashboard",
+        "uid": "payment-api-overview"
+      },
+      "message": "Auto-generated dashboard for payment-api",
+      "overwrite": true
+    },
+    "pagerduty-config.json": {
+      "note": "Set PAGERDUTY_API_KEY to create resources in PagerDuty",
+      "resources_to_create": {
+        "escalation_policy": "payments-escalation",
+        "schedules": [
+          "payments-primary",
+          "payments-secondary",
+          "payments-manager"
+        ],
+        "service": "payment-api",
+        "team": "payments"
+      },
+      "service_name": "payment-api",
+      "support_model": "shared",
+      "team": "payments",
+      "tier": "critical",
+      "timezone": "America/New_York"
+    },
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "payment-api_slo_metrics",
+          "rules": [
+            {
+              "expr": "sum(increase(http_requests_total{service=\"payment-api\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"payment-api\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"payment-api\",slo=\"availability\"} / slo:requests_total:30d{service=\"payment-api\",slo=\"availability\"}",
+              "labels": {
+                "objective": "99.95",
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"payment-api\",slo=\"availability\"}) / (1 - 0.9995))",
+              "labels": {
+                "objective": "99.95",
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_count{service=\"payment-api\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:latency_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"0.5\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p95",
+                "threshold": "500ms"
+              },
+              "record": "slo:latency_requests_fast:30d"
+            },
+            {
+              "expr": "slo:latency_requests_fast:30d{service=\"payment-api\",slo=\"latency-p95\"} / slo:latency_requests_total:30d{service=\"payment-api\",slo=\"latency-p95\"}",
+              "labels": {
+                "objective": "99.0",
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p99"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "payment-api_health_metrics",
+          "rules": [
+            {
+              "expr": "sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_requests:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"payment-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            }
+          ]
+        }
+      ]
+    },
+    "sloth/payment-api.yaml": {
+      "labels": {
+        "team": "payments",
+        "tier": "critical",
+        "type": "api"
+      },
+      "service": "payment-api",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO availability for payment-api"
+            },
+            "labels": {
+              "service": "payment-api",
+              "tier": "critical"
+            },
+            "name": "PaymentApiAvailability",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on payment-api"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on payment-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.95% availability",
+          "name": "availability",
+          "objective": 99.95,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO latency-p95 for payment-api"
+            },
+            "labels": {
+              "service": "payment-api",
+              "tier": "critical"
+            },
+            "name": "PaymentApiLatencyP95",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on payment-api"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on payment-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.0% latency p95",
+          "name": "latency-p95",
+          "objective": 99.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
+  "json": {
+    "duration_seconds": "<masked>",
+    "errors": [],
+    "output_dir": "<tmp>/out",
+    "resources_created": {
+      "alerts": 27,
+      "backstage": 1,
+      "dashboard": 1,
+      "pagerduty": 1,
+      "recording-rules": 14,
+      "slos": 2
+    },
+    "service_name": "payment-api",
+    "success": true,
+    "total_resources": 46
+  },
+  "preamble": [],
+  "stray": []
+}

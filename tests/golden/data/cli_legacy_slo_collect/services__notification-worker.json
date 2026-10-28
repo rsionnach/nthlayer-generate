@@ -1,0 +1,28 @@
+{
+  "exit": 0,
+  "queries": [],
+  "text": [
+    "",
+    "============================================================",
+    "  Error Budget Status: notification-worker",
+    "============================================================",
+    "",
+    "Prometheus: http://prometheus.invalid",
+    "",
+    "[-] SLO: delivery-success (99.5%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "[-] SLO: processing-latency-p95 (98.0%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "[-] SLO: queue-lag (99.0%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "------------------------------------------------------------",
+    "Summary: 0/3 SLOs healthy",
+    ""
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Loki Alerts  │",
+    "╰──╯",
+    "",
+    "Service: examples/opensrm/batch.reliability.yaml",
+    "",
+    "✗ Error generating Loki alerts: Missing required 'service' section in examples/opensrm/batch.reliability.yaml"
+  ]
+}

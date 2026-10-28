@@ -668,6 +668,10 @@ def _sorted_dependency_extractors(env: Env) -> None:
     hand the commands the same dependencies sorted. generate_alerts looks
     extract_dependencies up in its own module; cli/generate_loki.py imports
     the loki one in its function body, so both are patched at their source.
+
+    Unlike _sorted_dependencies, which re-sorts printed lines afterwards, this
+    sorts at the source. Like it, it is a determinism fix that would also hide
+    a future, deliberate change to extraction order.
     """
     import nthlayer_generate.generators.alerts as alerts_gen
     import nthlayer_generate.loki.generator as loki_gen
@@ -715,7 +719,7 @@ def apply_text_verbose(env: Env) -> Any:
 
 def apply_dry_run_env(env: Env) -> Any:
     # --dry-run is plan's table (cli/apply.py:27-28) and must keep --env:
-    # search-api plans 14 resources in prod against 12 in dev.
+    # search-api plans more resources in prod than in dev, so a dropped --env shows.
     case = next(c for c in ENV_CASES if c.id == "staged__search-api__env-prod")
     out = _apply_text(case.target(env.tmp), env, case.environment, dry_run=True)
     out["wrote"] = sorted(
@@ -765,7 +769,8 @@ def recommend_yaml(env: Env) -> Any:
     env.discard_output()
     code = recommend_metrics_command(str(APPLY_FILTER_SERVICE), output_format="yaml")
     out = env.capsys.readouterr().out
-    # The header precedes the YAML document on the same stream.
+    # Raw stdout, not env.text(): its padding collapse would rewrite the YAML
+    # indentation. The console header precedes the document on the same stream.
     return {"exit": code, "text": _lines(out)}
 
 
@@ -819,6 +824,8 @@ def generate_alerts_links(env: Env) -> Any:
         notification_channel="slack",
         grafana_url="https://grafana.example.invalid",
     )
+    # The written rule file comes from the same list(set(...)) extractor and is
+    # pinned as a set; only the printed preview needs the source-side sort.
     return {"exit": code, "files": env.files(rules_unordered=lambda rel: True), "text": env.text()}
 
 
@@ -839,6 +846,7 @@ def generate_dashboard_dry_run(env: Env) -> Any:
     env.discard_output()
     code = generate_dashboard_command(str(APPLY_FILTER_SERVICE), dry_run=True)
     printed = env.capsys.readouterr().out
+    # Raw stdout, not env.text(): its padding collapse would rewrite the JSON.
     start = printed.index("\n{") + 1
     end = printed.rindex("}") + 1
     return {

@@ -50,7 +50,9 @@ def extract_dependency_technologies(manifest: ReliabilityManifest) -> list[str]:
         manifest: ReliabilityManifest instance
 
     Returns:
-        Deduplicated list of technology names (e.g., ["postgresql", "redis"])
+        Deduplicated technology names in declaration order (e.g.,
+        ["postgresql", "redis"]). Ordered, not a set: the list reaches
+        generated output, which must not depend on string-hash seeding.
     """
     technologies = []
 
@@ -90,4 +92,4 @@ def extract_dependency_technologies(manifest: ReliabilityManifest) -> list[str]:
             # API dependencies don't map to a technology for alert templates
             pass
 
-    return list(set(technologies))
+    return list(dict.fromkeys(technologies))

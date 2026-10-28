@@ -255,3 +255,24 @@ class TestNoSloResources:
 
         # Should return error or success with 0 SLOs depending on implementation
         assert result in [0, 1]
+
+
+# Each breaks one check in nthlayer-common's ReliabilityManifest, which raises a
+# bare ValueError rather than ManifestLoadError (opensrm-wo62.4.3). The type
+# comes from examples/services/analytics-stream.yaml, which the legacy parser
+# accepted and common rejects.
+MODEL_REJECTIONS = {
+    "invalid-tier": "  team: platform\n  tier: tier-1\n  type: api\n",
+    "invalid-type": "  team: platform\n  tier: standard\n  type: stream-processor\n",
+}
+
+
+@pytest.mark.parametrize("service_body", MODEL_REJECTIONS.values(), ids=MODEL_REJECTIONS.keys())
+def test_manifest_model_rejection_exits_1(service_body, tmp_path):
+    """A model ValueError is reported as a failure, not raised out of the command."""
+    service_file = tmp_path / "bad-service.yaml"
+    service_file.write_text("service:\n  name: bad-service\n" + service_body)
+    output_dir = tmp_path / "out"
+
+    assert generate_slo_command(str(service_file), output_dir=str(output_dir)) == 1
+    assert not output_dir.exists()

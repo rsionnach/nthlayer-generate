@@ -63,7 +63,8 @@ def generate_slo_command(
             manifest = load_manifest(
                 service_file, environment=environment, suppress_deprecation_warning=True
             )
-        except (FileNotFoundError, ManifestLoadError) as e:
+        except (FileNotFoundError, ManifestLoadError, ValueError) as e:
+            # ValueError: the manifest model's own checks (tier, type).
             error(f"Generation failed: {e}")
             console.print()
             return 1

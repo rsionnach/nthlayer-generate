@@ -37,35 +37,6 @@
               "total_query": "sum(rate(job_total{service=\"email-worker\"}[5m]))"
             }
           }
-        },
-        {
-          "alerting": {
-            "annotations": {
-              "summary": "SLO processing-latency-p95 for email-worker"
-            },
-            "labels": {
-              "service": "email-worker",
-              "tier": "standard"
-            },
-            "name": "EmailWorkerProcessingLatencyP95",
-            "ticket_alert": {
-              "annotations": {
-                "summary": "Error budget burn on email-worker"
-              },
-              "labels": {
-                "severity": "warning"
-              }
-            }
-          },
-          "description": "99.9% processing latency p95",
-          "name": "processing-latency-p95",
-          "objective": 99.9,
-          "sli": {
-            "events": {
-              "error_query": "",
-              "total_query": ""
-            }
-          }
         }
       ],
       "version": "prometheus/v1"
@@ -78,12 +49,11 @@
     "╰──╯",
     "",
     "✓ Generated SLOs for email-worker",
-    "  SLO count: 2",
+    "  SLO count: 1",
     "  Output: <tmp>/out/sloth/email-worker.yaml",
     "",
     "Generated SLOs:",
     "  • email-worker-success-rate (99.0%)",
-    "  • email-worker-processing-latency-p95 (99.9%)",
     "",
     "Next steps:",
     "  1. Review generated spec: <tmp>/out/sloth/email-worker.yaml",

@@ -1,6 +1,128 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "order-events-processor_slo_metrics",
+          "rules": [
+            {
+              "expr": "sum(increase(http_requests_total{service=\"order-events-processor\"}[30d]))",
+              "labels": {
+                "service": "order-events-processor",
+                "slo": "availability"
+              },
+              "record": "slo:requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"order-events-processor\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "order-events-processor",
+                "slo": "availability"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"order-events-processor\",slo=\"availability\"} / slo:requests_total:30d{service=\"order-events-processor\",slo=\"availability\"}",
+              "labels": {
+                "objective": "99.95",
+                "service": "order-events-processor",
+                "slo": "availability"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"order-events-processor\",slo=\"availability\"}) / (1 - 0.9995))",
+              "labels": {
+                "objective": "99.95",
+                "service": "order-events-processor",
+                "slo": "availability"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"order-events-processor\"}[5m]))",
+              "labels": {
+                "minimum": "5000.0",
+                "service": "order-events-processor",
+                "slo": "throughput"
+              },
+              "record": "slo:throughput:rate5m"
+            },
+            {
+              "expr": "(slo:throughput:rate5m{service=\"order-events-processor\",slo=\"throughput\"} >= 5000.0) or vector(0)",
+              "labels": {
+                "minimum": "5000.0",
+                "service": "order-events-processor",
+                "slo": "throughput"
+              },
+              "record": "slo:throughput:compliance"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"order-events-processor\"}[7d]))",
+              "labels": {
+                "service": "order-events-processor",
+                "slo": "error_rate"
+              },
+              "record": "slo:error_requests_total:7d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"order-events-processor\",status=~\"5..\"}[7d]))",
+              "labels": {
+                "service": "order-events-processor",
+                "slo": "error_rate"
+              },
+              "record": "slo:error_requests_failed:7d"
+            },
+            {
+              "expr": "slo:error_requests_failed:7d{service=\"order-events-processor\",slo=\"error_rate\"} / slo:error_requests_total:7d{service=\"order-events-processor\",slo=\"error_rate\"}",
+              "labels": {
+                "objective": "0.01",
+                "service": "order-events-processor",
+                "slo": "error_rate"
+              },
+              "record": "slo:error_rate:ratio"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "order-events-processor_health_metrics",
+          "rules": [
+            {
+              "expr": "sum(rate(http_requests_total{service=\"order-events-processor\"}[5m]))",
+              "labels": {
+                "service": "order-events-processor"
+              },
+              "record": "service:http_requests:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"order-events-processor\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"order-events-processor\"}[5m]))",
+              "labels": {
+                "service": "order-events-processor"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"order-events-processor\"}[5m]))",
+              "labels": {
+                "service": "order-events-processor"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"order-events-processor\"}[5m]))",
+              "labels": {
+                "service": "order-events-processor"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            }
+          ]
+        }
+      ]
+    }
+  },
   "text": [
     "",
     "╭──╮",
@@ -11,6 +133,32 @@
     "Output: <tmp>/out/recording-rules.yaml",
     "",
     "Parsing service specification...",
-    "✗ Error generating recording rules: Missing required 'service' section in examples/opensrm/stream.reliability.yaml"
+    "  Service: order-events-processor",
+    "  Team: orders",
+    "  Tier: high",
+    "  Type: stream",
+    "  SLOs: 3",
+    "",
+    "Building recording rules...",
+    "  Groups: 2",
+    "  Rules: 13",
+    "  • order-events-processor_slo_metrics: 9 rules (interval: 30s)",
+    "  • order-events-processor_health_metrics: 4 rules (interval: 30s)",
+    "",
+    "Writing recording rules to <tmp>/out/recording-rules.yaml...",
+    "",
+    "✓ Recording rules generated successfully!",
+    "",
+    "Next steps:",
+    "  1. Add to Prometheus configuration:",
+    "  rule_files:",
+    "  - <tmp>/out/recording-rules.yaml",
+    "",
+    "  2. Reload Prometheus:",
+    "  curl -X POST http://prometheus:9090/-/reload",
+    "",
+    "  3. Verify rules are loaded:",
+    "  curl http://prometheus:9090/api/v1/rules",
+    ""
   ]
 }

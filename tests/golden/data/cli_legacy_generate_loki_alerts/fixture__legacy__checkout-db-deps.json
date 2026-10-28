@@ -58,132 +58,6 @@
               }
             },
             {
-              "alert": "checkout-db-deps_mysql_MysqlConnectionRefused",
-              "annotations": {
-                "description": "Applications cannot connect to MySQL.",
-                "summary": "[checkout-db-deps/mysql] MySQL connection error"
-              },
-              "expr": "count_over_time({app=\"mysql\", service=\"checkout-db-deps\"} |~ \"Connection refused|Can't connect|Access denied\" [1m]) > 0",
-              "for": "1m",
-              "labels": {
-                "dependency": "mysql",
-                "service": "checkout-db-deps",
-                "severity": "critical",
-                "source": "dependency",
-                "team": "commerce",
-                "technology": "mysql",
-                "tier": "critical"
-              }
-            },
-            {
-              "alert": "checkout-db-deps_mysql_MysqlDeadlock",
-              "annotations": {
-                "description": "A deadlock was detected in MySQL.",
-                "summary": "[checkout-db-deps/mysql] MySQL deadlock detected"
-              },
-              "expr": "count_over_time({app=\"mysql\", service=\"checkout-db-deps\"} |~ \"Deadlock found|deadlock\" [1m]) > 0",
-              "for": "0m",
-              "labels": {
-                "dependency": "mysql",
-                "service": "checkout-db-deps",
-                "severity": "warning",
-                "source": "dependency",
-                "team": "commerce",
-                "technology": "mysql",
-                "tier": "critical"
-              }
-            },
-            {
-              "alert": "checkout-db-deps_mysql_MysqlError",
-              "annotations": {
-                "description": "MySQL logged an ERROR level message.",
-                "summary": "[checkout-db-deps/mysql] MySQL error detected"
-              },
-              "expr": "count_over_time({app=\"mysql\", service=\"checkout-db-deps\"} |~ \"\\\\[ERROR\\\\]\" [1m]) > 0",
-              "for": "0m",
-              "labels": {
-                "dependency": "mysql",
-                "service": "checkout-db-deps",
-                "severity": "critical",
-                "source": "dependency",
-                "team": "commerce",
-                "technology": "mysql",
-                "tier": "critical"
-              }
-            },
-            {
-              "alert": "checkout-db-deps_mysql_MysqlReplicationError",
-              "annotations": {
-                "description": "MySQL replication is experiencing errors.",
-                "summary": "[checkout-db-deps/mysql] MySQL replication error"
-              },
-              "expr": "count_over_time({app=\"mysql\", service=\"checkout-db-deps\"} |~ \"Slave.*error|replication.*error|Got fatal error\" [1m]) > 0",
-              "for": "1m",
-              "labels": {
-                "dependency": "mysql",
-                "service": "checkout-db-deps",
-                "severity": "critical",
-                "source": "dependency",
-                "team": "commerce",
-                "technology": "mysql",
-                "tier": "critical"
-              }
-            },
-            {
-              "alert": "checkout-db-deps_mysql_MysqlSlowQuery",
-              "annotations": {
-                "description": "Slow queries being logged. Review query performance.",
-                "summary": "[checkout-db-deps/mysql] MySQL slow queries detected"
-              },
-              "expr": "sum(count_over_time({app=\"mysql\", service=\"checkout-db-deps\"} |~ \"slow query|Query_time:\" [5m])) > 5",
-              "for": "5m",
-              "labels": {
-                "dependency": "mysql",
-                "service": "checkout-db-deps",
-                "severity": "warning",
-                "source": "dependency",
-                "team": "commerce",
-                "technology": "mysql",
-                "tier": "critical"
-              }
-            },
-            {
-              "alert": "checkout-db-deps_mysql_MysqlTableCorruption",
-              "annotations": {
-                "description": "MySQL table corruption detected. Immediate action required.",
-                "summary": "[checkout-db-deps/mysql] MySQL table corruption detected"
-              },
-              "expr": "count_over_time({app=\"mysql\", service=\"checkout-db-deps\"} |~ \"Table.*corrupt|Incorrect key file|crashed\" [1m]) > 0",
-              "for": "0m",
-              "labels": {
-                "dependency": "mysql",
-                "service": "checkout-db-deps",
-                "severity": "critical",
-                "source": "dependency",
-                "team": "commerce",
-                "technology": "mysql",
-                "tier": "critical"
-              }
-            },
-            {
-              "alert": "checkout-db-deps_mysql_MysqlTooManyConnections",
-              "annotations": {
-                "description": "MySQL has reached max_connections limit.",
-                "summary": "[checkout-db-deps/mysql] MySQL too many connections"
-              },
-              "expr": "count_over_time({app=\"mysql\", service=\"checkout-db-deps\"} |= \"Too many connections\" [1m]) > 0",
-              "for": "0m",
-              "labels": {
-                "dependency": "mysql",
-                "service": "checkout-db-deps",
-                "severity": "critical",
-                "source": "dependency",
-                "team": "commerce",
-                "technology": "mysql",
-                "tier": "critical"
-              }
-            },
-            {
               "alert": "checkout-db-deps_postgres_PostgresqlConnectionRefused",
               "annotations": {
                 "description": "Applications are unable to connect to PostgreSQL. Check if the database ...",
@@ -329,13 +203,13 @@
     "Service: checkout-db-deps",
     "Type: api",
     "Tier: critical",
-    "Dependencies: mysql, postgres",
+    "Dependencies: postgres",
     "",
-    "✓ Generated 17 Loki alerts",
+    "✓ Generated 10 Loki alerts",
     "",
     "Alert breakdown:",
     "  Service alerts: 3",
-    "  Dependency alerts: 14",
+    "  Dependency alerts: 7",
     "",
     "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
     "",

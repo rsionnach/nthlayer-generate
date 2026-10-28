@@ -4,7 +4,7 @@
     "labels": {
       "team": "data",
       "tier": "high",
-      "type": "stream-processor"
+      "type": "stream"
     },
     "service": "analytics-stream",
     "slos": [

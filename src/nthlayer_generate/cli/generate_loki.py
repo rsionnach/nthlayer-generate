@@ -47,26 +47,21 @@ def generate_loki_command(
     console.print()
 
     try:
+        from nthlayer_common.manifest import load_manifest
+
         from nthlayer_generate.loki import LokiAlertGenerator
-        from nthlayer_generate.loki.generator import extract_dependencies_from_resources
-        from nthlayer_generate.specs.parser import parse_service_file
+        from nthlayer_generate.specs.helpers import extract_dependency_technologies
 
-        context, resources = parse_service_file(str(service_path))
+        manifest = load_manifest(service_path, suppress_deprecation_warning=True)
 
-        dependencies = extract_dependencies_from_resources(resources)
+        dependencies = extract_dependency_technologies(manifest)
 
         generator = LokiAlertGenerator()
-        alerts = generator.generate_for_service(
-            service_name=context.name,
-            service_type=context.type,
-            dependencies=dependencies,
-            tier=context.tier,
-            labels={"team": context.team} if context.team else {},
-        )
+        alerts = generator.generate_from_manifest(manifest)
 
-        console.print(f"[muted]Service:[/muted] {context.name}")
-        console.print(f"[muted]Type:[/muted] {context.type}")
-        console.print(f"[muted]Tier:[/muted] {context.tier}")
+        console.print(f"[muted]Service:[/muted] {manifest.name}")
+        console.print(f"[muted]Type:[/muted] {manifest.type}")
+        console.print(f"[muted]Tier:[/muted] {manifest.tier}")
         console.print(
             f"[muted]Dependencies:[/muted] {', '.join(dependencies) if dependencies else 'none'}"
         )
@@ -86,16 +81,16 @@ def generate_loki_command(
         if dry_run:
             console.print("[bold]Preview of generated alerts:[/bold]")
             console.print("[muted]─[/muted]" * 50)
-            yaml_output = generator.to_ruler_yaml(alerts, group_name=context.name)
+            yaml_output = generator.to_ruler_yaml(alerts, group_name=manifest.name)
             print(yaml_output[:2000])
             if len(yaml_output) > 2000:
                 console.print(f"[muted]... ({len(yaml_output)} total characters)[/muted]")
         else:
             if not output:
-                output = f"generated/{context.name}/loki-alerts.yaml"
+                output = f"generated/{manifest.name}/loki-alerts.yaml"
 
             output_path = Path(output)
-            generator.write_ruler_file(alerts, output_path, group_name=context.name)
+            generator.write_ruler_file(alerts, output_path, group_name=manifest.name)
             success(f"Wrote alerts to: {output_path}")
 
         console.print()

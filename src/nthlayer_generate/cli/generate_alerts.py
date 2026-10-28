@@ -3,11 +3,12 @@
 from pathlib import Path
 
 import structlog
+from nthlayer_common.manifest import ManifestLoadError, load_manifest
 
 from nthlayer_generate.cli.ux import console, error, header
 
 logger = structlog.get_logger()
-from nthlayer_generate.generators.alerts import generate_alerts_for_service
+from nthlayer_generate.generators.alerts import generate_alerts_from_manifest
 from nthlayer_generate.specs.environment_alerts import explain_alert_filtering
 
 
@@ -69,23 +70,18 @@ def generate_alerts_command(
         console.print(f"[cyan]Output:[/cyan] {output}")
     console.print()
 
-    # Show alert filtering strategy if environment specified
-    if environment:
-        from nthlayer_generate.specs.parser import parse_service_file
-
-        try:
-            context, _ = parse_service_file(service_path, environment=environment)
-            explain_alert_filtering(environment, context.tier)
-        except (FileNotFoundError, ValueError, KeyError, TypeError):
-            # If parsing fails, continue anyway
-            pass
-
     try:
-        # Generate alerts
-        alerts = generate_alerts_for_service(
-            service_path,
+        manifest = load_manifest(
+            service_path, environment=environment, suppress_deprecation_warning=True
+        )
+
+        # Show alert filtering strategy if environment specified
+        if environment:
+            explain_alert_filtering(environment, manifest.tier)
+
+        alerts = generate_alerts_from_manifest(
+            manifest,
             output_path,
-            environment=environment,
             runbook_url=runbook_url,
             notification_channel=notification_channel,
             grafana_url=grafana_url,
@@ -122,7 +118,16 @@ def generate_alerts_command(
 
         return 0
 
-    except (FileNotFoundError, ValueError, KeyError, TypeError, OSError) as e:
+    except (
+        ManifestLoadError,
+        ValueError,
+        KeyError,
+        TypeError,
+        OSError,
+        # common's legacy loader on a non-mapping resource spec
+        # (opensrm-wo62.4.10).
+        AttributeError,
+    ) as e:
         error(f"Error generating alerts: {e}")
         logger.error("alert_generation_failed", err=str(e), exc_info=True)
         return 1

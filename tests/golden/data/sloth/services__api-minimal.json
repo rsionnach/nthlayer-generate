@@ -75,7 +75,7 @@
       "objective": 99.0,
       "sli": {
         "events": {
-          "error_query": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"api-minimal\"}[5m])\n)\n > 0.099",
+          "error_query": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"api-minimal\"}[5m])\n)\n > 0.5",
           "total_query": "sum(rate(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"api-minimal\"}[5m])\n)\n)"
         }
       }

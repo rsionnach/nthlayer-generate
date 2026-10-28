@@ -35,7 +35,7 @@
         "repeatDirection": "h",
         "targets": [
           {
-            "expr": "sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
+            "expr": "sum(rate(events_processed_total{service=\"analytics-stream\"}[5m]))",
             "refId": "A"
           }
         ],
@@ -60,7 +60,7 @@
         "repeatDirection": "h",
         "targets": [
           {
-            "expr": "sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
+            "expr": "sum(rate(events_processed_total{service=\"analytics-stream\"}[5m]))",
             "refId": "A"
           }
         ],
@@ -85,7 +85,7 @@
         "repeatDirection": "h",
         "targets": [
           {
-            "expr": "sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
+            "expr": "sum(rate(events_processed_total{service=\"analytics-stream\"}[5m]))",
             "refId": "A"
           }
         ],
@@ -108,7 +108,7 @@
         "type": "row"
       },
       {
-        "description": "Total requests per second",
+        "description": "Events processed per second",
         "fieldConfig": {
           "defaults": {},
           "overrides": []
@@ -123,18 +123,18 @@
         "repeatDirection": "h",
         "targets": [
           {
-            "expr": "sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
-            "legendFormat": "{{http}}",
+            "expr": "sum(rate(events_processed_total{service=\"analytics-stream\"}[5m]))",
+            "legendFormat": "{{events}}",
             "refId": "A"
           }
         ],
-        "title": "Request Rate",
+        "title": "Event Rate",
         "transformations": [],
         "transparent": false,
         "type": "timeseries"
       },
       {
-        "description": "Percentage of requests returning 5xx errors",
+        "description": "Percentage of events failing",
         "fieldConfig": {
           "defaults": {},
           "overrides": []
@@ -149,7 +149,7 @@
         "repeatDirection": "h",
         "targets": [
           {
-            "expr": "sum(rate(http_requests_total{service=\"analytics-stream\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"analytics-stream\"}[5m])) * 100",
+            "expr": "sum(rate(events_processed_total{service=\"analytics-stream\",status=\"error\"}[5m])) / sum(rate(events_processed_total{service=\"analytics-stream\"}[5m])) * 100",
             "legendFormat": "error %",
             "refId": "A"
           }
@@ -160,7 +160,7 @@
         "type": "timeseries"
       },
       {
-        "description": "95th percentile request duration",
+        "description": "95th percentile event processing duration",
         "fieldConfig": {
           "defaults": {},
           "overrides": []
@@ -175,12 +175,12 @@
         "repeatDirection": "h",
         "targets": [
           {
-            "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{service=\"analytics-stream\"}[5m])))",
-            "legendFormat": "{{http}}",
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(event_processing_duration_seconds_bucket{service=\"analytics-stream\"}[5m])))",
+            "legendFormat": "{{event}}",
             "refId": "A"
           }
         ],
-        "title": "Request Latency (p95)",
+        "title": "Processing Latency (p95)",
         "transformations": [],
         "transparent": false,
         "type": "timeseries"
@@ -495,7 +495,7 @@
     "tags": [
       "data",
       "high",
-      "stream-processor"
+      "stream"
     ],
     "templating": {},
     "time": {

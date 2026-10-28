@@ -55,110 +55,56 @@
           }
         },
         {
-          "alert": "notification-service_kafka_KafkaAuthenticationFailure",
+          "alert": "notification-service_sqs_ApplicationError",
           "annotations": {
-            "description": "Authentication failures detected when connecting to Kafka.",
-            "summary": "[notification-service/kafka] Kafka authentication failures"
+            "description": "Error-level log entries detected in application logs.",
+            "summary": "[notification-service/sqs] Application errors detected"
           },
-          "expr": "sum(count_over_time({app=\"kafka\", service=\"notification-service\"} |~ \"authentication.*fail|AuthenticationException|SASL\" [5m])) > 5",
+          "expr": "sum(count_over_time({app=\"sqs\", service=\"notification-service\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
           "for": "5m",
           "labels": {
-            "dependency": "kafka",
+            "dependency": "sqs",
             "service": "notification-service",
             "severity": "warning",
             "source": "dependency",
             "team": "platform",
-            "technology": "kafka",
+            "technology": "sqs",
             "tier": "standard"
           }
         },
         {
-          "alert": "notification-service_kafka_KafkaBrokerDown",
+          "alert": "notification-service_sqs_ApplicationHighErrorRate",
           "annotations": {
-            "description": "A Kafka broker appears to be down or unreachable.",
-            "summary": "[notification-service/kafka] Kafka broker down"
+            "description": "Application is experiencing a high rate of errors.",
+            "summary": "[notification-service/sqs] High error rate in application"
           },
-          "expr": "count_over_time({app=\"kafka\", service=\"notification-service\"} |~ \"broker.*down|BrokerNotAvailable|disconnected\" [1m]) > 0",
-          "for": "1m",
-          "labels": {
-            "dependency": "kafka",
-            "service": "notification-service",
-            "severity": "critical",
-            "source": "dependency",
-            "team": "platform",
-            "technology": "kafka",
-            "tier": "standard"
-          }
-        },
-        {
-          "alert": "notification-service_kafka_KafkaConsumerLag",
-          "annotations": {
-            "description": "Consumer group is lagging behind. Messages may not be processed in time.",
-            "summary": "[notification-service/kafka] Kafka consumer lag detected"
-          },
-          "expr": "count_over_time({app=\"kafka\", service=\"notification-service\"} |~ \"consumer.*lag|ConsumerLag|offset.*behind\" [1m]) > 0",
-          "for": "10m",
-          "labels": {
-            "dependency": "kafka",
-            "service": "notification-service",
-            "severity": "warning",
-            "source": "dependency",
-            "team": "platform",
-            "technology": "kafka",
-            "tier": "standard"
-          }
-        },
-        {
-          "alert": "notification-service_kafka_KafkaLeaderElection",
-          "annotations": {
-            "description": "Kafka is performing leader election. This may cause brief unavailability...",
-            "summary": "[notification-service/kafka] Kafka leader election in progress"
-          },
-          "expr": "count_over_time({app=\"kafka\", service=\"notification-service\"} |~ \"leader.*election|LeaderElection|partition.*leader\" [1m]) > 0",
-          "for": "0m",
-          "labels": {
-            "dependency": "kafka",
-            "service": "notification-service",
-            "severity": "warning",
-            "source": "dependency",
-            "team": "platform",
-            "technology": "kafka",
-            "tier": "standard"
-          }
-        },
-        {
-          "alert": "notification-service_kafka_KafkaOutOfDiskSpace",
-          "annotations": {
-            "description": "Kafka broker is out of disk space. Immediate action required.",
-            "summary": "[notification-service/kafka] Kafka out of disk space"
-          },
-          "expr": "count_over_time({app=\"kafka\", service=\"notification-service\"} |~ \"No space left|disk.*full|ENOSPC\" [1m]) > 0",
-          "for": "0m",
-          "labels": {
-            "dependency": "kafka",
-            "service": "notification-service",
-            "severity": "critical",
-            "source": "dependency",
-            "team": "platform",
-            "technology": "kafka",
-            "tier": "standard"
-          }
-        },
-        {
-          "alert": "notification-service_kafka_KafkaUnderReplicatedPartitions",
-          "annotations": {
-            "description": "Kafka has under-replicated partitions. Data durability may be at risk.",
-            "summary": "[notification-service/kafka] Kafka under-replicated partitions"
-          },
-          "expr": "count_over_time({app=\"kafka\", service=\"notification-service\"} |~ \"under.?replicated|UnderReplicated\" [1m]) > 0",
+          "expr": "sum(count_over_time({app=\"sqs\", service=\"notification-service\"} |~ \"(?i)error|exception\" [5m])) > 100",
           "for": "5m",
           "labels": {
-            "dependency": "kafka",
+            "dependency": "sqs",
             "service": "notification-service",
             "severity": "critical",
             "source": "dependency",
             "team": "platform",
-            "technology": "kafka",
+            "technology": "sqs",
+            "tier": "standard"
+          }
+        },
+        {
+          "alert": "notification-service_sqs_ApplicationPanic",
+          "annotations": {
+            "description": "Application appears to have crashed or panicked.",
+            "summary": "[notification-service/sqs] Application panic/crash detected"
+          },
+          "expr": "count_over_time({app=\"sqs\", service=\"notification-service\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+          "for": "0m",
+          "labels": {
+            "dependency": "sqs",
+            "service": "notification-service",
+            "severity": "critical",
+            "source": "dependency",
+            "team": "platform",
+            "technology": "sqs",
             "tier": "standard"
           }
         }

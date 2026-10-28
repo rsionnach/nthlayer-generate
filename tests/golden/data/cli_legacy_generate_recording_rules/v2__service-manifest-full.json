@@ -11,6 +11,6 @@
     "Output: <tmp>/out/recording-rules.yaml",
     "",
     "Parsing service specification...",
-    "✗ Error generating recording rules: Missing required 'service' section in <opensrm>/spec/v2/examples/service-manifest-full.yaml"
+    "✗ Error generating recording rules: Error parsing OpenSLO documents: $ref './slos/payment-availability.yaml' not found at <opensrm>/spec/v2/examples/slos/payment-availability.yaml"
   ]
 }

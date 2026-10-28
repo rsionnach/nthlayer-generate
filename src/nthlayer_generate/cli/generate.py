@@ -6,8 +6,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from nthlayer_common.manifest import ManifestLoadError, load_manifest
+
 from nthlayer_generate.cli.ux import console, error, header, info, success
-from nthlayer_generate.generators.sloth import generate_sloth_spec
+from nthlayer_generate.generators.sloth import generate_sloth_from_manifest
 
 
 def generate_slo_command(
@@ -57,7 +59,20 @@ def generate_slo_command(
             console.print()
             return 0
 
-        result = generate_sloth_spec(service_file, output_path, environment=environment)
+        try:
+            manifest = load_manifest(
+                service_file, environment=environment, suppress_deprecation_warning=True
+            )
+        except (OSError, ManifestLoadError, ValueError, AttributeError, TypeError) as e:
+            # OSError covers FileNotFoundError and a directory or unreadable
+            # path. ValueError: the manifest model's own checks (tier, type).
+            # AttributeError/TypeError: common's legacy loader on a
+            # non-mapping resource spec (opensrm-wo62.4.10).
+            error(f"Generation failed: {e}")
+            console.print()
+            return 1
+
+        result = generate_sloth_from_manifest(manifest, output_path)
 
         if not result.success:
             error(f"Generation failed: {result.error}")

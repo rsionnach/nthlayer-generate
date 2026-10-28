@@ -1,6 +1,67 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "loki-alerts.yaml": {
+      "groups": [
+        {
+          "name": "user-api",
+          "rules": [
+            {
+              "alert": "user-api_ApplicationError",
+              "annotations": {
+                "description": "Error-level log entries detected in application logs.",
+                "summary": "[user-api] Application errors detected"
+              },
+              "expr": "sum(count_over_time({app=\"user-api\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "service": "user-api",
+                "severity": "warning",
+                "source": "service",
+                "team": "platform",
+                "technology": "api",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "user-api_ApplicationHighErrorRate",
+              "annotations": {
+                "description": "Application is experiencing a high rate of errors.",
+                "summary": "[user-api] High error rate in application"
+              },
+              "expr": "sum(count_over_time({app=\"user-api\"} |~ \"(?i)error|exception\" [5m])) > 100",
+              "for": "5m",
+              "labels": {
+                "service": "user-api",
+                "severity": "critical",
+                "source": "service",
+                "team": "platform",
+                "technology": "api",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "user-api_ApplicationPanic",
+              "annotations": {
+                "description": "Application appears to have crashed or panicked.",
+                "summary": "[user-api] Application panic/crash detected"
+              },
+              "expr": "count_over_time({app=\"user-api\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "service": "user-api",
+                "severity": "critical",
+                "source": "service",
+                "team": "platform",
+                "technology": "api",
+                "tier": "standard"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
   "text": [
     "",
     "╭──╮",
@@ -13,6 +74,19 @@
     "",
     "Service: examples/opensrm/api-basic.reliability.yaml",
     "",
-    "✗ Error generating Loki alerts: Missing required 'service' section in examples/opensrm/api-basic.reliability.yaml"
+    "Service: user-api",
+    "Type: api",
+    "Tier: standard",
+    "Dependencies: none",
+    "",
+    "✓ Generated 3 Loki alerts",
+    "",
+    "Alert breakdown:",
+    "  Service alerts: 3",
+    "  Dependency alerts: 0",
+    "",
+    "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
+    "",
+    "✓ Done!"
   ]
 }

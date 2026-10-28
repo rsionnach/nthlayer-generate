@@ -11,6 +11,6 @@
     "Output: <tmp>/out/recording-rules.yaml",
     "",
     "Parsing service specification...",
-    "✗ Error generating recording rules: Missing required 'service' section in <opensrm>/spec/v2/examples/services/ai-gate.yaml"
+    "✗ Error generating recording rules: Judgment SLO missing metadata.name"
   ]
 }

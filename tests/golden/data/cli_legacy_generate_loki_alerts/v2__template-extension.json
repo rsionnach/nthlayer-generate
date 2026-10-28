@@ -13,6 +13,6 @@
     "",
     "Service: <opensrm>/spec/v2/examples/template-extension.yaml",
     "",
-    "✗ Error generating Loki alerts: Missing required 'service' section in <opensrm>/spec/v2/examples/template-extension.yaml"
+    "✗ Error generating Loki alerts: Template 'template:default/payment-services-base' not found. Searched for 'payment-services-base.yaml' in <opensrm>/spec/v2/examples/templates/ and <opensrm>/spec/v2/examples/.nthlayer/templates/"
   ]
 }

@@ -182,6 +182,132 @@
                 "technology": "postgresql",
                 "tier": "standard"
               }
+            },
+            {
+              "alert": "email-worker_rabbitmq_RabbitmqAuthFailure",
+              "annotations": {
+                "description": "Authentication failures connecting to RabbitMQ.",
+                "summary": "[email-worker/rabbitmq] RabbitMQ authentication failures"
+              },
+              "expr": "sum(count_over_time({app=\"rabbitmq\", service=\"email-worker\"} |~ \"authentication.*fail|ACCESS_REFUSED|invalid credentials\" [5m])) > 5",
+              "for": "5m",
+              "labels": {
+                "dependency": "rabbitmq",
+                "service": "email-worker",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "notifications",
+                "technology": "rabbitmq",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "email-worker_rabbitmq_RabbitmqClusterPartition",
+              "annotations": {
+                "description": "RabbitMQ cluster partition detected. Split-brain possible.",
+                "summary": "[email-worker/rabbitmq] RabbitMQ cluster partition"
+              },
+              "expr": "count_over_time({app=\"rabbitmq\", service=\"email-worker\"} |~ \"partition|network.*partition|mnesia.*inconsistent\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "rabbitmq",
+                "service": "email-worker",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "notifications",
+                "technology": "rabbitmq",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "email-worker_rabbitmq_RabbitmqConnectionError",
+              "annotations": {
+                "description": "Applications cannot connect to RabbitMQ.",
+                "summary": "[email-worker/rabbitmq] RabbitMQ connection error"
+              },
+              "expr": "count_over_time({app=\"rabbitmq\", service=\"email-worker\"} |~ \"connection.*closed|ECONNREFUSED|connection_closed\" [1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "dependency": "rabbitmq",
+                "service": "email-worker",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "notifications",
+                "technology": "rabbitmq",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "email-worker_rabbitmq_RabbitmqDiskAlarm",
+              "annotations": {
+                "description": "RabbitMQ has triggered a disk alarm. Publishing blocked.",
+                "summary": "[email-worker/rabbitmq] RabbitMQ disk alarm"
+              },
+              "expr": "count_over_time({app=\"rabbitmq\", service=\"email-worker\"} |~ \"disk.*alarm|disk_free_limit\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "rabbitmq",
+                "service": "email-worker",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "notifications",
+                "technology": "rabbitmq",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "email-worker_rabbitmq_RabbitmqMemoryAlarm",
+              "annotations": {
+                "description": "RabbitMQ has triggered a memory alarm. Publishing blocked.",
+                "summary": "[email-worker/rabbitmq] RabbitMQ memory alarm"
+              },
+              "expr": "count_over_time({app=\"rabbitmq\", service=\"email-worker\"} |~ \"memory.*alarm|vm_memory_high_watermark\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "rabbitmq",
+                "service": "email-worker",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "notifications",
+                "technology": "rabbitmq",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "email-worker_rabbitmq_RabbitmqNodeDown",
+              "annotations": {
+                "description": "A RabbitMQ node appears to be down.",
+                "summary": "[email-worker/rabbitmq] RabbitMQ node down"
+              },
+              "expr": "count_over_time({app=\"rabbitmq\", service=\"email-worker\"} |~ \"node.*down|nodedown|rabbit.*stopped\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "rabbitmq",
+                "service": "email-worker",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "notifications",
+                "technology": "rabbitmq",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "email-worker_rabbitmq_RabbitmqQueueOverflow",
+              "annotations": {
+                "description": "RabbitMQ queue is overflowing. Messages may be dropped.",
+                "summary": "[email-worker/rabbitmq] RabbitMQ queue overflow"
+              },
+              "expr": "count_over_time({app=\"rabbitmq\", service=\"email-worker\"} |~ \"queue.*overflow|message.*dropped|queue.*limit\" [1m]) > 0",
+              "for": "5m",
+              "labels": {
+                "dependency": "rabbitmq",
+                "service": "email-worker",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "notifications",
+                "technology": "rabbitmq",
+                "tier": "standard"
+              }
             }
           ]
         }
@@ -203,13 +329,13 @@
     "Service: email-worker",
     "Type: worker",
     "Tier: standard",
-    "Dependencies: postgresql",
+    "Dependencies: postgresql, rabbitmq",
     "",
-    "✓ Generated 10 Loki alerts",
+    "✓ Generated 17 Loki alerts",
     "",
     "Alert breakdown:",
     "  Service alerts: 3",
-    "  Dependency alerts: 7",
+    "  Dependency alerts: 14",
     "",
     "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
     "",

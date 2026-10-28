@@ -823,7 +823,9 @@ teams:
 
     def test_list_templates_command(self, capsys):
         """list-templates command runs."""
-        with patch("nthlayer_generate.cli.templates.list_templates_command", return_value=0) as mock:
+        with patch(
+            "nthlayer_generate.cli.templates.list_templates_command", return_value=0
+        ) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["list-templates"])
 
@@ -963,7 +965,9 @@ teams:
         """validate-metadata command dispatches to handler."""
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer_generate.demo.handle_validate_metadata_command", return_value=0) as mock:
+        with patch(
+            "nthlayer_generate.demo.handle_validate_metadata_command", return_value=0
+        ) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["validate-metadata", "service.yaml"])
 
@@ -1052,7 +1056,9 @@ alert_templates:
         """list-environments command dispatches correctly."""
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer_generate.cli.environments.list_environments_command", return_value=0) as mock:
+        with patch(
+            "nthlayer_generate.cli.environments.list_environments_command", return_value=0
+        ) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["list-environments"])
 
@@ -1074,7 +1080,9 @@ alert_templates:
         """validate-env command dispatches correctly."""
         monkeypatch.chdir(tmp_path)
 
-        with patch("nthlayer_generate.cli.environments.validate_env_command", return_value=0) as mock:
+        with patch(
+            "nthlayer_generate.cli.environments.validate_env_command", return_value=0
+        ) as mock:
             with pytest.raises(SystemExit) as exc_info:
                 main(["validate-env", "prod"])
 
@@ -1082,14 +1090,13 @@ alert_templates:
             assert exc_info.value.code == 0
 
     def test_generate_dashboard_command(self, tmp_path, monkeypatch):
-        """generate-dashboard command raises error for missing file."""
-        from nthlayer_generate.specs.parser import ServiceParseError
-
+        """generate-dashboard command exits 1 for missing file."""
         monkeypatch.chdir(tmp_path)
 
-        # The generate_dashboard_command raises ServiceParseError for missing files
-        with pytest.raises(ServiceParseError):
+        with pytest.raises(SystemExit) as exc_info:
             main(["generate-dashboard", "nonexistent.yaml"])
+
+        assert exc_info.value.code == 1
 
     def test_generate_recording_rules_command(self, tmp_path, monkeypatch):
         """generate-recording-rules command exits 1 for missing file."""

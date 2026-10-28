@@ -319,6 +319,82 @@
         }
       ]
     },
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": null,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/analytics-stream/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": null,
+        "serviceManifest": "examples/services/analytics-stream.yaml",
+        "slothSpec": "generated/analytics-stream/sloth/analytics-stream.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": "Real-time analytics event processing pipeline",
+        "name": "analytics-stream",
+        "supportModel": "self",
+        "team": "data",
+        "tier": "high",
+        "type": "stream"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "processing-availability",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.5,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "stream-lag",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.0,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "event-latency-p99",
+          "sloType": "latency",
+          "status": null,
+          "target": 95.0,
+          "window": "30d"
+        }
+      ]
+    },
     "dashboard.json": {
       "dashboard": {
         "annotations": {},
@@ -356,7 +432,7 @@
             "repeatDirection": "h",
             "targets": [
               {
-                "expr": "sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
+                "expr": "sum(rate(events_processed_total{service=\"analytics-stream\"}[5m]))",
                 "refId": "A"
               }
             ],
@@ -381,7 +457,7 @@
             "repeatDirection": "h",
             "targets": [
               {
-                "expr": "sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
+                "expr": "sum(rate(events_processed_total{service=\"analytics-stream\"}[5m]))",
                 "refId": "A"
               }
             ],
@@ -406,7 +482,7 @@
             "repeatDirection": "h",
             "targets": [
               {
-                "expr": "sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
+                "expr": "sum(rate(events_processed_total{service=\"analytics-stream\"}[5m]))",
                 "refId": "A"
               }
             ],
@@ -429,7 +505,7 @@
             "type": "row"
           },
           {
-            "description": "Total requests per second",
+            "description": "Events processed per second",
             "fieldConfig": {
               "defaults": {},
               "overrides": []
@@ -444,18 +520,18 @@
             "repeatDirection": "h",
             "targets": [
               {
-                "expr": "sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
-                "legendFormat": "{{http}}",
+                "expr": "sum(rate(events_processed_total{service=\"analytics-stream\"}[5m]))",
+                "legendFormat": "{{events}}",
                 "refId": "A"
               }
             ],
-            "title": "Request Rate",
+            "title": "Event Rate",
             "transformations": [],
             "transparent": false,
             "type": "timeseries"
           },
           {
-            "description": "Percentage of requests returning 5xx errors",
+            "description": "Percentage of events failing",
             "fieldConfig": {
               "defaults": {},
               "overrides": []
@@ -470,7 +546,7 @@
             "repeatDirection": "h",
             "targets": [
               {
-                "expr": "sum(rate(http_requests_total{service=\"analytics-stream\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"analytics-stream\"}[5m])) * 100",
+                "expr": "sum(rate(events_processed_total{service=\"analytics-stream\",status=\"error\"}[5m])) / sum(rate(events_processed_total{service=\"analytics-stream\"}[5m])) * 100",
                 "legendFormat": "error %",
                 "refId": "A"
               }
@@ -481,7 +557,7 @@
             "type": "timeseries"
           },
           {
-            "description": "95th percentile request duration",
+            "description": "95th percentile event processing duration",
             "fieldConfig": {
               "defaults": {},
               "overrides": []
@@ -496,12 +572,12 @@
             "repeatDirection": "h",
             "targets": [
               {
-                "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{service=\"analytics-stream\"}[5m])))",
-                "legendFormat": "{{http}}",
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(event_processing_duration_seconds_bucket{service=\"analytics-stream\"}[5m])))",
+                "legendFormat": "{{event}}",
                 "refId": "A"
               }
             ],
-            "title": "Request Latency (p95)",
+            "title": "Processing Latency (p95)",
             "transformations": [],
             "transparent": false,
             "type": "timeseries"
@@ -816,7 +892,7 @@
         "tags": [
           "data",
           "high",
-          "stream-processor"
+          "stream"
         ],
         "templating": {},
         "time": {
@@ -980,7 +1056,7 @@
       "labels": {
         "team": "data",
         "tier": "high",
-        "type": "stream-processor"
+        "type": "stream"
       },
       "service": "analytics-stream",
       "slos": [
@@ -1081,7 +1157,7 @@
     "output_dir": "<tmp>/out",
     "resources_created": {
       "alerts": 19,
-      "backstage": 0,
+      "backstage": 1,
       "dashboard": 1,
       "pagerduty": 1,
       "recording-rules": 14,
@@ -1089,10 +1165,8 @@
     },
     "service_name": "analytics-stream",
     "success": true,
-    "total_resources": 38
+    "total_resources": 39
   },
-  "preamble": [
-    "   ⚠️  Backstage generation warning: Invalid type 'stream-processor'. Must be one of: ai-gate, api, batch, database, stream, worker; or an extension type matching 'x-<lowercase-name>'."
-  ],
+  "preamble": [],
   "stray": []
 }

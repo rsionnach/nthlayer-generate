@@ -200,7 +200,6 @@
     "  Team: platform",
     "  Tier: critical",
     "  Type: api",
-    "  Resources: 3 defined",
     "",
     "  SLOs: 2",
     "  Dependencies: 0",

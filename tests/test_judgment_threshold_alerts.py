@@ -295,3 +295,26 @@ def test_dependency_and_threshold_alerts_are_both_returned_and_written(tmp_path:
     assert [a.name for a in returned] == expected
     doc = yaml.safe_load(out.read_text())
     assert sorted(r["alert"] for g in doc["groups"] for r in g["rules"]) == sorted(expected)
+
+
+@pytest.mark.parametrize("manifest_path", WITH_SOURCE, ids=lambda p: p.stem)
+def test_generate_alerts_cli_writes_threshold_alerts(manifest_path: Path, tmp_path: Path):
+    """End-to-end: ``nthlayer generate-alerts`` on a spec ai-gate (opensrm-wo62.4.3).
+
+    Before wo62.4.3 the command read only the legacy format, so no v2
+    manifest — and so no declared bound — could reach it. Driven through the
+    argparse entry point so the flag wiring is exercised too.
+    """
+    from nthlayer_generate.demo import main
+
+    expected = build_judgment_threshold_alerts(_load(manifest_path))
+    assert expected  # Anti-vacuity: every WITH_SOURCE example declares a sourced bound.
+    out = tmp_path / "alerts.yaml"
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(["generate-alerts", str(manifest_path), "--output", str(out)])
+
+    assert exc_info.value.code == 0
+    doc = yaml.safe_load(out.read_text())
+    written = {(r["alert"], r["expr"]) for g in doc["groups"] for r in g["rules"]}
+    assert {(a.name, a.expr) for a in expected} <= written

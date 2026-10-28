@@ -1,6 +1,114 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "intake-agent_judgment_metrics",
+          "rules": [
+            {
+              "expr": "histogram_quantile(0.5, rate(ai_gate_feedback_latency_seconds_bucket{service=\"intake-agent\"}[5m]))",
+              "labels": {
+                "service": "intake-agent",
+                "slo": "feedback_latency"
+              },
+              "record": "ai_gate:feedback_latency:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(ai_gate_feedback_latency_seconds_bucket{service=\"intake-agent\"}[5m]))",
+              "labels": {
+                "service": "intake-agent",
+                "slo": "feedback_latency"
+              },
+              "record": "ai_gate:feedback_latency:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(ai_gate_feedback_latency_seconds_bucket{service=\"intake-agent\"}[5m]))",
+              "labels": {
+                "service": "intake-agent",
+                "slo": "feedback_latency"
+              },
+              "record": "ai_gate:feedback_latency:p99"
+            },
+            {
+              "expr": "sum(rate(ai_gate_feedback_latency_seconds_bucket{service=\"intake-agent\",le=\"3600.0\"}[5m])) / sum(rate(ai_gate_feedback_latency_seconds_count{service=\"intake-agent\"}[5m]))",
+              "labels": {
+                "service": "intake-agent",
+                "slo": "feedback_latency",
+                "target": "3600.0"
+              },
+              "record": "ai_gate:feedback_latency:bucket"
+            }
+          ]
+        },
+        {
+          "interval": "5m",
+          "name": "intake-agent_judgment_thresholds_30d",
+          "rules": [
+            {
+              "expr": "sum(increase(ai_gate_feedback_latency_seconds_bucket{service=\"intake-agent\",le=\"3600.0\"}[30d])) / sum(increase(ai_gate_feedback_latency_seconds_count{service=\"intake-agent\"}[30d]))",
+              "labels": {
+                "quantile": "0.5",
+                "service": "intake-agent",
+                "slo": "feedback_latency",
+                "target": "3600.0"
+              },
+              "record": "ai_gate:feedback_latency:p50_within_bound_30d"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "intake-agent_health_metrics",
+          "rules": [
+            {
+              "expr": "sum(rate(ai_gate_decisions_total{service=\"intake-agent\"}[5m]))",
+              "labels": {
+                "service": "intake-agent"
+              },
+              "record": "service:ai_gate_decisions:rate5m"
+            },
+            {
+              "expr": "avg(ai_gate_confidence_score{service=\"intake-agent\"})",
+              "labels": {
+                "service": "intake-agent"
+              },
+              "record": "service:ai_gate_confidence:avg"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"intake-agent\"}[5m]))",
+              "labels": {
+                "service": "intake-agent"
+              },
+              "record": "service:http_requests:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"intake-agent\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"intake-agent\"}[5m]))",
+              "labels": {
+                "service": "intake-agent"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"intake-agent\"}[5m]))",
+              "labels": {
+                "service": "intake-agent"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"intake-agent\"}[5m]))",
+              "labels": {
+                "service": "intake-agent"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            }
+          ]
+        }
+      ]
+    }
+  },
   "text": [
     "",
     "╭──╮",
@@ -11,6 +119,33 @@
     "Output: <tmp>/out/recording-rules.yaml",
     "",
     "Parsing service specification...",
-    "✗ Error generating recording rules: Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/feedback-latency-p50-only.yaml"
+    "  Service: intake-agent",
+    "  Team: risk",
+    "  Tier: critical",
+    "  Type: ai-gate",
+    "  SLOs: 0",
+    "",
+    "Building recording rules...",
+    "  Groups: 3",
+    "  Rules: 11",
+    "  • intake-agent_judgment_metrics: 4 rules (interval: 30s)",
+    "  • intake-agent_judgment_thresholds_30d: 1 rules (interval: 5m)",
+    "  • intake-agent_health_metrics: 6 rules (interval: 30s)",
+    "",
+    "Writing recording rules to <tmp>/out/recording-rules.yaml...",
+    "",
+    "✓ Recording rules generated successfully!",
+    "",
+    "Next steps:",
+    "  1. Add to Prometheus configuration:",
+    "  rule_files:",
+    "  - <tmp>/out/recording-rules.yaml",
+    "",
+    "  2. Reload Prometheus:",
+    "  curl -X POST http://prometheus:9090/-/reload",
+    "",
+    "  3. Verify rules are loaded:",
+    "  curl http://prometheus:9090/api/v1/rules",
+    ""
   ]
 }

@@ -138,11 +138,9 @@
             "type": "row"
           },
           {
-            "description": "### Request Rate - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `http.requests_total`: No metric found for http.requests_total. Add instrumentation to your application.\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  http.requests_total: your_custom_metric\n```",
+            "description": "Total requests per second",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Add metrics: http.requests_total"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
@@ -151,22 +149,24 @@
               "x": 0,
               "y": 20
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+                "legendFormat": "{{http}}",
+                "refId": "A"
+              }
+            ],
             "title": "Request Rate",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Error Rate - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `http.requests_total`: No metric found for http.requests_total. Add instrumentation to your application.\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  http.requests_total: your_custom_metric\n```",
+            "description": "Percentage of requests returning 5xx errors",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Add metrics: http.requests_total"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
@@ -175,22 +175,24 @@
               "x": 12,
               "y": 20
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"payment-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"payment-api\"}[5m])) * 100",
+                "legendFormat": "error %",
+                "refId": "A"
+              }
+            ],
             "title": "Error Rate",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Request Latency (p95) - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `http.request_duration`: No metric found for http.request_duration. Add instrumentation to your application.\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  http.request_duration: your_custom_metric\n```",
+            "description": "95th percentile request duration",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Add metrics: http.request_duration"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
@@ -199,15 +201,19 @@
               "x": 0,
               "y": 29
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])))",
+                "legendFormat": "{{http}}",
+                "refId": "A"
+              }
+            ],
             "title": "Request Latency (p95)",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
             "collapsed": false,
@@ -223,11 +229,9 @@
             "type": "row"
           },
           {
-            "description": "### PostgreSQL Connections - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.connections`: No metric found for postgresql.connections. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n- `postgresql.max_connections`: No metric found for postgresql.max_connections. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.connections: your_custom_metric\n  postgresql.max_connections: your_custom_metric\n```",
+            "description": "Active database connections vs max connections limit",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
@@ -236,22 +240,29 @@
               "x": 0,
               "y": 39
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_stat_database_numbackends{service=\"postgresql\"}",
+                "legendFormat": "{{datname}} connections",
+                "refId": "A"
+              },
+              {
+                "expr": "pg_settings_max_connections{service=\"postgresql\"}",
+                "legendFormat": "Max connections",
+                "refId": "B"
+              }
+            ],
             "title": "PostgreSQL Connections",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Active Queries - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.active_queries`: No metric found for postgresql.active_queries. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.active_queries: your_custom_metric\n```",
+            "description": "Number of currently executing queries",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
@@ -260,22 +271,24 @@
               "x": 12,
               "y": 39
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_stat_activity_count{service=\"postgresql\",state=\"active\"}",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
             "title": "Active Queries",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Cache Hit Ratio - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.cache_hit`: No metric found for postgresql.cache_hit. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.cache_hit: your_custom_metric\n```",
+            "description": "Buffer cache hit ratio - should be >99% for good performance",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
@@ -284,22 +297,24 @@
               "x": 0,
               "y": 48
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(pg_stat_database_blks_hit{service=\"postgresql\"}) /\n(sum(pg_stat_database_blks_hit{service=\"postgresql\"}) + sum(pg_stat_database_blks_read{service=\"postgresql\"})) * 100",
+                "legendFormat": "Cache hit %",
+                "refId": "A"
+              }
+            ],
             "title": "Cache Hit Ratio",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "gauge"
           },
           {
-            "description": "### Transaction Rate - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.transactions_committed`: No metric found for postgresql.transactions_committed. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n- `postgresql.transactions_rolled_back`: No metric found for postgresql.transactions_rolled_back. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.transactions_committed: your_custom_metric\n  postgresql.transactions_rolled_back: your_custom_metric\n```",
+            "description": "Transaction commits and rollbacks per second",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
@@ -308,22 +323,29 @@
               "x": 12,
               "y": 48
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(pg_stat_database_xact_commit{service=\"postgresql\"}[5m])",
+                "legendFormat": "{{datname}} commits/sec",
+                "refId": "A"
+              },
+              {
+                "expr": "rate(pg_stat_database_xact_rollback{service=\"postgresql\"}[5m])",
+                "legendFormat": "{{datname}} rollbacks/sec",
+                "refId": "B"
+              }
+            ],
             "title": "Transaction Rate",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Database Size - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.database_size`: No metric found for postgresql.database_size. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.database_size: your_custom_metric\n```",
+            "description": "Total database size",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
@@ -332,22 +354,24 @@
               "x": 0,
               "y": 57
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_database_size_bytes{service=\"postgresql\"}",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
             "title": "Database Size",
             "transformations": [],
             "transparent": false,
             "type": "stat"
           },
           {
-            "description": "### Deadlocks - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.deadlocks`: No metric found for postgresql.deadlocks. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.deadlocks: your_custom_metric\n```",
+            "description": "Query execution time (95th percentile)",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
@@ -356,22 +380,24 @@
               "x": 12,
               "y": 57
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
-            "title": "Deadlocks",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(pg_stat_statements_mean_exec_time_seconds_bucket{service=\"postgresql\"}[5m])))",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Query Duration (p95)",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Table Bloat (Dead Tuples) - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.table_bloat`: No metric found for postgresql.table_bloat. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.table_bloat: your_custom_metric\n```",
+            "description": "Deadlocks per second - should be near zero",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
@@ -380,22 +406,24 @@
               "x": 0,
               "y": 66
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
-            "title": "Table Bloat (Dead Tuples)",
+            "targets": [
+              {
+                "expr": "rate(pg_stat_database_deadlocks{service=\"postgresql\"}[5m])",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Deadlocks",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Connection Pool Utilization - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.connections`: No metric found for postgresql.connections. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.connections: your_custom_metric\n```",
+            "description": "Replication lag in seconds",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
@@ -404,22 +432,24 @@
               "x": 12,
               "y": 66
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
-            "title": "Connection Pool Utilization",
+            "targets": [
+              {
+                "expr": "pg_replication_lag_seconds{service=\"postgresql\"}",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Replication Lag",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### PostgreSQL Connections - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.connections`: No metric found for postgresql.connections. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n- `postgresql.max_connections`: No metric found for postgresql.max_connections. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.connections: your_custom_metric\n  postgresql.max_connections: your_custom_metric\n```",
+            "description": "Dead tuples indicating table bloat - vacuum if high",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
@@ -428,94 +458,107 @@
               "x": 0,
               "y": 75
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(pg_stat_user_tables_n_dead_tup{service=\"postgresql\"}) by (relname)",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Table Bloat (Dead Tuples)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Connection pool utilization percentage",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 75
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_stat_database_numbackends{service=\"postgresql\"} /\non() group_left pg_settings_max_connections{service=\"postgresql\"} * 100",
+                "legendFormat": "Pool usage %",
+                "refId": "A"
+              }
+            ],
+            "title": "Connection Pool Utilization",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "Active database connections vs max connections limit",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 84
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_stat_database_numbackends{service=\"postgres\"}",
+                "legendFormat": "{{datname}} connections",
+                "refId": "A"
+              },
+              {
+                "expr": "pg_settings_max_connections{service=\"postgres\"}",
+                "legendFormat": "Max connections",
+                "refId": "B"
+              }
+            ],
             "title": "PostgreSQL Connections",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Active Queries - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.active_queries`: No metric found for postgresql.active_queries. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.active_queries: your_custom_metric\n```",
+            "description": "Number of currently executing queries",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 75
+              "y": 84
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_stat_activity_count{service=\"postgres\",state=\"active\"}",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
             "title": "Active Queries",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Cache Hit Ratio - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.cache_hit`: No metric found for postgresql.cache_hit. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.cache_hit: your_custom_metric\n```",
+            "description": "Buffer cache hit ratio - should be >99% for good performance",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 0,
-              "y": 84
-            },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
-            "repeatDirection": "h",
-            "title": "Cache Hit Ratio",
-            "transformations": [],
-            "transparent": false,
-            "type": "stat"
-          },
-          {
-            "description": "### Transaction Rate - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.transactions_committed`: No metric found for postgresql.transactions_committed. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n- `postgresql.transactions_rolled_back`: No metric found for postgresql.transactions_rolled_back. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.transactions_committed: your_custom_metric\n  postgresql.transactions_rolled_back: your_custom_metric\n```",
-            "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 12,
-              "y": 84
-            },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
-            "repeatDirection": "h",
-            "title": "Transaction Rate",
-            "transformations": [],
-            "transparent": false,
-            "type": "stat"
-          },
-          {
-            "description": "### Database Size - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.database_size`: No metric found for postgresql.database_size. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.database_size: your_custom_metric\n```",
-            "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
@@ -524,70 +567,81 @@
               "x": 0,
               "y": 93
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(pg_stat_database_blks_hit{service=\"postgres\"}) /\n(sum(pg_stat_database_blks_hit{service=\"postgres\"}) + sum(pg_stat_database_blks_read{service=\"postgres\"})) * 100",
+                "legendFormat": "Cache hit %",
+                "refId": "A"
+              }
+            ],
+            "title": "Cache Hit Ratio",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "Transaction commits and rollbacks per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 93
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(pg_stat_database_xact_commit{service=\"postgres\"}[5m])",
+                "legendFormat": "{{datname}} commits/sec",
+                "refId": "A"
+              },
+              {
+                "expr": "rate(pg_stat_database_xact_rollback{service=\"postgres\"}[5m])",
+                "legendFormat": "{{datname}} rollbacks/sec",
+                "refId": "B"
+              }
+            ],
+            "title": "Transaction Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Total database size",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 102
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_database_size_bytes{service=\"postgres\"}",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
             "title": "Database Size",
             "transformations": [],
             "transparent": false,
             "type": "stat"
           },
           {
-            "description": "### Deadlocks - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.deadlocks`: No metric found for postgresql.deadlocks. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.deadlocks: your_custom_metric\n```",
+            "description": "Query execution time (95th percentile)",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 12,
-              "y": 93
-            },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
-            "repeatDirection": "h",
-            "title": "Deadlocks",
-            "transformations": [],
-            "transparent": false,
-            "type": "stat"
-          },
-          {
-            "description": "### Table Bloat (Dead Tuples) - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.table_bloat`: No metric found for postgresql.table_bloat. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.table_bloat: your_custom_metric\n```",
-            "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 0,
-              "y": 102
-            },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
-            "repeatDirection": "h",
-            "title": "Table Bloat (Dead Tuples)",
-            "transformations": [],
-            "transparent": false,
-            "type": "stat"
-          },
-          {
-            "description": "### Connection Pool Utilization - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `postgresql.connections`: No metric found for postgresql.connections. Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n\n**To enable, install exporter:**\n```\nhelm install postgres-exporter prometheus-community/prometheus-postgres-exporter\n```\n\n[Documentation](https://github.com/prometheus-community/postgres_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  postgresql.connections: your_custom_metric\n```",
-            "fieldConfig": {
-              "defaults": {
-                "noValue": "Install postgres_exporter: helm install postgres-exporter prometheus-community/prometheus-postgres-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
@@ -596,22 +650,24 @@
               "x": 12,
               "y": 102
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
-            "title": "Connection Pool Utilization",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(pg_stat_statements_mean_exec_time_seconds_bucket{service=\"postgres\"}[5m])))",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Query Duration (p95)",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Redis Memory Usage - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `redis.memory`: No metric found for redis.memory. Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter\n\n**To enable, install exporter:**\n```\nhelm install redis-exporter prometheus-community/prometheus-redis-exporter\n```\n\n[Documentation](https://github.com/oliver006/redis_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  redis.memory: your_custom_metric\n```",
+            "description": "Deadlocks per second - should be near zero",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
@@ -620,179 +676,306 @@
               "x": 0,
               "y": 111
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(pg_stat_database_deadlocks{service=\"postgres\"}[5m])",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Deadlocks",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Replication lag in seconds",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 111
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_replication_lag_seconds{service=\"postgres\"}",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Replication Lag",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Dead tuples indicating table bloat - vacuum if high",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 120
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(pg_stat_user_tables_n_dead_tup{service=\"postgres\"}) by (relname)",
+                "legendFormat": "{{pg}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Table Bloat (Dead Tuples)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Connection pool utilization percentage",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 120
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "pg_stat_database_numbackends{service=\"postgres\"} /\non() group_left pg_settings_max_connections{service=\"postgres\"} * 100",
+                "legendFormat": "Pool usage %",
+                "refId": "A"
+              }
+            ],
+            "title": "Connection Pool Utilization",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "Redis memory consumption",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 129
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "redis_memory_used_bytes{service=\"redis\"}",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
             "title": "Redis Memory Usage",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Cache Hit Rate - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `redis.hits`: No metric found for redis.hits. Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter\n\n**To enable, install exporter:**\n```\nhelm install redis-exporter prometheus-community/prometheus-redis-exporter\n```\n\n[Documentation](https://github.com/oliver006/redis_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  redis.hits: your_custom_metric\n```",
+            "description": "Cache hit rate - should be >90% for good performance",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 111
+              "y": 129
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(cache_hits_total{service=\"redis\"}[5m])) /\n(sum(rate(cache_hits_total{service=\"redis\"}[5m])) +\nsum(rate(cache_misses_total{service=\"redis\"}[5m]))) * 100",
+                "legendFormat": "Hit rate %",
+                "refId": "A"
+              }
+            ],
             "title": "Cache Hit Rate",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "gauge"
           },
           {
-            "description": "### Connected Clients - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `redis.connections`: No metric found for redis.connections. Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter\n\n**To enable, install exporter:**\n```\nhelm install redis-exporter prometheus-community/prometheus-redis-exporter\n```\n\n[Documentation](https://github.com/oliver006/redis_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  redis.connections: your_custom_metric\n```",
+            "description": "Number of connected clients",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 120
+              "y": 138
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "redis_connected_clients{service=\"redis\"}",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
             "title": "Connected Clients",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Cache Hits vs Misses - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `redis.hits`: No metric found for redis.hits. Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter\n- `redis.misses`: No metric found for redis.misses. Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter\n\n**To enable, install exporter:**\n```\nhelm install redis-exporter prometheus-community/prometheus-redis-exporter\n```\n\n[Documentation](https://github.com/oliver006/redis_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  redis.hits: your_custom_metric\n  redis.misses: your_custom_metric\n```",
+            "description": "Cache hits and misses per second",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 120
+              "y": 138
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(cache_hits_total{service=\"redis\"}[5m])",
+                "legendFormat": "Hits/sec",
+                "refId": "A"
+              },
+              {
+                "expr": "rate(cache_misses_total{service=\"redis\"}[5m])",
+                "legendFormat": "Misses/sec",
+                "refId": "B"
+              }
+            ],
             "title": "Cache Hits vs Misses",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Evicted Keys - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `redis.evicted_keys`: No metric found for redis.evicted_keys. Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter\n\n**To enable, install exporter:**\n```\nhelm install redis-exporter prometheus-community/prometheus-redis-exporter\n```\n\n[Documentation](https://github.com/oliver006/redis_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  redis.evicted_keys: your_custom_metric\n```",
+            "description": "Keys evicted due to memory pressure - should be zero",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 129
+              "y": 147
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_evicted_keys_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
             "title": "Evicted Keys",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Expired Keys - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `redis.expired_keys`: No metric found for redis.expired_keys. Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter\n\n**To enable, install exporter:**\n```\nhelm install redis-exporter prometheus-community/prometheus-redis-exporter\n```\n\n[Documentation](https://github.com/oliver006/redis_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  redis.expired_keys: your_custom_metric\n```",
+            "description": "Keys expired per second due to TTL",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 129
+              "y": 147
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_expired_keys_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
             "title": "Expired Keys",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Commands/sec - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `redis.commands`: No metric found for redis.commands. Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter\n\n**To enable, install exporter:**\n```\nhelm install redis-exporter prometheus-community/prometheus-redis-exporter\n```\n\n[Documentation](https://github.com/oliver006/redis_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  redis.commands: your_custom_metric\n```",
+            "description": "Redis commands processed per second",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 138
+              "y": 156
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_commands_processed_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
             "title": "Commands/sec",
             "transformations": [],
             "transparent": false,
-            "type": "stat"
+            "type": "timeseries"
           },
           {
-            "description": "### Total Keys - Needs Instrumentation\n\nThis panel requires metrics that aren't currently being collected.\n\n**Missing metrics:**\n- `redis.keys`: No metric found for redis.keys. Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter\n\n**To enable, install exporter:**\n```\nhelm install redis-exporter prometheus-community/prometheus-redis-exporter\n```\n\n[Documentation](https://github.com/oliver006/redis_exporter)\n\n**Or add custom metric in service YAML:**\n```yaml\nmetrics:\n  redis.keys: your_custom_metric\n```",
+            "description": "Total number of keys in database",
             "fieldConfig": {
-              "defaults": {
-                "noValue": "Install redis_exporter: helm install redis-exporter prometheus-community/prometheus-redis-exporter"
-              },
+              "defaults": {},
               "overrides": []
             },
             "gridPos": {
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 138
+              "y": 156
             },
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none"
-            },
+            "options": null,
             "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(redis_db_keys{service=\"redis\"})",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
             "title": "Total Keys",
             "transformations": [],
             "transparent": false,
@@ -835,10 +1018,9 @@
     "  Team: payments",
     "  Tier: standard",
     "  Type: api",
-    "  Resources: 8 defined",
     "",
     "  SLOs: 4",
-    "  Dependencies: 2",
+    "  Dependencies: 6",
     "",
     "Building dashboard...",
     "  Mode: Overview panels (key metrics)",

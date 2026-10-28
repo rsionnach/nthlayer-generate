@@ -4,13 +4,13 @@ from pathlib import Path
 from typing import Optional
 
 import structlog
+from nthlayer_common.manifest import load_manifest
 
 from nthlayer_generate.cli.ux import console, error, header, success
 
 logger = structlog.get_logger()
-from nthlayer_generate.recording_rules.builder import build_recording_rules
+from nthlayer_generate.recording_rules.manifest_builder import build_recording_rules_from_manifest
 from nthlayer_generate.recording_rules.models import create_rule_groups
-from nthlayer_generate.specs.parser import parse_service_file
 
 
 def generate_recording_rules_command(
@@ -51,22 +51,23 @@ def generate_recording_rules_command(
 
         # Parse service specification
         console.print("[bold]Parsing service specification...[/bold]")
-        context, resources = parse_service_file(service_file, environment=environment)
+        manifest = load_manifest(
+            service_file, environment=environment, suppress_deprecation_warning=True
+        )
 
         # Print service info
-        console.print(f"   [muted]Service:[/muted] {context.name}")
-        console.print(f"   [muted]Team:[/muted] {context.team}")
-        console.print(f"   [muted]Tier:[/muted] {context.tier}")
-        console.print(f"   [muted]Type:[/muted] {context.type}")
+        console.print(f"   [muted]Service:[/muted] {manifest.name}")
+        console.print(f"   [muted]Team:[/muted] {manifest.team}")
+        console.print(f"   [muted]Tier:[/muted] {manifest.tier}")
+        console.print(f"   [muted]Type:[/muted] {manifest.type}")
 
-        slo_count = sum(1 for r in resources if r.kind == "SLO")
-        console.print(f"   [muted]SLOs:[/muted] {slo_count}")
+        console.print(f"   [muted]SLOs:[/muted] {len(manifest.slos)}")
 
         console.print()
 
         # Build recording rules
         console.print("[bold]Building recording rules...[/bold]")
-        groups = build_recording_rules(context, resources)
+        groups = build_recording_rules_from_manifest(manifest)
 
         # Count rules
         total_rules = sum(len(group.rules) for group in groups)
@@ -93,7 +94,7 @@ def generate_recording_rules_command(
             if not output:
                 output_dir = Path("generated/recording-rules")
                 output_dir.mkdir(parents=True, exist_ok=True)
-                output = str(output_dir / f"{context.name}.yaml")
+                output = str(output_dir / f"{manifest.name}.yaml")
 
             console.print(f"[cyan]Writing recording rules to {output}...[/cyan]")
 

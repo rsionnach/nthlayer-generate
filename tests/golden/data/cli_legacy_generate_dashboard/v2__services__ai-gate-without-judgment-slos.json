@@ -1,6 +1,16 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in <opensrm>/spec/v2/examples/services/ai-gate-without-judgment-slos.yaml"
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: <opensrm>/spec/v2/examples/services/ai-gate-without-judgment-slos.yaml",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "✗ Error generating dashboard: metadata.labels.tier is required. Set to: critical, high, standard, or low"
   ]
 }

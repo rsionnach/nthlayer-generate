@@ -51,7 +51,7 @@
           "labels": {
             "service": "fraud-detector",
             "slo": "latency",
-            "threshold": "100.0ms"
+            "threshold": "100ms"
           },
           "record": "slo:latency_requests_fast:30d"
         },

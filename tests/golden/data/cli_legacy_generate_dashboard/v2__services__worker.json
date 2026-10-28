@@ -1,6 +1,16 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in <opensrm>/spec/v2/examples/services/worker.yaml"
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: <opensrm>/spec/v2/examples/services/worker.yaml",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "✗ Error generating dashboard: Error parsing OpenSLO documents: Cannot infer slo_type for OpenSLO 'reconciliation-success-rate'. The indicator shape is ambiguous. Add an opensrm.nthlayer.io/slo-type annotation."
   ]
 }

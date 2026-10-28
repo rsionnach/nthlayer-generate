@@ -1,0 +1,102 @@
+{
+  "json": [
+    {
+      "enabled": true,
+      "name": "budget-warning",
+      "severity": "warning",
+      "slo": "processing-availability",
+      "threshold": 0.65,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-warning",
+      "severity": "warning",
+      "slo": "stream-lag",
+      "threshold": 0.65,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-warning",
+      "severity": "warning",
+      "slo": "event-latency-p99",
+      "threshold": 0.65,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
+      "slo": "processing-availability",
+      "threshold": 0.85,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
+      "slo": "stream-lag",
+      "threshold": 0.85,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "budget-critical",
+      "severity": "critical",
+      "slo": "event-latency-p99",
+      "threshold": 0.85,
+      "type": "budget_threshold"
+    },
+    {
+      "enabled": true,
+      "name": "burn-rate-warning",
+      "severity": "warning",
+      "slo": "processing-availability",
+      "threshold": 3.0,
+      "type": "burn_rate"
+    },
+    {
+      "enabled": true,
+      "name": "burn-rate-warning",
+      "severity": "warning",
+      "slo": "stream-lag",
+      "threshold": 3.0,
+      "type": "burn_rate"
+    },
+    {
+      "enabled": true,
+      "name": "burn-rate-warning",
+      "severity": "warning",
+      "slo": "event-latency-p99",
+      "threshold": 3.0,
+      "type": "burn_rate"
+    },
+    {
+      "enabled": true,
+      "name": "budget-exhaustion",
+      "severity": "critical",
+      "slo": "processing-availability",
+      "threshold": 6.0,
+      "type": "budget_exhaustion"
+    },
+    {
+      "enabled": true,
+      "name": "budget-exhaustion",
+      "severity": "critical",
+      "slo": "stream-lag",
+      "threshold": 6.0,
+      "type": "budget_exhaustion"
+    },
+    {
+      "enabled": true,
+      "name": "budget-exhaustion",
+      "severity": "critical",
+      "slo": "event-latency-p99",
+      "threshold": 6.0,
+      "type": "budget_exhaustion"
+    }
+  ],
+  "json_exit": 0,
+  "table_exit": 0
+}

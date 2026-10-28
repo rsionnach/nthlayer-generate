@@ -1,6 +1,19 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in <opensrm>/spec/v2/examples/services/stream.yaml"
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: <opensrm>/spec/v2/examples/services/stream.yaml",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "✗ Error generating alerts: Error parsing OpenSLO documents: Cannot infer slo_type for OpenSLO 'enrichment-consumer-lag'. The indicator shape is ambiguous. Add an opensrm.nthlayer.io/slo-type annotation."
   ]
 }

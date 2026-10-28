@@ -198,7 +198,6 @@
     "  Team: commerce",
     "  Tier: critical",
     "  Type: api",
-    "  Resources: 2 defined",
     "",
     "  SLOs: 2",
     "  Dependencies: 0",

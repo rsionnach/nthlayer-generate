@@ -1,9 +1,14 @@
 """Tests for CLI dashboard generation command."""
 
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
+
+import pytest
 
 from nthlayer_generate.cli.dashboard import generate_dashboard_command
+from nthlayer_generate.dashboards.manifest_builder import build_dashboard_from_manifest
+
+BUILDER = "nthlayer_generate.cli.dashboard.build_dashboard_from_manifest"
 
 MINIMAL_SERVICE_YAML = """
 service:
@@ -141,13 +146,19 @@ service:
 
         output_file = tmp_path / "dashboard.json"
 
-        result = generate_dashboard_command(
-            service_file=str(service_file),
-            output=str(output_file),
-            environment="prod",
-        )
+        with patch(BUILDER, wraps=build_dashboard_from_manifest) as spy:
+            result = generate_dashboard_command(
+                service_file=str(service_file),
+                output=str(output_file),
+                environment="prod",
+            )
 
         assert result == 0
+        manifest = spy.call_args[0][0]
+        # The environments/prod.yaml overlay was applied by load_manifest
+        assert manifest.environment == "prod"
+        assert manifest.tier == "critical"
+        assert output_file.exists()
 
     def test_file_not_found_error(self, tmp_path):
         """Test error handling when service file doesn't exist."""
@@ -155,7 +166,7 @@ service:
         service_file.write_text(MINIMAL_SERVICE_YAML)
 
         with patch(
-            "nthlayer_generate.cli.dashboard.build_dashboard",
+            BUILDER,
             side_effect=FileNotFoundError("Template file not found"),
         ):
             result = generate_dashboard_command(
@@ -173,7 +184,7 @@ service:
         service_file.write_text(MINIMAL_SERVICE_YAML)
 
         with patch(
-            "nthlayer_generate.cli.dashboard.build_dashboard",
+            BUILDER,
             side_effect=yaml.YAMLError("Invalid YAML in template"),
         ):
             result = generate_dashboard_command(
@@ -189,7 +200,7 @@ service:
         service_file.write_text(MINIMAL_SERVICE_YAML)
 
         with patch(
-            "nthlayer_generate.cli.dashboard.build_dashboard",
+            BUILDER,
             side_effect=KeyError("required_field"),
         ):
             result = generate_dashboard_command(
@@ -198,60 +209,6 @@ service:
             )
 
         assert result == 1
-
-    def test_legacy_dashboard_object(self, tmp_path):
-        """Test handling of legacy dashboard object format."""
-        service_file = tmp_path / "service.yaml"
-        service_file.write_text(MINIMAL_SERVICE_YAML)
-        output_file = tmp_path / "dashboard.json"
-
-        # Mock build_dashboard to return a legacy object with to_grafana_payload
-        mock_dashboard = MagicMock()
-        mock_dashboard.title = "Test Dashboard"
-        mock_dashboard.uid = "test-uid"
-        mock_dashboard.panels = [MagicMock(), MagicMock()]
-        mock_dashboard.rows = []
-        mock_dashboard.to_grafana_payload.return_value = {
-            "dashboard": {"title": "Test Dashboard", "uid": "test-uid", "panels": []},
-            "overwrite": True,
-        }
-
-        with patch("nthlayer_generate.cli.dashboard.build_dashboard", return_value=mock_dashboard):
-            result = generate_dashboard_command(
-                service_file=str(service_file),
-                output=str(output_file),
-            )
-
-        assert result == 0
-        mock_dashboard.to_grafana_payload.assert_called_once()
-
-    def test_legacy_dashboard_with_rows(self, tmp_path):
-        """Test handling legacy dashboard with rows."""
-        service_file = tmp_path / "service.yaml"
-        service_file.write_text(MINIMAL_SERVICE_YAML)
-        output_file = tmp_path / "dashboard.json"
-
-        # Create mock row with panels
-        mock_row = MagicMock()
-        mock_row.panels = [MagicMock(), MagicMock(), MagicMock()]
-
-        mock_dashboard = MagicMock()
-        mock_dashboard.title = "Test Dashboard"
-        mock_dashboard.uid = "test-uid"
-        mock_dashboard.panels = [MagicMock()]
-        mock_dashboard.rows = [mock_row]
-        mock_dashboard.to_grafana_payload.return_value = {
-            "dashboard": {"title": "Test Dashboard", "panels": []},
-            "overwrite": True,
-        }
-
-        with patch("nthlayer_generate.cli.dashboard.build_dashboard", return_value=mock_dashboard):
-            result = generate_dashboard_command(
-                service_file=str(service_file),
-                output=str(output_file),
-            )
-
-        assert result == 0
 
     def test_oserror_handling(self, tmp_path):
         """Test handling of OSError during file operations."""
@@ -273,7 +230,7 @@ service:
         service_file.write_text(MINIMAL_SERVICE_YAML)
 
         with patch(
-            "nthlayer_generate.cli.dashboard.build_dashboard",
+            BUILDER,
             side_effect=ValueError("Invalid service type"),
         ):
             result = generate_dashboard_command(
@@ -289,7 +246,7 @@ service:
         service_file.write_text(MINIMAL_SERVICE_YAML)
 
         with patch(
-            "nthlayer_generate.cli.dashboard.build_dashboard",
+            BUILDER,
             side_effect=TypeError("Invalid type"),
         ):
             result = generate_dashboard_command(
@@ -314,6 +271,78 @@ service:
         data = json.loads(output_file.read_text())
         assert "dashboard" in data
 
+    def test_builder_receives_loaded_manifest(self, tmp_path):
+        """The command hands the loaded manifest and flags to the builder."""
+        service_file = tmp_path / "service.yaml"
+        service_file.write_text(FULL_SERVICE_YAML)
+        output_file = tmp_path / "dashboard.json"
+
+        with patch(BUILDER, wraps=build_dashboard_from_manifest) as spy:
+            result = generate_dashboard_command(
+                service_file=str(service_file),
+                output=str(output_file),
+                full_panels=True,
+                prometheus_url="http://prom:9090",
+            )
+
+        assert result == 0
+        spy.assert_called_once()
+        manifest = spy.call_args[0][0]
+        assert manifest.name == "payment-api"
+        assert manifest.team == "payments"
+        assert manifest.tier == "critical"
+        assert [s.name for s in manifest.slos] == ["availability"]
+        assert manifest.slos[0].target == 99.9
+        assert [d.database_type for d in manifest.dependencies] == ["postgres"]
+        assert spy.call_args[1] == {"full_panels": True, "prometheus_url": "http://prom:9090"}
+
+    def test_written_file_is_builder_output(self, tmp_path):
+        """The builder's dict is written verbatim as the dashboard JSON."""
+        service_file = tmp_path / "service.yaml"
+        service_file.write_text(MINIMAL_SERVICE_YAML)
+        output_file = tmp_path / "dashboard.json"
+        payload = {"dashboard": {"title": "T", "uid": "u", "panels": []}, "overwrite": True}
+
+        with patch(BUILDER, return_value=payload):
+            result = generate_dashboard_command(
+                service_file=str(service_file),
+                output=str(output_file),
+            )
+
+        assert result == 0
+        assert json.loads(output_file.read_text()) == payload
+
+    def test_manifest_load_error_handling(self, tmp_path):
+        """A manifest the loader rejects (no team) exits 1 before building."""
+        service_file = tmp_path / "service.yaml"
+        # service.team is required by the legacy parser
+        service_file.write_text("service:\n  name: test-api\n  tier: standard\n  type: api\n")
+        output_file = tmp_path / "dashboard.json"
+
+        with patch(BUILDER) as mock_build:
+            result = generate_dashboard_command(
+                service_file=str(service_file),
+                output=str(output_file),
+            )
+
+        assert result == 1
+        mock_build.assert_not_called()
+        assert not output_file.exists()
+
+    def test_invalid_tier_error_handling(self, tmp_path):
+        """A tier outside critical/high/standard/low exits 1 before building."""
+        service_file = tmp_path / "service.yaml"
+        service_file.write_text(MINIMAL_SERVICE_YAML.replace("tier: standard", "tier: tier-1"))
+
+        with patch(BUILDER) as mock_build:
+            result = generate_dashboard_command(
+                service_file=str(service_file),
+                output=str(tmp_path / "dashboard.json"),
+            )
+
+        assert result == 1
+        mock_build.assert_not_called()
+
     def test_output_directory_creation(self, tmp_path):
         """Test that output directory is created if it doesn't exist."""
         service_file = tmp_path / "service.yaml"
@@ -329,3 +358,33 @@ service:
 
         assert result == 0
         assert output_file.exists()
+
+
+# Malformed legacy resource specs: common's loader raises a bare AttributeError
+# on each (opensrm-wo62.4.10), which must not escape as a traceback. What the
+# legacy path did at 88057bb, probed:
+# - dependencies-spec-str: ignored the spec and exited 0. Exit 1 is now
+#   stricter, from common's loader, not from any rule of the legacy format.
+# - databases-not-a-list, database-entry-str: rejected, exit 1.
+# - slo-spec-int: crashed with AttributeError.
+_MALFORMED = {
+    "dependencies-spec-str": "  - kind: Dependencies\n    name: upstream\n    spec: oops\n",
+    "databases-not-a-list": (
+        "  - kind: Dependencies\n    name: upstream\n    spec:\n      databases: notalist\n"
+    ),
+    "database-entry-str": (
+        "  - kind: Dependencies\n    name: upstream\n    spec:\n      databases: [pg]\n"
+    ),
+    "slo-spec-int": "  - kind: SLO\n    name: availability\n    spec: 5\n",
+}
+
+
+@pytest.mark.parametrize("resources", _MALFORMED.values(), ids=_MALFORMED.keys())
+def test_malformed_legacy_spec_exits_1(resources, tmp_path):
+    path = tmp_path / "bad-service.yaml"
+    path.write_text(
+        "service:\n  name: bad-service\n  team: platform\n  tier: standard\n  type: api\n"
+        "resources:\n" + resources
+    )
+
+    assert generate_dashboard_command(str(path), output=str(tmp_path / "d.json")) == 1

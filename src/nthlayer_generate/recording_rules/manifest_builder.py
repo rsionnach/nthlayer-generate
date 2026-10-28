@@ -213,7 +213,12 @@ class ManifestRecordingRuleBuilder:
     ) -> list[RecordingRule]:
         """Build recording rules for latency SLO."""
         objective = slo.target  # Target percentage under threshold
-        threshold_ms = slo.target if slo.unit == "ms" else 500
+        # The legacy bound is declared apart from the objective (common's
+        # threshold_ms, opensrm-wo62.4.7); srm/v1 puts it in target with unit.
+        if slo.threshold_ms is not None:
+            threshold_ms = slo.threshold_ms
+        else:
+            threshold_ms = slo.target if slo.unit == "ms" else 500
         threshold_sec = threshold_ms / 1000
         window = slo.window
 
@@ -237,12 +242,13 @@ class ManifestRecordingRuleBuilder:
                 record=f"slo:latency_requests_fast:{window}",
                 expr=(
                     f'sum(increase(http_request_duration_seconds_bucket{{service="{service}",'
-                    f'le="{threshold_sec}"}}[{window}]))'
+                    f'le="{prometheus_le(threshold_sec)}"}}[{window}]))'
                 ),
                 labels={
                     "service": service,
                     "slo": slo_name,
-                    "threshold": f"{threshold_ms}ms",
+                    # %g: 500.0 renders "500ms", as the legacy builder wrote it.
+                    "threshold": f"{threshold_ms:g}ms",
                 },
             )
         )

@@ -13,6 +13,6 @@
     "",
     "Service: <opensrm>/spec/v2/examples/service-manifest-full.yaml",
     "",
-    "✗ Error generating Loki alerts: Missing required 'service' section in <opensrm>/spec/v2/examples/service-manifest-full.yaml"
+    "✗ Error generating Loki alerts: Error parsing OpenSLO documents: $ref './slos/payment-availability.yaml' not found at <opensrm>/spec/v2/examples/slos/payment-availability.yaml"
   ]
 }

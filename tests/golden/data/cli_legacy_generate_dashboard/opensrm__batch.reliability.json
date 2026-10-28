@@ -1,6 +1,26 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in examples/opensrm/batch.reliability.yaml"
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: examples/opensrm/batch.reliability.yaml",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "  Service: daily-report-generator",
+    "  Team: analytics",
+    "  Tier: standard",
+    "  Type: batch",
+    "",
+    "  SLOs: 2",
+    "  Dependencies: 2",
+    "",
+    "Building dashboard...",
+    "  Mode: Overview panels (key metrics)",
+    "✗ Error generating dashboard: 'No template found for technology: redshift'"
   ]
 }

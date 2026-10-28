@@ -1,6 +1,178 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "payment-api_slo_metrics",
+          "rules": [
+            {
+              "expr": "sum(increase(http_requests_total{service=\"payment-api\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "payment-api-availability"
+              },
+              "record": "slo:requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"payment-api\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "payment-api-availability"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"payment-api\",slo=\"payment-api-availability\"} / slo:requests_total:30d{service=\"payment-api\",slo=\"payment-api-availability\"}",
+              "labels": {
+                "objective": "99.95",
+                "service": "payment-api",
+                "slo": "payment-api-availability"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"payment-api\",slo=\"payment-api-availability\"}) / (1 - 0.9995))",
+              "labels": {
+                "objective": "99.95",
+                "service": "payment-api",
+                "slo": "payment-api-availability"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_count{service=\"payment-api\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "payment-api-latency"
+              },
+              "record": "slo:latency_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"0.099\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "payment-api-latency",
+                "threshold": "99ms"
+              },
+              "record": "slo:latency_requests_fast:30d"
+            },
+            {
+              "expr": "slo:latency_requests_fast:30d{service=\"payment-api\",slo=\"payment-api-latency\"} / slo:latency_requests_total:30d{service=\"payment-api\",slo=\"payment-api-latency\"}",
+              "labels": {
+                "objective": "99.0",
+                "service": "payment-api",
+                "slo": "payment-api-latency"
+              },
+              "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "payment-api-latency"
+              },
+              "record": "slo:http_request_duration_seconds:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "payment-api-latency"
+              },
+              "record": "slo:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "payment-api-latency"
+              },
+              "record": "slo:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"payment-api\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "payment-api-error-rate"
+              },
+              "record": "slo:error_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"payment-api\",status=~\"5..\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "payment-api-error-rate"
+              },
+              "record": "slo:error_requests_failed:30d"
+            },
+            {
+              "expr": "slo:error_requests_failed:30d{service=\"payment-api\",slo=\"payment-api-error-rate\"} / slo:error_requests_total:30d{service=\"payment-api\",slo=\"payment-api-error-rate\"}",
+              "labels": {
+                "objective": "99.9",
+                "service": "payment-api",
+                "slo": "payment-api-error-rate"
+              },
+              "record": "slo:error_rate:ratio"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "minimum": "99.0",
+                "service": "payment-api",
+                "slo": "payment-api-throughput"
+              },
+              "record": "slo:throughput:rate5m"
+            },
+            {
+              "expr": "(slo:throughput:rate5m{service=\"payment-api\",slo=\"payment-api-throughput\"} >= 99.0) or vector(0)",
+              "labels": {
+                "minimum": "99.0",
+                "service": "payment-api",
+                "slo": "payment-api-throughput"
+              },
+              "record": "slo:throughput:compliance"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "payment-api_health_metrics",
+          "rules": [
+            {
+              "expr": "sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_requests:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"payment-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            }
+          ]
+        }
+      ]
+    }
+  },
   "text": [
     "",
     "╭──╮",
@@ -11,6 +183,32 @@
     "Output: <tmp>/out/recording-rules.yaml",
     "",
     "Parsing service specification...",
-    "✗ Error generating recording rules: Missing required 'service' section in <opensrm>/spec/v2/examples/migration/api-full-v2.yaml"
+    "  Service: payment-api",
+    "  Team: payments",
+    "  Tier: critical",
+    "  Type: api",
+    "  SLOs: 4",
+    "",
+    "Building recording rules...",
+    "  Groups: 2",
+    "  Rules: 19",
+    "  • payment-api_slo_metrics: 15 rules (interval: 30s)",
+    "  • payment-api_health_metrics: 4 rules (interval: 30s)",
+    "",
+    "Writing recording rules to <tmp>/out/recording-rules.yaml...",
+    "",
+    "✓ Recording rules generated successfully!",
+    "",
+    "Next steps:",
+    "  1. Add to Prometheus configuration:",
+    "  rule_files:",
+    "  - <tmp>/out/recording-rules.yaml",
+    "",
+    "  2. Reload Prometheus:",
+    "  curl -X POST http://prometheus:9090/-/reload",
+    "",
+    "  3. Verify rules are loaded:",
+    "  curl http://prometheus:9090/api/v1/rules",
+    ""
   ]
 }

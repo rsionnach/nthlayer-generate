@@ -42,6 +42,40 @@
               "record": "slo:error_budget_remaining:ratio"
             },
             {
+              "expr": "sum(increase(http_requests_total{service=\"analytics-stream\"}[30d]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "stream-lag"
+              },
+              "record": "slo:requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"analytics-stream\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "stream-lag"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"analytics-stream\",slo=\"stream-lag\"} / slo:requests_total:30d{service=\"analytics-stream\",slo=\"stream-lag\"}",
+              "labels": {
+                "objective": "99.0",
+                "service": "analytics-stream",
+                "slo": "stream-lag"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"analytics-stream\",slo=\"stream-lag\"}) / (1 - 0.99))",
+              "labels": {
+                "objective": "99.0",
+                "service": "analytics-stream",
+                "slo": "stream-lag"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
               "expr": "sum(increase(http_request_duration_seconds_count{service=\"analytics-stream\"}[30d]))",
               "labels": {
                 "service": "analytics-stream",
@@ -143,13 +177,13 @@
     "  Service: analytics-stream",
     "  Team: data",
     "  Tier: high",
-    "  Type: stream-processor",
+    "  Type: stream",
     "  SLOs: 3",
     "",
     "Building recording rules...",
     "  Groups: 2",
-    "  Rules: 14",
-    "  • analytics-stream_slo_metrics: 10 rules (interval: 30s)",
+    "  Rules: 18",
+    "  • analytics-stream_slo_metrics: 14 rules (interval: 30s)",
     "  • analytics-stream_health_metrics: 4 rules (interval: 30s)",
     "",
     "Writing recording rules to <tmp>/out/recording-rules.yaml...",

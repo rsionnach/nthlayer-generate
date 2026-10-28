@@ -1,13 +1,124 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "sloth/email-sender.yaml": {
+      "labels": {
+        "team": "notifications",
+        "tier": "standard",
+        "type": "worker"
+      },
+      "service": "email-sender",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO availability for email-sender"
+            },
+            "labels": {
+              "service": "email-sender",
+              "tier": "standard"
+            },
+            "name": "EmailSenderAvailability",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on email-sender"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "Worker process availability",
+          "name": "availability",
+          "objective": 99.9,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO throughput for email-sender"
+            },
+            "labels": {
+              "service": "email-sender",
+              "tier": "standard"
+            },
+            "name": "EmailSenderThroughput",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on email-sender"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "Sustained processing rate",
+          "name": "throughput",
+          "objective": 100.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO error_rate for email-sender"
+            },
+            "labels": {
+              "service": "email-sender",
+              "tier": "standard"
+            },
+            "name": "EmailSenderError_rate",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on email-sender"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "Job failure rate",
+          "name": "error_rate",
+          "objective": 0.5,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
   "text": [
     "",
     "╭──╮",
     "│ Generate SLOs  │",
     "╰──╯",
     "",
-    "✗ Generation failed: Missing required 'service' section in examples/opensrm/worker.reliability.yaml",
+    "✓ Generated SLOs for email-sender",
+    "  SLO count: 3",
+    "  Output: <tmp>/out/sloth/email-sender.yaml",
+    "",
+    "Generated SLOs:",
+    "  • email-sender-availability (99.9%)",
+    "  • email-sender-throughput (100.0%)",
+    "  • email-sender-error_rate (0.5%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/email-sender.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/email-sender.yaml",
+    "  3. Deploy rules to Prometheus",
     ""
   ]
 }

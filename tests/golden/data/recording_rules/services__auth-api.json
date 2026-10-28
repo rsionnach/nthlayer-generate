@@ -47,11 +47,11 @@
           "record": "slo:latency_requests_total:30d"
         },
         {
-          "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"auth-api\",le=\"0.5\"}[30d]))",
+          "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"auth-api\",le=\"0.2\"}[30d]))",
           "labels": {
             "service": "auth-api",
             "slo": "latency-p95",
-            "threshold": "500ms"
+            "threshold": "200ms"
           },
           "record": "slo:latency_requests_fast:30d"
         },
@@ -97,11 +97,11 @@
           "record": "slo:latency_requests_total:30d"
         },
         {
-          "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"auth-api\",le=\"0.5\"}[30d]))",
+          "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"auth-api\",le=\"0.1\"}[30d]))",
           "labels": {
             "service": "auth-api",
             "slo": "token-generation-latency",
-            "threshold": "500ms"
+            "threshold": "100ms"
           },
           "record": "slo:latency_requests_fast:30d"
         },

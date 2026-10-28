@@ -100,11 +100,11 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"0.5\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"1.0\"}[30d]))",
               "labels": {
                 "service": "payment-api",
                 "slo": "latency-p99",
-                "threshold": "500ms"
+                "threshold": "1000ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },
@@ -150,11 +150,11 @@
               "record": "slo:latency_requests_total:7d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"0.5\"}[7d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"1.0\"}[7d]))",
               "labels": {
                 "service": "payment-api",
                 "slo": "latency",
-                "threshold": "500ms"
+                "threshold": "1000ms"
               },
               "record": "slo:latency_requests_fast:7d"
             },

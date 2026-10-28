@@ -47,11 +47,11 @@
           "record": "slo:latency_requests_total:30d"
         },
         {
-          "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"mobile-api\",le=\"0.5\"}[30d]))",
+          "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"mobile-api\",le=\"2.0\"}[30d]))",
           "labels": {
             "service": "mobile-api",
             "slo": "latency-p95",
-            "threshold": "500ms"
+            "threshold": "2000ms"
           },
           "record": "slo:latency_requests_fast:30d"
         },
@@ -97,11 +97,11 @@
           "record": "slo:latency_requests_total:30d"
         },
         {
-          "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"mobile-api\",le=\"0.5\"}[30d]))",
+          "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"mobile-api\",le=\"5.0\"}[30d]))",
           "labels": {
             "service": "mobile-api",
             "slo": "latency-p99",
-            "threshold": "500ms"
+            "threshold": "5000ms"
           },
           "record": "slo:latency_requests_fast:30d"
         },

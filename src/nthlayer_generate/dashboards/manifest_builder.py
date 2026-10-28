@@ -14,7 +14,9 @@ import structlog
 from nthlayer_common.manifest import ReliabilityManifest
 
 from nthlayer_generate.dashboards.builder_sdk import DashboardBuilderSDK
+from nthlayer_generate.dashboards.templates import get_template_or_none
 from nthlayer_generate.specs.context import service_context_from_manifest
+from nthlayer_generate.specs.helpers import dependency_technology
 from nthlayer_generate.specs.models import Resource, ServiceContext
 
 logger = structlog.get_logger()
@@ -122,22 +124,27 @@ class ManifestDashboardBuilder:
                             "type": dep.database_type or "unknown",
                         }
                     )
-                elif dep.type == "cache":
-                    cache_type = "redis"
-                    name_lower = dep.name.lower()
-                    if "memcache" in name_lower or "memcached" in name_lower:
-                        cache_type = "memcached"
-                    dep_spec["caches"].append(
+                elif dep.type in ("cache", "queue"):
+                    # One rule set with alerts and loki (wo62.4 D5,
+                    # specs.helpers.dependency_technology): the declared
+                    # technology, else name inference, else its redis/kafka
+                    # defaults.
+                    technology = dependency_technology(dep)
+                    if technology is None or get_template_or_none(technology) is None:
+                        # Rob, 2026-10-28: a technology with no dashboard
+                        # template is left out with a warning, as alerts skip
+                        # it, rather than failing the whole dashboard.
+                        logger.warning(
+                            "No dashboard template for %s '%s' (technology %r), skipping",
+                            dep.type,
+                            dep.name,
+                            technology,
+                        )
+                        continue
+                    dep_spec["caches" if dep.type == "cache" else "queues"].append(
                         {
                             "name": dep.name,
-                            "type": cache_type,
-                        }
-                    )
-                elif dep.type == "queue":
-                    dep_spec["queues"].append(
-                        {
-                            "name": dep.name,
-                            "type": dep.name.split("-")[0].lower(),
+                            "type": technology,
                         }
                     )
                 elif dep.type == "api":

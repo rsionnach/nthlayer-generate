@@ -147,7 +147,7 @@ def test_recording_rule_bound(path, slo, le, label):
             "memcached",
             id="cache-declared-beats-name",
         ),
-        # Undeclared: name inference, then the legacy dashboard's defaults.
+        # Undeclared: name inference, then the shared rule's redis/kafka defaults.
         pytest.param(Dependency(name="events-kafka", type="queue"), "kafka", id="queue-name"),
         pytest.param(Dependency(name="jobs", type="queue"), "kafka", id="queue-default"),
         pytest.param(Dependency(name="sessions", type="cache"), "redis", id="cache-default"),

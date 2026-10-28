@@ -85,7 +85,6 @@ def generate_dashboard_command(
             manifest, full_panels=full_panels, prometheus_url=prometheus_url
         )
 
-        dashboard_json = dashboard
         title = dashboard.get("title", manifest.name)
         uid = dashboard.get("uid", f"{manifest.name}-overview")
         panel_count = len(dashboard.get("panels", []))
@@ -95,7 +94,7 @@ def generate_dashboard_command(
         log(f"   Panels: {panel_count}")
         log("")
 
-        json_str = json.dumps(dashboard_json, indent=2, sort_keys=True)
+        json_str = json.dumps(dashboard, indent=2, sort_keys=True)
 
         if dry_run:
             # Print JSON to stdout (always print for dry run)

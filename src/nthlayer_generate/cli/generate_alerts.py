@@ -119,7 +119,6 @@ def generate_alerts_command(
         return 0
 
     except (
-        FileNotFoundError,
         ManifestLoadError,
         ValueError,
         KeyError,

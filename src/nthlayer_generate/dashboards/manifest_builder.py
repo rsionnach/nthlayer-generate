@@ -124,9 +124,10 @@ class ManifestDashboardBuilder:
                         }
                     )
                 elif dep.type in ("cache", "queue"):
-                    # One rule set with alerts and loki (wo62.4 D5): the
-                    # declared technology, else name inference, else the
-                    # redis/kafka defaults the legacy builder used.
+                    # One rule set with alerts and loki (wo62.4 D5,
+                    # specs.helpers.dependency_technology): the declared
+                    # technology, else name inference, else its redis/kafka
+                    # defaults.
                     dep_spec["caches" if dep.type == "cache" else "queues"].append(
                         {
                             "name": dep.name,

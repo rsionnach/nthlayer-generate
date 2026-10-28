@@ -53,7 +53,7 @@ def dependency_technology(dep: Dependency) -> str | None:
         name_lower = dep.name.lower()
         if "redis" in name_lower:
             return "redis"
-        if "memcache" in name_lower or "memcached" in name_lower:
+        if "memcache" in name_lower:
             return "memcached"
         logger.warning(
             "Could not infer cache technology for dependency '%s', "
@@ -82,8 +82,8 @@ def dependency_technology(dep: Dependency) -> str | None:
 def extract_dependency_technologies(manifest: ReliabilityManifest) -> list[str]:
     """Extract technology names from manifest dependencies.
 
-    Consolidates dependency extraction logic previously duplicated in
-    generators/alerts.py and loki/generator.py.
+    The per-dependency rule is dependency_technology; this applies it to the
+    whole manifest for alerts and loki.
 
     Args:
         manifest: ReliabilityManifest instance

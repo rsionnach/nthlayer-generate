@@ -17,13 +17,13 @@ import os
 from typing import Any
 
 import yaml
+from nthlayer_common.manifest import load_manifest
 from rich.table import Table
 
 from nthlayer_generate.cli.ux import console, error, header, info, success
 from nthlayer_generate.metrics.discovery import discover_service_metrics
 from nthlayer_generate.metrics.models import MetricMatch, MetricRecommendation
-from nthlayer_generate.metrics.recommender import recommend_metrics
-from nthlayer_generate.specs.parser import parse_service_file
+from nthlayer_generate.metrics.recommender import recommend_metrics_from_manifest
 
 
 def recommend_metrics_command(
@@ -65,15 +65,17 @@ def recommend_metrics_command(
 
     # Parse service file
     try:
-        context, resources = parse_service_file(service_file, environment=environment)
+        manifest = load_manifest(
+            service_file, environment=environment, suppress_deprecation_warning=True
+        )
     except Exception as e:
         error(f"Error parsing service file: {e}")
         return 2
 
-    service_name = context.name
-    service_type = context.type
-    service_tier = context.tier
-    service_runtime = context.language
+    service_name = manifest.name
+    service_type = manifest.type
+    service_tier = manifest.tier
+    service_runtime = manifest.language
 
     # Show service info
     console.print(f"[muted]Service:[/muted] {service_name}")
@@ -105,7 +107,7 @@ def recommend_metrics_command(
         console.print()
 
     # Generate recommendations
-    recommendation = recommend_metrics(context, discovered_metrics)
+    recommendation = recommend_metrics_from_manifest(manifest, discovered_metrics)
 
     # Output results
     if output_format == "json":

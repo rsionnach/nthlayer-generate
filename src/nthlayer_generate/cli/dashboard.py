@@ -6,12 +6,12 @@ from typing import Optional
 
 import structlog
 import yaml
+from nthlayer_common.manifest import ManifestLoadError, load_manifest
 
 from nthlayer_generate.cli.ux import console, error, header
 
 logger = structlog.get_logger()
-from nthlayer_generate.dashboards.builder_sdk import build_dashboard
-from nthlayer_generate.specs.parser import parse_service_file
+from nthlayer_generate.dashboards.manifest_builder import build_dashboard_from_manifest
 
 
 def generate_dashboard_command(
@@ -59,21 +59,18 @@ def generate_dashboard_command(
     try:
         # Parse service file
         log("Parsing service specification...")
-        context, resources = parse_service_file(service_file, environment=environment)
+        manifest = load_manifest(
+            service_file, environment=environment, suppress_deprecation_warning=True
+        )
 
-        log(f"   Service: {context.name}")
-        log(f"   Team: {context.team}")
-        log(f"   Tier: {context.tier}")
-        log(f"   Type: {context.type}")
-        log(f"   Resources: {len(resources)} defined")
+        log(f"   Service: {manifest.name}")
+        log(f"   Team: {manifest.team}")
+        log(f"   Tier: {manifest.tier}")
+        log(f"   Type: {manifest.type}")
         log("")
 
-        # Count resource types
-        slos = [r for r in resources if r.kind == "SLO"]
-        dependencies = [r for r in resources if r.kind == "Dependencies"]
-
-        log(f"   SLOs: {len(slos)}")
-        log(f"   Dependencies: {len(dependencies)}")
+        log(f"   SLOs: {len(manifest.slos)}")
+        log(f"   Dependencies: {len(manifest.dependencies)}")
         log("")
 
         # Build dashboard
@@ -84,25 +81,14 @@ def generate_dashboard_command(
             log("   Mode: Overview panels (key metrics)")
         if prometheus_url:
             log(f"   Discovery: {prometheus_url}")
-        dashboard = build_dashboard(
-            context, resources, full_panels=full_panels, prometheus_url=prometheus_url
+        dashboard = build_dashboard_from_manifest(
+            manifest, full_panels=full_panels, prometheus_url=prometheus_url
         )
 
-        # Dashboard is now a dict from SDK builder
-        if isinstance(dashboard, dict):
-            dashboard_json = dashboard
-            title = dashboard.get("title", context.name)
-            uid = dashboard.get("uid", f"{context.name}-overview")
-            panels = dashboard.get("panels", [])
-            panel_count = len(panels)
-        else:
-            # Legacy object format
-            panel_count = len(dashboard.panels)
-            for row in dashboard.rows:
-                panel_count += len(row.panels)
-            title = dashboard.title
-            uid = dashboard.uid
-            dashboard_json = dashboard.to_grafana_payload()
+        dashboard_json = dashboard
+        title = dashboard.get("title", manifest.name)
+        uid = dashboard.get("uid", f"{manifest.name}-overview")
+        panel_count = len(dashboard.get("panels", []))
 
         log(f"   Title: {title}")
         log(f"   UID: {uid}")
@@ -126,7 +112,7 @@ def generate_dashboard_command(
         else:
             output_dir = Path("generated") / "dashboards"
             output_dir.mkdir(parents=True, exist_ok=True)
-            output_path = output_dir / f"{context.name}.json"
+            output_path = output_dir / f"{manifest.name}.json"
 
         # Write to file
         log(f"Writing dashboard to {output_path}...")
@@ -142,7 +128,7 @@ def generate_dashboard_command(
     except FileNotFoundError:
         error(f"Service file not found: {service_file}")
         return 1
-    except (yaml.YAMLError, ValueError, KeyError, TypeError, OSError) as e:
+    except (ManifestLoadError, yaml.YAMLError, ValueError, KeyError, TypeError, OSError) as e:
         error(f"Error generating dashboard: {e}")
         logger.error("dashboard_generation_failed", err=str(e), exc_info=True)
         return 1

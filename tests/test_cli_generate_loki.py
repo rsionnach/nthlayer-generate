@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+import yaml
 
 from nthlayer_generate.cli.generate_loki import (
     generate_loki_command,
@@ -16,23 +17,34 @@ from nthlayer_generate.cli.generate_loki import (
     register_loki_parser,
 )
 
+# generate_loki_command imports these inside the function body, so they are
+# looked up on their source modules at call time -- patch them there.
+GENERATOR_CLASS = "nthlayer_generate.loki.LokiAlertGenerator"
+LOAD_MANIFEST = "nthlayer_common.manifest.load_manifest"
+
 
 @pytest.fixture
 def service_with_dependencies():
-    """Create service YAML with dependencies."""
+    """Create legacy-format service YAML with database dependencies.
+
+    Tier must be one of nthlayer-common's TIER_NAMES (critical, high,
+    standard, low); Dependencies.spec.databases entries carry name + type.
+    """
     return """
 service:
   name: payment-api
   team: payments-team
-  tier: tier-1
+  tier: critical
   type: api
 resources:
   - kind: Dependencies
     name: upstream
     spec:
       databases:
-        - type: postgres
-        - type: redis
+        - name: payments-db
+          type: postgres
+        - name: payments-cache
+          type: redis
 """
 
 
@@ -43,9 +55,29 @@ def simple_service():
 service:
   name: simple-api
   team: simple-team
-  tier: tier-2
+  tier: standard
   type: api
 """
+
+
+def _mock_generator(alerts, ruler_yaml="groups: []"):
+    generator = MagicMock()
+    generator.generate_from_manifest.return_value = alerts
+    generator.to_ruler_yaml.return_value = ruler_yaml
+    return generator
+
+
+def _alerts(service=0, dependency=0):
+    alerts = []
+    for _ in range(service):
+        alert = MagicMock()
+        alert.category = "service"
+        alerts.append(alert)
+    for _ in range(dependency):
+        alert = MagicMock()
+        alert.category = "dependency"
+        alerts.append(alert)
+    return alerts
 
 
 class TestGenerateLokiCommand:
@@ -63,258 +95,149 @@ class TestGenerateLokiCommand:
             bad_file = Path(tmpdir) / "bad.yaml"
             bad_file.write_text("not: valid: yaml: {{")
 
-            result = generate_loki_command(str(bad_file))
+            with patch(GENERATOR_CLASS) as mock_generator_class:
+                result = generate_loki_command(str(bad_file))
 
         assert result == 1
+        mock_generator_class.return_value.generate_from_manifest.assert_not_called()
 
-    @patch("nthlayer_generate.loki.LokiAlertGenerator")
-    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer_generate.specs.parser.parse_service_file")
-    def test_dry_run(
-        self, mock_parse, mock_extract, mock_generator_class, service_with_dependencies
-    ):
-        """Test dry run mode."""
-        # Setup mocks
-        mock_context = MagicMock()
-        mock_context.name = "payment-api"
-        mock_context.type = "api"
-        mock_context.tier = "tier-1"
-        mock_context.team = "payments-team"
-        mock_parse.return_value = (mock_context, [])
+    def test_invalid_tier(self, service_with_dependencies):
+        """A tier outside critical/high/standard/low exits 1 before generating."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            service_file = Path(tmpdir) / "service.yaml"
+            service_file.write_text(service_with_dependencies.replace("critical", "tier-1"))
 
-        mock_extract.return_value = ["postgres", "redis"]
+            with patch(GENERATOR_CLASS) as mock_generator_class:
+                result = generate_loki_command(str(service_file), dry_run=True)
 
-        mock_alert1 = MagicMock()
-        mock_alert1.category = "service"
-        mock_alert2 = MagicMock()
-        mock_alert2.category = "dependency"
+        assert result == 1
+        mock_generator_class.return_value.generate_from_manifest.assert_not_called()
 
-        mock_generator = MagicMock()
-        mock_generator.generate_for_service.return_value = [mock_alert1, mock_alert2]
-        mock_generator.to_ruler_yaml.return_value = "groups:\n  - name: test\n    rules: []"
-        mock_generator_class.return_value = mock_generator
+    def test_dry_run(self, service_with_dependencies, tmp_path, monkeypatch):
+        """Dry run renders ruler YAML from the loaded manifest and writes nothing."""
+        monkeypatch.chdir(tmp_path)
+        mock_generator = _mock_generator(_alerts(service=1, dependency=1))
+        service_file = tmp_path / "service.yaml"
+        service_file.write_text(service_with_dependencies)
+
+        with patch(GENERATOR_CLASS, return_value=mock_generator):
+            result = generate_loki_command(str(service_file), dry_run=True)
+
+        assert result == 0
+        mock_generator.generate_from_manifest.assert_called_once()
+        manifest = mock_generator.generate_from_manifest.call_args[0][0]
+        assert manifest.name == "payment-api"
+        assert manifest.tier == "critical"
+        assert manifest.team == "payments-team"
+        assert [d.database_type for d in manifest.dependencies] == ["postgres", "redis"]
+        mock_generator.to_ruler_yaml.assert_called_once()
+        assert mock_generator.to_ruler_yaml.call_args[1] == {"group_name": "payment-api"}
+        mock_generator.write_ruler_file.assert_not_called()
+        assert not (tmp_path / "generated").exists()
+
+    def test_generate_with_output(self, service_with_dependencies, tmp_path):
+        """Real generator writes a parseable Loki ruler file at --output."""
+        service_file = tmp_path / "service.yaml"
+        service_file.write_text(service_with_dependencies)
+        output_file = tmp_path / "alerts.yaml"
+
+        result = generate_loki_command(str(service_file), output=str(output_file))
+
+        assert result == 0
+        data = yaml.safe_load(output_file.read_text())
+        assert [g["name"] for g in data["groups"]] == ["payment-api"]
+        rules = data["groups"][0]["rules"]
+        sources = {r["labels"]["source"] for r in rules}
+        assert sources == {"service", "dependency"}
+        technologies = {r["labels"]["technology"] for r in rules}
+        assert {"postgres", "redis"} <= technologies
+        for rule in rules:
+            assert rule["labels"]["service"] == "payment-api"
+            assert rule["labels"]["tier"] == "critical"
+            assert rule["labels"]["team"] == "payments-team"
+
+    def test_generate_default_output_path(self, service_with_dependencies, tmp_path, monkeypatch):
+        """Without --output, the file goes to generated/{service}/loki-alerts.yaml."""
+        monkeypatch.chdir(tmp_path)
+        service_file = tmp_path / "service.yaml"
+        service_file.write_text(service_with_dependencies)
+
+        result = generate_loki_command(str(service_file))
+
+        assert result == 0
+        default_output = tmp_path / "generated" / "payment-api" / "loki-alerts.yaml"
+        data = yaml.safe_load(default_output.read_text())
+        assert [g["name"] for g in data["groups"]] == ["payment-api"]
+
+    def test_no_dependencies(self, simple_service, tmp_path):
+        """A service with no dependencies yields only service-sourced alerts."""
+        service_file = tmp_path / "service.yaml"
+        service_file.write_text(simple_service)
+        output_file = tmp_path / "alerts.yaml"
+
+        result = generate_loki_command(str(service_file), output=str(output_file))
+
+        assert result == 0
+        rules = yaml.safe_load(output_file.read_text())["groups"][0]["rules"]
+        assert rules
+        assert {r["labels"]["source"] for r in rules} == {"service"}
+        assert {r["labels"]["tier"] for r in rules} == {"standard"}
+
+    def test_dry_run_large_output(self, service_with_dependencies):
+        """Test dry run with large YAML output (truncated)."""
+        mock_generator = _mock_generator([], ruler_yaml="x" * 3000)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             service_file = Path(tmpdir) / "service.yaml"
             service_file.write_text(service_with_dependencies)
 
-            result = generate_loki_command(str(service_file), dry_run=True)
+            with patch(GENERATOR_CLASS, return_value=mock_generator):
+                result = generate_loki_command(str(service_file), dry_run=True)
 
         assert result == 0
-        mock_generator.generate_for_service.assert_called_once()
         mock_generator.to_ruler_yaml.assert_called_once()
         mock_generator.write_ruler_file.assert_not_called()
 
-    @patch("nthlayer_generate.loki.LokiAlertGenerator")
-    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer_generate.specs.parser.parse_service_file")
-    def test_generate_with_output(
-        self, mock_parse, mock_extract, mock_generator_class, service_with_dependencies
-    ):
-        """Test generating alerts with specific output path."""
-        mock_context = MagicMock()
-        mock_context.name = "payment-api"
-        mock_context.type = "api"
-        mock_context.tier = "tier-1"
-        mock_context.team = "payments-team"
-        mock_parse.return_value = (mock_context, [])
-
-        mock_extract.return_value = ["postgres"]
-
-        mock_alert = MagicMock()
-        mock_alert.category = "service"
-
-        mock_generator = MagicMock()
-        mock_generator.generate_for_service.return_value = [mock_alert]
-        mock_generator_class.return_value = mock_generator
-
+    def test_exception_handling(self, service_with_dependencies):
+        """Test handling of exceptions during manifest loading."""
         with tempfile.TemporaryDirectory() as tmpdir:
             service_file = Path(tmpdir) / "service.yaml"
             service_file.write_text(service_with_dependencies)
 
-            output_file = Path(tmpdir) / "alerts.yaml"
-
-            result = generate_loki_command(str(service_file), output=str(output_file))
-
-        assert result == 0
-        mock_generator.write_ruler_file.assert_called_once()
-        call_args = mock_generator.write_ruler_file.call_args
-        assert call_args[0][1] == output_file
-
-    @patch("nthlayer_generate.loki.LokiAlertGenerator")
-    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer_generate.specs.parser.parse_service_file")
-    def test_generate_default_output_path(
-        self, mock_parse, mock_extract, mock_generator_class, service_with_dependencies
-    ):
-        """Test generating alerts with default output path."""
-        mock_context = MagicMock()
-        mock_context.name = "payment-api"
-        mock_context.type = "api"
-        mock_context.tier = "tier-1"
-        mock_context.team = "payments-team"
-        mock_parse.return_value = (mock_context, [])
-
-        mock_extract.return_value = []
-
-        mock_generator = MagicMock()
-        mock_generator.generate_for_service.return_value = []
-        mock_generator_class.return_value = mock_generator
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            service_file = Path(tmpdir) / "service.yaml"
-            service_file.write_text(service_with_dependencies)
-
-            result = generate_loki_command(str(service_file))
-
-        assert result == 0
-        call_args = mock_generator.write_ruler_file.call_args
-        # Default path should be generated/{service}/loki-alerts.yaml
-        assert "payment-api" in str(call_args[0][1])
-
-    @patch("nthlayer_generate.loki.LokiAlertGenerator")
-    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer_generate.specs.parser.parse_service_file")
-    def test_no_dependencies(self, mock_parse, mock_extract, mock_generator_class, simple_service):
-        """Test generating alerts for service without dependencies."""
-        mock_context = MagicMock()
-        mock_context.name = "simple-api"
-        mock_context.type = "api"
-        mock_context.tier = "tier-2"
-        mock_context.team = "simple-team"
-        mock_parse.return_value = (mock_context, [])
-
-        mock_extract.return_value = []
-
-        mock_generator = MagicMock()
-        mock_generator.generate_for_service.return_value = []
-        mock_generator_class.return_value = mock_generator
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            service_file = Path(tmpdir) / "service.yaml"
-            service_file.write_text(simple_service)
-
-            result = generate_loki_command(str(service_file), dry_run=True)
-
-        assert result == 0
-
-    @patch("nthlayer_generate.loki.LokiAlertGenerator")
-    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer_generate.specs.parser.parse_service_file")
-    def test_dry_run_large_output(
-        self, mock_parse, mock_extract, mock_generator_class, service_with_dependencies
-    ):
-        """Test dry run with large YAML output (truncated)."""
-        mock_context = MagicMock()
-        mock_context.name = "payment-api"
-        mock_context.type = "api"
-        mock_context.tier = "tier-1"
-        mock_context.team = "payments-team"
-        mock_parse.return_value = (mock_context, [])
-
-        mock_extract.return_value = ["postgres"]
-
-        mock_generator = MagicMock()
-        mock_generator.generate_for_service.return_value = []
-        # Create a large YAML output (>2000 chars)
-        mock_generator.to_ruler_yaml.return_value = "x" * 3000
-        mock_generator_class.return_value = mock_generator
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            service_file = Path(tmpdir) / "service.yaml"
-            service_file.write_text(service_with_dependencies)
-
-            result = generate_loki_command(str(service_file), dry_run=True)
-
-        assert result == 0
-
-    @patch("nthlayer_generate.loki.LokiAlertGenerator")
-    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer_generate.specs.parser.parse_service_file")
-    def test_exception_handling(
-        self, mock_parse, mock_extract, mock_generator_class, service_with_dependencies
-    ):
-        """Test handling of exceptions during generation."""
-        mock_parse.side_effect = ValueError("Invalid service configuration")
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            service_file = Path(tmpdir) / "service.yaml"
-            service_file.write_text(service_with_dependencies)
-
-            result = generate_loki_command(str(service_file))
+            with (
+                patch(LOAD_MANIFEST, side_effect=ValueError("Invalid service configuration")),
+                patch(GENERATOR_CLASS) as mock_generator_class,
+            ):
+                result = generate_loki_command(str(service_file))
 
         assert result == 1
+        mock_generator_class.return_value.generate_from_manifest.assert_not_called()
 
-    @patch("nthlayer_generate.loki.LokiAlertGenerator")
-    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer_generate.specs.parser.parse_service_file")
-    def test_alert_breakdown(
-        self, mock_parse, mock_extract, mock_generator_class, service_with_dependencies
-    ):
-        """Test alert breakdown display."""
-        mock_context = MagicMock()
-        mock_context.name = "payment-api"
-        mock_context.type = "api"
-        mock_context.tier = "tier-1"
-        mock_context.team = "payments-team"
-        mock_parse.return_value = (mock_context, [])
-
-        mock_extract.return_value = ["postgres", "redis"]
-
-        # Create mix of service and dependency alerts
-        alerts = []
-        for _i in range(3):
-            alert = MagicMock()
-            alert.category = "service"
-            alerts.append(alert)
-        for _i in range(5):
-            alert = MagicMock()
-            alert.category = "dependency"
-            alerts.append(alert)
-
-        mock_generator = MagicMock()
-        mock_generator.generate_for_service.return_value = alerts
-        mock_generator.to_ruler_yaml.return_value = "groups: []"
-        mock_generator_class.return_value = mock_generator
+    def test_alert_breakdown(self, service_with_dependencies):
+        """The full alert list is handed to the ruler YAML renderer."""
+        alerts = _alerts(service=3, dependency=5)
+        mock_generator = _mock_generator(alerts)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             service_file = Path(tmpdir) / "service.yaml"
             service_file.write_text(service_with_dependencies)
 
-            result = generate_loki_command(str(service_file), dry_run=True)
+            with patch(GENERATOR_CLASS, return_value=mock_generator):
+                result = generate_loki_command(str(service_file), dry_run=True)
 
         assert result == 0
+        assert mock_generator.to_ruler_yaml.call_args[0][0] == alerts
 
-    @patch("nthlayer_generate.loki.LokiAlertGenerator")
-    @patch("nthlayer_generate.loki.generator.extract_dependencies_from_resources")
-    @patch("nthlayer_generate.specs.parser.parse_service_file")
-    def test_no_team(
-        self, mock_parse, mock_extract, mock_generator_class, service_with_dependencies
-    ):
-        """Test service without team."""
-        mock_context = MagicMock()
-        mock_context.name = "orphan-api"
-        mock_context.type = "api"
-        mock_context.tier = "tier-2"
-        mock_context.team = None  # No team
-        mock_parse.return_value = (mock_context, [])
+    def test_no_team(self, tmp_path):
+        """A service without a team is rejected by the loader (team is required)."""
+        service_file = tmp_path / "service.yaml"
+        service_file.write_text("service:\n  name: orphan-api\n  tier: standard\n  type: api\n")
 
-        mock_extract.return_value = []
-
-        mock_generator = MagicMock()
-        mock_generator.generate_for_service.return_value = []
-        mock_generator_class.return_value = mock_generator
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            service_file = Path(tmpdir) / "service.yaml"
-            service_file.write_text(service_with_dependencies)
-
+        with patch(GENERATOR_CLASS) as mock_generator_class:
             result = generate_loki_command(str(service_file), dry_run=True)
 
-        assert result == 0
-        # Check that labels is empty dict when no team
-        call_args = mock_generator.generate_for_service.call_args
-        assert call_args[1]["labels"] == {}
+        assert result == 1
+        mock_generator_class.return_value.generate_from_manifest.assert_not_called()
 
 
 class TestRegisterLokiParser:

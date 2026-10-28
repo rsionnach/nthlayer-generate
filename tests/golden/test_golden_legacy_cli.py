@@ -34,8 +34,10 @@ commands that take ``--env`` over ``ENV_CASES``.
 
 from __future__ import annotations
 
+import itertools
 import json
 import re
+import types
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -640,6 +642,260 @@ def ownership_table_backstage(env: Env) -> Any:
     return {"exit": code, "text": env.text()}
 
 
+# --- non-default formats and flags (opensrm-9dbl sweep) -----------------------
+#
+# The corpus cells above call each command one way: plan/apply/validate-slo/
+# recommend-metrics/ownership as JSON, the generators without --dry-run. A
+# mutation sweep of cli/ found every other renderer and flag unpinned; these
+# cells pin each one once, on a shipped example that reaches the branch.
+
+PD_DEMO_SERVICE = EX / "services" / "payment-api-pagerduty-demo.yaml"
+
+# PagerDuty API failures as apply reports them ("Pagerduty generation failed:
+# <message>"). Without --verbose, print_apply_summary cuts an error longer
+# than 80 characters to 77 plus "..." (cli/apply.py:64-65): the long one is
+# cut, the short one (75 characters reported) is kept whole; the boundary pair
+# below pins the threshold itself.
+PD_API_FAILURE_LONG = (
+    "PagerDuty API returned 401 Unauthorized for POST /teams: "
+    "the API key is invalid or has been revoked"
+)
+PD_API_FAILURE_SHORT = "PagerDuty API returned 503 Service Unavailable"
+# cli/apply.py cuts an error longer than 80 characters to 77 + "...". The
+# reported line is "Pagerduty generation failed: " (29 characters) + the
+# message, so these two put it exactly at 80 (kept whole) and 81 (cut).
+_PD_BOUNDARY_BASE = "PagerDuty API returned 429 Too Many Requests: "
+PD_API_FAILURE_AT_LIMIT = _PD_BOUNDARY_BASE + "x" * (51 - len(_PD_BOUNDARY_BASE))
+PD_API_FAILURE_OVER_LIMIT = _PD_BOUNDARY_BASE + "x" * (52 - len(_PD_BOUNDARY_BASE))
+
+
+def _sorted_dependency_extractors(env: Env) -> None:
+    """Fix the order of both legacy list(set(...)) extractors.
+
+    The dry-run previews print rules in extraction order, as text that cannot
+    be re-sorted afterwards (the loki preview is cut at 2,000 characters), so
+    hand the commands the same dependencies sorted. generate_alerts looks
+    extract_dependencies up in its own module; cli/generate_loki.py imports
+    the loki one in its function body, so both are patched at their source.
+
+    Unlike _sorted_dependencies, which re-sorts printed lines afterwards, this
+    sorts at the source. Like it, it is a determinism fix that would also hide
+    a future, deliberate change to extraction order.
+    """
+    import nthlayer_generate.generators.alerts as alerts_gen
+    import nthlayer_generate.loki.generator as loki_gen
+
+    for module, name in (
+        (alerts_gen, "extract_dependencies"),
+        (loki_gen, "extract_dependencies_from_resources"),
+    ):
+        real = getattr(module, name)
+        env.monkeypatch.setattr(module, name, lambda resources, _r=real: sorted(_r(resources)))
+
+
+def plan_table(env: Env) -> Any:
+    # The default table renderer (cli/plan.py:20-111). payment-api-pagerduty-demo
+    # plans every resource kind, including all four PagerDuty sub-resources.
+    env.discard_output()
+    code = plan_command(str(PD_DEMO_SERVICE))
+    return {"exit": code, "text": env.text()}
+
+
+def plan_markdown(env: Env) -> Any:
+    # plan_to_report through a non-JSON formatter (cli/plan.py:114-210).
+    env.discard_output()
+    code = plan_command(str(PD_DEMO_SERVICE), output_format="markdown")
+    return {"exit": code, "text": env.text()}
+
+
+def _apply_text(path: Path, env: Env, environment: str | None = None, **kwargs: Any) -> Any:
+    # A stepping clock keeps the duration positive, so the " in Xs" suffix the
+    # summary prints only for a duration above zero is always there.
+    ticks = itertools.count(1000.0, 0.5)
+    # Swap only the orchestrator's module reference (it uses time.time alone),
+    # not time.time itself, which every other caller in the process shares.
+    import nthlayer_generate.orchestrator as orchestrator
+
+    env.monkeypatch.setattr(orchestrator, "time", types.SimpleNamespace(time=lambda: next(ticks)))
+    env.discard_output()
+    code = apply_command(str(path), env=environment, output_dir=str(env.tmp / "out"), **kwargs)
+    # The summary line carries the duration ("in 0.3s").
+    text = [re.sub(r" in \d+\.\ds\b", " in <duration>", line) for line in env.text()]
+    return {"exit": code, "text": text}
+
+
+def apply_text(env: Env) -> Any:
+    # The default text summary (cli/apply.py:14-78).
+    return _apply_text(APPLY_FILTER_SERVICE, env)
+
+
+def apply_text_verbose(env: Env) -> Any:
+    # --verbose adds the generated-file list with sizes (cli/apply.py:69-76).
+    return _apply_text(APPLY_FILTER_SERVICE, env, verbose=True)
+
+
+def apply_dry_run_env(env: Env) -> Any:
+    # --dry-run is plan's table (cli/apply.py:27-28) and must keep --env:
+    # search-api plans more resources in prod than in dev, so a dropped --env shows.
+    case = next(c for c in ENV_CASES if c.id == "staged__search-api__env-prod")
+    out = _apply_text(case.target(env.tmp), env, case.environment, dry_run=True)
+    out["wrote"] = sorted(
+        p.relative_to(env.tmp).as_posix()
+        for p in env.tmp.rglob("*")
+        if p.is_file() and not p.is_relative_to(env.tmp / STAGING)
+    )
+    return out
+
+
+def _apply_pd_failure(message: str, verbose: bool = False) -> Callable[[Env], Any]:
+    def cell(env: Env) -> Any:
+        # With a key, the PagerDuty handler calls the API; make that call fail
+        # so the summary's warning marker and error list are reached
+        # (cli/apply.py:39-40, 59-66). No shipped example produces an error.
+        def failing_manager(*args: Any, **kwargs: Any) -> Any:
+            raise RuntimeError(message)
+
+        env.monkeypatch.setenv("PAGERDUTY_API_KEY", "stub-key")
+        env.monkeypatch.setattr(
+            "nthlayer_generate.orchestration.handlers.PagerDutyResourceManager", failing_manager
+        )
+        return _apply_text(APPLY_FILTER_SERVICE, env, verbose=verbose)
+
+    return cell
+
+
+def _recommend_table(env: Env, **kwargs: Any) -> Any:
+    env.discard_output()
+    code = recommend_metrics_command(str(APPLY_FILTER_SERVICE), **kwargs)
+    return {"exit": code, "text": env.text()}
+
+
+def recommend_table(env: Env) -> Any:
+    return _recommend_table(env)
+
+
+def recommend_table_required(env: Env) -> Any:
+    return _recommend_table(env, level="required")
+
+
+def recommend_table_recommended_code(env: Env) -> Any:
+    return _recommend_table(env, level="recommended", show_code=True)
+
+
+def recommend_yaml(env: Env) -> Any:
+    env.discard_output()
+    code = recommend_metrics_command(str(APPLY_FILTER_SERVICE), output_format="yaml")
+    out = env.capsys.readouterr().out
+    # Raw stdout, not env.text(): its padding collapse would rewrite the YAML
+    # indentation. The console header precedes the document on the same stream.
+    return {"exit": code, "text": _lines(out)}
+
+
+def validate_slo_table(env: Env) -> Any:
+    # Offline, every SLO counts as found: the all-valid summary.
+    env.discard_output()
+    code = validate_slo_command(str(APPLY_FILTER_SERVICE))
+    return {"exit": code, "text": env.text()}
+
+
+def validate_slo_table_demo(env: Env) -> Any:
+    # --demo has a missing metric: the Missing status and partial summary.
+    env.discard_output()
+    code = validate_slo_command("unused.yaml", demo=True)
+    return {"exit": code, "text": env.text()}
+
+
+def generate_slo_dry_run(env: Env) -> Any:
+    env.discard_output()
+    code = generate_slo_command(
+        str(APPLY_FILTER_SERVICE), output_dir=str(env.tmp / "out"), dry_run=True
+    )
+    return {"exit": code, "files": env.files(), "text": env.text()}
+
+
+def generate_slo_unsupported_format(env: Env) -> Any:
+    # The CLI offers sloth/prometheus/openslo; only sloth is implemented.
+    env.discard_output()
+    code = generate_slo_command(
+        str(APPLY_FILTER_SERVICE), output_dir=str(env.tmp / "out"), format="openslo"
+    )
+    return {"exit": code, "files": env.files(), "text": env.text()}
+
+
+def generate_alerts_dry_run(env: Env) -> Any:
+    _sorted_dependency_extractors(env)
+    env.discard_output()
+    out = env.tmp / "out" / "alerts.yaml"
+    code = generate_alerts_command(str(APPLY_FILTER_SERVICE), output=str(out), dry_run=True)
+    return {"exit": code, "files": env.files(), "text": env.text()}
+
+
+def generate_alerts_links(env: Env) -> Any:
+    # --runbook-url, --notification-channel and --grafana-url reach the rules.
+    env.discard_output()
+    out = env.tmp / "out" / "alerts.yaml"
+    code = generate_alerts_command(
+        str(APPLY_FILTER_SERVICE),
+        output=str(out),
+        runbook_url="https://runbooks.example.invalid",
+        notification_channel="slack",
+        grafana_url="https://grafana.example.invalid",
+    )
+    # The written rule file comes from the same list(set(...)) extractor and is
+    # pinned as a set; only the printed preview needs the source-side sort.
+    return {"exit": code, "files": env.files(rules_unordered=lambda rel: True), "text": env.text()}
+
+
+def generate_recording_rules_dry_run(env: Env) -> Any:
+    env.discard_output()
+    code = generate_recording_rules_command(str(APPLY_FILTER_SERVICE), dry_run=True)
+    return {"exit": code, "files": env.files(env.tmp), "text": env.text()}
+
+
+def generate_loki_dry_run(env: Env) -> Any:
+    _sorted_dependency_extractors(env)
+    env.discard_output()
+    code = generate_loki_command(str(APPLY_FILTER_SERVICE), dry_run=True)
+    return {"exit": code, "files": env.files(env.tmp), "text": env.text()}
+
+
+def generate_dashboard_dry_run(env: Env) -> Any:
+    env.discard_output()
+    code = generate_dashboard_command(str(APPLY_FILTER_SERVICE), dry_run=True)
+    printed = env.capsys.readouterr().out
+    # Raw stdout: the slice needs the unsplit text, and env.text() would collapse
+    # runs of spaces inside JSON string values.
+    start = printed.index("\n{") + 1
+    end = printed.rindex("}") + 1
+    return {
+        "exit": code,
+        "files": env.files(env.tmp),
+        "dashboard": json.loads(printed[start:end]),
+        "text": _lines(printed[:start]) + _lines(printed[end:]),
+    }
+
+
+def generate_dashboard_full_panels(env: Env) -> Any:
+    # --full-panels changes only the "Mode:" log line today: build_dashboard
+    # passes it to DashboardBuilderSDK, which stores self.full_panels and never
+    # reads it (dashboards/builder_sdk.py:57).
+    env.discard_output()
+    out = env.tmp / "out" / "dashboard.json"
+    code = generate_dashboard_command(str(APPLY_FILTER_SERVICE), output=str(out), full_panels=True)
+    return {"exit": code, "files": env.files(), "text": env.text()}
+
+
+def _ownership_demo(output_format: str) -> Callable[[Env], Any]:
+    def cell(env: Env) -> Any:
+        env.discard_output()
+        code = ownership_command("unused.yaml", output_format=output_format, demo=True)
+        if output_format == "json":
+            return {"exit": code, "json": env.stdout_json()}
+        return {"exit": code, "text": env.text()}
+
+    return cell
+
+
 SINGLETONS: dict[str, dict[str, Callable[[Env], Any]]] = {
     "cli_legacy_apply_filter": {
         "checkout-service__skip": apply_skip,
@@ -654,6 +910,48 @@ SINGLETONS: dict[str, dict[str, Callable[[Env], Any]]] = {
     },
     "cli_legacy_validate_slo_exit": {
         "demo": validate_slo_demo,
+    },
+    "cli_legacy_plan_formats": {
+        "payment-api-pagerduty-demo__table": plan_table,
+        "payment-api-pagerduty-demo__markdown": plan_markdown,
+    },
+    "cli_legacy_apply_text": {
+        "checkout-service": apply_text,
+        "checkout-service__verbose": apply_text_verbose,
+        "checkout-service__pagerduty_failure": _apply_pd_failure(PD_API_FAILURE_LONG),
+        "checkout-service__pagerduty_failure__verbose": _apply_pd_failure(
+            PD_API_FAILURE_LONG, verbose=True
+        ),
+        "checkout-service__pagerduty_failure_short": _apply_pd_failure(PD_API_FAILURE_SHORT),
+        "checkout-service__pagerduty_failure_at_limit": _apply_pd_failure(PD_API_FAILURE_AT_LIMIT),
+        "checkout-service__pagerduty_failure_over_limit": _apply_pd_failure(
+            PD_API_FAILURE_OVER_LIMIT
+        ),
+        "staged__search-api__env-prod__dry_run": apply_dry_run_env,
+    },
+    "cli_legacy_recommend_metrics_formats": {
+        "checkout-service__table": recommend_table,
+        "checkout-service__table_required": recommend_table_required,
+        "checkout-service__table_recommended_show_code": recommend_table_recommended_code,
+        "checkout-service__yaml": recommend_yaml,
+    },
+    "cli_legacy_validate_slo_table": {
+        "checkout-service": validate_slo_table,
+        "demo": validate_slo_table_demo,
+    },
+    "cli_legacy_generator_flags": {
+        "generate_slo__dry_run": generate_slo_dry_run,
+        "generate_slo__format_openslo": generate_slo_unsupported_format,
+        "generate_alerts__dry_run": generate_alerts_dry_run,
+        "generate_alerts__links": generate_alerts_links,
+        "generate_recording_rules__dry_run": generate_recording_rules_dry_run,
+        "generate_loki_alerts__dry_run": generate_loki_dry_run,
+        "generate_dashboard__dry_run": generate_dashboard_dry_run,
+        "generate_dashboard__full_panels": generate_dashboard_full_panels,
+    },
+    "cli_legacy_ownership_demo": {
+        "json": _ownership_demo("json"),
+        "table": _ownership_demo("table"),
     },
 }
 

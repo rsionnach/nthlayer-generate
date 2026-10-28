@@ -1,0 +1,64 @@
+{
+  "exit": 0,
+  "json": {
+    "confidence": 1.0,
+    "contact": {
+      "email": null,
+      "opsgenie_team": null,
+      "pagerduty_escalation": "payments-escalation",
+      "slack_channel": "#team-payments"
+    },
+    "owner": "payments-team",
+    "owner_type": "team",
+    "service": "payment-api",
+    "signals": [
+      {
+        "confidence": 1.0,
+        "metadata": {
+          "field": "team"
+        },
+        "owner": "payments-team",
+        "owner_type": "team",
+        "source": "declared"
+      },
+      {
+        "confidence": 0.95,
+        "metadata": {
+          "escalation_policy": "payments-escalation"
+        },
+        "owner": "payments-team",
+        "owner_type": "team",
+        "source": "pagerduty"
+      },
+      {
+        "confidence": 0.9,
+        "metadata": {
+          "namespace": "default"
+        },
+        "owner": "team-payments",
+        "owner_type": "team",
+        "source": "backstage"
+      },
+      {
+        "confidence": 0.85,
+        "metadata": {
+          "file": ".github/CODEOWNERS"
+        },
+        "owner": "@acme/payments",
+        "owner_type": "group",
+        "source": "codeowners"
+      },
+      {
+        "confidence": 0.75,
+        "metadata": {
+          "label": "team=payments",
+          "namespace": "default"
+        },
+        "owner": "payments",
+        "owner_type": "team",
+        "source": "kubernetes"
+      }
+    ],
+    "source": "declared"
+  }
+}

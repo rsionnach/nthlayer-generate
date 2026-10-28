@@ -1,6 +1,29 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in <opensrm>/spec/v2/examples/migration/api-full-v2.yaml"
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: <opensrm>/spec/v2/examples/migration/api-full-v2.yaml",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "⚠️  No dependencies found in service definition",
+    "  Add a Dependencies resource to enable alert generation",
+    "",
+    "Tip: Add a Dependencies resource to your service YAML:",
+    "  resources:",
+    "  - kind: Dependencies",
+    "  name: upstream",
+    "  spec:",
+    "  databases:",
+    "  - type: postgres",
+    "  - type: redis"
   ]
 }

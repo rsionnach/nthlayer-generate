@@ -1,13 +1,186 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "sloth/fraud-detector.yaml": {
+      "labels": {
+        "team": "risk",
+        "tier": "critical",
+        "type": "ai-gate"
+      },
+      "service": "fraud-detector",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO availability for fraud-detector"
+            },
+            "labels": {
+              "service": "fraud-detector",
+              "tier": "critical"
+            },
+            "name": "FraudDetectorAvailability",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on fraud-detector"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on fraud-detector"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "Service availability for decision requests",
+          "name": "availability",
+          "objective": 99.9,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO latency for fraud-detector"
+            },
+            "labels": {
+              "service": "fraud-detector",
+              "tier": "critical"
+            },
+            "name": "FraudDetectorLatency",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on fraud-detector"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on fraud-detector"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "Decision latency - critical for checkout flow",
+          "name": "latency",
+          "objective": 100.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO reversal_rate for fraud-detector"
+            },
+            "labels": {
+              "service": "fraud-detector",
+              "tier": "critical"
+            },
+            "name": "FraudDetectorReversal_rate",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on fraud-detector"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on fraud-detector"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "Human override rate - indicates trust in AI decisions",
+          "name": "reversal_rate",
+          "objective": 0.05,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO high_confidence_failure for fraud-detector"
+            },
+            "labels": {
+              "service": "fraud-detector",
+              "tier": "critical"
+            },
+            "name": "FraudDetectorHigh_confidence_failure",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on fraud-detector"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on fraud-detector"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "Failures where model was highly confident",
+          "name": "high_confidence_failure",
+          "objective": 0.01,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
   "text": [
     "",
     "╭──╮",
     "│ Generate SLOs  │",
     "╰──╯",
     "",
-    "✗ Generation failed: Missing required 'service' section in examples/opensrm/ai-gate.reliability.yaml",
+    "✓ Generated SLOs for fraud-detector",
+    "  SLO count: 4",
+    "  Output: <tmp>/out/sloth/fraud-detector.yaml",
+    "",
+    "Generated SLOs:",
+    "  • fraud-detector-availability (99.9%)",
+    "  • fraud-detector-latency (100.0%)",
+    "  • fraud-detector-reversal_rate (0.05%)",
+    "  • fraud-detector-high_confidence_failure (0.01%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/fraud-detector.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/fraud-detector.yaml",
+    "  3. Deploy rules to Prometheus",
     ""
   ]
 }

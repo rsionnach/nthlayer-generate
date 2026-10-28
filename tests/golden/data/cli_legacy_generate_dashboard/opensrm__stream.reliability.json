@@ -1,6 +1,26 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in examples/opensrm/stream.reliability.yaml"
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: examples/opensrm/stream.reliability.yaml",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "  Service: order-events-processor",
+    "  Team: orders",
+    "  Tier: high",
+    "  Type: stream",
+    "",
+    "  SLOs: 3",
+    "  Dependencies: 3",
+    "",
+    "Building dashboard...",
+    "  Mode: Overview panels (key metrics)",
+    "✗ Error generating dashboard: 'No template found for technology: clickhouse'"
   ]
 }

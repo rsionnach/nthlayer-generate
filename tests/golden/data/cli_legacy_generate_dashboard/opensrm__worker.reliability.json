@@ -1,6 +1,26 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in examples/opensrm/worker.reliability.yaml"
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: examples/opensrm/worker.reliability.yaml",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "  Service: email-sender",
+    "  Team: notifications",
+    "  Tier: standard",
+    "  Type: worker",
+    "",
+    "  SLOs: 3",
+    "  Dependencies: 2",
+    "",
+    "Building dashboard...",
+    "  Mode: Overview panels (key metrics)",
+    "✗ Error generating dashboard: 'No template found for technology: sqs'"
   ]
 }

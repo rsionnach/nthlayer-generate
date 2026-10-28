@@ -356,31 +356,6 @@
             "type": "timeseries"
           },
           {
-            "description": "Target: 99.9%",
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 12,
-              "y": 1
-            },
-            "options": null,
-            "repeatDirection": "h",
-            "targets": [
-              {
-                "expr": "sum(rate(notifications_sent_total{service=\"email-worker\"}[5m]))",
-                "refId": "A"
-              }
-            ],
-            "title": "processing-latency-p95",
-            "transformations": [],
-            "transparent": false,
-            "type": "timeseries"
-          },
-          {
             "collapsed": false,
             "gridPos": {
               "h": 1,

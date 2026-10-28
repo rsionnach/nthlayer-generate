@@ -59,7 +59,7 @@
       "objective": 95.0,
       "sli": {
         "events": {
-          "error_query": "histogram_quantile(0.95,\n  rate(job_duration_seconds_bucket{service=\"notification-service\"}[5m])\n)\n > 0.095",
+          "error_query": "histogram_quantile(0.95,\n  rate(job_duration_seconds_bucket{service=\"notification-service\"}[5m])\n)\n > 5.0",
           "total_query": "sum(rate(0.95,\n  rate(job_duration_seconds_bucket{service=\"notification-service\"}[5m])\n)\n)"
         }
       }

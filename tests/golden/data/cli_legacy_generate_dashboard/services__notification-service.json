@@ -15,7 +15,6 @@
     "  Team: platform",
     "  Tier: standard",
     "  Type: worker",
-    "  Resources: 4 defined",
     "",
     "  SLOs: 2",
     "  Dependencies: 1",

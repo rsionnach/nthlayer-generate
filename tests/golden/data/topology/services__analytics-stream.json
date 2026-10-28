@@ -1,0 +1,47 @@
+{
+  "edges": [
+    {
+      "confidence": 1.0,
+      "critical": false,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "analytics-stream",
+      "target": "analytics_db"
+    },
+    {
+      "confidence": 1.0,
+      "critical": false,
+      "dep_type": "service",
+      "providers": [
+        "manifest"
+      ],
+      "source": "analytics-stream",
+      "target": "stream_cache"
+    }
+  ],
+  "exported_at": "<masked>",
+  "metadata": {
+    "providers_used": []
+  },
+  "nodes": [
+    {
+      "name": "analytics-stream",
+      "team": "data",
+      "tier": "high",
+      "type": "stream"
+    },
+    {
+      "name": "analytics_db"
+    },
+    {
+      "name": "stream_cache"
+    }
+  ],
+  "stats": {
+    "edge_count": 2,
+    "node_count": 3
+  },
+  "version": "1.0"
+}

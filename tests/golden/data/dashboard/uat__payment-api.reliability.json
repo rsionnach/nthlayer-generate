@@ -674,7 +674,7 @@
         "repeatDirection": "h",
         "targets": [
           {
-            "expr": "kafka_consumer_lag_seconds{service=\"redpanda\"}",
+            "expr": "kafka_consumer_lag_seconds{service=\"kafka\"}",
             "legendFormat": "{{kafka}}",
             "refId": "A"
           }
@@ -700,7 +700,7 @@
         "repeatDirection": "h",
         "targets": [
           {
-            "expr": "rate(kafka_topic_partition_current_offset{service=\"redpanda\"}[5m])",
+            "expr": "rate(kafka_topic_partition_current_offset{service=\"kafka\"}[5m])",
             "legendFormat": "{{kafka}}",
             "refId": "A"
           }
@@ -726,7 +726,7 @@
         "repeatDirection": "h",
         "targets": [
           {
-            "expr": "rate(kafka_consumer_offset_total{service=\"redpanda\"}[5m])",
+            "expr": "rate(kafka_consumer_offset_total{service=\"kafka\"}[5m])",
             "legendFormat": "{{kafka}}",
             "refId": "A"
           }

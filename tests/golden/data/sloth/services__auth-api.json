@@ -112,7 +112,7 @@
       "objective": 99.0,
       "sli": {
         "events": {
-          "error_query": "histogram_quantile(0.95,\n  rate(token_generation_duration_seconds_bucket{service=\"auth-api\"}[5m])\n)\n > 0.099",
+          "error_query": "histogram_quantile(0.95,\n  rate(token_generation_duration_seconds_bucket{service=\"auth-api\"}[5m])\n)\n > 0.1",
           "total_query": "sum(rate(0.95,\n  rate(token_generation_duration_seconds_bucket{service=\"auth-api\"}[5m])\n)\n)"
         }
       }

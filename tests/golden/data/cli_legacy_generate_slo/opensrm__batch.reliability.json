@@ -1,13 +1,94 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "sloth/daily-report-generator.yaml": {
+      "labels": {
+        "team": "analytics",
+        "tier": "standard",
+        "type": "batch"
+      },
+      "service": "daily-report-generator",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO availability for daily-report-generator"
+            },
+            "labels": {
+              "service": "daily-report-generator",
+              "tier": "standard"
+            },
+            "name": "DailyReportGeneratorAvailability",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on daily-report-generator"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "Job execution success rate",
+          "name": "availability",
+          "objective": 99.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO error_rate for daily-report-generator"
+            },
+            "labels": {
+              "service": "daily-report-generator",
+              "tier": "standard"
+            },
+            "name": "DailyReportGeneratorError_rate",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on daily-report-generator"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "Job failure rate (allow some retries)",
+          "name": "error_rate",
+          "objective": 1.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
   "text": [
     "",
     "╭──╮",
     "│ Generate SLOs  │",
     "╰──╯",
     "",
-    "✗ Generation failed: Missing required 'service' section in examples/opensrm/batch.reliability.yaml",
+    "✓ Generated SLOs for daily-report-generator",
+    "  SLO count: 2",
+    "  Output: <tmp>/out/sloth/daily-report-generator.yaml",
+    "",
+    "Generated SLOs:",
+    "  • daily-report-generator-availability (99.0%)",
+    "  • daily-report-generator-error_rate (1.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/daily-report-generator.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/daily-report-generator.yaml",
+    "  3. Deploy rules to Prometheus",
     ""
   ]
 }

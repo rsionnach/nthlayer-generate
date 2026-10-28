@@ -1132,219 +1132,6 @@
             "type": "timeseries"
           },
           {
-            "description": "Redis memory consumption",
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 12,
-              "y": 84
-            },
-            "options": null,
-            "repeatDirection": "h",
-            "targets": [
-              {
-                "expr": "redis_memory_used_bytes{service=\"redis\"}",
-                "legendFormat": "{{redis}}",
-                "refId": "A"
-              }
-            ],
-            "title": "Redis Memory Usage",
-            "transformations": [],
-            "transparent": false,
-            "type": "timeseries"
-          },
-          {
-            "description": "Cache hit rate - should be >90% for good performance",
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 0,
-              "y": 93
-            },
-            "options": null,
-            "repeatDirection": "h",
-            "targets": [
-              {
-                "expr": "sum(rate(cache_hits_total{service=\"redis\"}[5m])) /\n(sum(rate(cache_hits_total{service=\"redis\"}[5m])) +\nsum(rate(cache_misses_total{service=\"redis\"}[5m]))) * 100",
-                "legendFormat": "Hit rate %",
-                "refId": "A"
-              }
-            ],
-            "title": "Cache Hit Rate",
-            "transformations": [],
-            "transparent": false,
-            "type": "gauge"
-          },
-          {
-            "description": "Number of connected clients",
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 12,
-              "y": 93
-            },
-            "options": null,
-            "repeatDirection": "h",
-            "targets": [
-              {
-                "expr": "redis_connected_clients{service=\"redis\"}",
-                "legendFormat": "{{redis}}",
-                "refId": "A"
-              }
-            ],
-            "title": "Connected Clients",
-            "transformations": [],
-            "transparent": false,
-            "type": "timeseries"
-          },
-          {
-            "description": "Cache hits and misses per second",
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 0,
-              "y": 102
-            },
-            "options": null,
-            "repeatDirection": "h",
-            "targets": [
-              {
-                "expr": "rate(cache_hits_total{service=\"redis\"}[5m])",
-                "legendFormat": "Hits/sec",
-                "refId": "A"
-              },
-              {
-                "expr": "rate(cache_misses_total{service=\"redis\"}[5m])",
-                "legendFormat": "Misses/sec",
-                "refId": "B"
-              }
-            ],
-            "title": "Cache Hits vs Misses",
-            "transformations": [],
-            "transparent": false,
-            "type": "timeseries"
-          },
-          {
-            "description": "Keys evicted due to memory pressure - should be zero",
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 12,
-              "y": 102
-            },
-            "options": null,
-            "repeatDirection": "h",
-            "targets": [
-              {
-                "expr": "rate(redis_evicted_keys_total{service=\"redis\"}[5m])",
-                "legendFormat": "{{redis}}",
-                "refId": "A"
-              }
-            ],
-            "title": "Evicted Keys",
-            "transformations": [],
-            "transparent": false,
-            "type": "timeseries"
-          },
-          {
-            "description": "Keys expired per second due to TTL",
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 0,
-              "y": 111
-            },
-            "options": null,
-            "repeatDirection": "h",
-            "targets": [
-              {
-                "expr": "rate(redis_expired_keys_total{service=\"redis\"}[5m])",
-                "legendFormat": "{{redis}}",
-                "refId": "A"
-              }
-            ],
-            "title": "Expired Keys",
-            "transformations": [],
-            "transparent": false,
-            "type": "timeseries"
-          },
-          {
-            "description": "Redis commands processed per second",
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 12,
-              "y": 111
-            },
-            "options": null,
-            "repeatDirection": "h",
-            "targets": [
-              {
-                "expr": "rate(redis_commands_processed_total{service=\"redis\"}[5m])",
-                "legendFormat": "{{redis}}",
-                "refId": "A"
-              }
-            ],
-            "title": "Commands/sec",
-            "transformations": [],
-            "transparent": false,
-            "type": "timeseries"
-          },
-          {
-            "description": "Total number of keys in database",
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 0,
-              "y": 120
-            },
-            "options": null,
-            "repeatDirection": "h",
-            "targets": [
-              {
-                "expr": "sum(redis_db_keys{service=\"redis\"})",
-                "legendFormat": "{{redis}}",
-                "refId": "A"
-              }
-            ],
-            "title": "Total Keys",
-            "transformations": [],
-            "transparent": false,
-            "type": "stat"
-          },
-          {
             "description": "Elasticsearch cluster health (0=green, 1=yellow, 2=red)",
             "fieldConfig": {
               "defaults": {},
@@ -1354,7 +1141,7 @@
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 120
+              "y": 84
             },
             "options": null,
             "repeatDirection": "h",
@@ -1380,7 +1167,7 @@
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 129
+              "y": 93
             },
             "options": null,
             "repeatDirection": "h",
@@ -1411,7 +1198,7 @@
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 129
+              "y": 93
             },
             "options": null,
             "repeatDirection": "h",
@@ -1437,7 +1224,7 @@
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 138
+              "y": 102
             },
             "options": null,
             "repeatDirection": "h",
@@ -1463,7 +1250,7 @@
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 138
+              "y": 102
             },
             "options": null,
             "repeatDirection": "h",
@@ -1489,7 +1276,7 @@
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 147
+              "y": 111
             },
             "options": null,
             "repeatDirection": "h",
@@ -1515,7 +1302,7 @@
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 147
+              "y": 111
             },
             "options": null,
             "repeatDirection": "h",
@@ -1541,7 +1328,7 @@
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 156
+              "y": 120
             },
             "options": null,
             "repeatDirection": "h",
@@ -1567,7 +1354,7 @@
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 156
+              "y": 120
             },
             "options": null,
             "repeatDirection": "h",
@@ -1582,6 +1369,219 @@
             "transformations": [],
             "transparent": false,
             "type": "timeseries"
+          },
+          {
+            "description": "Redis memory consumption",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 129
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "redis_memory_used_bytes{service=\"redis\"}",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Redis Memory Usage",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Cache hit rate - should be >90% for good performance",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 129
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(cache_hits_total{service=\"redis\"}[5m])) /\n(sum(rate(cache_hits_total{service=\"redis\"}[5m])) +\nsum(rate(cache_misses_total{service=\"redis\"}[5m]))) * 100",
+                "legendFormat": "Hit rate %",
+                "refId": "A"
+              }
+            ],
+            "title": "Cache Hit Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "gauge"
+          },
+          {
+            "description": "Number of connected clients",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 138
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "redis_connected_clients{service=\"redis\"}",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Connected Clients",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Cache hits and misses per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 138
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(cache_hits_total{service=\"redis\"}[5m])",
+                "legendFormat": "Hits/sec",
+                "refId": "A"
+              },
+              {
+                "expr": "rate(cache_misses_total{service=\"redis\"}[5m])",
+                "legendFormat": "Misses/sec",
+                "refId": "B"
+              }
+            ],
+            "title": "Cache Hits vs Misses",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Keys evicted due to memory pressure - should be zero",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 147
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_evicted_keys_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Evicted Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Keys expired per second due to TTL",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 147
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_expired_keys_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Expired Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Redis commands processed per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 156
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "rate(redis_commands_processed_total{service=\"redis\"}[5m])",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Commands/sec",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Total number of keys in database",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 156
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(redis_db_keys{service=\"redis\"})",
+                "legendFormat": "{{redis}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Total Keys",
+            "transformations": [],
+            "transparent": false,
+            "type": "stat"
           },
           {
             "description": "Redis memory consumption",

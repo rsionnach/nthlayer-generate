@@ -1,6 +1,229 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "loki-alerts.yaml": {
+      "groups": [
+        {
+          "name": "order-events-processor",
+          "rules": [
+            {
+              "alert": "order-events-processor_ApplicationError",
+              "annotations": {
+                "description": "Error-level log entries detected in application logs.",
+                "summary": "[order-events-processor] Application errors detected"
+              },
+              "expr": "sum(count_over_time({app=\"order-events-processor\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "service": "order-events-processor",
+                "severity": "warning",
+                "source": "service",
+                "team": "orders",
+                "technology": "stream",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "order-events-processor_ApplicationHighErrorRate",
+              "annotations": {
+                "description": "Application is experiencing a high rate of errors.",
+                "summary": "[order-events-processor] High error rate in application"
+              },
+              "expr": "sum(count_over_time({app=\"order-events-processor\"} |~ \"(?i)error|exception\" [5m])) > 100",
+              "for": "5m",
+              "labels": {
+                "service": "order-events-processor",
+                "severity": "critical",
+                "source": "service",
+                "team": "orders",
+                "technology": "stream",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "order-events-processor_ApplicationPanic",
+              "annotations": {
+                "description": "Application appears to have crashed or panicked.",
+                "summary": "[order-events-processor] Application panic/crash detected"
+              },
+              "expr": "count_over_time({app=\"order-events-processor\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "service": "order-events-processor",
+                "severity": "critical",
+                "source": "service",
+                "team": "orders",
+                "technology": "stream",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "order-events-processor_clickhouse_ApplicationError",
+              "annotations": {
+                "description": "Error-level log entries detected in application logs.",
+                "summary": "[order-events-processor/clickhouse] Application errors detected"
+              },
+              "expr": "sum(count_over_time({app=\"clickhouse\", service=\"order-events-processor\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "dependency": "clickhouse",
+                "service": "order-events-processor",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "orders",
+                "technology": "clickhouse",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "order-events-processor_clickhouse_ApplicationHighErrorRate",
+              "annotations": {
+                "description": "Application is experiencing a high rate of errors.",
+                "summary": "[order-events-processor/clickhouse] High error rate in application"
+              },
+              "expr": "sum(count_over_time({app=\"clickhouse\", service=\"order-events-processor\"} |~ \"(?i)error|exception\" [5m])) > 100",
+              "for": "5m",
+              "labels": {
+                "dependency": "clickhouse",
+                "service": "order-events-processor",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "orders",
+                "technology": "clickhouse",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "order-events-processor_clickhouse_ApplicationPanic",
+              "annotations": {
+                "description": "Application appears to have crashed or panicked.",
+                "summary": "[order-events-processor/clickhouse] Application panic/crash detected"
+              },
+              "expr": "count_over_time({app=\"clickhouse\", service=\"order-events-processor\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "clickhouse",
+                "service": "order-events-processor",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "orders",
+                "technology": "clickhouse",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "order-events-processor_kafka_KafkaAuthenticationFailure",
+              "annotations": {
+                "description": "Authentication failures detected when connecting to Kafka.",
+                "summary": "[order-events-processor/kafka] Kafka authentication failures"
+              },
+              "expr": "sum(count_over_time({app=\"kafka\", service=\"order-events-processor\"} |~ \"authentication.*fail|AuthenticationException|SASL\" [5m])) > 5",
+              "for": "5m",
+              "labels": {
+                "dependency": "kafka",
+                "service": "order-events-processor",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "orders",
+                "technology": "kafka",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "order-events-processor_kafka_KafkaBrokerDown",
+              "annotations": {
+                "description": "A Kafka broker appears to be down or unreachable.",
+                "summary": "[order-events-processor/kafka] Kafka broker down"
+              },
+              "expr": "count_over_time({app=\"kafka\", service=\"order-events-processor\"} |~ \"broker.*down|BrokerNotAvailable|disconnected\" [1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "dependency": "kafka",
+                "service": "order-events-processor",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "orders",
+                "technology": "kafka",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "order-events-processor_kafka_KafkaConsumerLag",
+              "annotations": {
+                "description": "Consumer group is lagging behind. Messages may not be processed in time.",
+                "summary": "[order-events-processor/kafka] Kafka consumer lag detected"
+              },
+              "expr": "count_over_time({app=\"kafka\", service=\"order-events-processor\"} |~ \"consumer.*lag|ConsumerLag|offset.*behind\" [1m]) > 0",
+              "for": "10m",
+              "labels": {
+                "dependency": "kafka",
+                "service": "order-events-processor",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "orders",
+                "technology": "kafka",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "order-events-processor_kafka_KafkaLeaderElection",
+              "annotations": {
+                "description": "Kafka is performing leader election. This may cause brief unavailability...",
+                "summary": "[order-events-processor/kafka] Kafka leader election in progress"
+              },
+              "expr": "count_over_time({app=\"kafka\", service=\"order-events-processor\"} |~ \"leader.*election|LeaderElection|partition.*leader\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "kafka",
+                "service": "order-events-processor",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "orders",
+                "technology": "kafka",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "order-events-processor_kafka_KafkaOutOfDiskSpace",
+              "annotations": {
+                "description": "Kafka broker is out of disk space. Immediate action required.",
+                "summary": "[order-events-processor/kafka] Kafka out of disk space"
+              },
+              "expr": "count_over_time({app=\"kafka\", service=\"order-events-processor\"} |~ \"No space left|disk.*full|ENOSPC\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "kafka",
+                "service": "order-events-processor",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "orders",
+                "technology": "kafka",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "order-events-processor_kafka_KafkaUnderReplicatedPartitions",
+              "annotations": {
+                "description": "Kafka has under-replicated partitions. Data durability may be at risk.",
+                "summary": "[order-events-processor/kafka] Kafka under-replicated partitions"
+              },
+              "expr": "count_over_time({app=\"kafka\", service=\"order-events-processor\"} |~ \"under.?replicated|UnderReplicated\" [1m]) > 0",
+              "for": "5m",
+              "labels": {
+                "dependency": "kafka",
+                "service": "order-events-processor",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "orders",
+                "technology": "kafka",
+                "tier": "high"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
   "text": [
     "",
     "╭──╮",
@@ -13,6 +236,19 @@
     "",
     "Service: examples/opensrm/stream.reliability.yaml",
     "",
-    "✗ Error generating Loki alerts: Missing required 'service' section in examples/opensrm/stream.reliability.yaml"
+    "Service: order-events-processor",
+    "Type: stream",
+    "Tier: high",
+    "Dependencies: clickhouse, kafka",
+    "",
+    "✓ Generated 12 Loki alerts",
+    "",
+    "Alert breakdown:",
+    "  Service alerts: 3",
+    "  Dependency alerts: 9",
+    "",
+    "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
+    "",
+    "✓ Done!"
   ]
 }

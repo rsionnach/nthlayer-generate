@@ -1,6 +1,138 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "triage-agent_judgment_metrics",
+          "rules": [
+            {
+              "expr": "histogram_quantile(0.5, rate(ai_gate_feedback_latency_seconds_bucket{service=\"triage-agent\"}[5m]))",
+              "labels": {
+                "service": "triage-agent",
+                "slo": "feedback_latency"
+              },
+              "record": "ai_gate:feedback_latency:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(ai_gate_feedback_latency_seconds_bucket{service=\"triage-agent\"}[5m]))",
+              "labels": {
+                "service": "triage-agent",
+                "slo": "feedback_latency"
+              },
+              "record": "ai_gate:feedback_latency:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(ai_gate_feedback_latency_seconds_bucket{service=\"triage-agent\"}[5m]))",
+              "labels": {
+                "service": "triage-agent",
+                "slo": "feedback_latency"
+              },
+              "record": "ai_gate:feedback_latency:p99"
+            },
+            {
+              "expr": "avg(ai_gate_calibration_error{service=\"triage-agent\"})",
+              "labels": {
+                "service": "triage-agent",
+                "slo": "calibration",
+                "target": "0.03"
+              },
+              "record": "ai_gate:calibration:ece"
+            },
+            {
+              "expr": "avg(ai_gate_calibration_error{service=\"triage-agent\",confidence_bucket=\"low\"})",
+              "labels": {
+                "confidence_bucket": "low",
+                "service": "triage-agent"
+              },
+              "record": "ai_gate:calibration_bucket:low"
+            },
+            {
+              "expr": "avg(ai_gate_calibration_error{service=\"triage-agent\",confidence_bucket=\"medium\"})",
+              "labels": {
+                "confidence_bucket": "medium",
+                "service": "triage-agent"
+              },
+              "record": "ai_gate:calibration_bucket:medium"
+            },
+            {
+              "expr": "avg(ai_gate_calibration_error{service=\"triage-agent\",confidence_bucket=\"high\"})",
+              "labels": {
+                "confidence_bucket": "high",
+                "service": "triage-agent"
+              },
+              "record": "ai_gate:calibration_bucket:high"
+            }
+          ]
+        },
+        {
+          "interval": "5m",
+          "name": "triage-agent_judgment_thresholds_30d",
+          "rules": [
+            {
+              "expr": "sum(increase(ai_gate_feedback_latency_seconds_bucket{service=\"triage-agent\",le=\"86400.0\"}[30d])) / sum(increase(ai_gate_feedback_latency_seconds_count{service=\"triage-agent\"}[30d]))",
+              "labels": {
+                "quantile": "0.9",
+                "service": "triage-agent",
+                "slo": "feedback_latency",
+                "target": "86400.0"
+              },
+              "record": "ai_gate:feedback_latency:p90_within_bound_30d"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "triage-agent_health_metrics",
+          "rules": [
+            {
+              "expr": "sum(rate(ai_gate_decisions_total{service=\"triage-agent\"}[5m]))",
+              "labels": {
+                "service": "triage-agent"
+              },
+              "record": "service:ai_gate_decisions:rate5m"
+            },
+            {
+              "expr": "avg(ai_gate_confidence_score{service=\"triage-agent\"})",
+              "labels": {
+                "service": "triage-agent"
+              },
+              "record": "service:ai_gate_confidence:avg"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"triage-agent\"}[5m]))",
+              "labels": {
+                "service": "triage-agent"
+              },
+              "record": "service:http_requests:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"triage-agent\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"triage-agent\"}[5m]))",
+              "labels": {
+                "service": "triage-agent"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"triage-agent\"}[5m]))",
+              "labels": {
+                "service": "triage-agent"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"triage-agent\"}[5m]))",
+              "labels": {
+                "service": "triage-agent"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            }
+          ]
+        }
+      ]
+    }
+  },
   "text": [
     "",
     "╭──╮",
@@ -11,6 +143,33 @@
     "Output: <tmp>/out/recording-rules.yaml",
     "",
     "Parsing service specification...",
-    "✗ Error generating recording rules: Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/single-bounds.yaml"
+    "  Service: triage-agent",
+    "  Team: risk",
+    "  Tier: critical",
+    "  Type: ai-gate",
+    "  SLOs: 0",
+    "",
+    "Building recording rules...",
+    "  Groups: 3",
+    "  Rules: 14",
+    "  • triage-agent_judgment_metrics: 7 rules (interval: 30s)",
+    "  • triage-agent_judgment_thresholds_30d: 1 rules (interval: 5m)",
+    "  • triage-agent_health_metrics: 6 rules (interval: 30s)",
+    "",
+    "Writing recording rules to <tmp>/out/recording-rules.yaml...",
+    "",
+    "✓ Recording rules generated successfully!",
+    "",
+    "Next steps:",
+    "  1. Add to Prometheus configuration:",
+    "  rule_files:",
+    "  - <tmp>/out/recording-rules.yaml",
+    "",
+    "  2. Reload Prometheus:",
+    "  curl -X POST http://prometheus:9090/-/reload",
+    "",
+    "  3. Verify rules are loaded:",
+    "  curl http://prometheus:9090/api/v1/rules",
+    ""
   ]
 }

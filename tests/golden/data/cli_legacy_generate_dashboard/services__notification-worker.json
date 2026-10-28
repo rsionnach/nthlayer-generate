@@ -449,7 +449,6 @@
     "  Team: platform",
     "  Tier: high",
     "  Type: worker",
-    "  Resources: 6 defined",
     "",
     "  SLOs: 3",
     "  Dependencies: 1",

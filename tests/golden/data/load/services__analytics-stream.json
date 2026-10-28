@@ -1,13 +1,43 @@
 {
-  "authored_type": null,
-  "dependencies": null,
-  "error": [
-    "ValueError",
-    "Invalid type 'stream-processor'. Must be one of: ai-gate, api, batch, database, stream, worker; or an extension type matching 'x-<lowercase-name>'."
+  "authored_type": "stream-processor",
+  "dependencies": [
+    [
+      "analytics_db",
+      "database",
+      false
+    ],
+    [
+      "stream_cache",
+      "database",
+      false
+    ]
   ],
-  "ok": false,
-  "slos": null,
-  "source_format": null,
-  "type": null,
+  "error": null,
+  "ok": true,
+  "slos": [
+    [
+      "processing-availability",
+      "availability",
+      99.5,
+      "30d",
+      false
+    ],
+    [
+      "stream-lag",
+      "availability",
+      99.0,
+      "30d",
+      false
+    ],
+    [
+      "event-latency-p99",
+      "latency",
+      95.0,
+      "30d",
+      false
+    ]
+  ],
+  "source_format": "legacy",
+  "type": "stream",
   "warnings": []
 }

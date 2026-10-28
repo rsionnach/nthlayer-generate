@@ -173,7 +173,6 @@
     "  Team: platform",
     "  Tier: high",
     "  Type: worker",
-    "  Resources: 2 defined",
     "",
     "  SLOs: 1",
     "  Dependencies: 0",

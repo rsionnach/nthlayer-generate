@@ -1,6 +1,19 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in <opensrm>/spec/v2/examples/services/database.yaml"
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: <opensrm>/spec/v2/examples/services/database.yaml",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "✗ Error generating alerts: metadata.labels.tier is required. Set to: critical, high, standard, or low"
   ]
 }

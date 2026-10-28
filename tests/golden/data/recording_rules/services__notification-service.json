@@ -47,11 +47,11 @@
           "record": "slo:latency_requests_total:30d"
         },
         {
-          "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"notification-service\",le=\"0.5\"}[30d]))",
+          "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"notification-service\",le=\"5.0\"}[30d]))",
           "labels": {
             "service": "notification-service",
             "slo": "processing-time-p95",
-            "threshold": "500ms"
+            "threshold": "5000.0ms"
           },
           "record": "slo:latency_requests_fast:30d"
         },

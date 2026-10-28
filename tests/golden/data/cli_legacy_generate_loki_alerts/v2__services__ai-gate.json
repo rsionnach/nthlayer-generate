@@ -13,6 +13,6 @@
     "",
     "Service: <opensrm>/spec/v2/examples/services/ai-gate.yaml",
     "",
-    "✗ Error generating Loki alerts: Missing required 'service' section in <opensrm>/spec/v2/examples/services/ai-gate.yaml"
+    "✗ Error generating Loki alerts: Judgment SLO missing metadata.name"
   ]
 }

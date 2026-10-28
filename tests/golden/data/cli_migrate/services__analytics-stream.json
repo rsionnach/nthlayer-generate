@@ -1,0 +1,6 @@
+{
+  "exit": 0,
+  "files": {
+    "analytics-stream.reliability.yaml": "# OpenSRM Service Reliability Manifest\n# Migrated from legacy NthLayer format\n# Original file: analytics-stream.yaml\n#\n# For more information, see:\n# https://github.com/rsionnach/opensrm\n#\n\napiVersion: srm/v1\nkind: ServiceReliabilityManifest\nmetadata:\n  name: analytics-stream\n  team: data\n  tier: high\n  description: Real-time analytics event processing pipeline\nspec:\n  type: stream\n  slos:\n    processing-availability:\n      type: availability\n      target: 99.5\n      window: 30d\n    stream-lag:\n      type: availability\n      target: 99.0\n      window: 30d\n    event-latency-p99:\n      type: latency\n      target: 95.0\n      window: 30d\n  dependencies:\n  - name: analytics_db\n    type: database\n    critical: false\n  - name: stream_cache\n    type: database\n    critical: false\n  ownership:\n    team: data\n"
+  }
+}

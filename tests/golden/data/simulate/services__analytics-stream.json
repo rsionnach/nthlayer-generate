@@ -1,0 +1,6 @@
+{
+  "error": [
+    "ValueError",
+    "Service 'analytics-stream' has no availability SLO — required for simulation"
+  ]
+}

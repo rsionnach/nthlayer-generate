@@ -1,6 +1,175 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "loki-alerts.yaml": {
+      "groups": [
+        {
+          "name": "daily-report-generator",
+          "rules": [
+            {
+              "alert": "daily-report-generator_ApplicationError",
+              "annotations": {
+                "description": "Error-level log entries detected in application logs.",
+                "summary": "[daily-report-generator] Application errors detected"
+              },
+              "expr": "sum(count_over_time({app=\"daily-report-generator\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "service": "daily-report-generator",
+                "severity": "warning",
+                "source": "service",
+                "team": "analytics",
+                "technology": "batch",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "daily-report-generator_ApplicationHighErrorRate",
+              "annotations": {
+                "description": "Application is experiencing a high rate of errors.",
+                "summary": "[daily-report-generator] High error rate in application"
+              },
+              "expr": "sum(count_over_time({app=\"daily-report-generator\"} |~ \"(?i)error|exception\" [5m])) > 100",
+              "for": "5m",
+              "labels": {
+                "service": "daily-report-generator",
+                "severity": "critical",
+                "source": "service",
+                "team": "analytics",
+                "technology": "batch",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "daily-report-generator_ApplicationPanic",
+              "annotations": {
+                "description": "Application appears to have crashed or panicked.",
+                "summary": "[daily-report-generator] Application panic/crash detected"
+              },
+              "expr": "count_over_time({app=\"daily-report-generator\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "service": "daily-report-generator",
+                "severity": "critical",
+                "source": "service",
+                "team": "analytics",
+                "technology": "batch",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "daily-report-generator_redshift_ApplicationError",
+              "annotations": {
+                "description": "Error-level log entries detected in application logs.",
+                "summary": "[daily-report-generator/redshift] Application errors detected"
+              },
+              "expr": "sum(count_over_time({app=\"redshift\", service=\"daily-report-generator\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "dependency": "redshift",
+                "service": "daily-report-generator",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "analytics",
+                "technology": "redshift",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "daily-report-generator_redshift_ApplicationHighErrorRate",
+              "annotations": {
+                "description": "Application is experiencing a high rate of errors.",
+                "summary": "[daily-report-generator/redshift] High error rate in application"
+              },
+              "expr": "sum(count_over_time({app=\"redshift\", service=\"daily-report-generator\"} |~ \"(?i)error|exception\" [5m])) > 100",
+              "for": "5m",
+              "labels": {
+                "dependency": "redshift",
+                "service": "daily-report-generator",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "analytics",
+                "technology": "redshift",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "daily-report-generator_redshift_ApplicationPanic",
+              "annotations": {
+                "description": "Application appears to have crashed or panicked.",
+                "summary": "[daily-report-generator/redshift] Application panic/crash detected"
+              },
+              "expr": "count_over_time({app=\"redshift\", service=\"daily-report-generator\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "redshift",
+                "service": "daily-report-generator",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "analytics",
+                "technology": "redshift",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "daily-report-generator_s3_ApplicationError",
+              "annotations": {
+                "description": "Error-level log entries detected in application logs.",
+                "summary": "[daily-report-generator/s3] Application errors detected"
+              },
+              "expr": "sum(count_over_time({app=\"s3\", service=\"daily-report-generator\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "dependency": "s3",
+                "service": "daily-report-generator",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "analytics",
+                "technology": "s3",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "daily-report-generator_s3_ApplicationHighErrorRate",
+              "annotations": {
+                "description": "Application is experiencing a high rate of errors.",
+                "summary": "[daily-report-generator/s3] High error rate in application"
+              },
+              "expr": "sum(count_over_time({app=\"s3\", service=\"daily-report-generator\"} |~ \"(?i)error|exception\" [5m])) > 100",
+              "for": "5m",
+              "labels": {
+                "dependency": "s3",
+                "service": "daily-report-generator",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "analytics",
+                "technology": "s3",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "daily-report-generator_s3_ApplicationPanic",
+              "annotations": {
+                "description": "Application appears to have crashed or panicked.",
+                "summary": "[daily-report-generator/s3] Application panic/crash detected"
+              },
+              "expr": "count_over_time({app=\"s3\", service=\"daily-report-generator\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "s3",
+                "service": "daily-report-generator",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "analytics",
+                "technology": "s3",
+                "tier": "standard"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
   "text": [
     "",
     "╭──╮",
@@ -13,6 +182,19 @@
     "",
     "Service: examples/opensrm/batch.reliability.yaml",
     "",
-    "✗ Error generating Loki alerts: Missing required 'service' section in examples/opensrm/batch.reliability.yaml"
+    "Service: daily-report-generator",
+    "Type: batch",
+    "Tier: standard",
+    "Dependencies: redshift, s3",
+    "",
+    "✓ Generated 9 Loki alerts",
+    "",
+    "Alert breakdown:",
+    "  Service alerts: 3",
+    "  Dependency alerts: 6",
+    "",
+    "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
+    "",
+    "✓ Done!"
   ]
 }

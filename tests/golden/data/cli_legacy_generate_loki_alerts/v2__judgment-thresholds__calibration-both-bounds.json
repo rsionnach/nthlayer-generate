@@ -1,6 +1,67 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "loki-alerts.yaml": {
+      "groups": [
+        {
+          "name": "investigation-agent",
+          "rules": [
+            {
+              "alert": "investigation-agent_ApplicationError",
+              "annotations": {
+                "description": "Error-level log entries detected in application logs.",
+                "summary": "[investigation-agent] Application errors detected"
+              },
+              "expr": "sum(count_over_time({app=\"investigation-agent\"} |~ \"(?i)error|exception|fatal\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "service": "investigation-agent",
+                "severity": "warning",
+                "source": "service",
+                "team": "risk",
+                "technology": "ai-gate",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "investigation-agent_ApplicationHighErrorRate",
+              "annotations": {
+                "description": "Application is experiencing a high rate of errors.",
+                "summary": "[investigation-agent] High error rate in application"
+              },
+              "expr": "sum(count_over_time({app=\"investigation-agent\"} |~ \"(?i)error|exception\" [5m])) > 100",
+              "for": "5m",
+              "labels": {
+                "service": "investigation-agent",
+                "severity": "critical",
+                "source": "service",
+                "team": "risk",
+                "technology": "ai-gate",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "investigation-agent_ApplicationPanic",
+              "annotations": {
+                "description": "Application appears to have crashed or panicked.",
+                "summary": "[investigation-agent] Application panic/crash detected"
+              },
+              "expr": "count_over_time({app=\"investigation-agent\"} |~ \"(?i)panic|segfault|SIGSEGV\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "service": "investigation-agent",
+                "severity": "critical",
+                "source": "service",
+                "team": "risk",
+                "technology": "ai-gate",
+                "tier": "critical"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
   "text": [
     "",
     "╭──╮",
@@ -13,6 +74,19 @@
     "",
     "Service: <opensrm>/spec/v2/examples/judgment-thresholds/calibration-both-bounds.yaml",
     "",
-    "✗ Error generating Loki alerts: Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/calibration-both-bounds.yaml"
+    "Service: investigation-agent",
+    "Type: ai-gate",
+    "Tier: critical",
+    "Dependencies: none",
+    "",
+    "✓ Generated 3 Loki alerts",
+    "",
+    "Alert breakdown:",
+    "  Service alerts: 3",
+    "  Dependency alerts: 0",
+    "",
+    "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
+    "",
+    "✓ Done!"
   ]
 }

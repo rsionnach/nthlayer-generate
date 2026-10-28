@@ -11,6 +11,6 @@
     "Output: <tmp>/out/recording-rules.yaml",
     "",
     "Parsing service specification...",
-    "✗ Error generating recording rules: Missing required 'service' section in <opensrm>/spec/v2/examples/services/worker.yaml"
+    "✗ Error generating recording rules: Error parsing OpenSLO documents: Cannot infer slo_type for OpenSLO 'reconciliation-success-rate'. The indicator shape is ambiguous. Add an opensrm.nthlayer.io/slo-type annotation."
   ]
 }

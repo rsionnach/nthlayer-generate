@@ -1,6 +1,19 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in <opensrm>/spec/v2/examples/template-extension.yaml"
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: <opensrm>/spec/v2/examples/template-extension.yaml",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "✗ Error generating alerts: Template 'template:default/payment-services-base' not found. Searched for 'payment-services-base.yaml' in <opensrm>/spec/v2/examples/templates/ and <opensrm>/spec/v2/examples/.nthlayer/templates/"
   ]
 }

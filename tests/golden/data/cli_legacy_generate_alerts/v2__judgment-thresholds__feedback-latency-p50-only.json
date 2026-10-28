@@ -1,6 +1,71 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/feedback-latency-p50-only.yaml"
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "intake-agent-judgment_threshold",
+          "rules": [
+            {
+              "alert": "AIGateFeedbackLatencyP50Breach",
+              "annotations": {
+                "description": "Only {{ $value }} of ground truth arrived within 3600.0s, below 0.5, so the quantile exceeds the declared maximum_p50 (OPENSRM-CORE-v2 §5.5.6 E1).",
+                "summary": "intake-agent: feedback_latency maximum_p50 breached"
+              },
+              "expr": "ai_gate:feedback_latency:p50_within_bound_30d{service=\"intake-agent\",target=\"3600.0\"} < 0.5",
+              "for": "15m",
+              "labels": {
+                "bound": "maximum_p50",
+                "routing": "self",
+                "service": "intake-agent",
+                "severity": "warning",
+                "team": "risk",
+                "threshold_type": "feedback_latency",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "AIGateFeedbackLatencyP50NotEvaluable",
+              "annotations": {
+                "description": "ai_gate:feedback_latency:p50_within_bound_30d has no value or is NaN, so maximum_p50 cannot be evaluated. Not evaluable is not within bounds (OPENSRM-CORE-v2 §5.5.6 E3).",
+                "summary": "intake-agent: feedback_latency maximum_p50 not evaluable"
+              },
+              "expr": "absent(ai_gate:feedback_latency:p50_within_bound_30d{service=\"intake-agent\",target=\"3600.0\"}) or (ai_gate:feedback_latency:p50_within_bound_30d{service=\"intake-agent\",target=\"3600.0\"} != ai_gate:feedback_latency:p50_within_bound_30d{service=\"intake-agent\",target=\"3600.0\"})",
+              "for": "1h",
+              "labels": {
+                "bound": "maximum_p50",
+                "routing": "self",
+                "service": "intake-agent",
+                "severity": "info",
+                "team": "risk",
+                "threshold_type": "feedback_latency",
+                "tier": "critical"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: <opensrm>/spec/v2/examples/judgment-thresholds/feedback-latency-p50-only.yaml",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "✅ Added 2 judgment-threshold alerts",
+    "  Written to: <tmp>/out/alerts.yaml",
+    "",
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
   ]
 }

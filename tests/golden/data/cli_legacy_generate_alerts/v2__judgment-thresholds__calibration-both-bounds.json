@@ -1,6 +1,107 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/calibration-both-bounds.yaml"
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "investigation-agent-judgment_threshold",
+          "rules": [
+            {
+              "alert": "AIGateCalibrationBrierBreach",
+              "annotations": {
+                "description": "ai_gate:calibration:brier is {{ $value }}, above the declared maximum_brier_score of 0.05 (OPENSRM-CORE-v2 §5.5.6 E1).",
+                "summary": "investigation-agent: calibration maximum_brier_score breached"
+              },
+              "expr": "ai_gate:calibration:brier{service=\"investigation-agent\",target=\"0.05\"} > 0.05",
+              "for": "15m",
+              "labels": {
+                "bound": "maximum_brier_score",
+                "routing": "self",
+                "service": "investigation-agent",
+                "severity": "warning",
+                "team": "risk",
+                "threshold_type": "calibration",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "AIGateCalibrationBrierNotEvaluable",
+              "annotations": {
+                "description": "ai_gate:calibration:brier has no value or is NaN, so maximum_brier_score cannot be evaluated. Not evaluable is not within bounds (OPENSRM-CORE-v2 §5.5.6 E3).",
+                "summary": "investigation-agent: calibration maximum_brier_score not evaluable"
+              },
+              "expr": "absent(ai_gate:calibration:brier{service=\"investigation-agent\",target=\"0.05\"}) or (ai_gate:calibration:brier{service=\"investigation-agent\",target=\"0.05\"} != ai_gate:calibration:brier{service=\"investigation-agent\",target=\"0.05\"})",
+              "for": "1h",
+              "labels": {
+                "bound": "maximum_brier_score",
+                "routing": "self",
+                "service": "investigation-agent",
+                "severity": "info",
+                "team": "risk",
+                "threshold_type": "calibration",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "AIGateCalibrationECEBreach",
+              "annotations": {
+                "description": "ai_gate:calibration:ece is {{ $value }}, above the declared maximum_expected_calibration_error of 0.03 (OPENSRM-CORE-v2 §5.5.6 E1).",
+                "summary": "investigation-agent: calibration maximum_expected_calibration_error breached"
+              },
+              "expr": "ai_gate:calibration:ece{service=\"investigation-agent\",target=\"0.03\"} > 0.03",
+              "for": "15m",
+              "labels": {
+                "bound": "maximum_expected_calibration_error",
+                "routing": "self",
+                "service": "investigation-agent",
+                "severity": "warning",
+                "team": "risk",
+                "threshold_type": "calibration",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "AIGateCalibrationECENotEvaluable",
+              "annotations": {
+                "description": "ai_gate:calibration:ece has no value or is NaN, so maximum_expected_calibration_error cannot be evaluated. Not evaluable is not within bounds (OPENSRM-CORE-v2 §5.5.6 E3).",
+                "summary": "investigation-agent: calibration maximum_expected_calibration_error not evaluable"
+              },
+              "expr": "absent(ai_gate:calibration:ece{service=\"investigation-agent\",target=\"0.03\"}) or (ai_gate:calibration:ece{service=\"investigation-agent\",target=\"0.03\"} != ai_gate:calibration:ece{service=\"investigation-agent\",target=\"0.03\"})",
+              "for": "1h",
+              "labels": {
+                "bound": "maximum_expected_calibration_error",
+                "routing": "self",
+                "service": "investigation-agent",
+                "severity": "info",
+                "team": "risk",
+                "threshold_type": "calibration",
+                "tier": "critical"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "╭──╮",
+    "│ Generate Alerts  │",
+    "╰──╯",
+    "",
+    "Service: <opensrm>/spec/v2/examples/judgment-thresholds/calibration-both-bounds.yaml",
+    "Output: <tmp>/out/alerts.yaml",
+    "",
+    "✅ Added 4 judgment-threshold alerts",
+    "  Written to: <tmp>/out/alerts.yaml",
+    "",
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
   ]
 }

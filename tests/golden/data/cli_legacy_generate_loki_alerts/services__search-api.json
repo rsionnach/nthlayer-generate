@@ -128,6 +128,114 @@
                 "technology": "elasticsearch",
                 "tier": "high"
               }
+            },
+            {
+              "alert": "search-api_redis_RedisClusterDown",
+              "annotations": {
+                "description": "Redis cluster is in a down state. Some slots may not be covered.",
+                "summary": "[search-api/redis] Redis cluster down"
+              },
+              "expr": "count_over_time({app=\"redis\", service=\"search-api\"} |~ \"CLUSTERDOWN|cluster.*down|slots.*not covered\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "redis",
+                "service": "search-api",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "search",
+                "technology": "redis",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "search-api_redis_RedisConnectionRefused",
+              "annotations": {
+                "description": "Applications cannot connect to Redis. Check if Redis is running and acce...",
+                "summary": "[search-api/redis] Redis connection refused"
+              },
+              "expr": "count_over_time({app=\"redis\", service=\"search-api\"} |~ \"Connection refused|ECONNREFUSED\" [1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "dependency": "redis",
+                "service": "search-api",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "search",
+                "technology": "redis",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "search-api_redis_RedisOutOfMemory",
+              "annotations": {
+                "description": "Redis is out of memory. Consider increasing maxmemory or reviewing evict...",
+                "summary": "[search-api/redis] Redis out of memory"
+              },
+              "expr": "count_over_time({app=\"redis\", service=\"search-api\"} |~ \"OOM|out of memory|Can't save\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "redis",
+                "service": "search-api",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "search",
+                "technology": "redis",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "search-api_redis_RedisRDBSaveFailed",
+              "annotations": {
+                "description": "Redis background save (RDB) failed. Check disk space and permissions.",
+                "summary": "[search-api/redis] Redis RDB save failed"
+              },
+              "expr": "count_over_time({app=\"redis\", service=\"search-api\"} |~ \"MISCONF|Background saving|RDB\" [1m]) > 0",
+              "for": "0m",
+              "labels": {
+                "dependency": "redis",
+                "service": "search-api",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "search",
+                "technology": "redis",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "search-api_redis_RedisReplicationBroken",
+              "annotations": {
+                "description": "Redis replication to master is broken. Check network connectivity and ma...",
+                "summary": "[search-api/redis] Redis replication broken"
+              },
+              "expr": "count_over_time({app=\"redis\", service=\"search-api\"} |~ \"MASTER aborted|Disconnected from MASTER|replication\" [1m]) > 0",
+              "for": "1m",
+              "labels": {
+                "dependency": "redis",
+                "service": "search-api",
+                "severity": "critical",
+                "source": "dependency",
+                "team": "search",
+                "technology": "redis",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "search-api_redis_RedisSlowlog",
+              "annotations": {
+                "description": "Slow Redis commands detected. Review command patterns and consider optim...",
+                "summary": "[search-api/redis] Redis slow commands detected"
+              },
+              "expr": "sum(count_over_time({app=\"redis\", service=\"search-api\"} |~ \"Slow|slowlog\" [5m])) > 10",
+              "for": "5m",
+              "labels": {
+                "dependency": "redis",
+                "service": "search-api",
+                "severity": "warning",
+                "source": "dependency",
+                "team": "search",
+                "technology": "redis",
+                "tier": "high"
+              }
             }
           ]
         }
@@ -149,13 +257,13 @@
     "Service: search-api",
     "Type: api",
     "Tier: high",
-    "Dependencies: elasticsearch",
+    "Dependencies: elasticsearch, redis",
     "",
-    "✓ Generated 7 Loki alerts",
+    "✓ Generated 13 Loki alerts",
     "",
     "Alert breakdown:",
     "  Service alerts: 3",
-    "  Dependency alerts: 4",
+    "  Dependency alerts: 10",
     "",
     "✓ Wrote alerts to: <tmp>/out/loki-alerts.yaml",
     "",

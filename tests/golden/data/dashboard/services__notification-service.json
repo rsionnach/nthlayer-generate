@@ -1,6 +1,6 @@
 {
   "error": [
     "KeyError",
-    "'No template found for technology: notification'"
+    "'No template found for technology: sqs'"
   ]
 }

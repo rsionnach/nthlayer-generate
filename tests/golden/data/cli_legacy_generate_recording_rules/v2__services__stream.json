@@ -11,6 +11,6 @@
     "Output: <tmp>/out/recording-rules.yaml",
     "",
     "Parsing service specification...",
-    "✗ Error generating recording rules: Missing required 'service' section in <opensrm>/spec/v2/examples/services/stream.yaml"
+    "✗ Error generating recording rules: Error parsing OpenSLO documents: Cannot infer slo_type for OpenSLO 'enrichment-consumer-lag'. The indicator shape is ambiguous. Add an opensrm.nthlayer.io/slo-type annotation."
   ]
 }

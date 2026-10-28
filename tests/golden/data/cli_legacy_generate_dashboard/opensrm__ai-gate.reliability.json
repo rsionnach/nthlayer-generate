@@ -1,6 +1,26 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in examples/opensrm/ai-gate.reliability.yaml"
+  "exit": 1,
+  "files": {},
+  "text": [
+    "",
+    "╭──╮",
+    "│ Generate Grafana Dashboard  │",
+    "╰──╯",
+    "",
+    "Service: examples/opensrm/ai-gate.reliability.yaml",
+    "Output: <tmp>/out/dashboard.json",
+    "",
+    "Parsing service specification...",
+    "  Service: fraud-detector",
+    "  Team: risk",
+    "  Tier: critical",
+    "  Type: ai-gate",
+    "",
+    "  SLOs: 4",
+    "  Dependencies: 2",
+    "",
+    "Building dashboard...",
+    "  Mode: Overview panels (key metrics)",
+    "✗ Error generating dashboard: 'No template found for technology: unknown'"
   ]
 }

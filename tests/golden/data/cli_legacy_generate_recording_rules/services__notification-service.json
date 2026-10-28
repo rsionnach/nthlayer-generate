@@ -13,24 +13,83 @@
                 "service": "notification-service",
                 "slo": "job-success-rate"
               },
-              "record": "slo:error_requests_total:30d"
+              "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"notification-service\",status=~\"5..\"}[30d]))",
+              "expr": "sum(increase(http_requests_total{service=\"notification-service\",status!~\"5..\"}[30d]))",
               "labels": {
                 "service": "notification-service",
                 "slo": "job-success-rate"
               },
-              "record": "slo:error_requests_failed:30d"
+              "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:error_requests_failed:30d{service=\"notification-service\",slo=\"job-success-rate\"} / slo:error_requests_total:30d{service=\"notification-service\",slo=\"job-success-rate\"}",
+              "expr": "slo:requests_success:30d{service=\"notification-service\",slo=\"job-success-rate\"} / slo:requests_total:30d{service=\"notification-service\",slo=\"job-success-rate\"}",
               "labels": {
                 "objective": "99.5",
                 "service": "notification-service",
                 "slo": "job-success-rate"
               },
-              "record": "slo:error_rate:ratio"
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"notification-service\",slo=\"job-success-rate\"}) / (1 - 0.995))",
+              "labels": {
+                "objective": "99.5",
+                "service": "notification-service",
+                "slo": "job-success-rate"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_count{service=\"notification-service\"}[30d]))",
+              "labels": {
+                "service": "notification-service",
+                "slo": "processing-time-p95"
+              },
+              "record": "slo:latency_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"notification-service\",le=\"5.0\"}[30d]))",
+              "labels": {
+                "service": "notification-service",
+                "slo": "processing-time-p95",
+                "threshold": "5000.0ms"
+              },
+              "record": "slo:latency_requests_fast:30d"
+            },
+            {
+              "expr": "slo:latency_requests_fast:30d{service=\"notification-service\",slo=\"processing-time-p95\"} / slo:latency_requests_total:30d{service=\"notification-service\",slo=\"processing-time-p95\"}",
+              "labels": {
+                "objective": "95.0",
+                "service": "notification-service",
+                "slo": "processing-time-p95"
+              },
+              "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"notification-service\"}[5m]))",
+              "labels": {
+                "service": "notification-service",
+                "slo": "processing-time-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"notification-service\"}[5m]))",
+              "labels": {
+                "service": "notification-service",
+                "slo": "processing-time-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"notification-service\"}[5m]))",
+              "labels": {
+                "service": "notification-service",
+                "slo": "processing-time-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p99"
             }
           ]
         },
@@ -89,8 +148,8 @@
     "",
     "Building recording rules...",
     "  Groups: 2",
-    "  Rules: 7",
-    "  • notification-service_slo_metrics: 3 rules (interval: 30s)",
+    "  Rules: 14",
+    "  • notification-service_slo_metrics: 10 rules (interval: 30s)",
     "  • notification-service_health_metrics: 4 rules (interval: 30s)",
     "",
     "Writing recording rules to <tmp>/out/recording-rules.yaml...",

@@ -50,11 +50,11 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"search-api\",le=\"0.5\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"search-api\",le=\"0.3\"}[30d]))",
               "labels": {
                 "service": "search-api",
                 "slo": "search-latency-p95",
-                "threshold": "500ms"
+                "threshold": "300.0ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },

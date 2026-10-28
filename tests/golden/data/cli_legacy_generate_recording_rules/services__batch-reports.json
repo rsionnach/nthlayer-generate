@@ -50,11 +50,11 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"batch-reports\",le=\"0.5\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"batch-reports\",le=\"2.0\"}[30d]))",
               "labels": {
                 "service": "batch-reports",
                 "slo": "latency-p95",
-                "threshold": "500ms"
+                "threshold": "2000.0ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },
@@ -97,24 +97,33 @@
                 "service": "batch-reports",
                 "slo": "report-success-rate"
               },
-              "record": "slo:error_requests_total:30d"
+              "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"batch-reports\",status=~\"5..\"}[30d]))",
+              "expr": "sum(increase(http_requests_total{service=\"batch-reports\",status!~\"5..\"}[30d]))",
               "labels": {
                 "service": "batch-reports",
                 "slo": "report-success-rate"
               },
-              "record": "slo:error_requests_failed:30d"
+              "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:error_requests_failed:30d{service=\"batch-reports\",slo=\"report-success-rate\"} / slo:error_requests_total:30d{service=\"batch-reports\",slo=\"report-success-rate\"}",
+              "expr": "slo:requests_success:30d{service=\"batch-reports\",slo=\"report-success-rate\"} / slo:requests_total:30d{service=\"batch-reports\",slo=\"report-success-rate\"}",
               "labels": {
                 "objective": "95.0",
                 "service": "batch-reports",
                 "slo": "report-success-rate"
               },
-              "record": "slo:error_rate:ratio"
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"batch-reports\",slo=\"report-success-rate\"}) / (1 - 0.95))",
+              "labels": {
+                "objective": "95.0",
+                "service": "batch-reports",
+                "slo": "report-success-rate"
+              },
+              "record": "slo:error_budget_remaining:ratio"
             }
           ]
         },
@@ -173,8 +182,8 @@
     "",
     "Building recording rules...",
     "  Groups: 2",
-    "  Rules: 17",
-    "  • batch-reports_slo_metrics: 13 rules (interval: 30s)",
+    "  Rules: 18",
+    "  • batch-reports_slo_metrics: 14 rules (interval: 30s)",
     "  • batch-reports_health_metrics: 4 rules (interval: 30s)",
     "",
     "Writing recording rules to <tmp>/out/recording-rules.yaml...",

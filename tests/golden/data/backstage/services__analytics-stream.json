@@ -1,0 +1,76 @@
+{
+  "deploymentGate": {
+    "blockingThreshold": null,
+    "budgetRemainingPercent": null,
+    "message": null,
+    "recommendations": [],
+    "status": "APPROVED",
+    "warningThreshold": 20.0
+  },
+  "errorBudget": {
+    "burnRate": null,
+    "consumedMinutes": null,
+    "remainingMinutes": null,
+    "remainingPercent": null,
+    "status": null,
+    "totalMinutes": null
+  },
+  "generatedAt": "<masked>",
+  "links": {
+    "alertsYaml": "generated/analytics-stream/alerts.yaml",
+    "grafanaDashboard": null,
+    "runbook": null,
+    "serviceManifest": "examples/services/analytics-stream.yaml",
+    "slothSpec": "generated/analytics-stream/sloth/analytics-stream.yaml"
+  },
+  "schemaVersion": "v1",
+  "score": {
+    "band": null,
+    "components": {
+      "deploySuccessRate": null,
+      "errorBudgetRemaining": null,
+      "incidentScore": null,
+      "sloCompliance": null
+    },
+    "grade": null,
+    "score": null,
+    "trend": null
+  },
+  "service": {
+    "description": "Real-time analytics event processing pipeline",
+    "name": "analytics-stream",
+    "supportModel": "self",
+    "team": "data",
+    "tier": "high",
+    "type": "stream"
+  },
+  "slos": [
+    {
+      "currentValue": null,
+      "description": null,
+      "name": "processing-availability",
+      "sloType": "availability",
+      "status": null,
+      "target": 99.5,
+      "window": "30d"
+    },
+    {
+      "currentValue": null,
+      "description": null,
+      "name": "stream-lag",
+      "sloType": "availability",
+      "status": null,
+      "target": 99.0,
+      "window": "30d"
+    },
+    {
+      "currentValue": null,
+      "description": null,
+      "name": "event-latency-p99",
+      "sloType": "latency",
+      "status": null,
+      "target": 95.0,
+      "window": "30d"
+    }
+  ]
+}

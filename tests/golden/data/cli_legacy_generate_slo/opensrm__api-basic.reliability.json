@@ -1,13 +1,94 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "sloth/user-api.yaml": {
+      "labels": {
+        "team": "platform",
+        "tier": "standard",
+        "type": "api"
+      },
+      "service": "user-api",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO availability for user-api"
+            },
+            "labels": {
+              "service": "user-api",
+              "tier": "standard"
+            },
+            "name": "UserApiAvailability",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on user-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.9% availability",
+          "name": "availability",
+          "objective": 99.9,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO latency for user-api"
+            },
+            "labels": {
+              "service": "user-api",
+              "tier": "standard"
+            },
+            "name": "UserApiLatency",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on user-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "200.0% latency",
+          "name": "latency",
+          "objective": 200.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
   "text": [
     "",
     "╭──╮",
     "│ Generate SLOs  │",
     "╰──╯",
     "",
-    "✗ Generation failed: Missing required 'service' section in examples/opensrm/api-basic.reliability.yaml",
+    "✓ Generated SLOs for user-api",
+    "  SLO count: 2",
+    "  Output: <tmp>/out/sloth/user-api.yaml",
+    "",
+    "Generated SLOs:",
+    "  • user-api-availability (99.9%)",
+    "  • user-api-latency (200.0%)",
+    "",
+    "Next steps:",
+    "  1. Review generated spec: <tmp>/out/sloth/user-api.yaml",
+    "  2. Generate Prometheus rules: sloth generate -i <tmp>/out/sloth/user-api.yaml",
+    "  3. Deploy rules to Prometheus",
     ""
   ]
 }

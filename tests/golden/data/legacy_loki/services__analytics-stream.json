@@ -18,7 +18,7 @@
               "severity": "warning",
               "source": "service",
               "team": "data",
-              "technology": "stream-processor",
+              "technology": "stream",
               "tier": "high"
             }
           },
@@ -35,7 +35,7 @@
               "severity": "critical",
               "source": "service",
               "team": "data",
-              "technology": "stream-processor",
+              "technology": "stream",
               "tier": "high"
             }
           },
@@ -52,7 +52,7 @@
               "severity": "critical",
               "source": "service",
               "team": "data",
-              "technology": "stream-processor",
+              "technology": "stream",
               "tier": "high"
             }
           },

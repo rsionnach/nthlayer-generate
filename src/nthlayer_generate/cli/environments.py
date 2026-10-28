@@ -5,13 +5,14 @@ Commands for discovering, comparing, and validating environment configurations.
 
 from __future__ import annotations
 
+import dataclasses
 from pathlib import Path
 from typing import Any
 
 import yaml
+from nthlayer_common.manifest import ManifestLoadError, ReliabilityManifest, load_manifest
 
 from nthlayer_generate.cli.ux import console, error, header, success, warning
-from nthlayer_generate.specs.parser import parse_service_file
 
 
 def list_environments_command(service_file: str | None = None, directory: str | None = None) -> int:
@@ -163,25 +164,38 @@ def diff_envs_command(service_file: str, env1: str, env2: str, show_all: bool = 
     console.print(f"[cyan]Comparing:[/cyan] {env1} vs {env2}")
     console.print()
 
-    # Parse service with both environments
+    # Load the manifest under each environment: common applies the overlay
+    # (wo62.4.1), so this compares the two merged manifests field by field
+    # (wo62.4 D7), not the raw resource dicts.
     try:
-        context1, resources1 = parse_service_file(service_file, environment=env1)
-        context2, resources2 = parse_service_file(service_file, environment=env2)
-    except (FileNotFoundError, yaml.YAMLError, KeyError, ValueError, TypeError) as e:
+        view1, view2 = _manifest_views(
+            load_manifest(service_file, environment=env1, suppress_deprecation_warning=True),
+            load_manifest(service_file, environment=env2, suppress_deprecation_warning=True),
+        )
+    # AttributeError: common's legacy loader on a malformed resource spec
+    # (opensrm-wo62.4.10).
+    except (
+        OSError,
+        ManifestLoadError,
+        yaml.YAMLError,
+        KeyError,
+        ValueError,
+        TypeError,
+        AttributeError,
+    ) as e:
         error(f"Error parsing service: {e}")
         console.print()
         return 1
 
     has_differences = False
 
-    # Compare service context
+    # Compare service fields (the manifest's scalars)
     console.print("[bold]Service Configuration:[/bold]")
     console.print()
 
-    service_fields = ["tier", "type", "team", "template"]
-    for field in service_fields:
-        val1 = getattr(context1, field, None)
-        val2 = getattr(context2, field, None)
+    for field in view1["service"]:
+        val1 = view1["service"][field]
+        val2 = view2["service"][field]
 
         if val1 != val2:
             console.print(f"  [cyan]{field}:[/cyan]")
@@ -196,41 +210,35 @@ def diff_envs_command(service_file: str, env1: str, env2: str, show_all: bool = 
         console.print("  [success]✓[/success] All fields are identical")
         console.print()
 
-    # Compare resources
+    # Compare everything else: SLOs, thresholds and dependencies by name,
+    # then ownership, observability and the other sections
     console.print("[bold]Resources:[/bold]")
     console.print()
 
-    # Build resource maps (filter out resources without names)
-    resources1_map = {r.name: r for r in resources1 if r.name}
-    resources2_map = {r.name: r for r in resources2 if r.name}
-
-    all_resource_names = set(resources1_map.keys()) | set(resources2_map.keys())
-
     resource_differences = False
 
-    for name in sorted(all_resource_names):  # type: ignore[type-var]
-        r1 = resources1_map.get(name)
-        r2 = resources2_map.get(name)
-
-        if r1 and not r2:
-            console.print(f"  [warning]⚠[/warning] {name} (only in {env1})")
-            resource_differences = True
-        elif r2 and not r1:
-            console.print(f"  [warning]⚠[/warning] {name} (only in {env2})")
-            resource_differences = True
-        elif r1 and r2:
-            # Compare specs
-            spec_diff = _diff_dicts(r1.spec, r2.spec)
-            if spec_diff:
-                console.print(f"  [cyan]{name}[/cyan] ({r1.kind}):")
-                for key, (v1, v2) in spec_diff.items():
-                    console.print(f"      [cyan]{key}:[/cyan]")
-                    console.print(f"        [muted]{env1}:[/muted] {v1}")
-                    console.print(f"        [muted]{env2}:[/muted] {v2}")
-                console.print()
+    for section, items1 in view1["resources"].items():
+        items2 = view2["resources"][section]
+        for name in sorted(set(items1) | set(items2), key=str):
+            label = f"{section}.{name}"
+            if name not in items2:
+                console.print(f"  [warning]⚠[/warning] {label} (only in {env1})")
                 resource_differences = True
-            elif show_all:
-                console.print(f"  [success]✓[/success] {name} ({r1.kind}): identical")
+            elif name not in items1:
+                console.print(f"  [warning]⚠[/warning] {label} (only in {env2})")
+                resource_differences = True
+            else:
+                spec_diff = _diff_dicts(items1[name], items2[name])
+                if spec_diff:
+                    console.print(f"  [cyan]{label}[/cyan]:")
+                    for key, (v1, v2) in sorted(spec_diff.items()):
+                        console.print(f"      [cyan]{key}:[/cyan]")
+                        console.print(f"        [muted]{env1}:[/muted] {v1}")
+                        console.print(f"        [muted]{env2}:[/muted] {v2}")
+                    console.print()
+                    resource_differences = True
+                elif show_all:
+                    console.print(f"  [success]✓[/success] {label}: identical")
 
     if not resource_differences and not show_all:
         console.print("  [success]✓[/success] All resources are identical")
@@ -398,10 +406,23 @@ def validate_env_command(
     if service_file and not errors:
         console.print("[cyan]Testing with service file...[/cyan]")
         try:
-            context, resources = parse_service_file(service_file, environment=environment)
+            manifest = load_manifest(
+                service_file, environment=environment, suppress_deprecation_warning=True
+            )
             success(f"Successfully merged with {Path(service_file).name}")
-            console.print(f"   [muted]Result: tier={context.tier}, {len(resources)} resource(s)")
-        except (FileNotFoundError, yaml.YAMLError, KeyError, ValueError, TypeError) as e:
+            console.print(
+                f"   [muted]Result: tier={manifest.tier}, {len(manifest.slos)} SLO(s), "
+                f"{len(manifest.dependencies)} dependency(ies)"
+            )
+        except (
+            OSError,
+            ManifestLoadError,
+            yaml.YAMLError,
+            KeyError,
+            ValueError,
+            TypeError,
+            AttributeError,
+        ) as e:
             errors.append(f"Failed to merge with service: {e}")
         console.print()
 
@@ -436,6 +457,48 @@ def validate_env_command(
         console.print()
 
     return 0
+
+
+# Not compared: what differs by construction between two loads of one file.
+_UNCOMPARED = frozenset({"environment", "source_file", "source_format", "raw_data"})
+
+
+def _manifest_views(
+    m1: ReliabilityManifest, m2: ReliabilityManifest
+) -> tuple[dict[str, dict[Any, Any]], dict[str, dict[Any, Any]]]:
+    """Both manifests as {"service": scalars, "resources": {section: {key: dict}}}.
+
+    A field is a section if either manifest holds a mapping or list there (an
+    optional section is None in one environment and set in the other), so
+    both views share one set of keys. List sections whose entries carry a
+    ``name`` (slos, dependencies, ...) are keyed by it, so a reordered or
+    extended list diffs per entry; an absent section is empty.
+    """
+    d1, d2 = (
+        {k: v for k, v in dataclasses.asdict(m).items() if k not in _UNCOMPARED} for m in (m1, m2)
+    )
+    sections = {k for d in (d1, d2) for k, v in d.items() if isinstance(v, (dict, list))}
+
+    def view(data: dict[str, Any]) -> dict[str, dict[Any, Any]]:
+        # Keyed by entry name, or by position for an unnamed entry.
+        resources: dict[str, dict[Any, Any]] = {}
+        for key in sorted(sections):
+            value = data.get(key)
+            if isinstance(value, list):
+                resources[key] = {
+                    (item["name"] if isinstance(item, dict) and item.get("name") else i): (
+                        item if isinstance(item, dict) else {"value": item}
+                    )
+                    for i, item in enumerate(value)
+                }
+            elif isinstance(value, dict) and value:
+                resources[key] = {key: value}
+            else:
+                resources[key] = {}
+        service = {k: v for k, v in data.items() if k not in sections}
+        return {"service": service, "resources": resources}
+
+    return view(d1), view(d2)
 
 
 def _diff_dicts(d1: dict, d2: dict, prefix: str = "") -> dict[str, tuple[Any, Any]]:

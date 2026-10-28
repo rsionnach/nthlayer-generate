@@ -18,10 +18,10 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional
 
+from nthlayer_common.manifest import load_manifest
 from rich.table import Table
 
 from nthlayer_generate.cli.ux import console, error, header
-from nthlayer_generate.specs.parser import parse_service_file, render_resource_spec
 
 # PromQL function names to exclude from metric extraction
 PROMQL_FUNCTIONS = {
@@ -360,17 +360,16 @@ def validate_slo_command(
     else:
         # Parse service file
         try:
-            context, resources = parse_service_file(service_file, environment=environment)
+            manifest = load_manifest(
+                service_file, environment=environment, suppress_deprecation_warning=True
+            )
         except Exception as e:
             error(f"Error parsing service file: {e}")
             return 2
 
-        service_name = context.name or "unknown"
+        service_name = manifest.name
 
-        # Filter SLO resources
-        slo_resources = [r for r in resources if r.kind == "SLO"]
-
-        if not slo_resources:
+        if not manifest.slos:
             console.print()
             console.print(f"[yellow]No SLO resources found in {service_file}[/yellow]")
             console.print()
@@ -381,18 +380,13 @@ def validate_slo_command(
 
         # Validate each SLO
         results = []
-        for slo_resource in slo_resources:
-            # Render the spec with variable substitution
-            rendered_spec = render_resource_spec(slo_resource)
+        for slo in manifest.slos:
+            # The legacy loader has already substituted ${var}. The legacy
+            # read here (spec.query, objectives[0]...) matched no shipped
+            # manifest, so every SLO validated nothing (opensrm-2ykh).
+            query = slo.indicator_query or ""
 
-            # Get query from objectives
-            objectives = rendered_spec.get("objectives", [])
-            if objectives:
-                query = objectives[0].get("indicator", {}).get("spec", {}).get("query", "")
-            else:
-                query = rendered_spec.get("query", "")
-
-            slo_name = f"{service_name}-{slo_resource.name}"
+            slo_name = f"{service_name}-{slo.name}"
 
             result = asyncio.run(validate_slo_metrics(slo_name, query, prometheus_url=prom_url))
             results.append(result)

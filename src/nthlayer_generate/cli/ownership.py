@@ -16,6 +16,7 @@ import asyncio
 import os
 from typing import Optional
 
+from nthlayer_common.manifest import load_manifest
 from rich.table import Table
 
 from nthlayer_generate.cli.ux import console, error, header
@@ -25,7 +26,6 @@ from nthlayer_generate.identity.ownership import (
     OwnershipSource,
     create_demo_attribution,
 )
-from nthlayer_generate.specs.parser import parse_service_file
 
 
 def ownership_command(
@@ -68,14 +68,20 @@ def ownership_command(
 
     # Parse service file
     try:
-        context, _resources = parse_service_file(service_file, environment=environment)
+        manifest = load_manifest(
+            service_file, environment=environment, suppress_deprecation_warning=True
+        )
     except Exception as e:
         error(f"Error parsing service file: {e}")
         return 2
 
-    service_name = context.name or "unknown"
-    declared_team = getattr(context, "team", None)
-    declared_owner = getattr(context, "owner", None)
+    service_name = manifest.name
+    declared_team = manifest.team
+    # The resolver's "explicit owner (email/contact)": the legacy loader maps
+    # service.email here. ServiceContext had no `owner`, so getattr always
+    # returned None (wo62.4 D6). The resolver uses it only without a team,
+    # which common now requires, so this restores the contract, not output.
+    declared_owner = manifest.ownership.email if manifest.ownership else None
 
     # Create resolver and add providers
     resolver = OwnershipResolver()

@@ -6,12 +6,14 @@ and validating environment configurations.
 
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
+from nthlayer_common.manifest import load_manifest
 
 from nthlayer_generate.cli.environments import (
     _diff_dicts,
+    _manifest_views,
     diff_envs_command,
     list_environments_command,
     validate_env_command,
@@ -202,115 +204,141 @@ class TestListEnvironmentsCommand:
             assert "dev" in captured.out
 
 
+def _diff_views(service_file, env1, env2, show_all=False):
+    """Run diff-envs and return (exit code, the two views it compared).
+
+    diff-envs only prints, so the views the command built are captured from
+    ``_manifest_views`` (patched at its use site) rather than read off the
+    console.
+    """
+    captured = []
+
+    def spy(m1, m2):
+        views = _manifest_views(m1, m2)
+        captured.append(views)
+        return views
+
+    with patch("nthlayer_generate.cli.environments._manifest_views", side_effect=spy):
+        result = diff_envs_command(service_file, env1, env2, show_all=show_all)
+    assert len(captured) <= 1
+    return result, (captured[0] if captured else None)
+
+
 class TestDiffEnvsCommand:
-    """Tests for diff_envs_command function."""
+    """Tests for diff_envs_command function.
 
-    @patch("nthlayer_generate.cli.environments.parse_service_file")
-    def test_shows_differences(self, mock_parse, capsys):
+    Overlays follow examples/environments/{dev,prod}.yaml: ``service`` keys
+    and ``kind: SLO`` resources deep-merged by (kind, name) onto the base
+    (nthlayer-common parser/legacy.py apply_environment_overlay).
+    """
+
+    def test_shows_differences(self, service_with_envs):
         """Test showing differences between environments."""
-        ctx1 = MagicMock()
-        ctx1.tier = "low"
-        ctx1.type = "api"
-        ctx1.team = "platform"
-        ctx1.template = None
-
-        ctx2 = MagicMock()
-        ctx2.tier = "critical"
-        ctx2.type = "api"
-        ctx2.team = "platform"
-        ctx2.template = None
-
-        r1 = MagicMock()
-        r1.name = "availability"
-        r1.kind = "SLO"
-        r1.spec = {"objective": 99.0}
-
-        r2 = MagicMock()
-        r2.name = "availability"
-        r2.kind = "SLO"
-        r2.spec = {"objective": 99.99}
-
-        mock_parse.side_effect = [(ctx1, [r1]), (ctx2, [r2])]
-
-        result = diff_envs_command("service.yaml", "dev", "prod")
+        result, (dev, prod) = _diff_views(service_with_envs, "dev", "prod")
 
         assert result == 0
-        captured = capsys.readouterr()
-        assert "tier" in captured.out or "Comparing" in captured.out
+        assert (dev["service"]["tier"], prod["service"]["tier"]) == ("low", "critical")
+        assert {k for k in dev["service"] if dev["service"][k] != prod["service"][k]} == {"tier"}
+        slo_diff = _diff_dicts(
+            dev["resources"]["slos"]["availability"], prod["resources"]["slos"]["availability"]
+        )
+        assert slo_diff == {"target": (99.0, 99.99)}
 
-    @patch("nthlayer_generate.cli.environments.parse_service_file")
-    def test_shows_identical_when_same(self, mock_parse, capsys):
+    def test_shows_identical_when_same(self, service_with_envs):
         """Test showing identical message when configs match."""
-        ctx = MagicMock()
-        ctx.tier = "standard"
-        ctx.type = "api"
-        ctx.team = "platform"
-        ctx.template = None
-
-        r = MagicMock()
-        r.name = "availability"
-        r.kind = "SLO"
-        r.spec = {"objective": 99.9}
-
-        mock_parse.return_value = (ctx, [r])
-
-        result = diff_envs_command("service.yaml", "dev", "staging")
+        # No overlay for either environment: both load the base unchanged.
+        result, (v1, v2) = _diff_views(service_with_envs, "qa", "staging")
 
         assert result == 0
-        captured = capsys.readouterr()
-        assert "identical" in captured.out.lower() or "same" in captured.out.lower()
+        assert v1 == v2
+        assert v1["service"]["tier"] == "standard"
+        assert v1["resources"]["slos"]["availability"]["target"] == 99.9
 
-    @patch("nthlayer_generate.cli.environments.parse_service_file")
-    def test_shows_resources_only_in_one_env(self, mock_parse, capsys):
+    def test_shows_resources_only_in_one_env(self, service_with_envs):
         """Test showing resources that exist only in one environment."""
-        ctx = MagicMock()
-        ctx.tier = "standard"
-        ctx.type = "api"
-        ctx.team = "platform"
-        ctx.template = None
+        overlay = Path(service_with_envs).parent / "environments" / "prod.yaml"
+        overlay.write_text(
+            overlay.read_text()
+            + """  - kind: SLO
+    name: latency
+    spec:
+      objective: 99.0
+"""
+        )
 
-        r1 = MagicMock()
-        r1.name = "availability"
-        r1.kind = "SLO"
-        r1.spec = {}
-
-        r2 = MagicMock()
-        r2.name = "latency"
-        r2.kind = "SLO"
-        r2.spec = {}
-
-        mock_parse.side_effect = [(ctx, [r1]), (ctx, [r1, r2])]
-
-        result = diff_envs_command("service.yaml", "dev", "prod")
+        result, (dev, prod) = _diff_views(service_with_envs, "dev", "prod")
 
         assert result == 0
-        captured = capsys.readouterr()
-        assert "only in" in captured.out or "latency" in captured.out
+        assert set(dev["resources"]["slos"]) == {"availability"}
+        assert set(prod["resources"]["slos"]) == {"availability", "latency"}
 
-    @patch("nthlayer_generate.cli.environments.parse_service_file")
-    def test_handles_parse_error(self, mock_parse):
+    def test_handles_parse_error(self, tmp_path):
         """Test handling of parse errors."""
-        mock_parse.side_effect = FileNotFoundError("Service not found")
+        result, views = _diff_views(str(tmp_path / "missing.yaml"), "dev", "prod")
 
-        result = diff_envs_command("missing.yaml", "dev", "prod")
         assert result == 1
+        assert views is None
 
-    @patch("nthlayer_generate.cli.environments.parse_service_file")
-    def test_show_all_flag(self, mock_parse, capsys):
+    def test_handles_invalid_manifest(self, tmp_path):
+        """A manifest common rejects (tier outside the four) exits 1."""
+        service_file = tmp_path / "svc.yaml"
+        service_file.write_text(
+            "service:\n  name: svc\n  team: platform\n  tier: tier-1\n  type: api\n"
+        )
+
+        result, views = _diff_views(str(service_file), "dev", "prod")
+
+        assert result == 1
+        assert views is None
+
+    def test_show_all_flag(self, service_with_envs):
         """Test --show-all flag shows identical fields."""
-        ctx = MagicMock()
-        ctx.tier = "standard"
-        ctx.type = "api"
-        ctx.team = "platform"
-        ctx.template = None
-
-        mock_parse.return_value = (ctx, [])
-
-        result = diff_envs_command("service.yaml", "dev", "prod", show_all=True)
+        result, (v1, v2) = _diff_views(service_with_envs, "qa", "staging", show_all=True)
 
         assert result == 0
-        captured = capsys.readouterr()
-        assert "same" in captured.out or "identical" in captured.out
+        assert v1 == v2
+
+
+class TestManifestViews:
+    """_manifest_views: the field-by-field shape diff-envs compares."""
+
+    def _load(self, path, env):
+        return load_manifest(path, environment=env, suppress_deprecation_warning=True)
+
+    def test_excludes_per_load_fields(self, service_with_envs):
+        """environment/source fields differ by construction and are not compared."""
+        v1, v2 = _manifest_views(
+            self._load(service_with_envs, "qa"), self._load(service_with_envs, "staging")
+        )
+
+        for field in ("environment", "source_file", "source_format", "raw_data"):
+            assert field not in v1["service"]
+            assert field not in v1["resources"]
+        assert v1 == v2
+
+    def test_views_share_section_keys(self, service_with_envs):
+        """A section set in one environment only is empty in the other view."""
+        overlay = Path(service_with_envs).parent / "environments" / "prod.yaml"
+        overlay.write_text(
+            overlay.read_text()
+            + """  - kind: Dependencies
+    name: upstream
+    spec:
+      databases:
+        - name: payments-db
+          type: postgresql
+          criticality: high
+"""
+        )
+
+        dev, prod = _manifest_views(
+            self._load(service_with_envs, "dev"), self._load(service_with_envs, "prod")
+        )
+
+        assert set(dev["resources"]) == set(prod["resources"])
+        assert set(dev["service"]) == set(prod["service"])
+        assert dev["resources"]["dependencies"] == {}
+        assert set(prod["resources"]["dependencies"]) == {"payments-db"}
 
 
 class TestValidateEnvCommand:

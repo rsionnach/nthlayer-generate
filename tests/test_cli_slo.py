@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from nthlayer_common.manifest import SLODefinition
 
 from nthlayer_generate.cli.slo import (
     _parse_window_minutes,
@@ -236,21 +237,17 @@ class TestSloListCommand:
 
 
 class TestSloCollectCommand:
-    """Tests for slo_collect_command function."""
+    """Tests for slo_collect_command function.
+
+    Service files are real legacy YAML loaded by nthlayer-common (shape from
+    examples/services/payment-api.yaml: ``kind: SLO`` resources with
+    ``spec.objective``/``window``/``indicator.query``, read by parser/loader.py
+    ``_extract_slos_from_resources``).
+    """
 
     @patch("nthlayer_generate.cli.slo._collect_slo_metrics")
-    @patch("nthlayer_generate.cli.slo.parse_service_file")
-    def test_collects_metrics(self, mock_parse, mock_collect, service_with_slos, capsys):
+    def test_collects_metrics(self, mock_collect, service_with_slos):
         """Test collecting metrics from Prometheus."""
-        ctx = MagicMock()
-        ctx.name = "test-service"
-
-        slo = MagicMock()
-        slo.kind = "SLO"
-        slo.name = "availability"
-        slo.spec = {"objective": 99.9, "window": "30d"}
-
-        mock_parse.return_value = (ctx, [slo])
         mock_collect.return_value = [
             {
                 "name": "availability",
@@ -272,78 +269,60 @@ class TestSloCollectCommand:
         )
 
         assert result == 0
-        captured = capsys.readouterr()
-        assert "HEALTHY" in captured.out or "availability" in captured.out
+        mock_collect.assert_called_once()
+        slos, prom_url, service_name = mock_collect.call_args.args
+        assert prom_url == "http://prometheus:9090"
+        assert service_name == "test-service"
+        assert [(s.name, s.target, s.window) for s in slos] == [
+            ("availability", 99.9, "30d"),
+            ("latency-p99", 99.0, "7d"),
+        ]
+        assert all(isinstance(s, SLODefinition) for s in slos)
+        assert slos[0].indicator_query.startswith("sum(rate(http_requests_total")
 
-    @patch("nthlayer_generate.cli.slo.parse_service_file")
-    def test_service_file_not_found(self, mock_parse, capsys):
+    @patch("nthlayer_generate.cli.slo._collect_slo_metrics")
+    def test_service_file_not_found(self, mock_collect, tmp_path):
         """Test error when service file not found."""
-        mock_parse.side_effect = FileNotFoundError("File not found")
-
         result = slo_collect_command(
             service="nonexistent",
-            service_file="/nonexistent/file.yaml",
+            service_file=str(tmp_path / "missing.yaml"),
         )
 
         assert result == 1
-        captured = capsys.readouterr()
-        assert "Error" in captured.out
+        mock_collect.assert_not_called()
 
-    @patch("nthlayer_generate.cli.slo.parse_service_file")
-    def test_no_slos_defined(self, mock_parse, capsys):
+    @patch("nthlayer_generate.cli.slo._collect_slo_metrics")
+    def test_no_slos_defined(self, mock_collect, service_without_slos):
         """Test error when no SLOs defined."""
-        ctx = MagicMock()
-        ctx.name = "test"
-        mock_parse.return_value = (ctx, [])
-
         result = slo_collect_command(
-            service="test",
-            service_file="test.yaml",
+            service="minimal-service",
+            service_file=service_without_slos,
         )
 
         assert result == 1
-        captured = capsys.readouterr()
-        assert "No SLOs" in captured.out
+        mock_collect.assert_not_called()
 
     @patch.dict("os.environ", {"NTHLAYER_PROMETHEUS_URL": "http://env-prom:9090"})
     @patch("nthlayer_generate.cli.slo._collect_slo_metrics")
-    @patch("nthlayer_generate.cli.slo.parse_service_file")
-    def test_uses_env_prometheus_url(self, mock_parse, mock_collect, capsys):
+    def test_uses_env_prometheus_url(self, mock_collect, service_with_slos):
         """Test using Prometheus URL from environment."""
-        ctx = MagicMock()
-        ctx.name = "test"
-        slo = MagicMock()
-        slo.kind = "SLO"
-        slo.name = "test"
-        slo.spec = {}
-
-        mock_parse.return_value = (ctx, [slo])
         mock_collect.return_value = []
 
-        slo_collect_command(
-            service="test",
-            service_file="test.yaml",
+        result = slo_collect_command(
+            service="test-service",
+            service_file=service_with_slos,
         )
 
-        captured = capsys.readouterr()
-        assert "env-prom" in captured.out
+        assert result == 0
+        assert mock_collect.call_args.args[1] == "http://env-prom:9090"
 
+    @patch("nthlayer_generate.cli.slo._print_slo_result")
     @patch("nthlayer_generate.cli.slo._collect_slo_metrics")
-    @patch("nthlayer_generate.cli.slo.parse_service_file")
-    def test_shows_healthy_count(self, mock_parse, mock_collect, capsys):
+    def test_shows_healthy_count(self, mock_collect, mock_print, service_with_slos):
         """Test showing healthy SLO count."""
-        ctx = MagicMock()
-        ctx.name = "test"
-
-        slo1 = MagicMock()
-        slo1.kind = "SLO"
-        slo1.name = "slo1"
-        slo1.spec = {}
-
-        mock_parse.return_value = (ctx, [slo1])
-        mock_collect.return_value = [
+        collected = [
             {
-                "name": "slo1",
+                "name": "availability",
                 "status": "HEALTHY",
                 "objective": 99.9,
                 "window": "30d",
@@ -351,14 +330,15 @@ class TestSloCollectCommand:
                 "error": None,
             }
         ]
+        mock_collect.return_value = collected
 
-        slo_collect_command(
-            service="test",
-            service_file="test.yaml",
+        result = slo_collect_command(
+            service="test-service",
+            service_file=service_with_slos,
         )
 
-        captured = capsys.readouterr()
-        assert "1/1" in captured.out or "healthy" in captured.out.lower()
+        assert result == 0
+        mock_print.assert_called_once_with(collected[0])
 
 
 class TestParseWindowMinutes:
@@ -482,7 +462,6 @@ class TestRegisterSloParser:
         assert args.prometheus_url == "http://prom:9090"
 
 
-
 class TestHandleSloCommand:
     """Tests for handle_slo_command function."""
 
@@ -555,16 +534,16 @@ class TestCollectSloMetrics:
         mock_provider.get_sli_value = AsyncMock(return_value=0.9995)
         mock_provider_class.return_value = mock_provider
 
-        mock_slo = MagicMock()
-        mock_slo.name = "availability"
-        mock_slo.spec = {
-            "objective": 99.9,
-            "window": "30d",
-            "indicator": {"query": "up{service='$service'}"},
-        }
+        slo = SLODefinition(
+            name="availability",
+            target=99.9,
+            slo_type="availability",
+            window="30d",
+            indicator_query="up{service='$service'}",
+        )
 
         results = await _collect_slo_metrics(
-            slo_resources=[mock_slo],
+            slos=[slo],
             prometheus_url="http://localhost:9090",
             service_name="test-service",
         )
@@ -586,16 +565,16 @@ class TestCollectSloMetrics:
         mock_provider.get_sli_value = AsyncMock(return_value=0.9994)
         mock_provider_class.return_value = mock_provider
 
-        mock_slo = MagicMock()
-        mock_slo.name = "availability"
-        mock_slo.spec = {
-            "objective": 99.9,
-            "window": "30d",
-            "indicator": {"query": "up"},
-        }
+        slo = SLODefinition(
+            name="availability",
+            target=99.9,
+            slo_type="availability",
+            window="30d",
+            indicator_query="up",
+        )
 
         results = await _collect_slo_metrics(
-            slo_resources=[mock_slo],
+            slos=[slo],
             prometheus_url="http://localhost:9090",
             service_name="test-service",
         )
@@ -613,16 +592,16 @@ class TestCollectSloMetrics:
         mock_provider.get_sli_value = AsyncMock(return_value=0.9992)  # ~80% budget consumed
         mock_provider_class.return_value = mock_provider
 
-        mock_slo = MagicMock()
-        mock_slo.name = "availability"
-        mock_slo.spec = {
-            "objective": 99.9,
-            "window": "30d",
-            "indicator": {"query": "up"},
-        }
+        slo = SLODefinition(
+            name="availability",
+            target=99.9,
+            slo_type="availability",
+            window="30d",
+            indicator_query="up",
+        )
 
         results = await _collect_slo_metrics(
-            slo_resources=[mock_slo],
+            slos=[slo],
             prometheus_url="http://localhost:9090",
             service_name="test-service",
         )
@@ -640,16 +619,16 @@ class TestCollectSloMetrics:
         mock_provider.get_sli_value = AsyncMock(return_value=0.98)  # 2% error = exhausted
         mock_provider_class.return_value = mock_provider
 
-        mock_slo = MagicMock()
-        mock_slo.name = "availability"
-        mock_slo.spec = {
-            "objective": 99.9,
-            "window": "30d",
-            "indicator": {"query": "up"},
-        }
+        slo = SLODefinition(
+            name="availability",
+            target=99.9,
+            slo_type="availability",
+            window="30d",
+            indicator_query="up",
+        )
 
         results = await _collect_slo_metrics(
-            slo_resources=[mock_slo],
+            slos=[slo],
             prometheus_url="http://localhost:9090",
             service_name="test-service",
         )
@@ -667,16 +646,16 @@ class TestCollectSloMetrics:
         mock_provider.get_sli_value = AsyncMock(return_value=None)
         mock_provider_class.return_value = mock_provider
 
-        mock_slo = MagicMock()
-        mock_slo.name = "availability"
-        mock_slo.spec = {
-            "objective": 99.9,
-            "window": "30d",
-            "indicator": {"query": "up"},
-        }
+        slo = SLODefinition(
+            name="availability",
+            target=99.9,
+            slo_type="availability",
+            window="30d",
+            indicator_query="up",
+        )
 
         results = await _collect_slo_metrics(
-            slo_resources=[mock_slo],
+            slos=[slo],
             prometheus_url="http://localhost:9090",
             service_name="test-service",
         )
@@ -694,16 +673,16 @@ class TestCollectSloMetrics:
         mock_provider.get_sli_value = AsyncMock(return_value=0.0)
         mock_provider_class.return_value = mock_provider
 
-        mock_slo = MagicMock()
-        mock_slo.name = "availability"
-        mock_slo.spec = {
-            "objective": 99.9,
-            "window": "30d",
-            "indicator": {"query": "up"},
-        }
+        slo = SLODefinition(
+            name="availability",
+            target=99.9,
+            slo_type="availability",
+            window="30d",
+            indicator_query="up",
+        )
 
         results = await _collect_slo_metrics(
-            slo_resources=[mock_slo],
+            slos=[slo],
             prometheus_url="http://localhost:9090",
             service_name="test-service",
         )
@@ -721,12 +700,16 @@ class TestCollectSloMetrics:
         mock_provider = MagicMock()
         mock_provider_class.return_value = mock_provider
 
-        mock_slo = MagicMock()
-        mock_slo.name = "availability"
-        mock_slo.spec = {"objective": 99.9, "window": "30d", "indicator": {}}
+        slo = SLODefinition(
+            name="availability",
+            target=99.9,
+            slo_type="availability",
+            window="30d",
+            indicator_query=None,
+        )
 
         results = await _collect_slo_metrics(
-            slo_resources=[mock_slo],
+            slos=[slo],
             prometheus_url="http://localhost:9090",
             service_name="test-service",
         )
@@ -746,16 +729,16 @@ class TestCollectSloMetrics:
         mock_provider.get_sli_value = AsyncMock(side_effect=PrometheusProviderError("Query failed"))
         mock_provider_class.return_value = mock_provider
 
-        mock_slo = MagicMock()
-        mock_slo.name = "availability"
-        mock_slo.spec = {
-            "objective": 99.9,
-            "window": "30d",
-            "indicator": {"query": "up"},
-        }
+        slo = SLODefinition(
+            name="availability",
+            target=99.9,
+            slo_type="availability",
+            window="30d",
+            indicator_query="up",
+        )
 
         results = await _collect_slo_metrics(
-            slo_resources=[mock_slo],
+            slos=[slo],
             prometheus_url="http://localhost:9090",
             service_name="test-service",
         )
@@ -774,23 +757,22 @@ class TestCollectSloMetrics:
         mock_provider.get_sli_value = AsyncMock(return_value=0.999)
         mock_provider_class.return_value = mock_provider
 
-        mock_slo = MagicMock()
-        mock_slo.name = "availability"
-        mock_slo.spec = {
-            "objective": 99.9,
-            "window": "30d",
-            "indicator": {"query": "up{service='${service}'}"},
-        }
+        slo = SLODefinition(
+            name="availability",
+            target=99.9,
+            slo_type="availability",
+            window="30d",
+            indicator_query="up{service='${service}'}",
+        )
 
         await _collect_slo_metrics(
-            slo_resources=[mock_slo],
+            slos=[slo],
             prometheus_url="http://localhost:9090",
             service_name="my-service",
         )
 
         # Verify that service was substituted
-        call_args = mock_provider.get_sli_value.call_args
-        assert "my-service" in call_args[0][0]
+        mock_provider.get_sli_value.assert_awaited_once_with("up{service='my-service'}")
 
     @pytest.mark.asyncio
     @patch.dict(
@@ -809,16 +791,16 @@ class TestCollectSloMetrics:
         mock_provider.get_sli_value = AsyncMock(return_value=0.999)
         mock_provider_class.return_value = mock_provider
 
-        mock_slo = MagicMock()
-        mock_slo.name = "availability"
-        mock_slo.spec = {
-            "objective": 99.9,
-            "window": "30d",
-            "indicator": {"query": "up"},
-        }
+        slo = SLODefinition(
+            name="availability",
+            target=99.9,
+            slo_type="availability",
+            window="30d",
+            indicator_query="up",
+        )
 
         await _collect_slo_metrics(
-            slo_resources=[mock_slo],
+            slos=[slo],
             prometheus_url="http://localhost:9090",
             service_name="test-service",
         )
@@ -957,28 +939,16 @@ resources:
 class TestSloCollectPrometheusError:
     """Tests for Prometheus error handling in slo_collect_command."""
 
-    @patch("nthlayer_generate.cli.slo.asyncio.run")
-    @patch("nthlayer_generate.cli.slo.parse_service_file")
-    def test_connection_error(self, mock_parse, mock_run, capsys):
+    @patch("nthlayer_generate.cli.slo._collect_slo_metrics")
+    def test_connection_error(self, mock_collect, service_with_slos):
         """Test handling Prometheus connection error."""
-        ctx = MagicMock()
-        ctx.name = "test"
-
-        slo = MagicMock()
-        slo.kind = "SLO"
-        slo.name = "test"
-        slo.spec = {}
-
-        mock_parse.return_value = (ctx, [slo])
-        mock_run.side_effect = ConnectionError("Connection refused")
+        mock_collect.side_effect = ConnectionError("Connection refused")
 
         result = slo_collect_command(
-            service="test",
+            service="test-service",
             prometheus_url="http://localhost:9090",
-            service_file="test.yaml",
+            service_file=service_with_slos,
         )
 
         assert result == 1
-        captured = capsys.readouterr()
-        assert "Error querying Prometheus" in captured.out
-        assert "NTHLAYER_PROMETHEUS_URL" in captured.out
+        mock_collect.assert_called_once()

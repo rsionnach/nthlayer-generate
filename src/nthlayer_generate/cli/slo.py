@@ -15,8 +15,9 @@ import os
 from pathlib import Path
 from typing import Any
 
+from nthlayer_common.manifest import SLODefinition, load_manifest
+
 from nthlayer_generate.cli.ux import console, header
-from nthlayer_generate.specs.parser import parse_service_file
 
 
 def slo_show_command(
@@ -47,15 +48,14 @@ def slo_show_command(
             return 1
 
     try:
-        context, resources = parse_service_file(str(service_path))
+        manifest = load_manifest(service_path, suppress_deprecation_warning=True)
     except Exception as e:
         console.print(f"[red]Error parsing service file:[/red] {e}")
         return 1
 
-    # Find SLO resources
-    slo_resources = [r for r in resources if r.kind == "SLO"]
+    slos = manifest.slos
 
-    if not slo_resources:
+    if not slos:
         console.print(f"[yellow]No SLOs defined in {service_path}[/yellow]")
         console.print()
         console.print("[dim]Add SLOs to your service.yaml:[/dim]")
@@ -68,10 +68,9 @@ def slo_show_command(
         return 1
 
     # Display each SLO
-    for slo in slo_resources:
-        spec = slo.spec or {}
-        objective = spec.get("objective", 99.9)
-        window = spec.get("window", "30d")
+    for slo in slos:
+        objective = slo.target
+        window = slo.window
 
         # Calculate error budget
         window_minutes = _parse_window_minutes(window)
@@ -88,12 +87,10 @@ def slo_show_command(
         console.print()
 
         # Indicator details
-        indicator = spec.get("indicator", {})
-        indicator_type = indicator.get("type", "custom")
-        console.print(f"  [dim]Indicator:[/dim] {indicator_type}")
+        console.print(f"  [dim]Indicator:[/dim] {slo.slo_type}")
 
-        if indicator.get("query"):
-            query = indicator["query"].strip()
+        if slo.indicator_query:
+            query = slo.indicator_query.strip()
             if len(query) > 60:
                 query = query[:57] + "..."
             console.print(f"  [dim]Query:[/dim] {query}")
@@ -101,7 +98,7 @@ def slo_show_command(
         console.print()
 
     console.rule(style="dim")
-    console.print(f"[bold]Total:[/bold] {len(slo_resources)} SLO(s) defined")
+    console.print(f"[bold]Total:[/bold] {len(slos)} SLO(s) defined")
     console.print()
     console.print("[dim]To collect metrics and calculate actual budget:[/dim]")
     console.print(f"  [cyan]nthlayer slo collect {service}[/cyan]")
@@ -128,17 +125,15 @@ def slo_list_command() -> int:
 
         for service_file in search_path.glob("*.yaml"):
             try:
-                context, resources = parse_service_file(str(service_file))
-                slo_resources = [r for r in resources if r.kind == "SLO"]
+                manifest = load_manifest(service_file, suppress_deprecation_warning=True)
 
-                for slo in slo_resources:
-                    spec = slo.spec or {}
+                for slo in manifest.slos:
                     all_slos.append(
                         {
-                            "service": context.name,
+                            "service": manifest.name,
                             "name": slo.name,
-                            "objective": spec.get("objective", 99.9),
-                            "window": spec.get("window", "30d"),
+                            "objective": slo.target,
+                            "window": slo.window,
                             "file": str(service_file),
                         }
                     )
@@ -206,15 +201,14 @@ def slo_collect_command(
             return 1
 
     try:
-        context, resources = parse_service_file(str(service_path))
+        manifest = load_manifest(service_path, suppress_deprecation_warning=True)
     except Exception as e:
         print(f"Error parsing service file: {e}")
         return 1
 
-    # Find SLO resources
-    slo_resources = [r for r in resources if r.kind == "SLO"]
+    slos = manifest.slos
 
-    if not slo_resources:
+    if not slos:
         print(f"No SLOs defined in {service_path}")
         return 1
 
@@ -223,8 +217,7 @@ def slo_collect_command(
     print()
 
     try:
-        service_name = context.name or "unknown"
-        results = asyncio.run(_collect_slo_metrics(slo_resources, prom_url, service_name))
+        results = asyncio.run(_collect_slo_metrics(slos, prom_url, manifest.name))
     except Exception as e:
         print(f"Error querying Prometheus: {e}")
         print()
@@ -248,7 +241,7 @@ def slo_collect_command(
 
 
 async def _collect_slo_metrics(
-    slo_resources: list[Any],
+    slos: list[SLODefinition],
     prometheus_url: str,
     service_name: str,
 ) -> list[dict[str, Any]]:
@@ -262,18 +255,16 @@ async def _collect_slo_metrics(
     provider = PrometheusProvider(prometheus_url, username=username, password=password)
     results = []
 
-    for slo in slo_resources:
-        spec = slo.spec or {}
-        objective = spec.get("objective", 99.9)
-        window = spec.get("window", "30d")
-        indicator = spec.get("indicator", {})
+    for slo in slos:
+        objective = slo.target
+        window = slo.window
 
         # Calculate budget
         window_minutes = _parse_window_minutes(window)
         error_budget_percent = (100 - objective) / 100
         total_budget_minutes = window_minutes * error_budget_percent
 
-        result = {
+        result: dict[str, Any] = {
             "name": slo.name,
             "objective": objective,
             "window": window,
@@ -286,7 +277,7 @@ async def _collect_slo_metrics(
         }
 
         # Try to get SLI value from Prometheus
-        query = indicator.get("query")
+        query = slo.indicator_query
         if query:
             # Substitute service name in query
             query = query.replace("${service}", service_name)
@@ -399,7 +390,6 @@ def register_slo_parser(subparsers: argparse._SubParsersAction) -> None:
         "--prometheus-url",
         help="Prometheus server URL (or set NTHLAYER_PROMETHEUS_URL)",
     )
-
 
 
 def handle_slo_command(args: argparse.Namespace) -> int:

@@ -108,7 +108,10 @@ def test_sloth_legacy_without_a_bound_keeps_the_legacy_default(tmp_path):
             "100ms",
             id="legacy-declared",
         ),
-        # legacy: no bound declared, no query; the legacy builder's 500 ms default
+        # legacy: checkout-service declares threshold_ms: 800, but only inside a
+        # plural indicators: list, which nothing reads yet (opensrm-wo62.4.8).
+        # This pins today's 500 ms fallback as a tripwire: it re-pins when that
+        # lands. The no-bound path proper is the derived payment-api sloth case.
         pytest.param(
             SERVICES / "checkout-service.yaml", "latency-p95", "0.5", "500ms", id="legacy-default"
         ),
@@ -149,7 +152,15 @@ def test_recording_rule_bound(path, slo, le, label):
             id="cache-declared-beats-name",
         ),
         # Undeclared: name inference, then the shared rule's redis/kafka defaults.
+        # Name keywords: the alerts/loki rule this was moved from
+        # (specs/helpers.py extract_dependency_technologies @88057bb).
         pytest.param(Dependency(name="events-kafka", type="queue"), "kafka", id="queue-name"),
+        pytest.param(Dependency(name="rabbit-jobs", type="queue"), "rabbitmq", id="queue-rabbit"),
+        pytest.param(
+            Dependency(name="memcache-sessions", type="cache"), "memcached", id="cache-memcache"
+        ),
+        # examples/opensrm/worker.reliability.yaml: an untyped "sqs-queue".
+        pytest.param(Dependency(name="sqs-queue", type="queue"), "sqs", id="queue-sqs"),
         pytest.param(Dependency(name="jobs", type="queue"), "kafka", id="queue-default"),
         pytest.param(Dependency(name="sessions", type="cache"), "redis", id="cache-default"),
         # APIs map to no template whatever they carry.
@@ -234,10 +245,13 @@ def test_queue_without_a_dashboard_template_is_skipped():
 
 
 def test_cache_declaring_an_untemplated_technology_is_skipped():
-    """srm/v1 carries database_type on any dependency (common parser/v1.py).
-    examples/opensrm/api-critical.reliability.yaml's redis cache, re-declared
-    as elasticache: base drew redis panels from the name, then the declared
-    technology made the dashboard fail outright."""
+    """Derived, and from the implementation: opensrm/spec/v1/specification.md
+    §7.2 has no database_type, but NthLayer's srm/v1 parser reads one as an
+    extension (common parser/v1.py), so a file can declare it.
+    examples/opensrm/api-critical.reliability.yaml's cache, re-declared as
+    elasticache: base drew redis panels from the name, the declared technology
+    then failed the dashboard. The real artefact for the skip is
+    notification-service's sqs queue (the test above)."""
     manifest = _load(EXAMPLES / "opensrm" / "api-critical.reliability.yaml")
     caches = [d for d in manifest.dependencies if d.type == "cache"]
     assert caches

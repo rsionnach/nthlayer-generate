@@ -360,10 +360,13 @@ service:
         assert output_file.exists()
 
 
-# Malformed legacy Dependencies specs. generate's legacy parser reported these
-# (exit 1) or ignored them; common's loader raises a bare AttributeError on
-# them (opensrm-wo62.4.10), which must not escape as a traceback. Last case:
-# a non-mapping SLO spec, the same loader path.
+# Malformed legacy resource specs: common's loader raises a bare AttributeError
+# on each (opensrm-wo62.4.10), which must not escape as a traceback. What the
+# legacy path did at 88057bb, probed:
+# - dependencies-spec-str: ignored the spec and exited 0. Exit 1 is now
+#   stricter, from common's loader, not from any rule of the legacy format.
+# - databases-not-a-list, database-entry-str: rejected, exit 1.
+# - slo-spec-int: crashed with AttributeError.
 _MALFORMED = {
     "dependencies-spec-str": "  - kind: Dependencies\n    name: upstream\n    spec: oops\n",
     "databases-not-a-list": (

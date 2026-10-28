@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.2.0](https://github.com/rsionnach/nthlayer-generate/compare/v3.1.1...v3.2.0) (2026-10-28)
+
+
+### Features
+
+* move *_from_manifest commands onto nthlayer-common (opensrm-wo62.4.3) ([98e1029](https://github.com/rsionnach/nthlayer-generate/commit/98e1029a77a4d5c56d5217d285716850c67246ee))
+* read common 5.7.0's latency threshold and declared dependency technology (opensrm-wo62.4.3) ([a30232d](https://github.com/rsionnach/nthlayer-generate/commit/a30232ddae21718308a0b6dd3084d9e644232b1f))
+
+
+### Bug Fixes
+
+* deterministic dependency order; generate-slo reports model errors (opensrm-wo62.4.3) ([67dde7b](https://github.com/rsionnach/nthlayer-generate/commit/67dde7b3700a173af15b3a170842383b4f1a5234))
+
+
+### Code Refactoring
+
+* move *_from_manifest commands onto nthlayer-common (opensrm-wo62.4.3) ([b8f49b4](https://github.com/rsionnach/nthlayer-generate/commit/b8f49b4a1a61de3f436c7730cebc72fc9421cef2))
+
 ## [3.1.1](https://github.com/rsionnach/nthlayer-generate/compare/v3.1.0...v3.1.1) (2026-10-27)
 
 

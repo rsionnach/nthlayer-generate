@@ -12,7 +12,7 @@ from typing import Any
 
 import structlog
 import yaml
-from nthlayer_common.manifest import ReliabilityManifest, SLODefinition
+from nthlayer_common.manifest import ReliabilityManifest, SLODefinition, SourceFormat
 
 from nthlayer_generate.specs.models import ServiceContext
 from nthlayer_generate.specs.parser import parse_service_file, render_resource_spec
@@ -269,8 +269,14 @@ def _convert_slo_definition_to_sloth(
         "query": query,
     }
     if "latency" in indicator_type:
-        # Use target as threshold for latency SLOs
-        indicator["threshold_ms"] = slo.target
+        # The bound: the legacy format declares it apart from the objective
+        # (common's threshold_ms, opensrm-wo62.4.7); srm/v1 puts it in target.
+        # A legacy SLO with no bound keeps convert_indicator_to_sli's default,
+        # as the legacy builder did, rather than reading its 0-100 objective.
+        if slo.threshold_ms is not None:
+            indicator["threshold_ms"] = slo.threshold_ms
+        elif manifest.source_format != SourceFormat.LEGACY:
+            indicator["threshold_ms"] = slo.target
 
     sli = convert_indicator_to_sli(indicator)
 

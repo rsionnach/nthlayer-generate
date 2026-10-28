@@ -80,20 +80,19 @@ _SHIPPED_LEGACY = sorted((REPO / "examples" / "services").glob("*.yaml")) + [
     REPO / "examples" / "uat" / n
     for n in ("payment-api.yaml", "payment-api-with-slas.yaml", "payment-api-partial-slas.yaml")
 ]
-# examples/services/analytics-stream.yaml declares ``type: stream-processor``,
-# which common's legacy loader rejects before migrate ever runs
-# (checkpoint-B-coverage.md §1). Named, not filtered by catching errors, so a
-# second unloadable example fails the count below instead of vanishing.
-_UNLOADABLE = {REPO / "examples" / "services" / "analytics-stream.yaml"}
-_ROUND_TRIP = [p for p in _SHIPPED_LEGACY if p not in _UNLOADABLE]
+# Every one loads: examples/services/analytics-stream.yaml's
+# ``type: stream-processor`` was rejected until nthlayer-common 5.7.0 aliased it
+# to ``stream`` (opensrm-wo62.4.7 R3). Not filtered by catching errors, so an
+# unloadable example fails the loop below instead of vanishing.
+_ROUND_TRIP = _SHIPPED_LEGACY
+ANALYTICS_STREAM = REPO / "examples" / "services" / "analytics-stream.yaml"
 
 
 def test_round_trip_covers_every_loadable_legacy_example() -> None:
     assert all(p.is_file() for p in _SHIPPED_LEGACY)
-    assert len(_ROUND_TRIP) >= 19
-    for path in _UNLOADABLE:
-        with pytest.raises(ValueError, match="stream-processor"):
-            load_manifest(path, suppress_deprecation_warning=True)
+    assert len(_ROUND_TRIP) >= 20
+    analytics = load_manifest(ANALYTICS_STREAM, suppress_deprecation_warning=True)
+    assert (analytics.type, analytics.authored_type) == ("stream", "stream-processor")
     # Template-only examples (api-minimal, ...) declare no SLOs, so the SLO
     # assertion below is vacuous for them; most examples must still carry some.
     with_slos = [p for p in _ROUND_TRIP if load_manifest(p, suppress_deprecation_warning=True).slos]

@@ -3,6 +3,8 @@
 import json
 from unittest.mock import patch
 
+import pytest
+
 from nthlayer_generate.cli.dashboard import generate_dashboard_command
 from nthlayer_generate.dashboards.manifest_builder import build_dashboard_from_manifest
 
@@ -356,3 +358,30 @@ service:
 
         assert result == 0
         assert output_file.exists()
+
+
+# Malformed legacy Dependencies specs. generate's legacy parser reported these
+# (exit 1) or ignored them; common's loader raises a bare AttributeError on
+# them (opensrm-wo62.4.10), which must not escape as a traceback. Last case:
+# a non-mapping SLO spec, the same loader path.
+_MALFORMED = {
+    "dependencies-spec-str": "  - kind: Dependencies\n    name: upstream\n    spec: oops\n",
+    "databases-not-a-list": (
+        "  - kind: Dependencies\n    name: upstream\n    spec:\n      databases: notalist\n"
+    ),
+    "database-entry-str": (
+        "  - kind: Dependencies\n    name: upstream\n    spec:\n      databases: [pg]\n"
+    ),
+    "slo-spec-int": "  - kind: SLO\n    name: availability\n    spec: 5\n",
+}
+
+
+@pytest.mark.parametrize("resources", _MALFORMED.values(), ids=_MALFORMED.keys())
+def test_malformed_legacy_spec_exits_1(resources, tmp_path):
+    path = tmp_path / "bad-service.yaml"
+    path.write_text(
+        "service:\n  name: bad-service\n  team: platform\n  tier: standard\n  type: api\n"
+        "resources:\n" + resources
+    )
+
+    assert generate_dashboard_command(str(path), output=str(tmp_path / "d.json")) == 1

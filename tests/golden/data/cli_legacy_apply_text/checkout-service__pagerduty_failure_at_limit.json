@@ -1,0 +1,17 @@
+{
+  "exit": 1,
+  "text": [
+    "",
+    "  ✓ SLOs  3 created",
+    "  ✓ Recording  20 rules",
+    "  ✓ Backstage  1 created",
+    "  ✓ Alerts  26 generated",
+    "  ✓ Dashboard  1 generated",
+    "",
+    "Applied 51 resources with errors in <duration>",
+    "",
+    "Warnings:",
+    "  • Pagerduty generation failed: PagerDuty API returned 429 Too Many Requests: xxxxx",
+    ""
+  ]
+}

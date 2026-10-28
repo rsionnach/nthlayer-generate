@@ -34,6 +34,7 @@ commands that take ``--env`` over ``ENV_CASES``.
 
 from __future__ import annotations
 
+import itertools
 import json
 import re
 from collections.abc import Callable
@@ -652,12 +653,19 @@ PD_DEMO_SERVICE = EX / "services" / "payment-api-pagerduty-demo.yaml"
 # PagerDuty API failures as apply reports them ("Pagerduty generation failed:
 # <message>"). Without --verbose, print_apply_summary cuts an error longer
 # than 80 characters to 77 plus "..." (cli/apply.py:64-65): the long one is
-# cut, the short one (75 characters reported) sits just under the threshold.
+# cut, the short one (75 characters reported) is kept whole; the boundary pair
+# below pins the threshold itself.
 PD_API_FAILURE_LONG = (
     "PagerDuty API returned 401 Unauthorized for POST /teams: "
     "the API key is invalid or has been revoked"
 )
 PD_API_FAILURE_SHORT = "PagerDuty API returned 503 Service Unavailable"
+# cli/apply.py cuts an error longer than 80 characters to 77 + "...". The
+# reported line is "Pagerduty generation failed: " (29 characters) + the
+# message, so these two put it exactly at 80 (kept whole) and 81 (cut).
+_PD_BOUNDARY_BASE = "PagerDuty API returned 429 Too Many Requests: "
+PD_API_FAILURE_AT_LIMIT = _PD_BOUNDARY_BASE + "x" * (51 - len(_PD_BOUNDARY_BASE))
+PD_API_FAILURE_OVER_LIMIT = _PD_BOUNDARY_BASE + "x" * (52 - len(_PD_BOUNDARY_BASE))
 
 
 def _sorted_dependency_extractors(env: Env) -> None:
@@ -700,9 +708,13 @@ def plan_markdown(env: Env) -> Any:
 
 
 def _apply_text(path: Path, env: Env, environment: str | None = None, **kwargs: Any) -> Any:
+    # A stepping clock keeps the duration positive, so the " in Xs" suffix the
+    # summary prints only for a duration above zero is always there.
+    ticks = itertools.count(1000.0, 0.5)
+    env.monkeypatch.setattr("nthlayer_generate.orchestrator.time.time", lambda: next(ticks))
     env.discard_output()
     code = apply_command(str(path), env=environment, output_dir=str(env.tmp / "out"), **kwargs)
-    # The summary line carries the wall-clock duration ("in 0.3s").
+    # The summary line carries the duration ("in 0.3s").
     text = [re.sub(r" in \d+\.\ds\b", " in <duration>", line) for line in env.text()]
     return {"exit": code, "text": text}
 
@@ -906,6 +918,10 @@ SINGLETONS: dict[str, dict[str, Callable[[Env], Any]]] = {
             PD_API_FAILURE_LONG, verbose=True
         ),
         "checkout-service__pagerduty_failure_short": _apply_pd_failure(PD_API_FAILURE_SHORT),
+        "checkout-service__pagerduty_failure_at_limit": _apply_pd_failure(PD_API_FAILURE_AT_LIMIT),
+        "checkout-service__pagerduty_failure_over_limit": _apply_pd_failure(
+            PD_API_FAILURE_OVER_LIMIT
+        ),
         "staged__search-api__env-prod__dry_run": apply_dry_run_env,
     },
     "cli_legacy_recommend_metrics_formats": {

@@ -37,6 +37,7 @@ from __future__ import annotations
 import itertools
 import json
 import re
+import types
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -711,7 +712,11 @@ def _apply_text(path: Path, env: Env, environment: str | None = None, **kwargs: 
     # A stepping clock keeps the duration positive, so the " in Xs" suffix the
     # summary prints only for a duration above zero is always there.
     ticks = itertools.count(1000.0, 0.5)
-    env.monkeypatch.setattr("nthlayer_generate.orchestrator.time.time", lambda: next(ticks))
+    # Swap only the orchestrator's module reference (it uses time.time alone),
+    # not time.time itself, which every other caller in the process shares.
+    import nthlayer_generate.orchestrator as orchestrator
+
+    env.monkeypatch.setattr(orchestrator, "time", types.SimpleNamespace(time=lambda: next(ticks)))
     env.discard_output()
     code = apply_command(str(path), env=environment, output_dir=str(env.tmp / "out"), **kwargs)
     # The summary line carries the duration ("in 0.3s").

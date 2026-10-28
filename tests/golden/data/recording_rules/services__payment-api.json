@@ -51,7 +51,7 @@
           "labels": {
             "service": "payment-api",
             "slo": "latency-p95",
-            "threshold": "500.0ms"
+            "threshold": "500ms"
           },
           "record": "slo:latency_requests_fast:30d"
         },
@@ -101,7 +101,7 @@
           "labels": {
             "service": "payment-api",
             "slo": "latency-p99",
-            "threshold": "1000.0ms"
+            "threshold": "1000ms"
           },
           "record": "slo:latency_requests_fast:30d"
         },

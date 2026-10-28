@@ -54,7 +54,7 @@
               "labels": {
                 "service": "auth-api",
                 "slo": "latency-p95",
-                "threshold": "200.0ms"
+                "threshold": "200ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },
@@ -104,7 +104,7 @@
               "labels": {
                 "service": "auth-api",
                 "slo": "token-generation-latency",
-                "threshold": "100.0ms"
+                "threshold": "100ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },

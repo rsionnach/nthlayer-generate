@@ -51,7 +51,7 @@
           "labels": {
             "service": "user-api",
             "slo": "latency",
-            "threshold": "200.0ms"
+            "threshold": "200ms"
           },
           "record": "slo:latency_requests_fast:30d"
         },

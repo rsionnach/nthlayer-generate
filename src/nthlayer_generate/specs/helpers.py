@@ -48,7 +48,9 @@ def dependency_technology(dep: Dependency) -> str | None:
     without one is a cache or queue inferred from its name, then defaulted.
     """
     if dep.type in ("database", "cache", "queue") and dep.database_type:
-        return dep.database_type.lower()
+        declared = dep.database_type.strip().lower()
+        if declared:
+            return declared
     if dep.type == "cache":
         name_lower = dep.name.lower()
         if "redis" in name_lower:

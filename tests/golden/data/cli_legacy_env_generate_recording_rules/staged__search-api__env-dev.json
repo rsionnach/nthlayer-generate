@@ -54,7 +54,7 @@
               "labels": {
                 "service": "search-api",
                 "slo": "search-latency-p95",
-                "threshold": "300.0ms"
+                "threshold": "300ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },

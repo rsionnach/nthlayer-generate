@@ -51,7 +51,7 @@
           "labels": {
             "service": "batch-reports",
             "slo": "latency-p95",
-            "threshold": "2000.0ms"
+            "threshold": "2000ms"
           },
           "record": "slo:latency_requests_fast:30d"
         },

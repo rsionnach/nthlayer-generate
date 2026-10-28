@@ -54,7 +54,7 @@
               "labels": {
                 "service": "search-api",
                 "slo": "search-latency-p95",
-                "threshold": "300.0ms"
+                "threshold": "300ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },
@@ -138,7 +138,7 @@
               "labels": {
                 "service": "search-api",
                 "slo": "latency-p95",
-                "threshold": "800.0ms"
+                "threshold": "800ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },
@@ -188,7 +188,7 @@
               "labels": {
                 "service": "search-api",
                 "slo": "latency-p99",
-                "threshold": "2000.0ms"
+                "threshold": "2000ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },

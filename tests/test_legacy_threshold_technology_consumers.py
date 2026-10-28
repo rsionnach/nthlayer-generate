@@ -14,6 +14,7 @@ recording_rules/builder.py: 500 ms).
 
 from __future__ import annotations
 
+import dataclasses
 import warnings
 from pathlib import Path
 
@@ -104,7 +105,7 @@ def test_sloth_legacy_without_a_bound_keeps_the_legacy_default(tmp_path):
             SERVICES / "auth-api.yaml",
             "token-generation-latency",
             "0.1",
-            "100.0ms",
+            "100ms",
             id="legacy-declared",
         ),
         # legacy: no bound declared, no query; the legacy builder's 500 ms default
@@ -116,7 +117,7 @@ def test_sloth_legacy_without_a_bound_keeps_the_legacy_default(tmp_path):
             EXAMPLES / "opensrm" / "ai-gate.reliability.yaml",
             "latency",
             "0.1",
-            "100.0ms",
+            "100ms",
             id="srm-v1-target",
         ),
     ],
@@ -187,3 +188,63 @@ def test_search_api_cache_uses_the_declared_type():
     spec = next(r.spec for r in resources if r.kind == "Dependencies")
 
     assert {c["name"]: c["type"] for c in spec["caches"]} == {"query-cache": "redis"}
+
+
+def test_recording_rule_le_is_formatted_as_exporters_write_it():
+    """A bound of 1e9 ms is le 1e+06 in exporters' formatting (prometheus_le,
+    Go's %g), not "1000000.0"; the label drops the float's trailing .0."""
+    manifest = _load(SERVICES / "auth-api.yaml")
+    slos = [
+        dataclasses.replace(s, threshold_ms=1e9) if s.name == "token-generation-latency" else s
+        for s in manifest.slos
+    ]
+
+    rule = _latency_fast_rule(dataclasses.replace(manifest, slos=slos), "token-generation-latency")
+
+    assert 'le="1e+06"' in rule["expr"]
+    assert rule["threshold"] == "1e+09ms"
+
+
+@pytest.mark.parametrize(
+    ("declared", "expected"),
+    [
+        pytest.param(" Redis ", "redis", id="whitespace-and-case"),
+        pytest.param("   ", "redis", id="blank-falls-back-to-name"),
+    ],
+)
+def test_declared_technology_is_normalised(declared, expected):
+    dep = Dependency(name="redis-sessions", type="cache", database_type=declared)
+
+    assert dependency_technology(dep) == expected
+
+
+def test_queue_without_a_dashboard_template_is_skipped():
+    """examples/services/notification-service.yaml declares a queue with
+    type: sqs, for which no dashboard template exists. Rob, 2026-10-28: leave
+    it out with a warning, as alerts do, rather than fail the dashboard (the
+    legacy builder failed here too)."""
+    manifest = _load(SERVICES / "notification-service.yaml")
+    assert "sqs" in {dependency_technology(d) for d in manifest.dependencies}
+    builder = ManifestDashboardBuilder(manifest=manifest)
+    resources = builder._manifest_to_resources(builder._manifest_to_context())
+    spec = next(r.spec for r in resources if r.kind == "Dependencies")
+
+    assert "sqs" not in {q["type"] for q in spec["queues"]}
+    assert builder.build()["dashboard"]["panels"]
+
+
+def test_cache_declaring_an_untemplated_technology_is_skipped():
+    """srm/v1 carries database_type on any dependency (common parser/v1.py).
+    examples/opensrm/api-critical.reliability.yaml's redis cache, re-declared
+    as elasticache: base drew redis panels from the name, then the declared
+    technology made the dashboard fail outright."""
+    manifest = _load(EXAMPLES / "opensrm" / "api-critical.reliability.yaml")
+    caches = [d for d in manifest.dependencies if d.type == "cache"]
+    assert caches
+    deps = [
+        dataclasses.replace(d, database_type="elasticache") if d.type == "cache" else d
+        for d in manifest.dependencies
+    ]
+    builder = ManifestDashboardBuilder(manifest=dataclasses.replace(manifest, dependencies=deps))
+
+    assert builder.build()["dashboard"]["panels"]

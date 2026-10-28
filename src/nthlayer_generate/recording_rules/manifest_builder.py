@@ -242,12 +242,13 @@ class ManifestRecordingRuleBuilder:
                 record=f"slo:latency_requests_fast:{window}",
                 expr=(
                     f'sum(increase(http_request_duration_seconds_bucket{{service="{service}",'
-                    f'le="{threshold_sec}"}}[{window}]))'
+                    f'le="{prometheus_le(threshold_sec)}"}}[{window}]))'
                 ),
                 labels={
                     "service": service,
                     "slo": slo_name,
-                    "threshold": f"{threshold_ms}ms",
+                    # %g: 500.0 renders "500ms", as the legacy builder wrote it.
+                    "threshold": f"{threshold_ms:g}ms",
                 },
             )
         )

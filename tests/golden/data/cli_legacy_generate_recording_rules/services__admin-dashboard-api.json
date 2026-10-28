@@ -54,7 +54,7 @@
               "labels": {
                 "service": "admin-dashboard-api",
                 "slo": "latency-p95",
-                "threshold": "1000.0ms"
+                "threshold": "1000ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },

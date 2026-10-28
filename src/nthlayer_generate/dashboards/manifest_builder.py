@@ -14,6 +14,7 @@ import structlog
 from nthlayer_common.manifest import ReliabilityManifest
 
 from nthlayer_generate.dashboards.builder_sdk import DashboardBuilderSDK
+from nthlayer_generate.dashboards.templates import get_template_or_none
 from nthlayer_generate.specs.context import service_context_from_manifest
 from nthlayer_generate.specs.helpers import dependency_technology
 from nthlayer_generate.specs.models import Resource, ServiceContext
@@ -128,10 +129,22 @@ class ManifestDashboardBuilder:
                     # specs.helpers.dependency_technology): the declared
                     # technology, else name inference, else its redis/kafka
                     # defaults.
+                    technology = dependency_technology(dep)
+                    if technology is None or get_template_or_none(technology) is None:
+                        # Rob, 2026-10-28: a technology with no dashboard
+                        # template is left out with a warning, as alerts skip
+                        # it, rather than failing the whole dashboard.
+                        logger.warning(
+                            "No dashboard template for %s '%s' (technology %r), skipping",
+                            dep.type,
+                            dep.name,
+                            technology,
+                        )
+                        continue
                     dep_spec["caches" if dep.type == "cache" else "queues"].append(
                         {
                             "name": dep.name,
-                            "type": dependency_technology(dep),
+                            "type": technology,
                         }
                     )
                 elif dep.type == "api":

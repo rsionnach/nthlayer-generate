@@ -1,6 +1,191 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "dashboard.json": {
+      "dashboard": {
+        "annotations": {},
+        "description": "Auto-generated dashboard for notification-service service",
+        "editable": true,
+        "fiscalYearStartMonth": 0,
+        "graphTooltip": 0,
+        "panels": [
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 0
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "SLO Metrics",
+            "type": "row"
+          },
+          {
+            "description": "Target: 99.5%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(job_runs{service=\"notification-service\",status=\"success\"}[5m]))\n/\nsum(rate(job_runs{service=\"notification-service\"}[5m]))\n",
+                "legendFormat": "job-success-rate",
+                "refId": "A"
+              }
+            ],
+            "title": "job-success-rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 95.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95,\n  rate(job_duration_seconds_bucket{service=\"notification-service\"}[5m])\n)\n",
+                "legendFormat": "processing-time-p95",
+                "refId": "A"
+              }
+            ],
+            "title": "processing-time-p95",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 10
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Service Health",
+            "type": "row"
+          },
+          {
+            "description": "Jobs/notifications processed per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 11
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(notifications_sent_total{service=\"notification-service\"}[5m]))",
+                "legendFormat": "{{notifications}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Notification Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Percentage of jobs/notifications failing",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 11
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(notifications_sent_total{service=\"notification-service\",status=\"failed\"}[5m])) / sum(rate(notifications_sent_total{service=\"notification-service\"}[5m])) * 100",
+                "legendFormat": "error %",
+                "refId": "A"
+              }
+            ],
+            "title": "Error Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "95th percentile processing duration",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(notification_processing_duration_seconds_bucket{service=\"notification-service\"}[5m])))",
+                "legendFormat": "{{notification}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Processing Latency (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          }
+        ],
+        "schemaVersion": 36,
+        "style": "dark",
+        "tags": [
+          "platform",
+          "standard",
+          "worker"
+        ],
+        "templating": {},
+        "time": {
+          "from": "now-6h",
+          "to": "now"
+        },
+        "timezone": "browser",
+        "title": "notification-service - Service Dashboard",
+        "uid": "notification-service-overview"
+      },
+      "message": "Auto-generated dashboard for notification-service",
+      "overwrite": true
+    }
+  },
   "text": [
     "",
     "╭──╮",
@@ -21,6 +206,13 @@
     "",
     "Building dashboard...",
     "  Mode: Overview panels (key metrics)",
-    "✗ Error generating dashboard: 'No template found for technology: sqs'"
+    "  Title: notification-service",
+    "  UID: notification-service-overview",
+    "  Panels: 0",
+    "",
+    "Writing dashboard to <tmp>/out/dashboard.json...",
+    "",
+    "Dashboard generated successfully!",
+    ""
   ]
 }

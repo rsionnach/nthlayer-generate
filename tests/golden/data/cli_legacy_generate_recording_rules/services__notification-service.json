@@ -54,7 +54,7 @@
               "labels": {
                 "service": "notification-service",
                 "slo": "processing-time-p95",
-                "threshold": "5000.0ms"
+                "threshold": "5000ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },

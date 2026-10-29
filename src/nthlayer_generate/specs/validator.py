@@ -109,13 +109,13 @@ def _legacy_resources(manifest: Any) -> list[dict[str, Any]]:
     return [r for r in resources if isinstance(r, dict)]
 
 
-def _first_nameless_resource(raw_data: Any) -> int | None:
-    """Index of the first resource with no name in ``raw_data``'s
-    ``resources:`` list (the file after its env overlay), or None.
+def _first_incomplete_resource(raw_data: Any) -> tuple[int, str] | None:
+    """The first resource in ``raw_data``'s ``resources:`` list (the file
+    after its env overlay) with no kind or no name, as (index, reason).
 
-    The legacy parser rejected such a file ("Resource name is required"),
-    indexing the overlaid list before template expansion; any falsy name
-    counts, as in its ``Resource`` model.
+    The legacy parser rejected such a file, indexing the overlaid list
+    before template expansion, with its ``Resource`` model's checks in
+    order: a falsy kind, then a falsy name.
     """
     if not isinstance(raw_data, dict):
         return None
@@ -123,8 +123,12 @@ def _first_nameless_resource(raw_data: Any) -> int | None:
     if not isinstance(resources, list):
         return None
     for index, resource in enumerate(resources):
-        if isinstance(resource, dict) and not resource.get("name"):
-            return index
+        if not isinstance(resource, dict):
+            continue
+        if not resource.get("kind"):
+            return index, "Resource kind is required"
+        if not resource.get("name"):
+            return index, "Resource name is required"
     return None
 
 
@@ -215,9 +219,9 @@ def validate_service_file(
 
     try:
         if not use_opensrm:
-            # Before the load: common loads a nameless resource (an SLO named
-            # '') or crashes on it. The parser checked the list after the env
-            # overlay, so the check reads common's own overlay merge.
+            # Before the load: common loads a kindless or nameless resource
+            # (an SLO named '') or crashes on it. The parser checked the list
+            # after the env overlay, so the check reads common's own merge.
             overlaid = (
                 legacy_parser.apply_environment_overlay(
                     copy.deepcopy(raw_data), file_path, environment
@@ -225,13 +229,11 @@ def validate_service_file(
                 if isinstance(raw_data, dict)
                 else raw_data
             )
-            nameless = _first_nameless_resource(overlaid)
-            if nameless is not None:
+            incomplete = _first_incomplete_resource(overlaid)
+            if incomplete is not None:
+                index, reason = incomplete
                 return ValidationResult(
-                    valid=False,
-                    errors=[
-                        f"Invalid resource {nameless} in {file_path}: Resource name is required"
-                    ],
+                    valid=False, errors=[f"Invalid resource {index} in {file_path}: {reason}"]
                 )
 
         with stdlib_warnings.catch_warnings():

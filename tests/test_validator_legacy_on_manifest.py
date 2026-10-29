@@ -211,3 +211,42 @@ def test_falsy_name_is_nameless(tmp_path: Path, name: str):
         f"resources:\n  - kind: SLO\n    name: {name}\n    spec: {{objective: 99.9}}\n"
     )
     assert _validate(path).errors == [f"Invalid resource 0 in {path}: Resource name is required"]
+
+
+def test_missing_kind_is_rejected_before_name(tmp_path: Path):
+    # The parser's Resource checked a falsy kind first ("Resource kind is
+    # required"), then the name.
+    path = tmp_path / "svc.yaml"
+    path.write_text(
+        "service:\n  name: svc\n  team: t\n  tier: critical\n  type: api\n"
+        "resources:\n  - spec: {objective: 99.9}\n"
+    )
+    assert _validate(path).errors == [f"Invalid resource 0 in {path}: Resource kind is required"]
+
+
+def test_env_without_an_environment_is_not_an_unknown_variable(tmp_path: Path):
+    # ${env} is a known variable (generate specs/template.py at 44fc4de) but
+    # common substitutes it only when an environment is given, so with none
+    # it is still in the spec and must not be reported.
+    path = tmp_path / "svc.yaml"
+    path.write_text(
+        "service:\n  name: svc\n  team: t\n  tier: critical\n  type: api\n"
+        "resources:\n  - kind: SLO\n    name: availability\n"
+        "    spec:\n      objective: 99.9\n      description: 'deploy-${env}'\n"
+    )
+    result = _validate(path)
+    assert result.valid
+    assert result.warnings == []
+
+
+def test_unknown_variables_inside_lists_are_reported(tmp_path: Path):
+    # The old check recursed into lists as well as mappings.
+    path = tmp_path / "svc.yaml"
+    path.write_text(
+        "service:\n  name: svc\n  team: t\n  tier: critical\n  type: api\n"
+        "resources:\n  - kind: SLO\n    name: availability\n"
+        "    spec:\n      objective: 99.9\n      channels: ['${CHANNEL}']\n"
+    )
+    assert _validate(path).warnings == [
+        "Resource 'SLO/availability': Uses unknown template variables: CHANNEL"
+    ]

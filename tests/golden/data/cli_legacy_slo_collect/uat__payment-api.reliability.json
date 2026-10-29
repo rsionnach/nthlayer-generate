@@ -22,10 +22,11 @@
     "",
     "[-] SLO: latency-p95 (99.0 ms)",
     "  Window: 30d rolling",
-    "  Error: Target is a bound, not an objective: no error budget",
+    "  Error: Target is not a 0-100 objective: no error budget",
     "",
     "------------------------------------------------------------",
-    "Summary: 1/2 SLOs healthy",
+    "Summary: 1/1 SLOs healthy",
+    "  1 without an error budget (not 0-100 objectives)",
     ""
   ]
 }

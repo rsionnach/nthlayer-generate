@@ -17,7 +17,7 @@
     "SLO: error_rate",
     "  Target: 1.0",
     "  Window: 7d",
-    "  Error Budget: n/a (target is a bound)",
+    "  Error Budget: n/a (target is not a 0-100 objective)",
     "",
     "  Indicator: error_rate",
     "",

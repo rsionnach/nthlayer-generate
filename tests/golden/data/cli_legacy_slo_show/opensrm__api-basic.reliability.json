@@ -17,7 +17,7 @@
     "SLO: latency",
     "  Target: 200.0 ms",
     "  Window: 30d",
-    "  Error Budget: n/a (target is a bound)",
+    "  Error Budget: n/a (target is not a 0-100 objective)",
     "",
     "  Indicator: latency",
     "",

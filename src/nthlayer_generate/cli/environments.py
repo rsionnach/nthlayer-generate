@@ -460,7 +460,9 @@ _UNCOMPARED = frozenset({"environment", "source_file", "source_format", "raw_dat
 
 # Service fields: the manifest's scalar fields, by declared type, so an unset
 # optional section (observability: None) is not mistaken for one.
-_SCALAR_TYPES = frozenset({"str", "str | None", "int", "int | None", "float", "bool"})
+_SCALAR_TYPES = frozenset(
+    {"str", "str | None", "int", "int | None", "float", "float | None", "bool", "bool | None"}
+)
 _SERVICE_FIELDS = tuple(
     f.name
     for f in dataclasses.fields(ReliabilityManifest)

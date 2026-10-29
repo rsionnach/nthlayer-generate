@@ -15,14 +15,15 @@
     "",
     "[-] SLO: throughput (5000.0 rps)",
     "  Window: 30d rolling",
-    "  Error: Target is a bound, not an objective: no error budget",
+    "  Error: Target is not a 0-100 objective: no error budget",
     "",
     "[-] SLO: error_rate (0.01)",
     "  Window: 7d rolling",
-    "  Error: Target is a bound, not an objective: no error budget",
+    "  Error: Target is not a 0-100 objective: no error budget",
     "",
     "------------------------------------------------------------",
-    "Summary: 0/3 SLOs healthy",
+    "Summary: 0/1 SLOs healthy",
+    "  2 without an error budget (not 0-100 objectives)",
     ""
   ]
 }

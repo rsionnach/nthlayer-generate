@@ -15,18 +15,19 @@
     "",
     "[-] SLO: latency (100.0 ms)",
     "  Window: 30d rolling",
-    "  Error: Target is a bound, not an objective: no error budget",
+    "  Error: Target is not a 0-100 objective: no error budget",
     "",
     "[-] SLO: reversal_rate (0.05)",
     "  Window: 7d rolling",
-    "  Error: Target is a bound, not an objective: no error budget",
+    "  Error: Target is not a 0-100 objective: no error budget",
     "",
     "[-] SLO: high_confidence_failure (0.01)",
     "  Window: 7d rolling",
-    "  Error: Target is a bound, not an objective: no error budget",
+    "  Error: Target is not a 0-100 objective: no error budget",
     "",
     "------------------------------------------------------------",
-    "Summary: 0/4 SLOs healthy",
+    "Summary: 0/1 SLOs healthy",
+    "  3 without an error budget (not 0-100 objectives)",
     ""
   ]
 }

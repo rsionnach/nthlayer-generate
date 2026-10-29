@@ -1,34 +1,17 @@
 {
-  "dry_run_exit": 0,
+  "dry_run_exit": 1,
   "dry_run_text": [
     "",
     "╭──╮",
     "│ Setup PagerDuty Integration  │",
     "╰──╯",
     "",
-    "Service: payment-api",
-    "  Team: payments",
-    "  Tier: critical",
+    "✗ examples/opensrm/api-critical.reliability.yaml declares PagerDuty service_id P123ABC: setup-pagerduty only creates services by name, and would not use it",
     "",
-    "ℹ DRY RUN MODE - No changes will be made",
-    "",
-    "Would create/verify:",
-    "  • PagerDuty service: payment-api",
-    "  • Escalation policy: payments-escalation",
-    "  • Team mapping: payments",
+    "Remove service_id to let setup-pagerduty create or match the service by name.",
     ""
   ],
   "no_key_exit": 1,
-  "setup_service_calls": [
-    {
-      "auto_resolve_timeout": null,
-      "create_escalation_policy_config": null,
-      "escalation_policy_id": "P456DEF",
-      "escalation_policy_name": "payments-escalation",
-      "service_name": "payment-api",
-      "team_name": "payments",
-      "urgency": "high"
-    }
-  ],
-  "stubbed_exit": 0
+  "setup_service_calls": [],
+  "stubbed_exit": 1
 }

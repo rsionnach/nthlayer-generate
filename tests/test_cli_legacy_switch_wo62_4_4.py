@@ -196,3 +196,48 @@ def test_collect_gives_a_bound_no_budget():
     # availability is an objective; it has no query in this example
     assert by_name["availability"]["status"] == "NO_QUERY"
     assert by_name["availability"]["total_budget_minutes"] > 0
+
+
+@pytest.mark.parametrize("target", [200.0, 100.0, 0.0], ids=["above-100", "exactly-100", "zero"])
+def test_a_target_outside_0_100_has_no_budget(target):
+    """Common does not range-check targets. stream.reliability's availability
+    SLO (99.95, an objective) with its target replaced: 200 gave a negative
+    budget that collect reported HEALTHY, 100 a zero budget it divided by."""
+    import dataclasses
+
+    from nthlayer_generate.cli.slo import _collect_slo_metrics, _is_objective
+
+    manifest = _load(EXAMPLES / "opensrm" / "stream.reliability.yaml")
+    slos = [
+        dataclasses.replace(s, target=target) if s.name == "availability" else s
+        for s in manifest.slos
+    ]
+    manifest = dataclasses.replace(manifest, slos=slos)
+    availability = next(s for s in manifest.slos if s.name == "availability")
+
+    assert not _is_objective(manifest, availability)
+    with patch("nthlayer_generate.providers.prometheus.PrometheusProvider"):
+        results = asyncio.run(_collect_slo_metrics(manifest, "http://prometheus.invalid"))
+    assert {r["name"]: r["status"] for r in results}["availability"] == "NOT_APPLICABLE"
+
+
+def test_every_manifest_field_is_classified_for_diff_envs():
+    """A scalar field typed in a way _SCALAR_TYPES misses would become an empty
+    section and never be compared. Every field must be a service field, a
+    section, or deliberately uncompared, and every scalar-looking type a
+    service field."""
+    import dataclasses
+    import re
+
+    from nthlayer_common.manifest import ReliabilityManifest
+
+    from nthlayer_generate.cli.environments import _SERVICE_FIELDS, _UNCOMPARED
+
+    scalar = re.compile(r"(str|int|float|bool)( \| None)?")
+    for field in dataclasses.fields(ReliabilityManifest):
+        if field.name in _UNCOMPARED:
+            continue
+        assert (field.name in _SERVICE_FIELDS) == bool(scalar.fullmatch(str(field.type))), (
+            field.name,
+            field.type,
+        )

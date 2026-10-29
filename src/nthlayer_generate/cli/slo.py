@@ -28,8 +28,13 @@ def _is_objective(manifest: ReliabilityManifest, slo: SLODefinition) -> bool:
     (reversal_rate: 0.05, though common types it availability); only its
     other availability SLOs carry an objective. Legacy and v2 targets are
     always objectives (v2 converts to percent on load, ceilings included).
-    Rob, 2026-10-29: budget objectives only.
+    Rob, 2026-10-29: budget objectives only. Common does not range-check
+    targets, so one outside (0, 100) is not an objective in any format: 200
+    gave a negative budget that collect reported HEALTHY, and 100 a zero one
+    it divided by.
     """
+    if not 0 < slo.target < 100:
+        return False
     if manifest.source_format != SourceFormat.SRM_V1:
         return True
     return slo.slo_type == "availability" and not slo.is_judgment_slo()
@@ -112,7 +117,9 @@ def slo_show_command(
         else:
             console.print(f"  [green]Target:[/green] {_target_label(manifest, slo)}")
             console.print(f"  [green]Window:[/green] {window}")
-            console.print("  [green]Error Budget:[/green] n/a [dim](target is a bound)[/dim]")
+            console.print(
+                "  [green]Error Budget:[/green] n/a [dim](target is not a 0-100 objective)[/dim]"
+            )
         console.print()
 
         # Indicator details
@@ -266,8 +273,13 @@ def slo_collect_command(
         _print_slo_result(result)
 
     print("-" * 60)
-    healthy = sum(1 for r in results if r["status"] == "HEALTHY")
-    print(f"Summary: {healthy}/{len(results)} SLOs healthy")
+    budgeted = [r for r in results if r["status"] != "NOT_APPLICABLE"]
+    healthy = sum(1 for r in budgeted if r["status"] == "HEALTHY")
+    print(f"Summary: {healthy}/{len(budgeted)} SLOs healthy")
+    if len(budgeted) < len(results):
+        print(
+            f"         {len(results) - len(budgeted)} without an error budget (not 0-100 objectives)"
+        )
     print()
 
     return 0
@@ -293,7 +305,8 @@ async def _collect_slo_metrics(
         window = slo.window
 
         if not _is_objective(manifest, slo):
-            # A bound, not an objective: no budget, and the SLI is not a ratio.
+            # Not an objective (a bound, or out of range): no budget, and the
+            # SLI need not be a ratio.
             results.append(
                 {
                     "name": slo.name,
@@ -304,7 +317,7 @@ async def _collect_slo_metrics(
                     "burned_minutes": None,
                     "percent_consumed": None,
                     "status": "NOT_APPLICABLE",
-                    "error": "Target is a bound, not an objective: no error budget",
+                    "error": "Target is not a 0-100 objective: no error budget",
                 }
             )
             continue

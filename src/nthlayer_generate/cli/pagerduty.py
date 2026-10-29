@@ -84,6 +84,22 @@ def setup_pagerduty_command(
         console.print()
         return 1
 
+    # Rob, 2026-10-29: a declared service_id names a service that already
+    # exists, but setup_service finds services by name and creates one when
+    # that misses, so it could make a duplicate. Refuse, live and dry run.
+    if pagerduty.service_id:
+        error(
+            f"{service_file} declares PagerDuty service_id {pagerduty.service_id}: "
+            "setup-pagerduty only creates services by name, and would not use it"
+        )
+        console.print()
+        console.print(
+            "[muted]Remove service_id to let setup-pagerduty create or match the "
+            "service by name.[/muted]"
+        )
+        console.print()
+        return 1
+
     # The policy NAME is ownership.escalation in every format. For the legacy
     # format common also stores that name in PagerDutyConfig.escalation_policy_id
     # (nthlayer-common parser/loader.py _extract_ownership), so only srm/v1 and v2 have a real

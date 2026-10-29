@@ -279,9 +279,17 @@ class TestSetupPagerDutyCommand:
 
     @patch("nthlayer_generate.cli.pagerduty.PagerDutyClient")
     def test_srm_v1_passes_escalation_policy_id(self, mock_client, write_service):
-        """srm/v1 carries a real policy ID, passed alongside the policy name."""
+        """srm/v1 carries a real policy ID, passed alongside the policy name.
+
+        The fixture without service_id: a declared service_id is refused
+        (test_declared_service_id_is_refused). Derived from
+        examples/opensrm/api-critical.reliability.yaml's ownership block.
+        """
         mock_instance = _mock_client(mock_client)
-        service_file = write_service(SRM_V1_WITH_PAGERDUTY, name="payment-api.reliability.yaml")
+        service_file = write_service(
+            SRM_V1_WITH_PAGERDUTY.replace("      service_id: P123ABC\n", ""),
+            name="payment-api.reliability.yaml",
+        )
 
         result = setup_pagerduty_command(str(service_file), api_key="test-key")
 
@@ -356,3 +364,21 @@ class TestSetupPagerDutyCommand:
 
         assert result == 0
         assert mock_instance.setup_service.call_args.kwargs["team_name"] == "payments-team"
+
+
+@pytest.mark.parametrize("dry_run", [False, True], ids=["live", "dry-run"])
+@patch("nthlayer_generate.cli.pagerduty.PagerDutyClient")
+def test_declared_service_id_is_refused(mock_client, dry_run):
+    """examples/opensrm/api-critical.reliability.yaml declares service_id
+    P123ABC. setup_service finds services by name and creates one when that
+    misses, so it could duplicate the declared service. Rob, 2026-10-29:
+    refuse, before any client is built."""
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "examples"
+        / "opensrm"
+        / "api-critical.reliability.yaml"
+    )
+
+    assert setup_pagerduty_command(str(path), api_key="test-key", dry_run=dry_run) == 1
+    mock_client.assert_not_called()

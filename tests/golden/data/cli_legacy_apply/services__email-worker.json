@@ -247,6 +247,171 @@
               }
             }
           ]
+        },
+        {
+          "name": "email-worker-rabbitmq",
+          "rules": [
+            {
+              "alert": "RabbitmqFileDescriptorsUsage",
+              "annotations": {
+                "description": "A node use more than 90% of file descriptors\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "RabbitMQ file descriptors usage (instance {{ $labels.instance }})"
+              },
+              "expr": "rabbitmq_process_open_fds / rabbitmq_process_max_fds * 100 > 90",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "email-worker",
+                "severity": "warning",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "RabbitmqInstancesDifferentVersions",
+              "annotations": {
+                "description": "Running different version of RabbitMQ in the same cluster, can lead to failure.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "RabbitMQ instances different versions (instance {{ $labels.instance }})"
+              },
+              "expr": "count(count(rabbitmq_build_info) by (rabbitmq_version)) > 1",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "email-worker",
+                "severity": "warning",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "RabbitmqMemoryHigh",
+              "annotations": {
+                "description": "A node use more than 90% of allocated RAM\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "RabbitMQ memory high (instance {{ $labels.instance }})"
+              },
+              "expr": "rabbitmq_process_resident_memory_bytes / rabbitmq_resident_memory_limit_bytes * 100 > 90",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "email-worker",
+                "severity": "warning",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "RabbitmqNoQueueConsumer",
+              "annotations": {
+                "description": "A queue has less than 1 consumer\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "RabbitMQ no queue consumer (instance {{ $labels.instance }})"
+              },
+              "expr": "rabbitmq_queue_consumers < 1",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "email-worker",
+                "severity": "warning",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "RabbitmqNodeDown",
+              "annotations": {
+                "description": "Less than 3 nodes running in RabbitMQ cluster\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "RabbitMQ node down (instance [instance unavailable])"
+              },
+              "expr": "sum(rabbitmq_build_info) < 3",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "email-worker",
+                "severity": "critical",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "RabbitmqNodeNotDistributed",
+              "annotations": {
+                "description": "Distribution link state is not 'up'\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "RabbitMQ node not distributed (instance {{ $labels.instance }})"
+              },
+              "expr": "erlang_vm_dist_node_state < 3",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "email-worker",
+                "severity": "critical",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "RabbitmqTooManyConnections",
+              "annotations": {
+                "description": "The total connections of a node is too high\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "RabbitMQ too many connections (instance {{ $labels.instance }})"
+              },
+              "expr": "rabbitmq_connections > 1000",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "email-worker",
+                "severity": "warning",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "RabbitmqTooManyReadyMessages",
+              "annotations": {
+                "description": "RabbitMQ too many ready messages on {{ $labels.instace }}\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "RabbitMQ too many ready messages (instance {{ $labels.instance }})"
+              },
+              "expr": "sum(rabbitmq_queue_messages_ready) BY (queue) > 1000",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "email-worker",
+                "severity": "warning",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "RabbitmqTooManyUnackMessages",
+              "annotations": {
+                "description": "Too many unacknowledged messages\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "RabbitMQ too many unack messages (instance {{ $labels.instance }})"
+              },
+              "expr": "sum(rabbitmq_queue_messages_unacked) BY (queue) > 1000",
+              "for": "1m",
+              "labels": {
+                "routing": "self",
+                "service": "email-worker",
+                "severity": "warning",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "RabbitmqUnroutableMessages",
+              "annotations": {
+                "description": "A queue has unroutable messages\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}",
+                "summary": "RabbitMQ unroutable messages (instance {{ $labels.instance }})"
+              },
+              "expr": "increase(rabbitmq_channel_messages_unroutable_returned_total[1m]) > 0 or increase(rabbitmq_channel_messages_unroutable_dropped_total[1m]) > 0",
+              "for": "2m",
+              "labels": {
+                "routing": "self",
+                "service": "email-worker",
+                "severity": "warning",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            }
+          ]
         }
       ]
     },
@@ -893,6 +1058,24 @@
       "message": "Auto-generated dashboard for email-worker",
       "overwrite": true
     },
+    "pagerduty-config.json": {
+      "note": "Set PAGERDUTY_API_KEY to create resources in PagerDuty",
+      "resources_to_create": {
+        "escalation_policy": "notifications-escalation",
+        "schedules": [
+          "notifications-primary",
+          "notifications-secondary",
+          "notifications-manager"
+        ],
+        "service": "email-worker",
+        "team": "notifications"
+      },
+      "service_name": "email-worker",
+      "support_model": "self",
+      "team": "notifications",
+      "tier": "standard",
+      "timezone": "America/New_York"
+    },
     "recording-rules.yaml": {
       "groups": [
         {
@@ -905,74 +1088,33 @@
                 "service": "email-worker",
                 "slo": "success-rate"
               },
-              "record": "slo:error_requests_total:30d"
+              "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"email-worker\",status=~\"5..\"}[30d]))",
+              "expr": "sum(increase(http_requests_total{service=\"email-worker\",status!~\"5..\"}[30d]))",
               "labels": {
                 "service": "email-worker",
                 "slo": "success-rate"
               },
-              "record": "slo:error_requests_failed:30d"
+              "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:error_requests_failed:30d{service=\"email-worker\",slo=\"success-rate\"} / slo:error_requests_total:30d{service=\"email-worker\",slo=\"success-rate\"}",
+              "expr": "slo:requests_success:30d{service=\"email-worker\",slo=\"success-rate\"} / slo:requests_total:30d{service=\"email-worker\",slo=\"success-rate\"}",
               "labels": {
                 "objective": "99.0",
                 "service": "email-worker",
                 "slo": "success-rate"
               },
-              "record": "slo:error_rate:ratio"
+              "record": "slo:availability:ratio"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_count{service=\"email-worker\"}[30d]))",
-              "labels": {
-                "service": "email-worker",
-                "slo": "processing-latency-p95"
-              },
-              "record": "slo:latency_requests_total:30d"
-            },
-            {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"email-worker\",le=\"0.5\"}[30d]))",
-              "labels": {
-                "service": "email-worker",
-                "slo": "processing-latency-p95",
-                "threshold": "500ms"
-              },
-              "record": "slo:latency_requests_fast:30d"
-            },
-            {
-              "expr": "slo:latency_requests_fast:30d{service=\"email-worker\",slo=\"processing-latency-p95\"} / slo:latency_requests_total:30d{service=\"email-worker\",slo=\"processing-latency-p95\"}",
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"email-worker\",slo=\"success-rate\"}) / (1 - 0.99))",
               "labels": {
                 "objective": "99.0",
                 "service": "email-worker",
-                "slo": "processing-latency-p95"
+                "slo": "success-rate"
               },
-              "record": "slo:latency:ratio"
-            },
-            {
-              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"email-worker\"}[5m]))",
-              "labels": {
-                "service": "email-worker",
-                "slo": "processing-latency-p95"
-              },
-              "record": "slo:http_request_duration_seconds:p50"
-            },
-            {
-              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"email-worker\"}[5m]))",
-              "labels": {
-                "service": "email-worker",
-                "slo": "processing-latency-p95"
-              },
-              "record": "slo:http_request_duration_seconds:p95"
-            },
-            {
-              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"email-worker\"}[5m]))",
-              "labels": {
-                "service": "email-worker",
-                "slo": "processing-latency-p95"
-              },
-              "record": "slo:http_request_duration_seconds:p99"
+              "record": "slo:error_budget_remaining:ratio"
             }
           ]
         },
@@ -1048,35 +1190,6 @@
               "total_query": "sum(rate(job_total{service=\"email-worker\"}[5m]))"
             }
           }
-        },
-        {
-          "alerting": {
-            "annotations": {
-              "summary": "SLO processing-latency-p95 for email-worker"
-            },
-            "labels": {
-              "service": "email-worker",
-              "tier": "standard"
-            },
-            "name": "EmailWorkerProcessingLatencyP95",
-            "ticket_alert": {
-              "annotations": {
-                "summary": "Error budget burn on email-worker"
-              },
-              "labels": {
-                "severity": "warning"
-              }
-            }
-          },
-          "description": "99.9% processing latency p95",
-          "name": "processing-latency-p95",
-          "objective": 99.9,
-          "sli": {
-            "events": {
-              "error_query": "",
-              "total_query": ""
-            }
-          }
         }
       ],
       "version": "prometheus/v1"
@@ -1087,15 +1200,16 @@
     "errors": [],
     "output_dir": "<tmp>/out",
     "resources_created": {
-      "alerts": 15,
+      "alerts": 25,
       "backstage": 1,
       "dashboard": 1,
-      "recording-rules": 13,
-      "slos": 2
+      "pagerduty": 1,
+      "recording-rules": 8,
+      "slos": 1
     },
     "service_name": "email-worker",
     "success": true,
-    "total_resources": 32
+    "total_resources": 37
   },
   "preamble": [],
   "stray": []

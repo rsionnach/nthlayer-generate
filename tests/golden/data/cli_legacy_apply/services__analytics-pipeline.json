@@ -1,5 +1,5 @@
 {
-  "exit": 0,
+  "exit": 1,
   "files": {
     "backstage.json": {
       "deploymentGate": {
@@ -89,24 +89,101 @@
                 "service": "analytics-pipeline",
                 "slo": "success-rate"
               },
-              "record": "slo:error_requests_total:30d"
+              "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\",status=~\"5..\"}[30d]))",
+              "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\",status!~\"5..\"}[30d]))",
               "labels": {
                 "service": "analytics-pipeline",
                 "slo": "success-rate"
               },
-              "record": "slo:error_requests_failed:30d"
+              "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:error_requests_failed:30d{service=\"analytics-pipeline\",slo=\"success-rate\"} / slo:error_requests_total:30d{service=\"analytics-pipeline\",slo=\"success-rate\"}",
+              "expr": "slo:requests_success:30d{service=\"analytics-pipeline\",slo=\"success-rate\"} / slo:requests_total:30d{service=\"analytics-pipeline\",slo=\"success-rate\"}",
               "labels": {
                 "objective": "95.0",
                 "service": "analytics-pipeline",
                 "slo": "success-rate"
               },
-              "record": "slo:error_rate:ratio"
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"analytics-pipeline\",slo=\"success-rate\"}) / (1 - 0.95))",
+              "labels": {
+                "objective": "95.0",
+                "service": "analytics-pipeline",
+                "slo": "success-rate"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\"}[30d]))",
+              "labels": {
+                "service": "analytics-pipeline",
+                "slo": "freshness-p95"
+              },
+              "record": "slo:requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "analytics-pipeline",
+                "slo": "freshness-p95"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"analytics-pipeline\",slo=\"freshness-p95\"} / slo:requests_total:30d{service=\"analytics-pipeline\",slo=\"freshness-p95\"}",
+              "labels": {
+                "objective": "90.0",
+                "service": "analytics-pipeline",
+                "slo": "freshness-p95"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"analytics-pipeline\",slo=\"freshness-p95\"}) / (1 - 0.9))",
+              "labels": {
+                "objective": "90.0",
+                "service": "analytics-pipeline",
+                "slo": "freshness-p95"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\"}[30d]))",
+              "labels": {
+                "service": "analytics-pipeline",
+                "slo": "data-quality"
+              },
+              "record": "slo:requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "analytics-pipeline",
+                "slo": "data-quality"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"analytics-pipeline\",slo=\"data-quality\"} / slo:requests_total:30d{service=\"analytics-pipeline\",slo=\"data-quality\"}",
+              "labels": {
+                "objective": "99.0",
+                "service": "analytics-pipeline",
+                "slo": "data-quality"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"analytics-pipeline\",slo=\"data-quality\"}) / (1 - 0.99))",
+              "labels": {
+                "objective": "99.0",
+                "service": "analytics-pipeline",
+                "slo": "data-quality"
+              },
+              "record": "slo:error_budget_remaining:ratio"
             }
           ]
         },
@@ -247,21 +324,20 @@
   },
   "json": {
     "duration_seconds": "<masked>",
-    "errors": [],
+    "errors": [
+      "Dashboard generation failed: 'No template found for technology: bigquery'"
+    ],
     "output_dir": "<tmp>/out",
     "resources_created": {
       "alerts": 0,
       "backstage": 1,
-      "dashboard": 1,
-      "recording-rules": 7,
+      "recording-rules": 16,
       "slos": 3
     },
     "service_name": "analytics-pipeline",
-    "success": true,
-    "total_resources": 12
+    "success": false,
+    "total_resources": 20
   },
-  "preamble": [
-    "✗ Error generating dashboard: 'No template found for technology: bigquery'"
-  ],
+  "preamble": [],
   "stray": []
 }

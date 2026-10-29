@@ -1,14 +1,143 @@
 {
   "exit": 0,
-  "files": {},
+  "files": {
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "credit-decision-agent_judgment_metrics",
+          "rules": [
+            {
+              "expr": "avg(ai_gate_calibration_brier{service=\"credit-decision-agent\"})",
+              "labels": {
+                "service": "credit-decision-agent",
+                "slo": "calibration",
+                "target": "0.05"
+              },
+              "record": "ai_gate:calibration:brier"
+            },
+            {
+              "expr": "histogram_quantile(0.5, rate(ai_gate_feedback_latency_seconds_bucket{service=\"credit-decision-agent\"}[5m]))",
+              "labels": {
+                "service": "credit-decision-agent",
+                "slo": "feedback_latency"
+              },
+              "record": "ai_gate:feedback_latency:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(ai_gate_feedback_latency_seconds_bucket{service=\"credit-decision-agent\"}[5m]))",
+              "labels": {
+                "service": "credit-decision-agent",
+                "slo": "feedback_latency"
+              },
+              "record": "ai_gate:feedback_latency:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(ai_gate_feedback_latency_seconds_bucket{service=\"credit-decision-agent\"}[5m]))",
+              "labels": {
+                "service": "credit-decision-agent",
+                "slo": "feedback_latency"
+              },
+              "record": "ai_gate:feedback_latency:p99"
+            },
+            {
+              "expr": "sum(rate(ai_gate_feedback_latency_seconds_bucket{service=\"credit-decision-agent\",le=\"3600.0\"}[5m])) / sum(rate(ai_gate_feedback_latency_seconds_count{service=\"credit-decision-agent\"}[5m]))",
+              "labels": {
+                "service": "credit-decision-agent",
+                "slo": "feedback_latency",
+                "target": "3600.0"
+              },
+              "record": "ai_gate:feedback_latency:bucket"
+            }
+          ]
+        },
+        {
+          "interval": "5m",
+          "name": "credit-decision-agent_judgment_thresholds_30d",
+          "rules": [
+            {
+              "expr": "sum(increase(ai_gate_feedback_latency_seconds_bucket{service=\"credit-decision-agent\",le=\"3600.0\"}[30d])) / sum(increase(ai_gate_feedback_latency_seconds_count{service=\"credit-decision-agent\"}[30d]))",
+              "labels": {
+                "quantile": "0.5",
+                "service": "credit-decision-agent",
+                "slo": "feedback_latency",
+                "target": "3600.0"
+              },
+              "record": "ai_gate:feedback_latency:p50_within_bound_30d"
+            },
+            {
+              "expr": "sum(increase(ai_gate_feedback_latency_seconds_bucket{service=\"credit-decision-agent\",le=\"86400.0\"}[30d])) / sum(increase(ai_gate_feedback_latency_seconds_count{service=\"credit-decision-agent\"}[30d]))",
+              "labels": {
+                "quantile": "0.9",
+                "service": "credit-decision-agent",
+                "slo": "feedback_latency",
+                "target": "86400.0"
+              },
+              "record": "ai_gate:feedback_latency:p90_within_bound_30d"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "credit-decision-agent_health_metrics",
+          "rules": [
+            {
+              "expr": "sum(rate(ai_gate_decisions_total{service=\"credit-decision-agent\"}[5m]))",
+              "labels": {
+                "service": "credit-decision-agent"
+              },
+              "record": "service:ai_gate_decisions:rate5m"
+            },
+            {
+              "expr": "avg(ai_gate_confidence_score{service=\"credit-decision-agent\"})",
+              "labels": {
+                "service": "credit-decision-agent"
+              },
+              "record": "service:ai_gate_confidence:avg"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"credit-decision-agent\"}[5m]))",
+              "labels": {
+                "service": "credit-decision-agent"
+              },
+              "record": "service:http_requests:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"credit-decision-agent\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"credit-decision-agent\"}[5m]))",
+              "labels": {
+                "service": "credit-decision-agent"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"credit-decision-agent\"}[5m]))",
+              "labels": {
+                "service": "credit-decision-agent"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"credit-decision-agent\"}[5m]))",
+              "labels": {
+                "service": "credit-decision-agent"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            }
+          ]
+        }
+      ]
+    }
+  },
   "json": {
     "duration_seconds": "<masked>",
     "errors": [],
     "output_dir": "<tmp>/out",
-    "resources_created": {},
-    "service_name": "all-five-types",
+    "resources_created": {
+      "recording-rules": 13
+    },
+    "service_name": "credit-decision-agent",
     "success": true,
-    "total_resources": 0
+    "total_resources": 13
   },
   "preamble": [],
   "stray": []

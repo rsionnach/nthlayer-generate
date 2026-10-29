@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from nthlayer_common.manifest import ManifestLoadError, load_manifest
 
 from nthlayer_generate.core.errors import ProviderError
 from nthlayer_generate.orchestration.handlers import (
@@ -27,6 +28,18 @@ from nthlayer_generate.orchestrator import (
     ResourceDetector,
     ServiceOrchestrator,
 )
+
+
+def _context(service_yaml: Path, output_dir: Path) -> OrchestratorContext:
+    """An OrchestratorContext as ServiceOrchestrator builds it (opensrm-wo62.4.5)."""
+    manifest = load_manifest(service_yaml, suppress_deprecation_warning=True)
+    return OrchestratorContext(
+        service_yaml=service_yaml,
+        manifest=manifest,
+        service_name=manifest.name,
+        output_dir=output_dir,
+        env=None,
+    )
 
 
 @pytest.fixture
@@ -100,58 +113,19 @@ resources:
 @pytest.fixture
 def sample_context(sample_service_yaml, tmp_path):
     """Build an OrchestratorContext from sample YAML."""
-    import yaml
-
-    with open(sample_service_yaml) as f:
-        service_def = yaml.safe_load(f)
-
-    detector = ResourceDetector(service_def)
-    return OrchestratorContext(
-        service_yaml=sample_service_yaml,
-        service_def=service_def,
-        service_name="test-service",
-        output_dir=tmp_path,
-        env=None,
-        detector=detector,
-    )
+    return _context(sample_service_yaml, tmp_path)
 
 
 @pytest.fixture
 def minimal_context(minimal_service_yaml, tmp_path):
     """Build an OrchestratorContext from minimal YAML."""
-    import yaml
-
-    with open(minimal_service_yaml) as f:
-        service_def = yaml.safe_load(f)
-
-    detector = ResourceDetector(service_def)
-    return OrchestratorContext(
-        service_yaml=minimal_service_yaml,
-        service_def=service_def,
-        service_name="minimal-service",
-        output_dir=tmp_path,
-        env=None,
-        detector=detector,
-    )
+    return _context(minimal_service_yaml, tmp_path)
 
 
 @pytest.fixture
 def slo_only_context(slo_only_service_yaml, tmp_path):
     """Build an OrchestratorContext from SLO-only YAML."""
-    import yaml
-
-    with open(slo_only_service_yaml) as f:
-        service_def = yaml.safe_load(f)
-
-    detector = ResourceDetector(service_def)
-    return OrchestratorContext(
-        service_yaml=slo_only_service_yaml,
-        service_def=service_def,
-        service_name="slo-service",
-        output_dir=tmp_path,
-        env=None,
-        detector=detector,
-    )
+    return _context(slo_only_service_yaml, tmp_path)
 
 
 class TestApplyResult:
@@ -403,7 +377,7 @@ class TestServiceOrchestrator:
         assert orchestrator.service_yaml == sample_service_yaml
         assert orchestrator.env is None
         assert orchestrator.push_to_grafana is False
-        assert orchestrator.service_def is None
+        assert orchestrator.manifest is None
 
     def test_init_with_options(self, sample_service_yaml):
         """Test orchestrator initialization with options."""
@@ -421,30 +395,37 @@ class TestServiceOrchestrator:
         orchestrator = ServiceOrchestrator(sample_service_yaml)
         orchestrator._load_service()
 
-        assert orchestrator.service_def is not None
+        assert orchestrator.manifest is not None
         assert orchestrator.service_name == "test-service"
         assert orchestrator.output_dir == Path("generated") / "test-service"
 
-    def test_load_service_uses_filename_as_default_name(self, tmp_path):
-        """Test service name defaults to filename if not specified."""
+    def test_load_service_requires_service_name(self, tmp_path):
+        """The manifest model requires service.name (opensrm-wo62.4.5).
+
+        The raw-YAML loader fell back to the file stem; load_manifest rejects
+        the file, and plan reports it under the stem.
+        """
         service_file = tmp_path / "my-app.yaml"
         service_file.write_text("service:\n  team: test\n")
 
         orchestrator = ServiceOrchestrator(service_file)
-        orchestrator._load_service()
+        with pytest.raises(ManifestLoadError):
+            orchestrator._load_service()
 
-        assert orchestrator.service_name == "my-app"
+        result = ServiceOrchestrator(service_file).plan()
+        assert result.service_name == "my-app"
+        assert result.errors[0].startswith("Failed to load service: ")
 
     def test_load_service_idempotent(self, sample_service_yaml):
         """Test that _load_service is idempotent."""
         orchestrator = ServiceOrchestrator(sample_service_yaml)
         orchestrator._load_service()
-        service_def1 = orchestrator.service_def
+        manifest1 = orchestrator.manifest
 
         orchestrator._load_service()
-        service_def2 = orchestrator.service_def
+        manifest2 = orchestrator.manifest
 
-        assert service_def1 is service_def2
+        assert manifest1 is manifest2
 
     def test_plan_success(self, sample_service_yaml):
         """Test successful planning."""
@@ -563,7 +544,7 @@ class TestHandlerPlanMethods:
 
         assert resources == []
 
-    @patch("nthlayer_generate.generators.alerts.generate_alerts_for_service")
+    @patch("nthlayer_generate.generators.alerts.generate_alerts_from_manifest")
     def test_plan_alerts(self, mock_generate, sample_context):
         """Test AlertHandler.plan()."""
         mock_alert = MagicMock()
@@ -577,7 +558,7 @@ class TestHandlerPlanMethods:
         assert alerts[0]["severity"] == "critical"
         assert alerts[0]["count"] == 3
 
-    @patch("nthlayer_generate.generators.alerts.generate_alerts_for_service")
+    @patch("nthlayer_generate.generators.alerts.generate_alerts_from_manifest")
     def test_plan_alerts_exception(self, mock_generate, sample_context):
         """Test AlertHandler.plan() handles exceptions."""
         mock_generate.side_effect = Exception("Alert generation failed")
@@ -956,8 +937,6 @@ class TestGenerateAlertmanagerConfig:
         monkeypatch.setenv("PAGERDUTY_API_KEY", "test-api-key")
 
         # Add sre_integration_key to context
-        import yaml
-
         service_file = tmp_path / "sre-service.yaml"
         service_file.write_text("""
 service:
@@ -973,17 +952,7 @@ resources:
       integration_key: test-key
       sre_integration_key: sre-key
 """)
-        with open(service_file) as f:
-            service_def = yaml.safe_load(f)
-
-        ctx = OrchestratorContext(
-            service_yaml=service_file,
-            service_def=service_def,
-            service_name="test-service",
-            output_dir=tmp_path / "output",
-            env=None,
-            detector=ResourceDetector(service_def),
-        )
+        ctx = _context(service_file, tmp_path / "output")
         (tmp_path / "output").mkdir()
 
         mock_result = MagicMock()

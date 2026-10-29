@@ -1,28 +1,88 @@
 {
   "json": {
     "checks": {
-      "resource_detection": {
-        "message": "No resources detected in service definition",
-        "status": "warn"
+      "recording_rules": {
+        "message": "14 recording rules will be generated",
+        "rule_count": 14,
+        "status": "pass"
       },
-      "warning": {
-        "message": "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources.",
-        "status": "warn"
+      "slo_definition": {
+        "message": "2 SLOs defined",
+        "slo_count": 2,
+        "status": "pass"
       }
     },
     "command": "plan",
     "metadata": {
-      "resources": {},
+      "resources": {
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "payment-api",
+            "slo_count": 2,
+            "team": "payments",
+            "tier": "standard",
+            "type": "backstage_entity"
+          }
+        ],
+        "pagerduty": [
+          {
+            "name": "payments",
+            "type": "team"
+          },
+          {
+            "names": [
+              "payments-primary",
+              "payments-secondary"
+            ],
+            "type": "schedules"
+          },
+          {
+            "name": "payments-escalation",
+            "type": "escalation_policy"
+          },
+          {
+            "name": "payment-api",
+            "support_model": "self",
+            "tier": "standard",
+            "type": "service"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 10,
+            "interval": "30s",
+            "type": "payment-api_slo_metrics"
+          },
+          {
+            "count": 4,
+            "interval": "30s",
+            "type": "payment-api_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "availability",
+            "objective": 99.5,
+            "window": "30d"
+          },
+          {
+            "name": "latency-p95",
+            "objective": 95.0,
+            "window": "30d"
+          }
+        ]
+      },
       "service_yaml": "examples/services/payment-api-with-envs.yaml"
     },
     "service": "payment-api",
     "summary": {
       "errors": 0,
-      "passed": 0,
-      "status": "warn",
+      "passed": 2,
+      "status": "pass",
       "total": 2,
-      "total_resources": 0,
-      "warnings": 2
+      "total_resources": 9,
+      "warnings": 0
     },
     "timestamp": "<masked>",
     "version": "1.0"
@@ -30,13 +90,69 @@
   "json_exit": 0,
   "plan": {
     "errors": [],
-    "resources": {},
+    "resources": {
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "payment-api",
+          "slo_count": 2,
+          "team": "payments",
+          "tier": "standard",
+          "type": "backstage_entity"
+        }
+      ],
+      "pagerduty": [
+        {
+          "name": "payments",
+          "type": "team"
+        },
+        {
+          "names": [
+            "payments-primary",
+            "payments-secondary"
+          ],
+          "type": "schedules"
+        },
+        {
+          "name": "payments-escalation",
+          "type": "escalation_policy"
+        },
+        {
+          "name": "payment-api",
+          "support_model": "self",
+          "tier": "standard",
+          "type": "service"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 10,
+          "interval": "30s",
+          "type": "payment-api_slo_metrics"
+        },
+        {
+          "count": 4,
+          "interval": "30s",
+          "type": "payment-api_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "availability",
+          "objective": 99.5,
+          "window": "30d"
+        },
+        {
+          "name": "latency-p95",
+          "objective": 95.0,
+          "window": "30d"
+        }
+      ]
+    },
     "service_name": "payment-api",
     "service_yaml": "examples/services/payment-api-with-envs.yaml",
-    "warnings": [
-      "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources."
-    ]
+    "warnings": []
   },
   "success": true,
-  "total_resources": 0
+  "total_resources": 9
 }

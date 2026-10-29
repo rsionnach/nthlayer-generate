@@ -6,13 +6,18 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import structlog
+from nthlayer_common.manifest import PagerDutyConfig
 
 from nthlayer_generate.alertmanager import generate_alertmanager_config
 from nthlayer_generate.core.errors import ProviderError
-
-logger = structlog.get_logger()
 from nthlayer_generate.orchestration.registry import OrchestratorContext, ResourceRegistry
 from nthlayer_generate.pagerduty import EventOrchestrationManager, PagerDutyResourceManager
+
+logger = structlog.get_logger()
+
+# What PagerDutyHandler has always used when service.pagerduty sets no
+# timezone; common carries only what was authored.
+DEFAULT_PAGERDUTY_TIMEZONE = "America/New_York"
 
 
 class SloHandler:
@@ -27,29 +32,20 @@ class SloHandler:
         return "SLOs"
 
     def plan(self, ctx: OrchestratorContext) -> List[Dict[str, Any]]:
-        slo_resources = ctx.detector.get_resources_by_kind("SLO")
         return [
-            {
-                "name": r.get("name"),
-                "objective": r.get("spec", {}).get("objective"),
-                "window": r.get("spec", {}).get("window", "30d"),
-            }
-            for r in slo_resources
+            {"name": slo.name, "objective": slo.target, "window": slo.window}
+            for slo in ctx.manifest.slos
         ]
 
     def generate(self, ctx: OrchestratorContext) -> int:
-        from nthlayer_generate.generators.sloth import generate_sloth_spec
+        from nthlayer_generate.generators.sloth import generate_sloth_from_manifest
 
-        sloth_output_dir = ctx.output_dir / "sloth"
-        result = generate_sloth_spec(
-            service_file=ctx.service_yaml,
-            output_dir=sloth_output_dir,
-            environment=ctx.env,
-        )
+        if not ctx.manifest.slos:
+            return 0
+
+        result = generate_sloth_from_manifest(ctx.manifest, ctx.output_dir / "sloth")
 
         if not result.success:
-            if result.error and "No SLO resources found" in result.error:
-                return 0
             print(f"   ⚠️  SLO generation warning: {result.error}")
             return 0
 
@@ -68,15 +64,10 @@ class AlertHandler:
         return "alerts"
 
     def plan(self, ctx: OrchestratorContext) -> List[Dict[str, Any]]:
-        from nthlayer_generate.generators.alerts import generate_alerts_for_service
+        from nthlayer_generate.generators.alerts import generate_alerts_from_manifest
 
         try:
-            alerts = generate_alerts_for_service(
-                service_file=ctx.service_yaml,
-                output_file=None,
-                environment=ctx.env,
-                quiet=True,
-            )
+            alerts = generate_alerts_from_manifest(ctx.manifest, output_file=None, quiet=True)
             severity_counts: Dict[str, int] = {}
             for alert in alerts:
                 severity = getattr(alert, "severity", "unknown")
@@ -90,15 +81,10 @@ class AlertHandler:
             return []
 
     def generate(self, ctx: OrchestratorContext) -> int:
-        from nthlayer_generate.generators.alerts import generate_alerts_for_service
+        from nthlayer_generate.generators.alerts import generate_alerts_from_manifest
 
         output_file = ctx.output_dir / "alerts.yaml"
-        alerts = generate_alerts_for_service(
-            service_file=ctx.service_yaml,
-            output_file=output_file,
-            environment=ctx.env,
-            quiet=True,
-        )
+        alerts = generate_alerts_from_manifest(ctx.manifest, output_file=output_file, quiet=True)
         return len(alerts)
 
 
@@ -123,18 +109,15 @@ class DashboardHandler:
         ]
 
     def generate(self, ctx: OrchestratorContext) -> int:
-        from nthlayer_generate.cli.dashboard import generate_dashboard_command
+        from nthlayer_generate.dashboards.manifest_builder import build_dashboard_from_manifest
 
-        output_file = ctx.output_dir / "dashboard.json"
-        generate_dashboard_command(
-            str(ctx.service_yaml),
-            output=str(output_file),
-            environment=ctx.env,
-            dry_run=False,
-            full_panels=False,
-            quiet=True,
-            prometheus_url=ctx.prometheus_url,
+        # As generate-dashboard writes it (cli/dashboard.py): overview panels,
+        # JSON with sorted keys.
+        dashboard = build_dashboard_from_manifest(
+            ctx.manifest, full_panels=False, prometheus_url=ctx.prometheus_url
         )
+        output_file = ctx.output_dir / "dashboard.json"
+        output_file.write_text(json.dumps(dashboard, indent=2, sort_keys=True))
 
         if ctx.push_to_grafana:
             _push_dashboard_to_grafana(output_file, ctx.service_name)
@@ -154,11 +137,11 @@ class RecordingRulesHandler:
         return "recording rules"
 
     def plan(self, ctx: OrchestratorContext) -> List[Dict[str, Any]]:
-        from nthlayer_generate.recording_rules.builder import build_recording_rules
-        from nthlayer_generate.specs.parser import parse_service_file
+        from nthlayer_generate.recording_rules.manifest_builder import (
+            build_recording_rules_from_manifest,
+        )
 
-        context, resources = parse_service_file(ctx.service_yaml, environment=ctx.env)
-        groups = build_recording_rules(context, resources)
+        groups = build_recording_rules_from_manifest(ctx.manifest)
 
         if not groups:
             return []
@@ -169,13 +152,13 @@ class RecordingRulesHandler:
         ]
 
     def generate(self, ctx: OrchestratorContext) -> int:
-        from nthlayer_generate.recording_rules.builder import build_recording_rules
+        from nthlayer_generate.recording_rules.manifest_builder import (
+            build_recording_rules_from_manifest,
+        )
         from nthlayer_generate.recording_rules.models import create_rule_groups
-        from nthlayer_generate.specs.parser import parse_service_file
 
         output_file = ctx.output_dir / "recording-rules.yaml"
-        context, resources = parse_service_file(ctx.service_yaml, environment=ctx.env)
-        groups = build_recording_rules(context, resources)
+        groups = build_recording_rules_from_manifest(ctx.manifest)
 
         if not groups:
             with open(output_file, "w") as f:
@@ -204,14 +187,13 @@ class PagerDutyHandler:
         return "PagerDuty"
 
     def plan(self, ctx: OrchestratorContext) -> List[Dict[str, Any]]:
-        pd_resources = ctx.detector.get_resources_by_kind("PagerDuty")
-        if not pd_resources:
+        manifest = ctx.manifest
+        if manifest.ownership is None or manifest.ownership.pagerduty is None:
             return []
 
-        service = ctx.service_def.get("service", {})
-        team = service.get("team", "unknown")
-        tier = service.get("tier", "medium")
-        support_model = service.get("support_model", "self")
+        team = manifest.team
+        tier = manifest.tier
+        support_model = manifest.support_model
 
         from nthlayer_generate.pagerduty.defaults import get_schedules_for_tier
 
@@ -233,23 +215,20 @@ class PagerDutyHandler:
         api_key = os.environ.get("PAGERDUTY_API_KEY")
         default_from = os.environ.get("PAGERDUTY_FROM_EMAIL", "nthlayer@example.com")
 
-        service = ctx.service_def.get("service", {})
-        team = service.get("team", "unknown")
-        tier = service.get("tier", "medium")
-        support_model = service.get("support_model", "self")
+        manifest = ctx.manifest
+        team = manifest.team
+        tier = manifest.tier
+        support_model = manifest.support_model
 
-        pagerduty_config = service.get("pagerduty", {})
-        timezone = pagerduty_config.get("timezone", "America/New_York")
-        sre_ep_id = pagerduty_config.get("sre_escalation_policy_id")
-
-        pd_resources = ctx.detector.get_resources_by_kind("PagerDuty")
-        pd_resource = pd_resources[0] if pd_resources else None
-        integration_key = None
-        sre_integration_key = None
-        if pd_resource:
-            spec = pd_resource.get("spec", {})
-            integration_key = spec.get("integration_key")
-            sre_integration_key = spec.get("sre_integration_key")
+        # common stores the keys as authored (opensrm-wo62.4.13, P4); the
+        # timezone default is generate's.
+        pagerduty = manifest.ownership.pagerduty if manifest.ownership else None
+        if pagerduty is None:
+            pagerduty = PagerDutyConfig()
+        timezone = pagerduty.timezone or DEFAULT_PAGERDUTY_TIMEZONE
+        sre_ep_id = pagerduty.sre_escalation_policy_id
+        integration_key = pagerduty.integration_key
+        sre_integration_key = pagerduty.sre_integration_key
 
         if not api_key:
             output_file = ctx.output_dir / "pagerduty-config.json"
@@ -341,30 +320,21 @@ class BackstageHandler:
         return "Backstage entity"
 
     def plan(self, ctx: OrchestratorContext) -> List[Dict[str, Any]]:
-        slo_resources = ctx.detector.get_resources_by_kind("SLO")
-        service = ctx.service_def.get("service", {})
-        team = service.get("team", "unknown")
-        tier = service.get("tier", "standard")
-
         return [
             {
                 "type": "backstage_entity",
                 "service": ctx.service_name,
-                "team": team,
-                "tier": tier,
-                "slo_count": len(slo_resources),
+                "team": ctx.manifest.team,
+                "tier": ctx.manifest.tier,
+                "slo_count": len(ctx.manifest.slos),
                 "output": "backstage.json",
             }
         ]
 
     def generate(self, ctx: OrchestratorContext) -> int:
-        from nthlayer_generate.generators.backstage import generate_backstage_entity
+        from nthlayer_generate.generators.backstage import generate_backstage_from_manifest
 
-        result = generate_backstage_entity(
-            service_file=ctx.service_yaml,
-            output_dir=ctx.output_dir,
-            environment=ctx.env,
-        )
+        result = generate_backstage_from_manifest(ctx.manifest, ctx.output_dir)
 
         if not result.success:
             print(f"   ⚠️  Backstage generation warning: {result.error}")
@@ -446,6 +416,16 @@ def _setup_event_orchestration(
             print(f"✅ Event Orchestration: {result.rules_created} routing rule(s) created")
 
 
+def _policy_resources(ctx: OrchestratorContext) -> List[Dict[str, Any]]:
+    """The manifest's ``kind: PolicyRules`` resources, from its raw data.
+
+    detect_resource_types never plans "policy", so plan/apply do not reach
+    this handler (pre-existing; opensrm-wo62.4.15 wires or deletes it).
+    """
+    resources = ctx.manifest.raw_data.get("resources") or []
+    return [r for r in resources if isinstance(r, dict) and r.get("kind") == "PolicyRules"]
+
+
 class PolicyHandler:
     """Evaluate policy rules against service spec."""
 
@@ -458,21 +438,19 @@ class PolicyHandler:
         return "Policy Rules"
 
     def plan(self, ctx: OrchestratorContext) -> List[Dict[str, Any]]:
-        policy_resources = ctx.detector.get_resources_by_kind("PolicyRules")
+        policy_resources = _policy_resources(ctx)
         if not policy_resources:
             return []
         return [{"type": "policy", "action": "evaluate", "count": len(policy_resources)}]
 
     def generate(self, ctx: OrchestratorContext) -> int:
-        from nthlayer_common.manifest import load_manifest
-
         from nthlayer_generate.policies.engine import PolicyEngine
 
-        policy_resources = ctx.detector.get_resources_by_kind("PolicyRules")
+        policy_resources = _policy_resources(ctx)
         if not policy_resources:
             return 0
 
-        manifest = load_manifest(ctx.service_yaml, suppress_deprecation_warning=True)
+        manifest = ctx.manifest
         engine = PolicyEngine()
 
         for resource in policy_resources:

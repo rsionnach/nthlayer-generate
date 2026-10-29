@@ -91,17 +91,17 @@
         "slos": [
           {
             "name": "availability",
-            "objective": 99.95,
+            "objective": 99.99,
             "window": "30d"
           },
           {
             "name": "latency-p95",
-            "objective": 99.0,
+            "objective": 99.5,
             "window": "30d"
           },
           {
             "name": "latency-p99",
-            "objective": 95.0,
+            "objective": 99.0,
             "window": "30d"
           }
         ]
@@ -190,17 +190,17 @@
       "slos": [
         {
           "name": "availability",
-          "objective": 99.95,
+          "objective": 99.99,
           "window": "30d"
         },
         {
           "name": "latency-p95",
-          "objective": 99.0,
+          "objective": 99.5,
           "window": "30d"
         },
         {
           "name": "latency-p99",
-          "objective": 95.0,
+          "objective": 99.0,
           "window": "30d"
         }
       ]

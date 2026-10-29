@@ -1,28 +1,33 @@
 {
   "json": {
     "checks": {
-      "resource_detection": {
-        "message": "No resources detected in service definition",
-        "status": "warn"
-      },
-      "warning": {
-        "message": "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources.",
-        "status": "warn"
+      "recording_rules": {
+        "message": "6 recording rules will be generated",
+        "rule_count": 6,
+        "status": "pass"
       }
     },
     "command": "plan",
     "metadata": {
-      "resources": {},
+      "resources": {
+        "recording-rules": [
+          {
+            "count": 6,
+            "interval": "30s",
+            "type": "pricing-agent_health_metrics"
+          }
+        ]
+      },
       "service_yaml": "<opensrm>/spec/v2/examples/judgment-thresholds/segments-two-dimensions.yaml"
     },
-    "service": "segments-two-dimensions",
+    "service": "pricing-agent",
     "summary": {
       "errors": 0,
-      "passed": 0,
-      "status": "warn",
-      "total": 2,
-      "total_resources": 0,
-      "warnings": 2
+      "passed": 1,
+      "status": "pass",
+      "total": 1,
+      "total_resources": 1,
+      "warnings": 0
     },
     "timestamp": "<masked>",
     "version": "1.0"
@@ -30,13 +35,19 @@
   "json_exit": 0,
   "plan": {
     "errors": [],
-    "resources": {},
-    "service_name": "segments-two-dimensions",
+    "resources": {
+      "recording-rules": [
+        {
+          "count": 6,
+          "interval": "30s",
+          "type": "pricing-agent_health_metrics"
+        }
+      ]
+    },
+    "service_name": "pricing-agent",
     "service_yaml": "<opensrm>/spec/v2/examples/judgment-thresholds/segments-two-dimensions.yaml",
-    "warnings": [
-      "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources."
-    ]
+    "warnings": []
   },
   "success": true,
-  "total_resources": 0
+  "total_resources": 1
 }

@@ -18,6 +18,7 @@ that a manifest which no longer loads changes it.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 from collections.abc import Callable
 from pathlib import Path
@@ -164,14 +165,16 @@ def topology(path: Path, env: Env) -> Any:
     return {"exit": code, "topology": json.loads(out.read_text()) if out.is_file() else None}
 
 
-class _Detector:
-    """Serves the shipped policies.yaml rules as a service's PolicyRules."""
+def _with_shipped_policies(manifest: Any) -> Any:
+    """``manifest`` with the shipped policies.yaml rules as its PolicyRules.
 
-    def get_resources_by_kind(self, kind: str) -> list[dict[str, Any]]:
-        if kind != "PolicyRules":
-            return []
-        rules = yaml.safe_load(POLICIES.read_text(encoding="utf-8"))["rules"]
-        return [{"spec": {"rules": rules}}]
+    PolicyHandler reads ``kind: PolicyRules`` from the manifest's raw data
+    (opensrm-wo62.4.5); the corpus declares none, so the shipped rules are
+    added the way the detector stub served them before.
+    """
+    rules = yaml.safe_load(POLICIES.read_text(encoding="utf-8"))["rules"]
+    raw_data = {**manifest.raw_data, "resources": [{"kind": "PolicyRules", "spec": {"rules": rules}}]}
+    return dataclasses.replace(manifest, raw_data=raw_data)
 
 
 def policy_handler(path: Path, env: Env) -> Any:
@@ -188,11 +191,10 @@ def policy_handler(path: Path, env: Env) -> Any:
     env.monkeypatch.setattr(PolicyEngine, "evaluate", recording_evaluate)
     ctx = OrchestratorContext(
         service_yaml=path,
-        service_def={},
+        manifest=_with_shipped_policies(_load(path)),
         service_name=path.stem,
         output_dir=env.tmp,
         env=None,
-        detector=_Detector(),
     )
     count = PolicyHandler().generate(ctx)
     env.discard_output()

@@ -1,28 +1,43 @@
 {
   "json": {
     "checks": {
-      "resource_detection": {
-        "message": "No resources detected in service definition",
-        "status": "warn"
-      },
-      "warning": {
-        "message": "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources.",
-        "status": "warn"
+      "recording_rules": {
+        "message": "13 recording rules will be generated",
+        "rule_count": 13,
+        "status": "pass"
       }
     },
     "command": "plan",
     "metadata": {
-      "resources": {},
+      "resources": {
+        "recording-rules": [
+          {
+            "count": 5,
+            "interval": "30s",
+            "type": "credit-decision-agent_judgment_metrics"
+          },
+          {
+            "count": 2,
+            "interval": "5m",
+            "type": "credit-decision-agent_judgment_thresholds_30d"
+          },
+          {
+            "count": 6,
+            "interval": "30s",
+            "type": "credit-decision-agent_health_metrics"
+          }
+        ]
+      },
       "service_yaml": "<opensrm>/spec/v2/examples/judgment-thresholds/all-five-types.yaml"
     },
-    "service": "all-five-types",
+    "service": "credit-decision-agent",
     "summary": {
       "errors": 0,
-      "passed": 0,
-      "status": "warn",
-      "total": 2,
-      "total_resources": 0,
-      "warnings": 2
+      "passed": 1,
+      "status": "pass",
+      "total": 1,
+      "total_resources": 3,
+      "warnings": 0
     },
     "timestamp": "<masked>",
     "version": "1.0"
@@ -30,13 +45,29 @@
   "json_exit": 0,
   "plan": {
     "errors": [],
-    "resources": {},
-    "service_name": "all-five-types",
+    "resources": {
+      "recording-rules": [
+        {
+          "count": 5,
+          "interval": "30s",
+          "type": "credit-decision-agent_judgment_metrics"
+        },
+        {
+          "count": 2,
+          "interval": "5m",
+          "type": "credit-decision-agent_judgment_thresholds_30d"
+        },
+        {
+          "count": 6,
+          "interval": "30s",
+          "type": "credit-decision-agent_health_metrics"
+        }
+      ]
+    },
+    "service_name": "credit-decision-agent",
     "service_yaml": "<opensrm>/spec/v2/examples/judgment-thresholds/all-five-types.yaml",
-    "warnings": [
-      "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources."
-    ]
+    "warnings": []
   },
   "success": true,
-  "total_resources": 0
+  "total_resources": 3
 }

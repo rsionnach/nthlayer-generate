@@ -1,14 +1,283 @@
 {
   "exit": 0,
-  "files": {},
+  "files": {
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": null,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/user-api/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": null,
+        "serviceManifest": "examples/opensrm/api-basic.reliability.yaml",
+        "slothSpec": "generated/user-api/sloth/user-api.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": "User management API",
+        "name": "user-api",
+        "supportModel": "self",
+        "team": "platform",
+        "tier": "standard",
+        "type": "api"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "availability",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.9,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "latency",
+          "sloType": "latency",
+          "status": null,
+          "target": 200.0,
+          "window": "30d"
+        }
+      ]
+    },
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "user-api_slo_metrics",
+          "rules": [
+            {
+              "expr": "sum(increase(http_requests_total{service=\"user-api\"}[30d]))",
+              "labels": {
+                "service": "user-api",
+                "slo": "availability"
+              },
+              "record": "slo:requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"user-api\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "user-api",
+                "slo": "availability"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"user-api\",slo=\"availability\"} / slo:requests_total:30d{service=\"user-api\",slo=\"availability\"}",
+              "labels": {
+                "objective": "99.9",
+                "service": "user-api",
+                "slo": "availability"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"user-api\",slo=\"availability\"}) / (1 - 0.9990000000000001))",
+              "labels": {
+                "objective": "99.9",
+                "service": "user-api",
+                "slo": "availability"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_count{service=\"user-api\"}[30d]))",
+              "labels": {
+                "service": "user-api",
+                "slo": "latency"
+              },
+              "record": "slo:latency_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"user-api\",le=\"0.2\"}[30d]))",
+              "labels": {
+                "service": "user-api",
+                "slo": "latency",
+                "threshold": "200ms"
+              },
+              "record": "slo:latency_requests_fast:30d"
+            },
+            {
+              "expr": "slo:latency_requests_fast:30d{service=\"user-api\",slo=\"latency\"} / slo:latency_requests_total:30d{service=\"user-api\",slo=\"latency\"}",
+              "labels": {
+                "objective": "200.0",
+                "service": "user-api",
+                "slo": "latency"
+              },
+              "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"user-api\"}[5m]))",
+              "labels": {
+                "service": "user-api",
+                "slo": "latency"
+              },
+              "record": "slo:http_request_duration_seconds:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"user-api\"}[5m]))",
+              "labels": {
+                "service": "user-api",
+                "slo": "latency"
+              },
+              "record": "slo:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"user-api\"}[5m]))",
+              "labels": {
+                "service": "user-api",
+                "slo": "latency"
+              },
+              "record": "slo:http_request_duration_seconds:p99"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "user-api_health_metrics",
+          "rules": [
+            {
+              "expr": "sum(rate(http_requests_total{service=\"user-api\"}[5m]))",
+              "labels": {
+                "service": "user-api"
+              },
+              "record": "service:http_requests:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"user-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"user-api\"}[5m]))",
+              "labels": {
+                "service": "user-api"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"user-api\"}[5m]))",
+              "labels": {
+                "service": "user-api"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"user-api\"}[5m]))",
+              "labels": {
+                "service": "user-api"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            }
+          ]
+        }
+      ]
+    },
+    "sloth/user-api.yaml": {
+      "labels": {
+        "team": "platform",
+        "tier": "standard",
+        "type": "api"
+      },
+      "service": "user-api",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO availability for user-api"
+            },
+            "labels": {
+              "service": "user-api",
+              "tier": "standard"
+            },
+            "name": "UserApiAvailability",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on user-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.9% availability",
+          "name": "availability",
+          "objective": 99.9,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO latency for user-api"
+            },
+            "labels": {
+              "service": "user-api",
+              "tier": "standard"
+            },
+            "name": "UserApiLatency",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on user-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "200.0% latency",
+          "name": "latency",
+          "objective": 200.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
   "json": {
     "duration_seconds": "<masked>",
     "errors": [],
     "output_dir": "<tmp>/out",
-    "resources_created": {},
-    "service_name": "api-basic.reliability",
+    "resources_created": {
+      "backstage": 1,
+      "recording-rules": 14,
+      "slos": 2
+    },
+    "service_name": "user-api",
     "success": true,
-    "total_resources": 0
+    "total_resources": 17
   },
   "preamble": [],
   "stray": []

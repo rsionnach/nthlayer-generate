@@ -1,14 +1,261 @@
 {
-  "exit": 0,
-  "files": {},
+  "exit": 1,
+  "files": {
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": null,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/daily-report-generator/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": "https://wiki/runbooks/daily-report-generator",
+        "serviceManifest": "examples/opensrm/batch.reliability.yaml",
+        "slothSpec": "generated/daily-report-generator/sloth/daily-report-generator.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": "Generates daily business reports and exports to S3",
+        "name": "daily-report-generator",
+        "supportModel": "self",
+        "team": "analytics",
+        "tier": "standard",
+        "type": "batch"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": "Job execution success rate",
+          "name": "availability",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.0,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": "Job failure rate (allow some retries)",
+          "name": "error_rate",
+          "sloType": "error_rate",
+          "status": null,
+          "target": 1.0,
+          "window": "7d"
+        }
+      ]
+    },
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "daily-report-generator_slo_metrics",
+          "rules": [
+            {
+              "expr": "sum(increase(http_requests_total{service=\"daily-report-generator\"}[30d]))",
+              "labels": {
+                "service": "daily-report-generator",
+                "slo": "availability"
+              },
+              "record": "slo:requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"daily-report-generator\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "daily-report-generator",
+                "slo": "availability"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"daily-report-generator\",slo=\"availability\"} / slo:requests_total:30d{service=\"daily-report-generator\",slo=\"availability\"}",
+              "labels": {
+                "objective": "99.0",
+                "service": "daily-report-generator",
+                "slo": "availability"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"daily-report-generator\",slo=\"availability\"}) / (1 - 0.99))",
+              "labels": {
+                "objective": "99.0",
+                "service": "daily-report-generator",
+                "slo": "availability"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"daily-report-generator\"}[7d]))",
+              "labels": {
+                "service": "daily-report-generator",
+                "slo": "error_rate"
+              },
+              "record": "slo:error_requests_total:7d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"daily-report-generator\",status=~\"5..\"}[7d]))",
+              "labels": {
+                "service": "daily-report-generator",
+                "slo": "error_rate"
+              },
+              "record": "slo:error_requests_failed:7d"
+            },
+            {
+              "expr": "slo:error_requests_failed:7d{service=\"daily-report-generator\",slo=\"error_rate\"} / slo:error_requests_total:7d{service=\"daily-report-generator\",slo=\"error_rate\"}",
+              "labels": {
+                "objective": "1.0",
+                "service": "daily-report-generator",
+                "slo": "error_rate"
+              },
+              "record": "slo:error_rate:ratio"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "daily-report-generator_health_metrics",
+          "rules": [
+            {
+              "expr": "sum(rate(http_requests_total{service=\"daily-report-generator\"}[5m]))",
+              "labels": {
+                "service": "daily-report-generator"
+              },
+              "record": "service:http_requests:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"daily-report-generator\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"daily-report-generator\"}[5m]))",
+              "labels": {
+                "service": "daily-report-generator"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"daily-report-generator\"}[5m]))",
+              "labels": {
+                "service": "daily-report-generator"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"daily-report-generator\"}[5m]))",
+              "labels": {
+                "service": "daily-report-generator"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            }
+          ]
+        }
+      ]
+    },
+    "sloth/daily-report-generator.yaml": {
+      "labels": {
+        "team": "analytics",
+        "tier": "standard",
+        "type": "batch"
+      },
+      "service": "daily-report-generator",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO availability for daily-report-generator"
+            },
+            "labels": {
+              "service": "daily-report-generator",
+              "tier": "standard"
+            },
+            "name": "DailyReportGeneratorAvailability",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on daily-report-generator"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "Job execution success rate",
+          "name": "availability",
+          "objective": 99.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO error_rate for daily-report-generator"
+            },
+            "labels": {
+              "service": "daily-report-generator",
+              "tier": "standard"
+            },
+            "name": "DailyReportGeneratorError_rate",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on daily-report-generator"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "Job failure rate (allow some retries)",
+          "name": "error_rate",
+          "objective": 1.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
   "json": {
     "duration_seconds": "<masked>",
-    "errors": [],
+    "errors": [
+      "Dashboard generation failed: 'No template found for technology: redshift'"
+    ],
     "output_dir": "<tmp>/out",
-    "resources_created": {},
-    "service_name": "batch.reliability",
-    "success": true,
-    "total_resources": 0
+    "resources_created": {
+      "alerts": 0,
+      "backstage": 1,
+      "recording-rules": 11,
+      "slos": 2
+    },
+    "service_name": "daily-report-generator",
+    "success": false,
+    "total_resources": 14
   },
   "preamble": [],
   "stray": []

@@ -1,14 +1,318 @@
 {
   "exit": 0,
-  "files": {},
+  "files": {
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": 10.0,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/payment-api/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": null,
+        "serviceManifest": "examples/services/payment-api-with-envs.yaml",
+        "slothSpec": "generated/payment-api/sloth/payment-api.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": null,
+        "name": "payment-api",
+        "supportModel": "self",
+        "team": "payments",
+        "tier": "critical",
+        "type": "api"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "availability",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.9,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": null,
+          "name": "latency-p95",
+          "sloType": "latency",
+          "status": null,
+          "target": 99.0,
+          "window": "30d"
+        }
+      ]
+    },
+    "pagerduty-config.json": {
+      "note": "Set PAGERDUTY_API_KEY to create resources in PagerDuty",
+      "resources_to_create": {
+        "escalation_policy": "payments-escalation",
+        "schedules": [
+          "payments-primary",
+          "payments-secondary",
+          "payments-manager"
+        ],
+        "service": "payment-api",
+        "team": "payments"
+      },
+      "service_name": "payment-api",
+      "support_model": "self",
+      "team": "payments",
+      "tier": "critical",
+      "timezone": "America/New_York"
+    },
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "payment-api_slo_metrics",
+          "rules": [
+            {
+              "expr": "sum(increase(http_requests_total{service=\"payment-api\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"payment-api\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"payment-api\",slo=\"availability\"} / slo:requests_total:30d{service=\"payment-api\",slo=\"availability\"}",
+              "labels": {
+                "objective": "99.9",
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"payment-api\",slo=\"availability\"}) / (1 - 0.9990000000000001))",
+              "labels": {
+                "objective": "99.9",
+                "service": "payment-api",
+                "slo": "availability"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_count{service=\"payment-api\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:latency_requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"0.5\"}[30d]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p95",
+                "threshold": "500ms"
+              },
+              "record": "slo:latency_requests_fast:30d"
+            },
+            {
+              "expr": "slo:latency_requests_fast:30d{service=\"payment-api\",slo=\"latency-p95\"} / slo:latency_requests_total:30d{service=\"payment-api\",slo=\"latency-p95\"}",
+              "labels": {
+                "objective": "99.0",
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p99"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "payment-api_health_metrics",
+          "rules": [
+            {
+              "expr": "sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_requests:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"payment-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
+              "labels": {
+                "service": "payment-api"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            }
+          ]
+        }
+      ]
+    },
+    "sloth/payment-api.yaml": {
+      "labels": {
+        "team": "payments",
+        "tier": "critical",
+        "type": "api"
+      },
+      "service": "payment-api",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO availability for payment-api"
+            },
+            "labels": {
+              "service": "payment-api",
+              "tier": "critical"
+            },
+            "name": "PaymentApiAvailability",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on payment-api"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on payment-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.9% availability",
+          "name": "availability",
+          "objective": 99.9,
+          "sli": {
+            "events": {
+              "error_query": "sum(rate(http_requests_total{service=\"payment-api\",code=~\"5..\"}[5m]))",
+              "total_query": "sum(rate(http_requests_total{service=\"payment-api\"}[5m]))"
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO latency-p95 for payment-api"
+            },
+            "labels": {
+              "service": "payment-api",
+              "tier": "critical"
+            },
+            "name": "PaymentApiLatencyP95",
+            "page_alert": {
+              "annotations": {
+                "summary": "High error budget burn on payment-api"
+              },
+              "labels": {
+                "severity": "critical"
+              }
+            },
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on payment-api"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "99.0% latency p95",
+          "name": "latency-p95",
+          "objective": 99.0,
+          "sli": {
+            "events": {
+              "error_query": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])\n)\n > 0.5",
+              "total_query": "sum(rate(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])\n)\n)"
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
   "json": {
     "duration_seconds": "<masked>",
     "errors": [],
     "output_dir": "<tmp>/out",
-    "resources_created": {},
+    "resources_created": {
+      "backstage": 1,
+      "pagerduty": 1,
+      "recording-rules": 14,
+      "slos": 2
+    },
     "service_name": "payment-api",
     "success": true,
-    "total_resources": 0
+    "total_resources": 18
   },
   "preamble": [],
   "stray": []

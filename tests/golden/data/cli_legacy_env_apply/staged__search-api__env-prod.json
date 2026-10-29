@@ -1832,7 +1832,7 @@
       "service_name": "search-api",
       "support_model": "self",
       "team": "search",
-      "tier": "high",
+      "tier": "critical",
       "timezone": "America/New_York"
     },
     "recording-rules.yaml": {
@@ -1884,11 +1884,11 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"search-api\",le=\"0.5\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"search-api\",le=\"0.3\"}[30d]))",
               "labels": {
                 "service": "search-api",
                 "slo": "search-latency-p95",
-                "threshold": "500ms"
+                "threshold": "300ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },
@@ -1968,11 +1968,11 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"search-api\",le=\"0.5\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"search-api\",le=\"0.8\"}[30d]))",
               "labels": {
                 "service": "search-api",
                 "slo": "latency-p95",
-                "threshold": "500ms"
+                "threshold": "800ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },
@@ -2018,11 +2018,11 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"search-api\",le=\"0.5\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"search-api\",le=\"2.0\"}[30d]))",
               "labels": {
                 "service": "search-api",
                 "slo": "latency-p99",
-                "threshold": "500ms"
+                "threshold": "2000ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },

@@ -2,8 +2,8 @@
   "json": {
     "checks": {
       "alert_generation": {
-        "alert_count": 15,
-        "message": "15 alerts will be generated",
+        "alert_count": 25,
+        "message": "25 alerts will be generated",
         "status": "pass"
       },
       "dashboard_generation": {
@@ -12,8 +12,8 @@
         "status": "pass"
       },
       "recording_rules": {
-        "message": "13 recording rules will be generated",
-        "rule_count": 13,
+        "message": "8 recording rules will be generated",
+        "rule_count": 8,
         "status": "pass"
       },
       "slo_definition": {
@@ -27,11 +27,11 @@
       "resources": {
         "alerts": [
           {
-            "count": 6,
+            "count": 8,
             "severity": "critical"
           },
           {
-            "count": 9,
+            "count": 17,
             "severity": "warning"
           }
         ],
@@ -52,9 +52,32 @@
             "panels": "12+"
           }
         ],
+        "pagerduty": [
+          {
+            "name": "notifications",
+            "type": "team"
+          },
+          {
+            "names": [
+              "notifications-primary",
+              "notifications-secondary"
+            ],
+            "type": "schedules"
+          },
+          {
+            "name": "notifications-escalation",
+            "type": "escalation_policy"
+          },
+          {
+            "name": "email-worker",
+            "support_model": "self",
+            "tier": "standard",
+            "type": "service"
+          }
+        ],
         "recording-rules": [
           {
-            "count": 9,
+            "count": 4,
             "interval": "30s",
             "type": "email-worker_slo_metrics"
           },
@@ -66,8 +89,8 @@
         ],
         "slos": [
           {
-            "name": "processing-latency-p95",
-            "objective": null,
+            "name": "success-rate",
+            "objective": 99.0,
             "window": "30d"
           }
         ]
@@ -80,7 +103,7 @@
       "passed": 4,
       "status": "pass",
       "total": 4,
-      "total_resources": 7,
+      "total_resources": 11,
       "warnings": 0
     },
     "timestamp": "<masked>",
@@ -92,11 +115,11 @@
     "resources": {
       "alerts": [
         {
-          "count": 6,
+          "count": 8,
           "severity": "critical"
         },
         {
-          "count": 9,
+          "count": 17,
           "severity": "warning"
         }
       ],
@@ -117,9 +140,32 @@
           "panels": "12+"
         }
       ],
+      "pagerduty": [
+        {
+          "name": "notifications",
+          "type": "team"
+        },
+        {
+          "names": [
+            "notifications-primary",
+            "notifications-secondary"
+          ],
+          "type": "schedules"
+        },
+        {
+          "name": "notifications-escalation",
+          "type": "escalation_policy"
+        },
+        {
+          "name": "email-worker",
+          "support_model": "self",
+          "tier": "standard",
+          "type": "service"
+        }
+      ],
       "recording-rules": [
         {
-          "count": 9,
+          "count": 4,
           "interval": "30s",
           "type": "email-worker_slo_metrics"
         },
@@ -131,8 +177,8 @@
       ],
       "slos": [
         {
-          "name": "processing-latency-p95",
-          "objective": null,
+          "name": "success-rate",
+          "objective": 99.0,
           "window": "30d"
         }
       ]
@@ -142,5 +188,5 @@
     "warnings": []
   },
   "success": true,
-  "total_resources": 7
+  "total_resources": 11
 }

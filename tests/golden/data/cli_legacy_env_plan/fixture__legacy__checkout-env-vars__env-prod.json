@@ -39,12 +39,12 @@
         ],
         "slos": [
           {
-            "name": "availability-${env}",
-            "objective": 99.95,
+            "name": "availability-prod",
+            "objective": 99.99,
             "window": "30d"
           },
           {
-            "name": "latency-p95-${team}",
+            "name": "latency-p95-commerce",
             "objective": 99.0,
             "window": "30d"
           }
@@ -92,12 +92,12 @@
       ],
       "slos": [
         {
-          "name": "availability-${env}",
-          "objective": 99.95,
+          "name": "availability-prod",
+          "objective": 99.99,
           "window": "30d"
         },
         {
-          "name": "latency-p95-${team}",
+          "name": "latency-p95-commerce",
           "objective": 99.0,
           "window": "30d"
         }

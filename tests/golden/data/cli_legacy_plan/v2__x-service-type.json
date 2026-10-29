@@ -1,13 +1,9 @@
 {
   "json": {
     "checks": {
-      "resource_detection": {
-        "message": "No resources detected in service definition",
-        "status": "warn"
-      },
-      "warning": {
-        "message": "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources.",
-        "status": "warn"
+      "configuration_error": {
+        "message": "Failed to load service: metadata.labels.tier is required. Set to: critical, high, standard, or low",
+        "status": "fail"
       }
     },
     "command": "plan",
@@ -17,26 +13,26 @@
     },
     "service": "x-service-type",
     "summary": {
-      "errors": 0,
+      "errors": 1,
       "passed": 0,
-      "status": "warn",
-      "total": 2,
+      "status": "fail",
+      "total": 1,
       "total_resources": 0,
-      "warnings": 2
+      "warnings": 0
     },
     "timestamp": "<masked>",
     "version": "1.0"
   },
-  "json_exit": 0,
+  "json_exit": 1,
   "plan": {
-    "errors": [],
+    "errors": [
+      "Failed to load service: metadata.labels.tier is required. Set to: critical, high, standard, or low"
+    ],
     "resources": {},
     "service_name": "x-service-type",
     "service_yaml": "<opensrm>/spec/v2/examples/x-service-type.yaml",
-    "warnings": [
-      "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources."
-    ]
+    "warnings": []
   },
-  "success": true,
+  "success": false,
   "total_resources": 0
 }

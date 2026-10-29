@@ -1,28 +1,88 @@
 {
   "json": {
     "checks": {
-      "resource_detection": {
-        "message": "No resources detected in service definition",
-        "status": "warn"
+      "alert_generation": {
+        "alert_count": 0,
+        "message": "0 alerts will be generated",
+        "status": "pass"
       },
-      "warning": {
-        "message": "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources.",
-        "status": "warn"
+      "dashboard_generation": {
+        "dashboard_count": 1,
+        "message": "1 dashboards will be generated",
+        "status": "pass"
+      },
+      "recording_rules": {
+        "message": "13 recording rules will be generated",
+        "rule_count": 13,
+        "status": "pass"
+      },
+      "slo_definition": {
+        "message": "3 SLOs defined",
+        "slo_count": 3,
+        "status": "pass"
       }
     },
     "command": "plan",
     "metadata": {
-      "resources": {},
+      "resources": {
+        "alerts": [],
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "email-sender",
+            "slo_count": 3,
+            "team": "notifications",
+            "tier": "standard",
+            "type": "backstage_entity"
+          }
+        ],
+        "dashboard": [
+          {
+            "description": "Auto-generated monitoring dashboard",
+            "name": "email-sender-dashboard",
+            "panels": "12+"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 9,
+            "interval": "30s",
+            "type": "email-sender_slo_metrics"
+          },
+          {
+            "count": 4,
+            "interval": "30s",
+            "type": "email-sender_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "availability",
+            "objective": 99.9,
+            "window": "30d"
+          },
+          {
+            "name": "throughput",
+            "objective": 100.0,
+            "window": "30d"
+          },
+          {
+            "name": "error_rate",
+            "objective": 0.5,
+            "window": "7d"
+          }
+        ]
+      },
       "service_yaml": "examples/opensrm/worker.reliability.yaml"
     },
-    "service": "worker.reliability",
+    "service": "email-sender",
     "summary": {
       "errors": 0,
-      "passed": 0,
-      "status": "warn",
-      "total": 2,
-      "total_resources": 0,
-      "warnings": 2
+      "passed": 4,
+      "status": "pass",
+      "total": 4,
+      "total_resources": 7,
+      "warnings": 0
     },
     "timestamp": "<masked>",
     "version": "1.0"
@@ -30,13 +90,59 @@
   "json_exit": 0,
   "plan": {
     "errors": [],
-    "resources": {},
-    "service_name": "worker.reliability",
+    "resources": {
+      "alerts": [],
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "email-sender",
+          "slo_count": 3,
+          "team": "notifications",
+          "tier": "standard",
+          "type": "backstage_entity"
+        }
+      ],
+      "dashboard": [
+        {
+          "description": "Auto-generated monitoring dashboard",
+          "name": "email-sender-dashboard",
+          "panels": "12+"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 9,
+          "interval": "30s",
+          "type": "email-sender_slo_metrics"
+        },
+        {
+          "count": 4,
+          "interval": "30s",
+          "type": "email-sender_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "availability",
+          "objective": 99.9,
+          "window": "30d"
+        },
+        {
+          "name": "throughput",
+          "objective": 100.0,
+          "window": "30d"
+        },
+        {
+          "name": "error_rate",
+          "objective": 0.5,
+          "window": "7d"
+        }
+      ]
+    },
+    "service_name": "email-sender",
     "service_yaml": "examples/opensrm/worker.reliability.yaml",
-    "warnings": [
-      "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources."
-    ]
+    "warnings": []
   },
   "success": true,
-  "total_resources": 0
+  "total_resources": 7
 }

@@ -1811,11 +1811,11 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"0.5\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"0.3\"}[30d]))",
               "labels": {
                 "service": "payment-api",
                 "slo": "latency-p95",
-                "threshold": "500ms"
+                "threshold": "300ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },
@@ -2017,7 +2017,7 @@
           "objective": 99.5,
           "sli": {
             "events": {
-              "error_query": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])\n)\n > 0.5",
+              "error_query": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])\n)\n > 0.3",
               "total_query": "sum(rate(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])\n)\n)"
             }
           }

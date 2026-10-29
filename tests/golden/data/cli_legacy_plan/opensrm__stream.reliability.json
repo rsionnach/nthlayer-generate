@@ -1,28 +1,101 @@
 {
   "json": {
     "checks": {
-      "resource_detection": {
-        "message": "No resources detected in service definition",
-        "status": "warn"
+      "alert_generation": {
+        "alert_count": 22,
+        "message": "22 alerts will be generated",
+        "status": "pass"
       },
-      "warning": {
-        "message": "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources.",
-        "status": "warn"
+      "dashboard_generation": {
+        "dashboard_count": 1,
+        "message": "1 dashboards will be generated",
+        "status": "pass"
+      },
+      "recording_rules": {
+        "message": "13 recording rules will be generated",
+        "rule_count": 13,
+        "status": "pass"
+      },
+      "slo_definition": {
+        "message": "3 SLOs defined",
+        "slo_count": 3,
+        "status": "pass"
       }
     },
     "command": "plan",
     "metadata": {
-      "resources": {},
+      "resources": {
+        "alerts": [
+          {
+            "count": 10,
+            "severity": "critical"
+          },
+          {
+            "count": 2,
+            "severity": "info"
+          },
+          {
+            "count": 10,
+            "severity": "warning"
+          }
+        ],
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "order-events-processor",
+            "slo_count": 3,
+            "team": "orders",
+            "tier": "high",
+            "type": "backstage_entity"
+          }
+        ],
+        "dashboard": [
+          {
+            "description": "Auto-generated monitoring dashboard",
+            "name": "order-events-processor-dashboard",
+            "panels": "12+"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 9,
+            "interval": "30s",
+            "type": "order-events-processor_slo_metrics"
+          },
+          {
+            "count": 4,
+            "interval": "30s",
+            "type": "order-events-processor_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "availability",
+            "objective": 99.95,
+            "window": "30d"
+          },
+          {
+            "name": "throughput",
+            "objective": 5000.0,
+            "window": "30d"
+          },
+          {
+            "name": "error_rate",
+            "objective": 0.01,
+            "window": "7d"
+          }
+        ]
+      },
       "service_yaml": "examples/opensrm/stream.reliability.yaml"
     },
-    "service": "stream.reliability",
+    "service": "order-events-processor",
     "summary": {
       "errors": 0,
-      "passed": 0,
-      "status": "warn",
-      "total": 2,
-      "total_resources": 0,
-      "warnings": 2
+      "passed": 4,
+      "status": "pass",
+      "total": 4,
+      "total_resources": 10,
+      "warnings": 0
     },
     "timestamp": "<masked>",
     "version": "1.0"
@@ -30,13 +103,72 @@
   "json_exit": 0,
   "plan": {
     "errors": [],
-    "resources": {},
-    "service_name": "stream.reliability",
+    "resources": {
+      "alerts": [
+        {
+          "count": 10,
+          "severity": "critical"
+        },
+        {
+          "count": 2,
+          "severity": "info"
+        },
+        {
+          "count": 10,
+          "severity": "warning"
+        }
+      ],
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "order-events-processor",
+          "slo_count": 3,
+          "team": "orders",
+          "tier": "high",
+          "type": "backstage_entity"
+        }
+      ],
+      "dashboard": [
+        {
+          "description": "Auto-generated monitoring dashboard",
+          "name": "order-events-processor-dashboard",
+          "panels": "12+"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 9,
+          "interval": "30s",
+          "type": "order-events-processor_slo_metrics"
+        },
+        {
+          "count": 4,
+          "interval": "30s",
+          "type": "order-events-processor_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "availability",
+          "objective": 99.95,
+          "window": "30d"
+        },
+        {
+          "name": "throughput",
+          "objective": 5000.0,
+          "window": "30d"
+        },
+        {
+          "name": "error_rate",
+          "objective": 0.01,
+          "window": "7d"
+        }
+      ]
+    },
+    "service_name": "order-events-processor",
     "service_yaml": "examples/opensrm/stream.reliability.yaml",
-    "warnings": [
-      "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources."
-    ]
+    "warnings": []
   },
   "success": true,
-  "total_resources": 0
+  "total_resources": 10
 }

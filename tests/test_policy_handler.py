@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import yaml
+from nthlayer_common.manifest import load_manifest
 
 from nthlayer_generate.orchestration.handlers import PolicyHandler
 from nthlayer_generate.orchestration.registry import OrchestratorContext
@@ -32,18 +32,16 @@ def _make_context(
     service_yaml = tmp_path / "service.yaml"
     service_yaml.write_text(yaml.dump(service_def))
 
-    detector = MagicMock()
-    detector.get_resources_by_kind.return_value = [
-        r for r in resources if r.get("kind") == "PolicyRules"
-    ]
+    # The handler reads PolicyRules from the loaded manifest's raw data
+    # (opensrm-wo62.4.5), so the context is built from the real loader.
+    manifest = load_manifest(service_yaml, suppress_deprecation_warning=True)
 
     return OrchestratorContext(
         service_yaml=service_yaml,
-        service_def=service_def,
+        manifest=manifest,
         service_name=service_data["name"],
         output_dir=tmp_path / "output",
         env=None,
-        detector=detector,
     )
 
 
@@ -177,8 +175,6 @@ class TestPolicyHandlerGenerate:
             },
         ]
         ctx = _make_context(tmp_path, resources=resources)
-        # Update the mock to return both resources
-        ctx.detector.get_resources_by_kind.return_value = resources
         handler = PolicyHandler()
         count = handler.generate(ctx)
         assert count == 2

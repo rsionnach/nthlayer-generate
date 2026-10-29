@@ -7,7 +7,9 @@ Two spec rulings:
   nothing written. Comparing with ``SRM_V1`` alone would "migrate" v2 down.
 - ``validate`` (spec §5.2, "validator"): srm/v1 **and** v2 take the manifest
   path, so ``resource_count`` is ``len(manifest.slos) + len(dependencies)``
-  and ``parse_service_file`` is never called for them.
+  and the legacy resource checks never run for them. (Since
+  opensrm-wo62.4.19 legacy files load through common too; what stays
+  legacy-only is ``_legacy_resources`` and the checks on its result.)
 
 Fixtures are opensrm spec examples from the sibling checkout.
 """
@@ -86,10 +88,10 @@ def test_validate_takes_the_manifest_path_for_v2(
     path = _minimal_with_tier(tmp_path) if which == "minimal" else API_FULL_V2
     doc = _read(path)
 
-    def _legacy_parser_must_not_run(*_args: object, **_kwargs: object) -> None:
-        raise AssertionError("v2 routed to parse_service_file")
+    def _legacy_route_must_not_run(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("v2 routed to the legacy resource checks")
 
-    monkeypatch.setattr(validator_module, "parse_service_file", _legacy_parser_must_not_run)
+    monkeypatch.setattr(validator_module, "_legacy_resources", _legacy_route_must_not_run)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")

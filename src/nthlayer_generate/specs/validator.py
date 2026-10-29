@@ -1,27 +1,27 @@
 """
 Service definition validation.
 
-Supports the OpenSRM formats (apiVersion: srm/v1 and opensrm.nthlayer.io/v2),
-loaded through nthlayer-common's manifest model, and the legacy NthLayer format.
+Supports the OpenSRM formats (apiVersion: srm/v1 and opensrm.nthlayer.io/v2)
+and the legacy NthLayer format, all loaded through nthlayer-common's manifest
+model. Legacy files also get resource-level checks on the loaded raw data
+(opensrm-wo62.4.19).
 """
 
 from __future__ import annotations
 
+import copy
+import re
 import warnings as stdlib_warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from nthlayer_common.manifest import (
-    VALID_TIERS,
     LegacyFormatWarning,
     ManifestLoadError,
     load_manifest,
 )
-from nthlayer_common.manifest.models import (
-    resolve_service_type,
-    valid_service_types_phrase,
-)
+from nthlayer_common.manifest.parser import legacy as legacy_parser
 from nthlayer_common.manifest.parser.v1 import is_srm_v1_format
 from nthlayer_common.manifest.parser.v2 import is_opensrm_v2_format
 
@@ -32,8 +32,12 @@ from nthlayer_generate.specs.contracts import (
 )
 from nthlayer_generate.specs.models import VALID_RESOURCE_KINDS
 from nthlayer_generate.specs.names import is_valid_service_name
-from nthlayer_generate.specs.parser import ServiceParseError, parse_service_file
-from nthlayer_generate.specs.template import validate_template_variables
+
+# The variables nthlayer-common's legacy substitution knows
+# (legacy.substitute_resource_specs; ${env} only with an environment), so
+# anything else in a loaded resource spec is still as written. Keep in sync.
+_TEMPLATE_VARIABLE = re.compile(r"\$\{(\w+)\}")
+_KNOWN_TEMPLATE_VARIABLES = {"service", "team", "tier", "type", "language", "framework", "env"}
 
 
 @dataclass
@@ -80,6 +84,54 @@ class _MockContext:
         self.template = m.template
 
 
+def _unknown_template_variables(value: Any) -> list[str]:
+    """The unknown ``${var}`` names anywhere in *value*, sorted and unique."""
+    unknown: set[str] = set()
+    if isinstance(value, str):
+        unknown.update(
+            m.group(1)
+            for m in _TEMPLATE_VARIABLE.finditer(value)
+            if m.group(1) not in _KNOWN_TEMPLATE_VARIABLES
+        )
+    elif isinstance(value, dict):
+        for v in value.values():
+            unknown.update(_unknown_template_variables(v))
+    elif isinstance(value, list):
+        for item in value:
+            unknown.update(_unknown_template_variables(item))
+    return sorted(unknown)
+
+
+def _legacy_resources(manifest: Any) -> list[dict[str, Any]]:
+    """A legacy manifest's resources, as loaded: after the env overlay,
+    template expansion and ${var} substitution (opensrm-wo62.4.1)."""
+    resources = manifest.raw_data.get("resources") or []
+    return [r for r in resources if isinstance(r, dict)]
+
+
+def _first_incomplete_resource(raw_data: Any) -> tuple[int, str] | None:
+    """The first resource in ``raw_data``'s ``resources:`` list (the file
+    after its env overlay) with no kind or no name, as (index, reason).
+
+    The legacy parser rejected such a file, indexing the overlaid list
+    before template expansion, with its ``Resource`` model's checks in
+    order: a falsy kind, then a falsy name.
+    """
+    if not isinstance(raw_data, dict):
+        return None
+    resources = raw_data.get("resources")
+    if not isinstance(resources, list):
+        return None
+    for index, resource in enumerate(resources):
+        if not isinstance(resource, dict):
+            continue
+        if not resource.get("kind"):
+            return index, "Resource kind is required"
+        if not resource.get("name"):
+            return index, "Resource name is required"
+    return None
+
+
 def _is_non_numeric(value: Any) -> bool:
     """Whether *value* is a set availability that is not a number."""
     return value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)))
@@ -121,15 +173,15 @@ def validate_service_file(
     Validate service YAML file.
 
     Checks:
-    1. File can be parsed
-    2. Service name is valid format
-    3. Service tier is valid
-    4. Service type is valid
-    5. All resource kinds are valid
-    6. No duplicate resource names
-    7. Template variables are valid
-    8. Template exists (if specified)
-    9. Filename matches service name (optional)
+    1. File loads through nthlayer-common (which rejects an invalid tier or
+       type, so the first such error is the only one reported)
+    2. Filename matches service name (optional)
+    3. Service name is valid format
+    4. (legacy files) Resource names are present and unique
+    5. (legacy files) Resource kinds are valid
+    6. (legacy files) Resource specs use only known ${var}s (warning)
+    7. (srm/v1, v2) Contracts, and the registry's expectations if given
+    8. A template, if set, is noted (warning)
 
     Args:
         file_path: Path to service YAML file
@@ -158,75 +210,70 @@ def validate_service_file(
             errors=[f"Failed to parse YAML: {e}"],
         )
 
-    # srm/v1 and v2 take the manifest path; legacy keeps parse_service_file,
-    # which preserves the resource list for validation (spec §5.2).
+    # Every format loads through nthlayer-common. srm/v1 and v2 also get the
+    # contract checks; legacy files keep their resource-level checks, run on
+    # the loaded raw data (opensrm-wo62.4.19).
     use_opensrm = isinstance(raw_data, dict) and (
         is_srm_v1_format(raw_data) or is_opensrm_v2_format(raw_data)
     )
 
-    # Variables for the parsed service
-    service_context: Any  # Either MockContext or ServiceContext
-    resources: list[Any] = []
-    resource_count: int = 0
-
-    if use_opensrm:
-        # Use unified loader for OpenSRM format
-        try:
-            with stdlib_warnings.catch_warnings():
-                stdlib_warnings.simplefilter("ignore", LegacyFormatWarning)
-                manifest = load_manifest(
-                    file_path, environment=environment, suppress_deprecation_warning=True
+    try:
+        if not use_opensrm:
+            # Before the load: common loads a kindless or nameless resource
+            # (an SLO named '') or crashes on it. The parser checked the list
+            # after the env overlay, so the check reads common's own merge.
+            overlaid = (
+                legacy_parser.apply_environment_overlay(
+                    copy.deepcopy(raw_data), file_path, environment
+                )
+                if isinstance(raw_data, dict)
+                else raw_data
+            )
+            incomplete = _first_incomplete_resource(overlaid)
+            if incomplete is not None:
+                index, reason = incomplete
+                return ValidationResult(
+                    valid=False, errors=[f"Invalid resource {index} in {file_path}: {reason}"]
                 )
 
-            service_context = _MockContext(manifest)
-            resources = []  # OpenSRM manifests have SLOs inline, not as resources
-            resource_count = len(manifest.slos) + len(manifest.dependencies)
-
-            # Contract validation (OpenSRM only). TypeError here only: common's
-            # v2 parser keeps a quoted ``availability`` ("0.9995") as a string
-            # and these checks then compare it with a float. A TypeError
-            # anywhere else, or here with every availability a number, is a
-            # bug and propagates.
-            try:
-                warnings.extend(manifest.validate_contracts())
-                if contract_registry is not None:
-                    warnings.extend(
-                        validate_dependency_expectations(manifest, contract_registry)
-                    )
-                    warnings.extend(
-                        validate_transitive_feasibility(manifest, contract_registry)
-                    )
-            except TypeError:
-                message = _non_numeric_availability_error(manifest, contract_registry)
-                if message is None:
-                    raise
-                return ValidationResult(valid=False, errors=[message])
-
-        except ManifestLoadError as e:
-            return ValidationResult(
-                valid=False,
-                errors=[str(e)],
+        with stdlib_warnings.catch_warnings():
+            stdlib_warnings.simplefilter("ignore", LegacyFormatWarning)
+            manifest = load_manifest(
+                file_path, environment=environment, suppress_deprecation_warning=True
             )
-        except (FileNotFoundError, ValueError) as e:
-            return ValidationResult(
-                valid=False,
-                errors=[str(e)],
-            )
-    else:
-        # Use legacy parser for legacy format (preserves resource list for validation)
+    except (ManifestLoadError, OSError, ValueError) as e:
+        # OSError: a missing or unreadable file, or an env overlay that is a
+        # directory or unreadable.
+        return ValidationResult(valid=False, errors=[str(e)])
+    except (AttributeError, TypeError) as e:
+        # common's legacy loader on a non-mapping resource spec
+        # (opensrm-wo62.4.10).
+        return ValidationResult(valid=False, errors=[f"Unexpected error parsing file: {e}"])
+
+    service_context = _MockContext(manifest)
+    resources: list[dict[str, Any]] = []
+
+    if use_opensrm:
+        resource_count = len(manifest.slos) + len(manifest.dependencies)
+
+        # Contract validation (OpenSRM only). TypeError here only: common's
+        # v2 parser keeps a quoted ``availability`` ("0.9995") as a string
+        # and these checks then compare it with a float. A TypeError
+        # anywhere else, or here with every availability a number, is a
+        # bug and propagates.
         try:
-            service_context, resources = parse_service_file(file_path, environment=environment)
-            resource_count = len(resources)
-        except ServiceParseError as parse_err:
-            return ValidationResult(
-                valid=False,
-                errors=[str(parse_err)],
-            )
-        except Exception as e:
-            return ValidationResult(
-                valid=False,
-                errors=[f"Unexpected error parsing file: {e}"],
-            )
+            warnings.extend(manifest.validate_contracts())
+            if contract_registry is not None:
+                warnings.extend(validate_dependency_expectations(manifest, contract_registry))
+                warnings.extend(validate_transitive_feasibility(manifest, contract_registry))
+        except TypeError:
+            message = _non_numeric_availability_error(manifest, contract_registry)
+            if message is None:
+                raise
+            return ValidationResult(valid=False, errors=[message])
+    else:
+        resources = _legacy_resources(manifest)
+        resource_count = len(resources)
 
     # Validate filename matches service name
     if validate_filename:
@@ -255,44 +302,27 @@ def validate_service_file(
             "numbers and hyphens, and not end with a hyphen."
         )
 
-    # Validate tier
-    if service_context.tier not in VALID_TIERS:
-        errors.append(
-            f"Invalid tier: '{service_context.tier}'. "
-            f"Must be one of: {', '.join(sorted(VALID_TIERS))}"
-        )
-
-    # Validate type through nthlayer-common, which owns the rule
-    # (opensrm-z3ab). resolve_service_type accepts canonical types, the
-    # spec's x- extension branch, and legacy aliases — the union this used
-    # to build by hand, plus the extension branch it was missing.
-    if resolve_service_type(service_context.type) is None:
-        errors.append(
-            f"Invalid type: '{service_context.type}'. "
-            f"Must be one of: {valid_service_types_phrase()}."
-        )
-
-    # Check for duplicate resource names
-    resource_names = [r.name for r in resources if r.name]
-    duplicates = [n for n in set(resource_names) if resource_names.count(n) > 1]
+    # Check for duplicate resource names (legacy resources only)
+    resource_names = [str(r["name"]) for r in resources if r.get("name")]
+    duplicates = sorted(n for n in set(resource_names) if resource_names.count(n) > 1)
     if duplicates:
         errors.append(f"Duplicate resource names: {', '.join(duplicates)}")
 
-    # Validate each resource
+    # Validate each legacy resource
     for resource in resources:
-        # Check resource kind
-        if resource.kind not in VALID_RESOURCE_KINDS:
+        kind = resource.get("kind")
+        name = resource.get("name")
+        if not isinstance(kind, str) or kind not in VALID_RESOURCE_KINDS:
             errors.append(
-                f"Resource {resource.kind}/{resource.name}: "
-                f"Invalid kind '{resource.kind}'. "
+                f"Resource {kind}/{name}: "
+                f"Invalid kind '{kind}'. "
                 f"Must be one of: {', '.join(sorted(VALID_RESOURCE_KINDS))}"
             )
 
-        # Validate template variables in spec
-        invalid_vars = validate_template_variables(resource.spec)
+        invalid_vars = _unknown_template_variables(resource.get("spec"))
         if invalid_vars:
             warnings.append(
-                f"Resource '{resource.kind}/{resource.name}': "
+                f"Resource '{kind}/{name}': "
                 f"Uses unknown template variables: {', '.join(invalid_vars)}"
             )
 

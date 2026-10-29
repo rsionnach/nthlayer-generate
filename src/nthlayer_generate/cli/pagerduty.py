@@ -69,21 +69,24 @@ def setup_pagerduty_command(
     pagerduty = ownership.pagerduty if ownership else None
 
     if pagerduty is None:
-        error(f"No PagerDuty resource found in {service_file}")
+        error(f"No PagerDuty configuration found in {service_file}")
         console.print()
-        console.print("[muted]Add a PagerDuty resource to your service definition:[/muted]")
-        console.print("  resources:")
-        console.print("    - kind: PagerDuty")
-        console.print("      name: primary")
-        console.print("      spec:")
-        console.print("        escalation_policy: my-policy")
-        console.print("        urgency: high")
+        console.print("[muted]Add one. srm/v1 (spec.ownership):[/muted]")
+        console.print("  pagerduty:")
+        console.print("    service_id: PXXXXXX")
+        console.print("    escalation_policy_id: PXXXXXX")
+        console.print("[muted]Legacy service.yaml (resources):[/muted]")
+        console.print("  - kind: PagerDuty")
+        console.print("    name: primary")
+        console.print("    spec:")
+        console.print("      escalation_policy: my-policy")
+        console.print("      urgency: high")
         console.print()
         return 1
 
     # The policy NAME is ownership.escalation in every format. For the legacy
     # format common also stores that name in PagerDutyConfig.escalation_policy_id
-    # (parser/loader.py _extract_ownership), so only srm/v1 and v2 have a real
+    # (nthlayer-common parser/loader.py _extract_ownership), so only srm/v1 and v2 have a real
     # ID there. No legacy example declares an ID; legacy read
     # spec.escalation_policy_id, which common does not carry.
     escalation_policy_name = ownership.escalation if ownership else None

@@ -371,7 +371,7 @@ def validate_slo_command(
 
         if not manifest.slos:
             console.print()
-            console.print(f"[yellow]No SLO resources found in {service_file}[/yellow]")
+            console.print(f"[yellow]No SLOs found in {service_file}[/yellow]")
             console.print()
             return 0
 

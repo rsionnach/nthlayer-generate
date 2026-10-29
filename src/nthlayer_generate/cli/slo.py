@@ -36,7 +36,7 @@ def _is_objective(manifest: ReliabilityManifest, slo: SLODefinition) -> bool:
 
 
 def _target_label(manifest: ReliabilityManifest, slo: SLODefinition) -> str:
-    """The target as written: a percentage for an objective, else the bound."""
+    """The target for display: a percentage for an objective, else the bound and unit."""
     if _is_objective(manifest, slo):
         return f"{slo.target}%"
     return f"{slo.target} {slo.unit}" if slo.unit else f"{slo.target}"
@@ -80,13 +80,17 @@ def slo_show_command(
     if not slos:
         console.print(f"[yellow]No SLOs defined in {service_path}[/yellow]")
         console.print()
-        console.print("[dim]Add SLOs to your service.yaml:[/dim]")
-        console.print("  resources:")
-        console.print("    - kind: SLO")
-        console.print("      name: availability")
-        console.print("      spec:")
-        console.print("        objective: 99.95")
-        console.print("        window: 30d")
+        console.print("[dim]Add an SLO. srm/v1 (spec.slos):[/dim]")
+        console.print("  slos:")
+        console.print("    availability:")
+        console.print("      target: 99.95")
+        console.print("      window: 30d")
+        console.print("[dim]Legacy service.yaml (resources):[/dim]")
+        console.print("  - kind: SLO")
+        console.print("    name: availability")
+        console.print("    spec:")
+        console.print("      objective: 99.95")
+        console.print("      window: 30d")
         return 1
 
     # Display each SLO

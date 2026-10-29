@@ -14,6 +14,19 @@ from nthlayer_common.manifest import ManifestLoadError, ReliabilityManifest, loa
 
 from nthlayer_generate.cli.ux import console, error, header, success, warning
 
+# What loading a manifest raises: common's ManifestLoadError, the model's
+# ValueError, and AttributeError/TypeError from common's legacy loader on a
+# malformed resource spec (opensrm-wo62.4.10).
+_LOAD_ERRORS = (
+    OSError,
+    ManifestLoadError,
+    yaml.YAMLError,
+    KeyError,
+    ValueError,
+    TypeError,
+    AttributeError,
+)
+
 
 def list_environments_command(service_file: str | None = None, directory: str | None = None) -> int:
     """List available environments for a service or directory.
@@ -172,17 +185,7 @@ def diff_envs_command(service_file: str, env1: str, env2: str, show_all: bool = 
             load_manifest(service_file, environment=env1, suppress_deprecation_warning=True),
             load_manifest(service_file, environment=env2, suppress_deprecation_warning=True),
         )
-    # AttributeError: common's legacy loader on a malformed resource spec
-    # (opensrm-wo62.4.10).
-    except (
-        OSError,
-        ManifestLoadError,
-        yaml.YAMLError,
-        KeyError,
-        ValueError,
-        TypeError,
-        AttributeError,
-    ) as e:
+    except _LOAD_ERRORS as e:
         error(f"Error parsing service: {e}")
         console.print()
         return 1
@@ -415,15 +418,7 @@ def validate_env_command(
                 f"   [muted]Result: tier={manifest.tier}, {len(manifest.slos)} SLO(s), "
                 f"{len(manifest.dependencies)} dependency(ies)"
             )
-        except (
-            OSError,
-            ManifestLoadError,
-            yaml.YAMLError,
-            KeyError,
-            ValueError,
-            TypeError,
-            AttributeError,
-        ) as e:
+        except _LOAD_ERRORS as e:
             errors.append(f"Failed to merge with service: {e}")
         console.print()
 

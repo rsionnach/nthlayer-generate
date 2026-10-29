@@ -382,3 +382,27 @@ def test_declared_service_id_is_refused(mock_client, dry_run):
 
     assert setup_pagerduty_command(str(path), api_key="test-key", dry_run=dry_run) == 1
     mock_client.assert_not_called()
+
+
+@pytest.mark.parametrize("fmt", ["srm-v1", "legacy"])
+@patch("nthlayer_generate.cli.pagerduty.PagerDutyClient")
+def test_the_missing_pagerduty_hint_is_accepted(mock_client, fmt, tmp_path):
+    """A manifest built from the hint the command prints must pass the dry
+    run. The first hint suggested service_id, which the command refuses."""
+    from nthlayer_generate.cli.pagerduty import LEGACY_PAGERDUTY_HINT, SRM_V1_PAGERDUTY_HINT
+
+    if fmt == "srm-v1":
+        head = (
+            "apiVersion: srm/v1\nkind: ServiceReliabilityManifest\n"
+            "metadata:\n  name: svc\n  team: my-team\n  tier: critical\n"
+            "spec:\n  type: api\n"
+        )
+        body = "\n".join(SRM_V1_PAGERDUTY_HINT)
+    else:
+        head = "service:\n  name: svc\n  team: my-team\n  tier: critical\n  type: api\nresources:\n"
+        body = "\n".join(LEGACY_PAGERDUTY_HINT)
+    path = tmp_path / "svc.yaml"
+    path.write_text(head + body + "\n")
+
+    assert setup_pagerduty_command(str(path), api_key="test-key", dry_run=True) == 0
+    mock_client.assert_not_called()

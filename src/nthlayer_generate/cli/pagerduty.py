@@ -14,6 +14,25 @@ from nthlayer_generate.cli.ux import console, error, header, info, success, warn
 logger = structlog.get_logger()
 from nthlayer_generate.integrations.pagerduty import PagerDutyClient
 
+# The shapes the missing-PagerDuty hint prints, indented as YAML under spec
+# (srm/v1) and resources (legacy). No service_id: a declared one is refused
+# below, so the hint must not suggest it. tests/test_cli_pagerduty.py loads
+# both and checks a dry run accepts them.
+SRM_V1_PAGERDUTY_HINT = (
+    "  ownership:",
+    "    team: my-team",
+    "    escalation: my-policy",
+    "    pagerduty:",
+    "      escalation_policy_id: PXXXXXX",
+)
+LEGACY_PAGERDUTY_HINT = (
+    "  - kind: PagerDuty",
+    "    name: primary",
+    "    spec:",
+    "      escalation_policy: my-policy",
+    "      urgency: high",
+)
+
 
 def setup_pagerduty_command(
     service_file: str,
@@ -71,16 +90,12 @@ def setup_pagerduty_command(
     if pagerduty is None:
         error(f"No PagerDuty configuration found in {service_file}")
         console.print()
-        console.print("[muted]Add one. srm/v1 (spec.ownership):[/muted]")
-        console.print("  pagerduty:")
-        console.print("    service_id: PXXXXXX")
-        console.print("    escalation_policy_id: PXXXXXX")
+        console.print("[muted]Add one. srm/v1 (spec):[/muted]")
+        for line in SRM_V1_PAGERDUTY_HINT:
+            console.print(line)
         console.print("[muted]Legacy service.yaml (resources):[/muted]")
-        console.print("  - kind: PagerDuty")
-        console.print("    name: primary")
-        console.print("    spec:")
-        console.print("      escalation_policy: my-policy")
-        console.print("      urgency: high")
+        for line in LEGACY_PAGERDUTY_HINT:
+            console.print(line)
         console.print()
         return 1
 

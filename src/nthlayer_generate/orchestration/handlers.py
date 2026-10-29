@@ -15,8 +15,8 @@ from nthlayer_generate.pagerduty import EventOrchestrationManager, PagerDutyReso
 
 logger = structlog.get_logger()
 
-# What PagerDutyHandler has always used when service.pagerduty sets no
-# timezone; common carries only what was authored.
+# PagerDutyHandler's timezone when ownership.pagerduty sets none, in any
+# format; common carries only what was authored (opensrm-wo62.4.13).
 DEFAULT_PAGERDUTY_TIMEZONE = "America/New_York"
 
 

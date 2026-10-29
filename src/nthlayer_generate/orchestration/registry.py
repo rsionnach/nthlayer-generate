@@ -15,7 +15,9 @@ class OrchestratorContext:
 
     ``manifest`` is the service loaded once through nthlayer-common, after
     the ``env`` overlay (opensrm-wo62.4.5). Handlers read it instead of the
-    raw YAML; ``service_yaml`` is kept for messages and for PolicyHandler.
+    raw YAML. ``service_yaml`` is kept for PlanResult and messages. ``env``
+    is informational only: the overlay is already in ``manifest``, so no
+    handler should apply it again.
     """
 
     service_yaml: Path

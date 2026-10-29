@@ -3,8 +3,9 @@
 Coordinates generation of all resources (SLOs, alerts, dashboards, etc.)
 from a single service definition file.
 
-This module is a facade — all logic lives in nthlayer.orchestration.
-Imports are preserved for backward compatibility.
+The handlers, plan builder and execution engine live in
+nthlayer_generate.orchestration; this module holds the ServiceOrchestrator
+facade and detect_resource_types, which decides what plan/apply generate.
 """
 
 import time
@@ -35,10 +36,10 @@ def detect_resource_types(manifest: ReliabilityManifest) -> List[str]:
 
     The legacy ResourceDetector's rules, read from the manifest instead of
     the raw YAML, so template-provided resources and every format count.
-    Rob's rulings: any dependency triggers alerts (E1); ownership.pagerduty
-    triggers pagerduty in any format (E2); judgment thresholds without SLOs
-    add recording rules only, the one generator that emits anything for
-    them (E5).
+    Rob's rulings, recorded on opensrm-wo62.4.5: any dependency (caches and
+    queues included) triggers alerts and the dashboard; ownership.pagerduty
+    triggers pagerduty in any format; judgment thresholds without SLOs add
+    recording rules only, the one generator that emits anything for them.
     """
     resources: List[str] = []
 

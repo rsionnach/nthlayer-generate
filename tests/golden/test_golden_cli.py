@@ -170,7 +170,7 @@ def _with_shipped_policies(manifest: Any) -> Any:
 
     PolicyHandler reads ``kind: PolicyRules`` from the manifest's raw data
     (opensrm-wo62.4.5); the corpus declares none, so the shipped rules are
-    added the way the detector stub served them before.
+    added as the one PolicyRules resource.
     """
     rules = yaml.safe_load(POLICIES.read_text(encoding="utf-8"))["rules"]
     raw_data = {**manifest.raw_data, "resources": [{"kind": "PolicyRules", "spec": {"rules": rules}}]}

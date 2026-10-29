@@ -1,7 +1,8 @@
 """plan/apply detection from the ReliabilityManifest (opensrm-wo62.4.5).
 
 Every case is a committed manifest. Each expected list follows from what the
-file declares and from Rob's rulings, not from the detector's code:
+file declares and from Rob's rulings (recorded on opensrm-wo62.4.5), not
+from the detector's code:
 
 - slos, recording-rules, backstage: the manifest has SLOs (the legacy
   "SLO resources" rule, now read after template expansion);

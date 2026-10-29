@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.4.0](https://github.com/rsionnach/nthlayer-generate/compare/v3.3.0...v3.4.0) (2026-10-29)
+
+
+### Features
+
+* plan/apply detect from the ReliabilityManifest and use the manifest handlers (opensrm-wo62.4.5) ([895dd98](https://github.com/rsionnach/nthlayer-generate/commit/895dd98e2b9491165bab0e18f5256343fbcffc9b))
+* plan/apply detect from the ReliabilityManifest and use the manifest handlers (opensrm-wo62.4.5) ([9d503f6](https://github.com/rsionnach/nthlayer-generate/commit/9d503f6fd78e1837111b2c09922b84d28ef0603b))
+
+
+### Bug Fixes
+
+* require nthlayer-common 5.8.0 (opensrm-wo62.4.5) ([79b6c07](https://github.com/rsionnach/nthlayer-generate/commit/79b6c07aeaaaa0be161b1553656f3af772765497))
+
 ## [3.3.0](https://github.com/rsionnach/nthlayer-generate/compare/v3.2.0...v3.3.0) (2026-10-29)
 
 

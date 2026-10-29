@@ -220,7 +220,7 @@ def diff_envs_command(service_file: str, env1: str, env2: str, show_all: bool = 
     for section, items1 in view1["resources"].items():
         items2 = view2["resources"][section]
         for name in sorted(set(items1) | set(items2), key=str):
-            label = f"{section}.{name}"
+            label = section if name == section else f"{section}.{name}"
             if name not in items2:
                 console.print(f"  [warning]⚠[/warning] {label} (only in {env1})")
                 resource_differences = True
@@ -462,27 +462,36 @@ def validate_env_command(
 # Not compared: what differs by construction between two loads of one file.
 _UNCOMPARED = frozenset({"environment", "source_file", "source_format", "raw_data"})
 
+# Service fields: the manifest's scalar fields, by declared type, so an unset
+# optional section (observability: None) is not mistaken for one.
+_SCALAR_TYPES = frozenset({"str", "str | None", "int", "int | None", "float", "bool"})
+_SERVICE_FIELDS = tuple(
+    f.name
+    for f in dataclasses.fields(ReliabilityManifest)
+    if f.name not in _UNCOMPARED and str(f.type) in _SCALAR_TYPES
+)
+
 
 def _manifest_views(
     m1: ReliabilityManifest, m2: ReliabilityManifest
 ) -> tuple[dict[str, dict[Any, Any]], dict[str, dict[Any, Any]]]:
     """Both manifests as {"service": scalars, "resources": {section: {key: dict}}}.
 
-    A field is a section if either manifest holds a mapping or list there (an
-    optional section is None in one environment and set in the other), so
-    both views share one set of keys. List sections whose entries carry a
-    ``name`` (slos, dependencies, ...) are keyed by it, so a reordered or
-    extended list diffs per entry; an absent section is empty.
+    Scalar fields (_SERVICE_FIELDS) are the service view; every other field
+    is a section. List sections whose entries carry a ``name`` (slos,
+    dependencies, ...) are keyed by it, so a reordered or extended list diffs
+    per entry; a mapping section is one entry under its own name; an absent
+    section is empty.
     """
     d1, d2 = (
         {k: v for k, v in dataclasses.asdict(m).items() if k not in _UNCOMPARED} for m in (m1, m2)
     )
-    sections = {k for d in (d1, d2) for k, v in d.items() if isinstance(v, (dict, list))}
+    sections = [k for k in d1 if k not in _SERVICE_FIELDS]
 
     def view(data: dict[str, Any]) -> dict[str, dict[Any, Any]]:
         # Keyed by entry name, or by position for an unnamed entry.
         resources: dict[str, dict[Any, Any]] = {}
-        for key in sorted(sections):
+        for key in sections:
             value = data.get(key)
             if isinstance(value, list):
                 resources[key] = {
@@ -495,7 +504,7 @@ def _manifest_views(
                 resources[key] = {key: value}
             else:
                 resources[key] = {}
-        service = {k: v for k, v in data.items() if k not in sections}
+        service = {k: data[k] for k in _SERVICE_FIELDS}
         return {"service": service, "resources": resources}
 
     return view(d1), view(d2)

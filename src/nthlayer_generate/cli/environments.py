@@ -231,7 +231,8 @@ def diff_envs_command(service_file: str, env1: str, env2: str, show_all: bool = 
                 spec_diff = _diff_dicts(items1[name], items2[name])
                 if spec_diff:
                     console.print(f"  [cyan]{label}[/cyan]:")
-                    for key, (v1, v2) in sorted(spec_diff.items()):
+                    # str keys: a YAML mapping can mix int and str keys.
+                    for key, (v1, v2) in sorted(spec_diff.items(), key=lambda kv: str(kv[0])):
                         console.print(f"      [cyan]{key}:[/cyan]")
                         console.print(f"        [muted]{env1}:[/muted] {v1}")
                         console.print(f"        [muted]{env2}:[/muted] {v2}")

@@ -15,9 +15,27 @@ import os
 from pathlib import Path
 from typing import Any
 
-from nthlayer_common.manifest import SLODefinition, load_manifest
+from nthlayer_common.manifest import ReliabilityManifest, SLODefinition, SourceFormat, load_manifest
 
 from nthlayer_generate.cli.ux import console, header
+
+
+def _is_objective(manifest: ReliabilityManifest, slo: SLODefinition) -> bool:
+    """Whether ``slo.target`` is a 0-100 objective, so an error budget exists.
+
+    srm/v1 puts a latency, throughput or error_rate SLO's bound in target
+    (200 ms, 5000 rps, 0.01); only its availability-shaped SLOs carry an
+    objective. Legacy and v2 targets are always objectives (v2 converts to
+    percent on load). Rob, 2026-10-29: budget objectives only.
+    """
+    return manifest.source_format != SourceFormat.SRM_V1 or slo.slo_type == "availability"
+
+
+def _target_label(manifest: ReliabilityManifest, slo: SLODefinition) -> str:
+    """The target as written: a percentage for an objective, else the bound."""
+    if _is_objective(manifest, slo):
+        return f"{slo.target}%"
+    return f"{slo.target} {slo.unit}" if slo.unit else f"{slo.target}"
 
 
 def slo_show_command(
@@ -72,18 +90,21 @@ def slo_show_command(
         objective = slo.target
         window = slo.window
 
-        # Calculate error budget
-        window_minutes = _parse_window_minutes(window)
-        error_budget_percent = 100 - objective
-        error_budget_minutes = window_minutes * (error_budget_percent / 100)
-
         console.print(f"[bold cyan]SLO:[/bold cyan] {slo.name}")
-        console.print(f"  [green]Objective:[/green] {objective}%")
-        console.print(f"  [green]Window:[/green] {window}")
-        console.print(
-            f"  [green]Error Budget:[/green] {error_budget_minutes:.1f} minutes "
-            f"[dim]({error_budget_percent:.2f}%)[/dim]"
-        )
+        if _is_objective(manifest, slo):
+            window_minutes = _parse_window_minutes(window)
+            error_budget_percent = 100 - objective
+            error_budget_minutes = window_minutes * (error_budget_percent / 100)
+            console.print(f"  [green]Objective:[/green] {objective}%")
+            console.print(f"  [green]Window:[/green] {window}")
+            console.print(
+                f"  [green]Error Budget:[/green] {error_budget_minutes:.1f} minutes "
+                f"[dim]({error_budget_percent:.2f}%)[/dim]"
+            )
+        else:
+            console.print(f"  [green]Target:[/green] {_target_label(manifest, slo)}")
+            console.print(f"  [green]Window:[/green] {window}")
+            console.print("  [green]Error Budget:[/green] n/a [dim](target is a bound)[/dim]")
         console.print()
 
         # Indicator details
@@ -132,7 +153,11 @@ def slo_list_command() -> int:
                         {
                             "service": manifest.name,
                             "name": slo.name,
-                            "objective": slo.target,
+                            "objective": (
+                                slo.target
+                                if _is_objective(manifest, slo)
+                                else _target_label(manifest, slo)
+                            ),
                             "window": slo.window,
                             "file": str(service_file),
                         }
@@ -217,7 +242,7 @@ def slo_collect_command(
     print()
 
     try:
-        results = asyncio.run(_collect_slo_metrics(slos, prom_url, manifest.name))
+        results = asyncio.run(_collect_slo_metrics(manifest, prom_url))
     except Exception as e:
         print(f"Error querying Prometheus: {e}")
         print()
@@ -241,9 +266,8 @@ def slo_collect_command(
 
 
 async def _collect_slo_metrics(
-    slos: list[SLODefinition],
+    manifest: ReliabilityManifest,
     prometheus_url: str,
-    service_name: str,
 ) -> list[dict[str, Any]]:
     """Query Prometheus for SLO metrics."""
     from nthlayer_generate.providers.prometheus import PrometheusProvider, PrometheusProviderError
@@ -255,9 +279,27 @@ async def _collect_slo_metrics(
     provider = PrometheusProvider(prometheus_url, username=username, password=password)
     results = []
 
-    for slo in slos:
+    service_name = manifest.name
+    for slo in manifest.slos:
         objective = slo.target
         window = slo.window
+
+        if not _is_objective(manifest, slo):
+            # A bound, not an objective: no budget, and the SLI is not a ratio.
+            results.append(
+                {
+                    "name": slo.name,
+                    "objective": _target_label(manifest, slo),
+                    "window": window,
+                    "total_budget_minutes": None,
+                    "current_sli": None,
+                    "burned_minutes": None,
+                    "percent_consumed": None,
+                    "status": "NOT_APPLICABLE",
+                    "error": "Target is a bound, not an objective: no error budget",
+                }
+            )
+            continue
 
         # Calculate budget
         window_minutes = _parse_window_minutes(window)
@@ -266,7 +308,7 @@ async def _collect_slo_metrics(
 
         result: dict[str, Any] = {
             "name": slo.name,
-            "objective": objective,
+            "objective": f"{objective}%",
             "window": window,
             "total_budget_minutes": total_budget_minutes,
             "current_sli": None,
@@ -329,12 +371,13 @@ def _print_slo_result(result: dict[str, Any]) -> None:
         "EXHAUSTED": "[X]",
         "NO_DATA": "[?]",
         "NO_QUERY": "[-]",
+        "NOT_APPLICABLE": "[-]",
         "ERROR": "[E]",
         "UNKNOWN": "[?]",
     }
 
     icon = status_icons.get(result["status"], "[?]")
-    print(f"{icon} SLO: {result['name']} ({result['objective']}%)")
+    print(f"{icon} SLO: {result['name']} ({result['objective']})")
     print(f"    Window: {result['window']} rolling")
 
     if result["current_sli"] is not None:

@@ -4,12 +4,13 @@ Tests for nthlayer slo commands including show, list, and collect.
 """
 
 import argparse
+import dataclasses
 import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from nthlayer_common.manifest import SLODefinition
+from nthlayer_common.manifest import ReliabilityManifest, SLODefinition, SourceFormat
 
 from nthlayer_generate.cli.slo import (
     _parse_window_minutes,
@@ -20,6 +21,18 @@ from nthlayer_generate.cli.slo import (
     slo_list_command,
     slo_show_command,
 )
+
+
+def _manifest(slos):
+    """A legacy-format manifest holding *slos*, as _collect_slo_metrics takes."""
+    return ReliabilityManifest(
+        name="test-service",
+        team="platform",
+        tier="critical",
+        type="api",
+        slos=slos,
+        source_format=SourceFormat.LEGACY,
+    )
 
 
 @pytest.fixture
@@ -270,9 +283,10 @@ class TestSloCollectCommand:
 
         assert result == 0
         mock_collect.assert_called_once()
-        slos, prom_url, service_name = mock_collect.call_args.args
+        manifest, prom_url = mock_collect.call_args.args
+        slos = manifest.slos
         assert prom_url == "http://prometheus:9090"
-        assert service_name == "test-service"
+        assert manifest.name == "test-service"
         assert [(s.name, s.target, s.window) for s in slos] == [
             ("availability", 99.9, "30d"),
             ("latency-p99", 99.0, "7d"),
@@ -543,9 +557,8 @@ class TestCollectSloMetrics:
         )
 
         results = await _collect_slo_metrics(
-            slos=[slo],
+            _manifest([slo]),
             prometheus_url="http://localhost:9090",
-            service_name="test-service",
         )
 
         assert len(results) == 1
@@ -574,9 +587,8 @@ class TestCollectSloMetrics:
         )
 
         results = await _collect_slo_metrics(
-            slos=[slo],
+            _manifest([slo]),
             prometheus_url="http://localhost:9090",
-            service_name="test-service",
         )
 
         assert len(results) == 1
@@ -601,9 +613,8 @@ class TestCollectSloMetrics:
         )
 
         results = await _collect_slo_metrics(
-            slos=[slo],
+            _manifest([slo]),
             prometheus_url="http://localhost:9090",
-            service_name="test-service",
         )
 
         assert len(results) == 1
@@ -628,9 +639,8 @@ class TestCollectSloMetrics:
         )
 
         results = await _collect_slo_metrics(
-            slos=[slo],
+            _manifest([slo]),
             prometheus_url="http://localhost:9090",
-            service_name="test-service",
         )
 
         assert len(results) == 1
@@ -655,9 +665,8 @@ class TestCollectSloMetrics:
         )
 
         results = await _collect_slo_metrics(
-            slos=[slo],
+            _manifest([slo]),
             prometheus_url="http://localhost:9090",
-            service_name="test-service",
         )
 
         assert len(results) == 1
@@ -682,9 +691,8 @@ class TestCollectSloMetrics:
         )
 
         results = await _collect_slo_metrics(
-            slos=[slo],
+            _manifest([slo]),
             prometheus_url="http://localhost:9090",
-            service_name="test-service",
         )
 
         assert len(results) == 1
@@ -709,9 +717,8 @@ class TestCollectSloMetrics:
         )
 
         results = await _collect_slo_metrics(
-            slos=[slo],
+            _manifest([slo]),
             prometheus_url="http://localhost:9090",
-            service_name="test-service",
         )
 
         assert len(results) == 1
@@ -738,9 +745,8 @@ class TestCollectSloMetrics:
         )
 
         results = await _collect_slo_metrics(
-            slos=[slo],
+            _manifest([slo]),
             prometheus_url="http://localhost:9090",
-            service_name="test-service",
         )
 
         assert len(results) == 1
@@ -766,9 +772,8 @@ class TestCollectSloMetrics:
         )
 
         await _collect_slo_metrics(
-            slos=[slo],
+            dataclasses.replace(_manifest([slo]), name="my-service"),
             prometheus_url="http://localhost:9090",
-            service_name="my-service",
         )
 
         # Verify that service was substituted
@@ -800,9 +805,8 @@ class TestCollectSloMetrics:
         )
 
         await _collect_slo_metrics(
-            slos=[slo],
+            _manifest([slo]),
             prometheus_url="http://localhost:9090",
-            service_name="test-service",
         )
 
         # Verify auth credentials were passed

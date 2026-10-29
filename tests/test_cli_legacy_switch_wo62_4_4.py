@@ -12,6 +12,7 @@ Manifests are committed examples unless stated.
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -109,3 +110,77 @@ def test_diff_envs_reports_a_malformed_spec(resources, tmp_path):
     path.write_text(head + body)
 
     assert diff_envs_command(str(path), "dev", "prod") == 1
+
+
+# =============================================================================
+# slo show / list / collect: an error budget only for an objective
+# =============================================================================
+#
+# Rob, 2026-10-29 (wo62.4.4 correctness): srm/v1 puts a latency, throughput or
+# error_rate SLO's bound in target, so treating it as a 0-100 objective
+# printed "Objective: 5000.0%" and a negative budget, with exit 0.
+
+OPENSRM = Path(__file__).resolve().parents[2] / "opensrm"
+
+
+def _load(path: Path):
+    import warnings
+
+    from nthlayer_common.manifest import load_manifest
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return load_manifest(path)
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        # srm/v1: availability 99.95 (objective), throughput 5000 rps, error_rate 0.01
+        pytest.param(
+            EXAMPLES / "opensrm" / "stream.reliability.yaml",
+            {"availability": True, "throughput": False, "error_rate": False},
+            id="srm-v1",
+        ),
+        # legacy: every target is the objective percentage
+        pytest.param(
+            EXAMPLES / "services" / "payment-api.yaml",
+            {"availability": True, "latency-p95": True, "latency-p99": True},
+            id="legacy",
+        ),
+        # v2 converts every target to percent on load (latency 99.0, unit ms)
+        pytest.param(
+            OPENSRM / "spec" / "v2" / "examples" / "migration" / "api-full-v2.yaml",
+            {
+                "payment-api-availability": True,
+                "payment-api-latency": True,
+                "payment-api-error-rate": True,
+                "payment-api-throughput": True,
+            },
+            id="v2",
+        ),
+    ],
+)
+def test_which_targets_are_objectives(path, expected):
+    from nthlayer_generate.cli.slo import _is_objective
+
+    manifest = _load(path)
+
+    assert {s.name: _is_objective(manifest, s) for s in manifest.slos} == expected
+
+
+def test_collect_gives_a_bound_no_budget():
+    from nthlayer_generate.cli.slo import _collect_slo_metrics
+
+    manifest = _load(EXAMPLES / "opensrm" / "stream.reliability.yaml")
+    with patch("nthlayer_generate.providers.prometheus.PrometheusProvider"):
+        results = asyncio.run(_collect_slo_metrics(manifest, "http://prometheus.invalid"))
+
+    by_name = {r["name"]: r for r in results}
+    assert by_name["throughput"]["status"] == "NOT_APPLICABLE"
+    assert by_name["throughput"]["objective"] == "5000.0 rps"
+    assert by_name["throughput"]["total_budget_minutes"] is None
+    assert by_name["error_rate"]["status"] == "NOT_APPLICABLE"
+    # availability is an objective; it has no query in this example
+    assert by_name["availability"]["status"] == "NO_QUERY"
+    assert by_name["availability"]["total_budget_minutes"] > 0

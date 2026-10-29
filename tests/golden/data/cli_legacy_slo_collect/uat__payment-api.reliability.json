@@ -1,8 +1,7 @@
 {
   "exit": 0,
   "queries": [
-    "sum(rate(http_requests_total{service=\"payment-api\",status=~\"[1234]..\"}[5m]))\n/\nsum(rate(http_requests_total{service=\"payment-api\"}[5m]))\n",
-    "histogram_quantile(0.95,\n  sum(rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])) by (le)\n)\n"
+    "sum(rate(http_requests_total{service=\"payment-api\",status=~\"[1234]..\"}[5m]))\n/\nsum(rate(http_requests_total{service=\"payment-api\"}[5m]))\n"
   ],
   "text": [
     "",
@@ -21,17 +20,12 @@
     "  Burned: 21.6 min (50%)",
     "  Status: HEALTHY",
     "",
-    "[OK] SLO: latency-p95 (99.0%)",
+    "[-] SLO: latency-p95 (99.0 ms)",
     "  Window: 30d rolling",
-    "  Current SLI: 99.95%",
-    "",
-    "  Error Budget:",
-    "  Total: 432.0 min",
-    "  Burned: 21.6 min (5%)",
-    "  Status: HEALTHY",
+    "  Error: Target is a bound, not an objective: no error budget",
     "",
     "------------------------------------------------------------",
-    "Summary: 2/2 SLOs healthy",
+    "Summary: 1/2 SLOs healthy",
     ""
   ]
 }

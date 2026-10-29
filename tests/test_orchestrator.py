@@ -14,6 +14,7 @@ from nthlayer_common.manifest import ManifestLoadError, load_manifest
 from nthlayer_generate.core.errors import ProviderError
 from nthlayer_generate.orchestration.handlers import (
     AlertHandler,
+    BackstageHandler,
     DashboardHandler,
     PagerDutyHandler,
     RecordingRulesHandler,
@@ -1044,3 +1045,120 @@ class TestResourceRegistry:
         expected = ["slos", "alerts", "dashboard", "recording-rules", "pagerduty", "backstage"]
         for name in expected:
             assert registry.get(name) is not None, f"Handler '{name}' not registered"
+
+
+# Copy of nthlayer-common tests/fixtures/legacy_loader/services/pagerduty-sre-keys.yaml
+# (opensrm-wo62.4.13): the service.pagerduty keys and resource keys
+# PagerDutyHandler reads, which no shipped example sets. Copied rather than
+# referenced because generate's CI resolves nthlayer-common from PyPI with no
+# sibling checkout.
+PAGERDUTY_SRE_KEYS_YAML = """
+service:
+  name: payment-api
+  team: payments
+  tier: critical
+  type: api
+  support_model: shared
+  language: java
+  framework: spring-boot
+  pagerduty:
+    timezone: Europe/Dublin
+    sre_escalation_policy_id: PSRE001
+
+resources:
+  - kind: PagerDuty
+    name: primary
+    spec:
+      integration_key: ${PAGERDUTY_INTEGRATION_KEY}
+      sre_integration_key: ${PAGERDUTY_SRE_INTEGRATION_KEY}
+      urgency: high
+      auto_resolve_timeout: 14400
+      auto_create: true
+"""
+
+
+@pytest.fixture
+def pagerduty_sre_context(tmp_path):
+    service_file = tmp_path / "pagerduty-sre-keys.yaml"
+    service_file.write_text(PAGERDUTY_SRE_KEYS_YAML)
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    return _context(service_file, output_dir)
+
+
+def _successful_manager(mock_manager_class):
+    mock_result = MagicMock()
+    mock_result.success = True
+    mock_result.team_id = "team-123"
+    mock_result.schedule_ids = []
+    mock_result.escalation_policy_id = "ep-123"
+    mock_result.service_id = "svc-123"
+    mock_result.service_url = "https://pagerduty.com/services/svc-123"
+    mock_result.created_resources = ["service"]
+    mock_result.warnings = []
+    mock_manager = MagicMock()
+    mock_manager.setup_service.return_value = mock_result
+    mock_manager.__enter__ = MagicMock(return_value=mock_manager)
+    mock_manager.__exit__ = MagicMock(return_value=False)
+    mock_manager_class.return_value = mock_manager
+    return mock_manager
+
+
+class TestPagerDutyManifestKeys:
+    """PagerDutyHandler reads ownership.pagerduty (opensrm-wo62.4.5).
+
+    The keys come from common's PagerDutyConfig (opensrm-wo62.4.13), stored as
+    authored; the America/New_York default is generate's.
+    """
+
+    def test_authored_timezone_reaches_dry_run_config(self, pagerduty_sre_context, monkeypatch):
+        monkeypatch.delenv("PAGERDUTY_API_KEY", raising=False)
+        PagerDutyHandler().generate(pagerduty_sre_context)
+        config = json.loads(
+            (pagerduty_sre_context.output_dir / "pagerduty-config.json").read_text()
+        )
+        assert config["timezone"] == "Europe/Dublin"
+        assert config["support_model"] == "shared"
+
+    def test_unset_timezone_defaults_to_new_york(self, sample_context, monkeypatch):
+        monkeypatch.delenv("PAGERDUTY_API_KEY", raising=False)
+        PagerDutyHandler().generate(sample_context)
+        config = json.loads((sample_context.output_dir / "pagerduty-config.json").read_text())
+        assert config["timezone"] == "America/New_York"
+
+    @patch("nthlayer_generate.orchestration.handlers.generate_alertmanager_config")
+    @patch("nthlayer_generate.orchestration.handlers._setup_event_orchestration")
+    @patch("nthlayer_generate.orchestration.handlers.PagerDutyResourceManager")
+    def test_sre_keys_reach_setup_and_routing(
+        self, mock_manager_class, mock_orchestration, mock_am, pagerduty_sre_context, monkeypatch
+    ):
+        monkeypatch.setenv("PAGERDUTY_API_KEY", "test-api-key")
+        manager = _successful_manager(mock_manager_class)
+
+        PagerDutyHandler().generate(pagerduty_sre_context)
+
+        setup_kwargs = manager.setup_service.call_args.kwargs
+        assert setup_kwargs["tz"] == "Europe/Dublin"
+        assert setup_kwargs["sre_escalation_policy_id"] == "PSRE001"
+        assert setup_kwargs["support_model"] == "shared"
+        # support_model shared + an SRE policy + a created service: the
+        # Event Orchestration routing rule is set up with that policy.
+        assert mock_orchestration.call_args.kwargs["sre_escalation_policy_id"] == "PSRE001"
+        assert mock_orchestration.call_args.kwargs["service_id"] == "svc-123"
+        am_kwargs = mock_am.call_args.kwargs
+        assert am_kwargs["pagerduty_integration_key"] == "${PAGERDUTY_INTEGRATION_KEY}"
+        assert am_kwargs["sre_integration_key"] == "${PAGERDUTY_SRE_INTEGRATION_KEY}"
+
+
+class TestManifestBackedPlanAndOutput:
+    def test_backstage_plan_counts_manifest_slos(self, sample_context):
+        (entry,) = BackstageHandler().plan(sample_context)
+        assert entry["slo_count"] == len(sample_context.manifest.slos) == 1
+        assert entry["team"] == "platform"
+        assert entry["tier"] == "standard"
+
+    def test_dashboard_is_written_as_generate_dashboard_writes_it(self, sample_context):
+        # cli/dashboard.py writes json.dumps(dashboard, indent=2, sort_keys=True).
+        DashboardHandler().generate(sample_context)
+        text = (sample_context.output_dir / "dashboard.json").read_text()
+        assert text == json.dumps(json.loads(text), indent=2, sort_keys=True)

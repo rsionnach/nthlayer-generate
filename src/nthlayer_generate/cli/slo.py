@@ -24,11 +24,15 @@ def _is_objective(manifest: ReliabilityManifest, slo: SLODefinition) -> bool:
     """Whether ``slo.target`` is a 0-100 objective, so an error budget exists.
 
     srm/v1 puts a latency, throughput or error_rate SLO's bound in target
-    (200 ms, 5000 rps, 0.01); only its availability-shaped SLOs carry an
-    objective. Legacy and v2 targets are always objectives (v2 converts to
-    percent on load). Rob, 2026-10-29: budget objectives only.
+    (200 ms, 5000 rps, 0.01), and a judgment SLO's ceiling too
+    (reversal_rate: 0.05, though common types it availability); only its
+    other availability SLOs carry an objective. Legacy and v2 targets are
+    always objectives (v2 converts to percent on load, ceilings included).
+    Rob, 2026-10-29: budget objectives only.
     """
-    return manifest.source_format != SourceFormat.SRM_V1 or slo.slo_type == "availability"
+    if manifest.source_format != SourceFormat.SRM_V1:
+        return True
+    return slo.slo_type == "availability" and not slo.is_judgment_slo()
 
 
 def _target_label(manifest: ReliabilityManifest, slo: SLODefinition) -> str:

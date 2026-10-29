@@ -142,6 +142,18 @@ def _load(path: Path):
             {"availability": True, "throughput": False, "error_rate": False},
             id="srm-v1",
         ),
+        # srm/v1 ai-gate: judgment ceilings (reversal_rate 0.05, typed
+        # availability by common) are bounds; latency 100 ms is a bound
+        pytest.param(
+            EXAMPLES / "opensrm" / "ai-gate.reliability.yaml",
+            {
+                "availability": True,
+                "latency": False,
+                "reversal_rate": False,
+                "high_confidence_failure": False,
+            },
+            id="srm-v1-ai-gate",
+        ),
         # legacy: every target is the objective percentage
         pytest.param(
             EXAMPLES / "services" / "payment-api.yaml",

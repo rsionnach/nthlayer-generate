@@ -106,6 +106,25 @@ def _legacy_resources(manifest: Any) -> list[dict[str, Any]]:
     return [r for r in resources if isinstance(r, dict)]
 
 
+def _first_nameless_resource(raw_data: Any) -> int | None:
+    """Index of the first resource in the file's own ``resources:`` list with
+    no name, or None.
+
+    The legacy parser rejected such a file ("Resource name is required"),
+    counting only the file's resources; common would load it (an SLO named
+    '') or crash on it, so the check runs on the raw file, before the load.
+    """
+    if not isinstance(raw_data, dict):
+        return None
+    resources = raw_data.get("resources")
+    if not isinstance(resources, list):
+        return None
+    for index, resource in enumerate(resources):
+        if isinstance(resource, dict) and resource.get("name") in (None, ""):
+            return index
+    return None
+
+
 def _is_non_numeric(value: Any) -> bool:
     """Whether *value* is a set availability that is not a number."""
     return value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)))
@@ -191,6 +210,14 @@ def validate_service_file(
         is_srm_v1_format(raw_data) or is_opensrm_v2_format(raw_data)
     )
 
+    if not use_opensrm:
+        nameless = _first_nameless_resource(raw_data)
+        if nameless is not None:
+            return ValidationResult(
+                valid=False,
+                errors=[f"Invalid resource {nameless} in {file_path}: Resource name is required"],
+            )
+
     try:
         with stdlib_warnings.catch_warnings():
             stdlib_warnings.simplefilter("ignore", LegacyFormatWarning)
@@ -268,13 +295,9 @@ def validate_service_file(
         errors.append(f"Duplicate resource names: {', '.join(duplicates)}")
 
     # Validate each legacy resource
-    for index, resource in enumerate(resources):
+    for resource in resources:
         kind = resource.get("kind")
         name = resource.get("name")
-        # common loads a nameless resource (an SLO named ''); the legacy parser
-        # rejected it, with this message.
-        if name is None or name == "":
-            errors.append(f"Invalid resource {index} in {file_path}: Resource name is required")
         if not isinstance(kind, str) or kind not in VALID_RESOURCE_KINDS:
             errors.append(
                 f"Resource {kind}/{name}: "

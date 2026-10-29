@@ -19,6 +19,8 @@ from __future__ import annotations
 import warnings
 from pathlib import Path
 
+import pytest
+
 from nthlayer_generate.specs.validator import validate_service_file
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
@@ -123,22 +125,39 @@ def test_missing_required_service_field_is_a_load_error(tmp_path: Path):
     assert result.errors == ["service.team is required"]
 
 
-def test_nameless_resources_are_rejected(tmp_path: Path):
-    # The legacy parser rejected a resource with no name (generate
-    # specs/models.py Resource: "Resource name is required"); common loads it.
+@pytest.mark.parametrize(
+    "name_yaml,index",
+    [("", 0), ("    name: ''\n", 0), ("    name: null\n", 0)],
+    ids=["missing", "empty", "null"],
+)
+def test_nameless_resource_is_rejected(tmp_path: Path, name_yaml: str, index: int):
+    # The legacy parser rejected a resource with no name, stopping at the
+    # first (generate specs/parser.py, ServiceParseError wrapping
+    # specs/models.py Resource: "Resource name is required"). common loads
+    # the missing/empty case and crashes on null for an SLO.
     path = tmp_path / "svc.yaml"
     path.write_text(
         "service:\n  name: svc\n  team: t\n  tier: critical\n  type: api\n"
         "resources:\n"
-        "  - kind: SLO\n    spec: {objective: 99.9}\n"
-        "  - kind: SLO\n    name: ''\n    spec: {objective: 99.0}\n"
+        "  - kind: SLO\n" + name_yaml + "    spec: {objective: 99.9}\n"
+        "  - kind: SLO\n    spec: {objective: 99.0}\n"
     )
     result = _validate(path)
     assert not result.valid
-    assert result.errors == [
-        f"Invalid resource 0 in {path}: Resource name is required",
-        f"Invalid resource 1 in {path}: Resource name is required",
-    ]
+    assert result.errors == [f"Invalid resource {index} in {path}: Resource name is required"]
+
+
+def test_nameless_index_counts_only_the_files_own_resources(tmp_path: Path):
+    # critical-api supplies three resources before the file's own; the
+    # parser's index was into the file's list, so the first is 0.
+    path = tmp_path / "svc.yaml"
+    path.write_text(
+        "service:\n  name: svc\n  team: t\n  tier: critical\n  type: api\n"
+        "  template: critical-api\n"
+        "resources:\n  - kind: Dependencies\n    spec: {}\n"
+    )
+    result = _validate(path)
+    assert result.errors == [f"Invalid resource 0 in {path}: Resource name is required"]
 
 
 def test_non_string_kind_is_an_invalid_kind(tmp_path: Path):

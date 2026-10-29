@@ -16,14 +16,9 @@ from pathlib import Path
 from typing import Any
 
 from nthlayer_common.manifest import (
-    VALID_TIERS,
     LegacyFormatWarning,
     ManifestLoadError,
     load_manifest,
-)
-from nthlayer_common.manifest.models import (
-    resolve_service_type,
-    valid_service_types_phrase,
 )
 from nthlayer_common.manifest.parser.v1 import is_srm_v1_format
 from nthlayer_common.manifest.parser.v2 import is_opensrm_v2_format
@@ -152,15 +147,15 @@ def validate_service_file(
     Validate service YAML file.
 
     Checks:
-    1. File can be parsed
+    1. File loads through nthlayer-common (which rejects an invalid tier or
+       type, so the first such error is the only one reported)
     2. Service name is valid format
-    3. Service tier is valid
-    4. Service type is valid
-    5. All resource kinds are valid
-    6. No duplicate resource names
-    7. Template variables are valid
-    8. Template exists (if specified)
-    9. Filename matches service name (optional)
+    3. Filename matches service name (optional)
+    4. (legacy files) Resource names are present and unique
+    5. (legacy files) Resource kinds are valid
+    6. (legacy files) Resource specs use only known ${var}s (warning)
+    7. (srm/v1, v2) Contracts, and the registry's expectations if given
+    8. A template, if set, is noted (warning)
 
     Args:
         file_path: Path to service YAML file
@@ -202,7 +197,9 @@ def validate_service_file(
             manifest = load_manifest(
                 file_path, environment=environment, suppress_deprecation_warning=True
             )
-    except (ManifestLoadError, FileNotFoundError, ValueError) as e:
+    except (ManifestLoadError, OSError, ValueError) as e:
+        # OSError: a missing or unreadable file, or an env overlay that is a
+        # directory or unreadable.
         return ValidationResult(valid=False, errors=[str(e)])
     except (AttributeError, TypeError) as e:
         # common's legacy loader on a non-mapping resource spec
@@ -261,22 +258,8 @@ def validate_service_file(
             "numbers and hyphens, and not end with a hyphen."
         )
 
-    # Validate tier
-    if service_context.tier not in VALID_TIERS:
-        errors.append(
-            f"Invalid tier: '{service_context.tier}'. "
-            f"Must be one of: {', '.join(sorted(VALID_TIERS))}"
-        )
-
-    # Validate type through nthlayer-common, which owns the rule
-    # (opensrm-z3ab). resolve_service_type accepts canonical types, the
-    # spec's x- extension branch, and legacy aliases — the union this used
-    # to build by hand, plus the extension branch it was missing.
-    if resolve_service_type(service_context.type) is None:
-        errors.append(
-            f"Invalid type: '{service_context.type}'. "
-            f"Must be one of: {valid_service_types_phrase()}."
-        )
+    # Tier and type are checked by nthlayer-common as the manifest loads: an
+    # invalid one is a load error above, for every format (Rob, wo62.4.19).
 
     # Check for duplicate resource names (legacy resources only)
     resource_names = [str(r["name"]) for r in resources if r.get("name")]
@@ -285,10 +268,14 @@ def validate_service_file(
         errors.append(f"Duplicate resource names: {', '.join(duplicates)}")
 
     # Validate each legacy resource
-    for resource in resources:
+    for index, resource in enumerate(resources):
         kind = resource.get("kind")
         name = resource.get("name")
-        if kind not in VALID_RESOURCE_KINDS:
+        # common loads a nameless resource (an SLO named ''); the legacy parser
+        # rejected it, with this message.
+        if name is None or name == "":
+            errors.append(f"Invalid resource {index} in {file_path}: Resource name is required")
+        if not isinstance(kind, str) or kind not in VALID_RESOURCE_KINDS:
             errors.append(
                 f"Resource {kind}/{name}: "
                 f"Invalid kind '{kind}'. "

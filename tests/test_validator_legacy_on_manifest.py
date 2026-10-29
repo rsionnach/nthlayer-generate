@@ -121,3 +121,43 @@ def test_missing_required_service_field_is_a_load_error(tmp_path: Path):
     result = _validate(path)
     assert not result.valid
     assert result.errors == ["service.team is required"]
+
+
+def test_nameless_resources_are_rejected(tmp_path: Path):
+    # The legacy parser rejected a resource with no name (generate
+    # specs/models.py Resource: "Resource name is required"); common loads it.
+    path = tmp_path / "svc.yaml"
+    path.write_text(
+        "service:\n  name: svc\n  team: t\n  tier: critical\n  type: api\n"
+        "resources:\n"
+        "  - kind: SLO\n    spec: {objective: 99.9}\n"
+        "  - kind: SLO\n    name: ''\n    spec: {objective: 99.0}\n"
+    )
+    result = _validate(path)
+    assert not result.valid
+    assert result.errors == [
+        f"Invalid resource 0 in {path}: Resource name is required",
+        f"Invalid resource 1 in {path}: Resource name is required",
+    ]
+
+
+def test_non_string_kind_is_an_invalid_kind(tmp_path: Path):
+    path = tmp_path / "svc.yaml"
+    path.write_text(
+        "service:\n  name: svc\n  team: t\n  tier: critical\n  type: api\n"
+        "resources:\n  - kind: [SLO]\n    name: x\n    spec: {}\n"
+    )
+    result = _validate(path)
+    assert not result.valid
+    assert result.errors == [
+        f"Resource ['SLO']/x: Invalid kind '['SLO']'. Must be one of: {VALID_KINDS}"
+    ]
+
+
+def test_unreadable_env_overlay_is_a_validation_error(tmp_path: Path):
+    base = tmp_path / "svc.yaml"
+    base.write_text("service:\n  name: svc\n  team: t\n  tier: critical\n  type: api\n")
+    (tmp_path / "environments" / "qa.yaml").mkdir(parents=True)  # a directory, not a file
+    result = _validate(base, "qa")
+    assert not result.valid
+    assert len(result.errors) == 1

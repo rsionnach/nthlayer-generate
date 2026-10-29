@@ -7,6 +7,6 @@
     "│ SLO Status: minimal  │",
     "╰──╯",
     "",
-    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/minimal.yaml"
+    "Error parsing service file: metadata.labels.tier is required. Set to: critical, high, standard, or low"
   ]
 }

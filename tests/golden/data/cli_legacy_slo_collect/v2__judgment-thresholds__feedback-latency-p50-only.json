@@ -7,6 +7,6 @@
     "  Error Budget Status: feedback-latency-p50-only",
     "============================================================",
     "",
-    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/feedback-latency-p50-only.yaml"
+    "No SLOs defined in <opensrm>/spec/v2/examples/judgment-thresholds/feedback-latency-p50-only.yaml"
   ]
 }

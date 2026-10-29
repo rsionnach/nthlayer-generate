@@ -6,7 +6,7 @@
     "│ Setup PagerDuty Integration  │",
     "╰──╯",
     "",
-    "✗ Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/template-extension.yaml",
+    "✗ Error parsing service file: Template 'template:default/payment-services-base' not found. Searched for 'payment-services-base.yaml' in <opensrm>/spec/v2/examples/templates/ and <opensrm>/spec/v2/examples/.nthlayer/templates/",
     ""
   ],
   "no_key_exit": 1,

@@ -13,7 +13,7 @@
     "  Error Budget: 216.0 minutes (0.50%)",
     "",
     "  Indicator: availability",
-    "  Query: sum(rate(job_runs{service=\"${service}\",status=\"success\"}[...",
+    "  Query: sum(rate(job_runs{service=\"notification-service\",status=\"...",
     "",
     "SLO: processing-time-p95",
     "  Objective: 95.0%",

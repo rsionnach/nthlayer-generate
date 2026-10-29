@@ -27,7 +27,6 @@
     "checkout-service  availability  99.95  30d",
     "checkout-service  latency-p95  99.0  30d",
     "checkout-service  latency-p99  95.0  30d",
-    "email-worker  processing-latency-p95 99.9  30d",
     "email-worker  success-rate  99.0  30d",
     "identity-service  availability  99.99  30d",
     "identity-service  latency-p95  99.5  30d",
@@ -54,7 +53,7 @@
     "search-api  search-latency-p95  99.0  30d",
     "search-api  search-quality  95.0  7d",
     "",
-    "Total: 45 SLO(s)",
+    "Total: 44 SLO(s)",
     ""
   ]
 }

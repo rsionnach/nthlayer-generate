@@ -5,11 +5,17 @@
     "results": [
       {
         "all_found": true,
-        "error": "No metrics found in query",
-        "found_metrics": [],
-        "metrics": [],
+        "error": null,
+        "found_metrics": [
+          "pipeline_runs_total",
+          "pipeline_success_total"
+        ],
+        "metrics": [
+          "pipeline_runs_total",
+          "pipeline_success_total"
+        ],
         "missing_metrics": [],
-        "query": "",
+        "query": "sum(rate(pipeline_success_total{service=\"analytics-pipeline\"}[5m]))\n/\nsum(rate(pipeline_runs_total{service=\"analytics-pipeline\"}[5m]))\n",
         "slo_name": "analytics-pipeline-success-rate"
       },
       {
@@ -23,11 +29,17 @@
       },
       {
         "all_found": true,
-        "error": "No metrics found in query",
-        "found_metrics": [],
-        "metrics": [],
+        "error": null,
+        "found_metrics": [
+          "pipeline_processed_records_total",
+          "pipeline_valid_records_total"
+        ],
+        "metrics": [
+          "pipeline_processed_records_total",
+          "pipeline_valid_records_total"
+        ],
         "missing_metrics": [],
-        "query": "",
+        "query": "sum(rate(pipeline_valid_records_total{service=\"analytics-pipeline\"}[5m]))\n/\nsum(rate(pipeline_processed_records_total{service=\"analytics-pipeline\"}[5m]))\n",
         "slo_name": "analytics-pipeline-data-quality"
       }
     ],

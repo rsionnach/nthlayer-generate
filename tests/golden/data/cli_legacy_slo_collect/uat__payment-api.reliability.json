@@ -1,12 +1,37 @@
 {
-  "exit": 1,
-  "queries": [],
+  "exit": 0,
+  "queries": [
+    "sum(rate(http_requests_total{service=\"payment-api\",status=~\"[1234]..\"}[5m]))\n/\nsum(rate(http_requests_total{service=\"payment-api\"}[5m]))\n",
+    "histogram_quantile(0.95,\n  sum(rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m])) by (le)\n)\n"
+  ],
   "text": [
     "",
     "============================================================",
     "  Error Budget Status: payment-api.reliability",
     "============================================================",
     "",
-    "Error parsing service file: Missing required 'service' section in examples/uat/payment-api.reliability.yaml"
+    "Prometheus: http://prometheus.invalid",
+    "",
+    "[OK] SLO: availability (99.9%)",
+    "  Window: 30d rolling",
+    "  Current SLI: 99.95%",
+    "",
+    "  Error Budget:",
+    "  Total: 43.2 min",
+    "  Burned: 21.6 min (50%)",
+    "  Status: HEALTHY",
+    "",
+    "[OK] SLO: latency-p95 (99.0%)",
+    "  Window: 30d rolling",
+    "  Current SLI: 99.95%",
+    "",
+    "  Error Budget:",
+    "  Total: 432.0 min",
+    "  Burned: 21.6 min (5%)",
+    "  Status: HEALTHY",
+    "",
+    "------------------------------------------------------------",
+    "Summary: 2/2 SLOs healthy",
+    ""
   ]
 }

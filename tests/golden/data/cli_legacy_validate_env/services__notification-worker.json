@@ -18,7 +18,7 @@
       "",
       "Testing with service file...",
       "✓ Successfully merged with notification-worker.yaml",
-      "  Result: tier=low, 9 resource(s)",
+      "  Result: tier=low, 5 SLO(s), 1 dependency(ies)",
       "",
       "✓ Validation passed",
       ""
@@ -43,7 +43,7 @@
       "",
       "Testing with service file...",
       "✓ Successfully merged with notification-worker.yaml",
-      "  Result: tier=critical, 7 resource(s)",
+      "  Result: tier=critical, 3 SLO(s), 1 dependency(ies)",
       "",
       "✓ Validation passed",
       ""
@@ -68,7 +68,7 @@
       "",
       "Testing with service file...",
       "✓ Successfully merged with notification-worker.yaml",
-      "  Result: tier=standard, 9 resource(s)",
+      "  Result: tier=standard, 5 SLO(s), 1 dependency(ies)",
       "",
       "✓ Validation passed",
       ""

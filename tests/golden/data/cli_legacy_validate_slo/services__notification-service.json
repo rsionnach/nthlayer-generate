@@ -5,20 +5,28 @@
     "results": [
       {
         "all_found": true,
-        "error": "No metrics found in query",
-        "found_metrics": [],
-        "metrics": [],
+        "error": null,
+        "found_metrics": [
+          "job_runs"
+        ],
+        "metrics": [
+          "job_runs"
+        ],
         "missing_metrics": [],
-        "query": "",
+        "query": "sum(rate(job_runs{service=\"notification-service\",status=\"success\"}[5m]))\n/\nsum(rate(job_runs{service=\"notification-service\"}[5m]))\n",
         "slo_name": "notification-service-job-success-rate"
       },
       {
         "all_found": true,
-        "error": "No metrics found in query",
-        "found_metrics": [],
-        "metrics": [],
+        "error": null,
+        "found_metrics": [
+          "job_duration_seconds_bucket"
+        ],
+        "metrics": [
+          "job_duration_seconds_bucket"
+        ],
         "missing_metrics": [],
-        "query": "",
+        "query": "histogram_quantile(0.95,\n  rate(job_duration_seconds_bucket{service=\"notification-service\"}[5m])\n)\n",
         "slo_name": "notification-service-processing-time-p95"
       }
     ],

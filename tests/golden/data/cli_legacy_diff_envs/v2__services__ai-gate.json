@@ -1,6 +1,59 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in <opensrm>/spec/v2/examples/services/ai-gate.yaml"
-  ]
+  "dev..prod": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Service: <opensrm>/spec/v2/examples/services/ai-gate.yaml",
+      "Comparing: dev vs prod",
+      "",
+      "✗ Error parsing service: Judgment SLO missing metadata.name",
+      ""
+    ]
+  },
+  "dev..staging": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Service: <opensrm>/spec/v2/examples/services/ai-gate.yaml",
+      "Comparing: dev vs staging",
+      "",
+      "✗ Error parsing service: Judgment SLO missing metadata.name",
+      ""
+    ]
+  },
+  "staging..prod": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Service: <opensrm>/spec/v2/examples/services/ai-gate.yaml",
+      "Comparing: staging vs prod",
+      "",
+      "✗ Error parsing service: Judgment SLO missing metadata.name",
+      ""
+    ]
+  }
 }

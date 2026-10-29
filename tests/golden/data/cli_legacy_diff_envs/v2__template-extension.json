@@ -1,6 +1,59 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in <opensrm>/spec/v2/examples/template-extension.yaml"
-  ]
+  "dev..prod": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Service: <opensrm>/spec/v2/examples/template-extension.yaml",
+      "Comparing: dev vs prod",
+      "",
+      "✗ Error parsing service: Template 'template:default/payment-services-base' not found. Searched for 'payment-services-base.yaml' in <opensrm>/spec/v2/examples/templates/ and <opensrm>/spec/v2/examples/.nthlayer/templates/",
+      ""
+    ]
+  },
+  "dev..staging": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Service: <opensrm>/spec/v2/examples/template-extension.yaml",
+      "Comparing: dev vs staging",
+      "",
+      "✗ Error parsing service: Template 'template:default/payment-services-base' not found. Searched for 'payment-services-base.yaml' in <opensrm>/spec/v2/examples/templates/ and <opensrm>/spec/v2/examples/.nthlayer/templates/",
+      ""
+    ]
+  },
+  "staging..prod": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Service: <opensrm>/spec/v2/examples/template-extension.yaml",
+      "Comparing: staging vs prod",
+      "",
+      "✗ Error parsing service: Template 'template:default/payment-services-base' not found. Searched for 'payment-services-base.yaml' in <opensrm>/spec/v2/examples/templates/ and <opensrm>/spec/v2/examples/.nthlayer/templates/",
+      ""
+    ]
+  }
 }

@@ -2,6 +2,6 @@
   "exit": 2,
   "json": null,
   "text": [
-    "✗ Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/services/ai-gate-without-judgment-slos.yaml"
+    "✗ Error parsing service file: metadata.labels.tier is required. Set to: critical, high, standard, or low"
   ]
 }

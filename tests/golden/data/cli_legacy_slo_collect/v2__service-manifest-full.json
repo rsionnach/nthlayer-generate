@@ -7,6 +7,6 @@
     "  Error Budget Status: service-manifest-full",
     "============================================================",
     "",
-    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/service-manifest-full.yaml"
+    "Error parsing service file: Error parsing OpenSLO documents: $ref './slos/payment-availability.yaml' not found at <opensrm>/spec/v2/examples/slos/payment-availability.yaml"
   ]
 }

@@ -1,7 +1,27 @@
 {
-  "exit": 2,
-  "json": null,
-  "text": [
-    "✗ Error parsing service file: Missing required 'service' section in examples/opensrm/api-basic.reliability.yaml"
-  ]
+  "exit": 0,
+  "json": {
+    "confidence": 1.0,
+    "contact": {
+      "email": null,
+      "opsgenie_team": null,
+      "pagerduty_escalation": null,
+      "slack_channel": "#team-platform"
+    },
+    "owner": "platform",
+    "owner_type": "team",
+    "service": "user-api",
+    "signals": [
+      {
+        "confidence": 1.0,
+        "metadata": {
+          "field": "team"
+        },
+        "owner": "platform",
+        "owner_type": "team",
+        "source": "declared"
+      }
+    ],
+    "source": "declared"
+  }
 }

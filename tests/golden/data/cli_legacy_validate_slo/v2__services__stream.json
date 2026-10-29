@@ -2,6 +2,6 @@
   "exit": 2,
   "json": null,
   "text": [
-    "✗ Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/services/stream.yaml"
+    "✗ Error parsing service file: Error parsing OpenSLO documents: Cannot infer slo_type for OpenSLO 'enrichment-consumer-lag'. The indicator shape is ambiguous. Add an opensrm.nthlayer.io/slo-type annotation."
   ]
 }

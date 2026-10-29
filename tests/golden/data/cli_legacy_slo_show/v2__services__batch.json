@@ -7,6 +7,6 @@
     "│ SLO Status: batch  │",
     "╰──╯",
     "",
-    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/services/batch.yaml"
+    "Error parsing service file: metadata.labels.tier is required. Set to: critical, high, standard, or low"
   ]
 }

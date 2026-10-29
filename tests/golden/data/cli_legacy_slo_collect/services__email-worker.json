@@ -20,12 +20,8 @@
     "  Burned: 21.6 min (5%)",
     "  Status: HEALTHY",
     "",
-    "[-] SLO: processing-latency-p95 (99.9%)",
-    "  Window: 30d rolling",
-    "  Error: No query defined in SLO indicator",
-    "",
     "------------------------------------------------------------",
-    "Summary: 1/2 SLOs healthy",
+    "Summary: 1/1 SLOs healthy",
     ""
   ]
 }

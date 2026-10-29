@@ -7,6 +7,14 @@
     "│ SLO Status: single-bounds  │",
     "╰──╯",
     "",
-    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/single-bounds.yaml"
+    "No SLOs defined in <opensrm>/spec/v2/examples/judgment-thresholds/single-bounds.yaml",
+    "",
+    "Add SLOs to your service.yaml:",
+    "  resources:",
+    "  - kind: SLO",
+    "  name: availability",
+    "  spec:",
+    "  objective: 99.95",
+    "  window: 30d"
   ]
 }

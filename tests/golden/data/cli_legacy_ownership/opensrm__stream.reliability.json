@@ -1,7 +1,27 @@
 {
-  "exit": 2,
-  "json": null,
-  "text": [
-    "✗ Error parsing service file: Missing required 'service' section in examples/opensrm/stream.reliability.yaml"
-  ]
+  "exit": 0,
+  "json": {
+    "confidence": 1.0,
+    "contact": {
+      "email": null,
+      "opsgenie_team": null,
+      "pagerduty_escalation": null,
+      "slack_channel": "#team-orders"
+    },
+    "owner": "orders",
+    "owner_type": "team",
+    "service": "order-events-processor",
+    "signals": [
+      {
+        "confidence": 1.0,
+        "metadata": {
+          "field": "team"
+        },
+        "owner": "orders",
+        "owner_type": "team",
+        "source": "declared"
+      }
+    ],
+    "source": "declared"
+  }
 }

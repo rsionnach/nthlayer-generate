@@ -1,15 +1,33 @@
 {
-  "dry_run_exit": 1,
+  "dry_run_exit": 0,
   "dry_run_text": [
     "",
     "╭──╮",
     "│ Setup PagerDuty Integration  │",
     "╰──╯",
     "",
-    "✗ Error parsing service file: Missing required 'service' section in examples/opensrm/ai-gate.reliability.yaml",
+    "Service: fraud-detector",
+    "  Team: risk",
+    "  Tier: critical",
+    "",
+    "ℹ DRY RUN MODE - No changes will be made",
+    "",
+    "Would create/verify:",
+    "  • PagerDuty service: fraud-detector",
+    "  • Team mapping: risk",
     ""
   ],
   "no_key_exit": 1,
-  "setup_service_calls": [],
-  "stubbed_exit": 1
+  "setup_service_calls": [
+    {
+      "auto_resolve_timeout": null,
+      "create_escalation_policy_config": null,
+      "escalation_policy_id": "PMLTEAM1",
+      "escalation_policy_name": null,
+      "service_name": "fraud-detector",
+      "team_name": "risk",
+      "urgency": "high"
+    }
+  ],
+  "stubbed_exit": 0
 }

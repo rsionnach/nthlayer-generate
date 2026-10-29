@@ -1,5 +1,5 @@
 {
-  "exit": 1,
+  "exit": 0,
   "queries": [],
   "text": [
     "",
@@ -7,6 +7,26 @@
     "  Error Budget Status: api-full-v2",
     "============================================================",
     "",
-    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/migration/api-full-v2.yaml"
+    "Prometheus: http://prometheus.invalid",
+    "",
+    "[-] SLO: payment-api-availability (99.95%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "[-] SLO: payment-api-latency (99.0%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "[-] SLO: payment-api-error-rate (99.9%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "[-] SLO: payment-api-throughput (99.0%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "------------------------------------------------------------",
+    "Summary: 0/4 SLOs healthy",
+    ""
   ]
 }

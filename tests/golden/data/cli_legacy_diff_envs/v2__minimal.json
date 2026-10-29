@@ -1,6 +1,59 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in <opensrm>/spec/v2/examples/minimal.yaml"
-  ]
+  "dev..prod": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Service: <opensrm>/spec/v2/examples/minimal.yaml",
+      "Comparing: dev vs prod",
+      "",
+      "✗ Error parsing service: metadata.labels.tier is required. Set to: critical, high, standard, or low",
+      ""
+    ]
+  },
+  "dev..staging": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Service: <opensrm>/spec/v2/examples/minimal.yaml",
+      "Comparing: dev vs staging",
+      "",
+      "✗ Error parsing service: metadata.labels.tier is required. Set to: critical, high, standard, or low",
+      ""
+    ]
+  },
+  "staging..prod": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Service: <opensrm>/spec/v2/examples/minimal.yaml",
+      "Comparing: staging vs prod",
+      "",
+      "✗ Error parsing service: metadata.labels.tier is required. Set to: critical, high, standard, or low",
+      ""
+    ]
+  }
 }

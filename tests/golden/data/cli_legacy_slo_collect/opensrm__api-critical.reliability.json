@@ -1,5 +1,5 @@
 {
-  "exit": 1,
+  "exit": 0,
   "queries": [],
   "text": [
     "",
@@ -7,6 +7,22 @@
     "  Error Budget Status: api-critical.reliability",
     "============================================================",
     "",
-    "Error parsing service file: Missing required 'service' section in examples/opensrm/api-critical.reliability.yaml"
+    "Prometheus: http://prometheus.invalid",
+    "",
+    "[-] SLO: availability (99.95%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "[-] SLO: latency (200.0%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "[-] SLO: error_rate (0.1%)",
+    "  Window: 7d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "------------------------------------------------------------",
+    "Summary: 0/3 SLOs healthy",
+    ""
   ]
 }

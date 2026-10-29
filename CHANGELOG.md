@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.3.0](https://github.com/rsionnach/nthlayer-generate/compare/v3.2.0...v3.3.0) (2026-10-29)
+
+
+### Features
+
+* move slo, validate-slo, ownership, setup-pagerduty, diff-envs onto nthlayer-common (opensrm-wo62.4.4) ([7e64f87](https://github.com/rsionnach/nthlayer-generate/commit/7e64f87295ff215e5388ea9970e16cbc4e81a364))
+
+
+### Bug Fixes
+
+* diff-envs classifies manifest fields by declared type (opensrm-wo62.4.4) ([de8dd2c](https://github.com/rsionnach/nthlayer-generate/commit/de8dd2c46d26efe405989af4811b57a9cfe66f3f))
+
+
+### Code Refactoring
+
+* move slo, validate-slo, ownership, setup-pagerduty, diff-envs onto nthlayer-common (opensrm-wo62.4.4) ([d47d796](https://github.com/rsionnach/nthlayer-generate/commit/d47d796a95c6e14a6355e2ab0808c33afa45f11b))
+
 ## [3.2.0](https://github.com/rsionnach/nthlayer-generate/compare/v3.1.1...v3.2.0) (2026-10-28)
 
 

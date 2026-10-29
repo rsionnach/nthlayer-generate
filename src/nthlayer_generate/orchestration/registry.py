@@ -6,17 +6,25 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 
+from nthlayer_common.manifest import ReliabilityManifest
+
 
 @dataclass
 class OrchestratorContext:
-    """Shared context passed to all resource handlers."""
+    """Shared context passed to all resource handlers.
+
+    ``manifest`` is the service loaded once through nthlayer-common, after
+    the ``env`` overlay (opensrm-wo62.4.5). Handlers read it instead of the
+    raw YAML. ``service_yaml`` is kept for PlanResult and messages. ``env``
+    is informational only: the overlay is already in ``manifest``, so no
+    handler should apply it again.
+    """
 
     service_yaml: Path
-    service_def: Dict[str, Any]
+    manifest: ReliabilityManifest
     service_name: str
     output_dir: Path
     env: Optional[str]
-    detector: Any  # ResourceDetector — Any to avoid circular import at runtime
     prometheus_url: Optional[str] = None
     push_to_grafana: bool = False
 

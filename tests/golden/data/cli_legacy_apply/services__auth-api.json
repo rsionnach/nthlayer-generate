@@ -818,6 +818,24 @@
       "message": "Auto-generated dashboard for auth-api",
       "overwrite": true
     },
+    "pagerduty-config.json": {
+      "note": "Set PAGERDUTY_API_KEY to create resources in PagerDuty",
+      "resources_to_create": {
+        "escalation_policy": "platform-escalation",
+        "schedules": [
+          "platform-primary",
+          "platform-secondary",
+          "platform-manager"
+        ],
+        "service": "auth-api",
+        "team": "platform"
+      },
+      "service_name": "auth-api",
+      "support_model": "self",
+      "team": "platform",
+      "tier": "critical",
+      "timezone": "America/New_York"
+    },
     "recording-rules.yaml": {
       "groups": [
         {
@@ -867,11 +885,11 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"auth-api\",le=\"0.5\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"auth-api\",le=\"0.2\"}[30d]))",
               "labels": {
                 "service": "auth-api",
                 "slo": "latency-p95",
-                "threshold": "500ms"
+                "threshold": "200ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },
@@ -917,11 +935,11 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"auth-api\",le=\"0.5\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"auth-api\",le=\"0.1\"}[30d]))",
               "labels": {
                 "service": "auth-api",
                 "slo": "token-generation-latency",
-                "threshold": "500ms"
+                "threshold": "100ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },
@@ -1127,12 +1145,13 @@
       "alerts": 15,
       "backstage": 1,
       "dashboard": 1,
+      "pagerduty": 1,
       "recording-rules": 20,
       "slos": 3
     },
     "service_name": "auth-api",
     "success": true,
-    "total_resources": 40
+    "total_resources": 41
   },
   "preamble": [],
   "stray": []

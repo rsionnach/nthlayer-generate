@@ -1,13 +1,15 @@
 {
-  "exit": 0,
+  "exit": 1,
   "files": {},
   "json": {
     "duration_seconds": "<masked>",
-    "errors": [],
-    "output_dir": "<tmp>/out",
+    "errors": [
+      "Failed to load service: Template 'template:default/payment-services-base' not found. Searched for 'payment-services-base.yaml' in <opensrm>/spec/v2/examples/templates/ and <opensrm>/spec/v2/examples/.nthlayer/templates/"
+    ],
+    "output_dir": ".",
     "resources_created": {},
     "service_name": "template-extension",
-    "success": true,
+    "success": false,
     "total_resources": 0
   },
   "preamble": [],

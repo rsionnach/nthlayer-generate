@@ -741,24 +741,33 @@
                 "service": "notification-worker",
                 "slo": "delivery-success"
               },
-              "record": "slo:error_requests_total:30d"
+              "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"notification-worker\",status=~\"5..\"}[30d]))",
+              "expr": "sum(increase(http_requests_total{service=\"notification-worker\",status!~\"5..\"}[30d]))",
               "labels": {
                 "service": "notification-worker",
                 "slo": "delivery-success"
               },
-              "record": "slo:error_requests_failed:30d"
+              "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:error_requests_failed:30d{service=\"notification-worker\",slo=\"delivery-success\"} / slo:error_requests_total:30d{service=\"notification-worker\",slo=\"delivery-success\"}",
+              "expr": "slo:requests_success:30d{service=\"notification-worker\",slo=\"delivery-success\"} / slo:requests_total:30d{service=\"notification-worker\",slo=\"delivery-success\"}",
               "labels": {
                 "objective": "99.5",
                 "service": "notification-worker",
                 "slo": "delivery-success"
               },
-              "record": "slo:error_rate:ratio"
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"notification-worker\",slo=\"delivery-success\"}) / (1 - 0.995))",
+              "labels": {
+                "objective": "99.5",
+                "service": "notification-worker",
+                "slo": "delivery-success"
+              },
+              "record": "slo:error_budget_remaining:ratio"
             },
             {
               "expr": "sum(increase(http_request_duration_seconds_count{service=\"notification-worker\"}[30d]))",
@@ -809,6 +818,40 @@
                 "slo": "processing-latency-p95"
               },
               "record": "slo:http_request_duration_seconds:p99"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"notification-worker\"}[30d]))",
+              "labels": {
+                "service": "notification-worker",
+                "slo": "queue-lag"
+              },
+              "record": "slo:requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"notification-worker\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "notification-worker",
+                "slo": "queue-lag"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"notification-worker\",slo=\"queue-lag\"} / slo:requests_total:30d{service=\"notification-worker\",slo=\"queue-lag\"}",
+              "labels": {
+                "objective": "99.0",
+                "service": "notification-worker",
+                "slo": "queue-lag"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"notification-worker\",slo=\"queue-lag\"}) / (1 - 0.99))",
+              "labels": {
+                "objective": "99.0",
+                "service": "notification-worker",
+                "slo": "queue-lag"
+              },
+              "record": "slo:error_budget_remaining:ratio"
             }
           ]
         },
@@ -956,12 +999,12 @@
       "backstage": 1,
       "dashboard": 1,
       "pagerduty": 1,
-      "recording-rules": 13,
+      "recording-rules": 18,
       "slos": 3
     },
     "service_name": "notification-worker",
     "success": true,
-    "total_resources": 31
+    "total_resources": 36
   },
   "preamble": [],
   "stray": []

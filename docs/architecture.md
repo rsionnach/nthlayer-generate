@@ -82,7 +82,7 @@
 
 ## Data Flow
 
-1. Service YAML → ServiceOrchestrator (facade) → ResourceDetector (indexes by kind) → OrchestratorContext
+1. Service file → ServiceOrchestrator → `load_manifest` (nthlayer-common, env overlay applied) → `detect_resource_types(manifest)` → OrchestratorContext (carries the manifest)
 2. ExecutionEngine iterates over registered ResourceHandlers (SLO, Alert, Dashboard, etc.)
 3. Each handler's generate() method creates resources, returns count
 4. Dashboard generation: IntentTemplate.get_panel_specs() → MetricResolver.resolve() → Panel objects

@@ -1,28 +1,38 @@
 {
   "json": {
     "checks": {
-      "resource_detection": {
-        "message": "No resources detected in service definition",
-        "status": "warn"
-      },
-      "warning": {
-        "message": "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources.",
-        "status": "warn"
+      "recording_rules": {
+        "message": "11 recording rules will be generated",
+        "rule_count": 11,
+        "status": "pass"
       }
     },
     "command": "plan",
     "metadata": {
-      "resources": {},
+      "resources": {
+        "recording-rules": [
+          {
+            "count": 5,
+            "interval": "30s",
+            "type": "investigation-agent_judgment_metrics"
+          },
+          {
+            "count": 6,
+            "interval": "30s",
+            "type": "investigation-agent_health_metrics"
+          }
+        ]
+      },
       "service_yaml": "<opensrm>/spec/v2/examples/judgment-thresholds/calibration-both-bounds.yaml"
     },
-    "service": "calibration-both-bounds",
+    "service": "investigation-agent",
     "summary": {
       "errors": 0,
-      "passed": 0,
-      "status": "warn",
-      "total": 2,
-      "total_resources": 0,
-      "warnings": 2
+      "passed": 1,
+      "status": "pass",
+      "total": 1,
+      "total_resources": 2,
+      "warnings": 0
     },
     "timestamp": "<masked>",
     "version": "1.0"
@@ -30,13 +40,24 @@
   "json_exit": 0,
   "plan": {
     "errors": [],
-    "resources": {},
-    "service_name": "calibration-both-bounds",
+    "resources": {
+      "recording-rules": [
+        {
+          "count": 5,
+          "interval": "30s",
+          "type": "investigation-agent_judgment_metrics"
+        },
+        {
+          "count": 6,
+          "interval": "30s",
+          "type": "investigation-agent_health_metrics"
+        }
+      ]
+    },
+    "service_name": "investigation-agent",
     "service_yaml": "<opensrm>/spec/v2/examples/judgment-thresholds/calibration-both-bounds.yaml",
-    "warnings": [
-      "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources."
-    ]
+    "warnings": []
   },
   "success": true,
-  "total_resources": 0
+  "total_resources": 2
 }

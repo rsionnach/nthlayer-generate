@@ -1,13 +1,15 @@
 {
-  "exit": 0,
+  "exit": 1,
   "files": {},
   "json": {
     "duration_seconds": "<masked>",
-    "errors": [],
-    "output_dir": "<tmp>/out",
+    "errors": [
+      "Failed to load service: Error parsing OpenSLO documents: Cannot infer slo_type for OpenSLO 'reconciliation-success-rate'. The indicator shape is ambiguous. Add an opensrm.nthlayer.io/slo-type annotation."
+    ],
+    "output_dir": ".",
     "resources_created": {},
     "service_name": "worker",
-    "success": true,
+    "success": false,
     "total_resources": 0
   },
   "preamble": [],

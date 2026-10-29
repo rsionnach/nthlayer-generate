@@ -228,24 +228,33 @@
                 "service": "notification-observability-only",
                 "slo": "delivery-success"
               },
-              "record": "slo:error_requests_total:30d"
+              "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"notification-observability-only\",status=~\"5..\"}[30d]))",
+              "expr": "sum(increase(http_requests_total{service=\"notification-observability-only\",status!~\"5..\"}[30d]))",
               "labels": {
                 "service": "notification-observability-only",
                 "slo": "delivery-success"
               },
-              "record": "slo:error_requests_failed:30d"
+              "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:error_requests_failed:30d{service=\"notification-observability-only\",slo=\"delivery-success\"} / slo:error_requests_total:30d{service=\"notification-observability-only\",slo=\"delivery-success\"}",
+              "expr": "slo:requests_success:30d{service=\"notification-observability-only\",slo=\"delivery-success\"} / slo:requests_total:30d{service=\"notification-observability-only\",slo=\"delivery-success\"}",
               "labels": {
                 "objective": "99.5",
                 "service": "notification-observability-only",
                 "slo": "delivery-success"
               },
-              "record": "slo:error_rate:ratio"
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"notification-observability-only\",slo=\"delivery-success\"}) / (1 - 0.995))",
+              "labels": {
+                "objective": "99.5",
+                "service": "notification-observability-only",
+                "slo": "delivery-success"
+              },
+              "record": "slo:error_budget_remaining:ratio"
             }
           ]
         },
@@ -333,12 +342,12 @@
     "resources_created": {
       "backstage": 1,
       "dashboard": 1,
-      "recording-rules": 7,
+      "recording-rules": 8,
       "slos": 1
     },
     "service_name": "notification-observability-only",
     "success": true,
-    "total_resources": 10
+    "total_resources": 11
   },
   "preamble": [],
   "stray": []

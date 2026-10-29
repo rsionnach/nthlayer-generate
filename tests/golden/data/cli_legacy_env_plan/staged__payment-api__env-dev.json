@@ -17,8 +17,8 @@
         "status": "pass"
       },
       "slo_definition": {
-        "message": "3 SLOs defined",
-        "slo_count": 3,
+        "message": "4 SLOs defined",
+        "slo_count": 4,
         "status": "pass"
       }
     },
@@ -39,9 +39,9 @@
           {
             "output": "backstage.json",
             "service": "payment-api",
-            "slo_count": 3,
+            "slo_count": 4,
             "team": "payments",
-            "tier": "critical",
+            "tier": "standard",
             "type": "backstage_entity"
           }
         ],
@@ -60,8 +60,7 @@
           {
             "names": [
               "payments-primary",
-              "payments-secondary",
-              "payments-manager"
+              "payments-secondary"
             ],
             "type": "schedules"
           },
@@ -72,7 +71,7 @@
           {
             "name": "payment-api",
             "support_model": "self",
-            "tier": "critical",
+            "tier": "standard",
             "type": "service"
           }
         ],
@@ -91,8 +90,8 @@
         "slos": [
           {
             "name": "availability",
-            "objective": 99.95,
-            "window": "30d"
+            "objective": 99.0,
+            "window": "7d"
           },
           {
             "name": "latency-p95",
@@ -103,6 +102,11 @@
             "name": "latency-p99",
             "objective": 95.0,
             "window": "30d"
+          },
+          {
+            "name": "latency",
+            "objective": 95.0,
+            "window": "7d"
           }
         ]
       },
@@ -114,7 +118,7 @@
       "passed": 4,
       "status": "pass",
       "total": 4,
-      "total_resources": 13,
+      "total_resources": 14,
       "warnings": 0
     },
     "timestamp": "<masked>",
@@ -138,9 +142,9 @@
         {
           "output": "backstage.json",
           "service": "payment-api",
-          "slo_count": 3,
+          "slo_count": 4,
           "team": "payments",
-          "tier": "critical",
+          "tier": "standard",
           "type": "backstage_entity"
         }
       ],
@@ -159,8 +163,7 @@
         {
           "names": [
             "payments-primary",
-            "payments-secondary",
-            "payments-manager"
+            "payments-secondary"
           ],
           "type": "schedules"
         },
@@ -171,7 +174,7 @@
         {
           "name": "payment-api",
           "support_model": "self",
-          "tier": "critical",
+          "tier": "standard",
           "type": "service"
         }
       ],
@@ -190,8 +193,8 @@
       "slos": [
         {
           "name": "availability",
-          "objective": 99.95,
-          "window": "30d"
+          "objective": 99.0,
+          "window": "7d"
         },
         {
           "name": "latency-p95",
@@ -202,6 +205,11 @@
           "name": "latency-p99",
           "objective": 95.0,
           "window": "30d"
+        },
+        {
+          "name": "latency",
+          "objective": 95.0,
+          "window": "7d"
         }
       ]
     },
@@ -210,5 +218,5 @@
     "warnings": []
   },
   "success": true,
-  "total_resources": 13
+  "total_resources": 14
 }

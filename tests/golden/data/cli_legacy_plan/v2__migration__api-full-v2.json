@@ -1,28 +1,93 @@
 {
   "json": {
     "checks": {
-      "resource_detection": {
-        "message": "No resources detected in service definition",
-        "status": "warn"
+      "alert_generation": {
+        "alert_count": 0,
+        "message": "0 alerts will be generated",
+        "status": "pass"
       },
-      "warning": {
-        "message": "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources.",
-        "status": "warn"
+      "dashboard_generation": {
+        "dashboard_count": 1,
+        "message": "1 dashboards will be generated",
+        "status": "pass"
+      },
+      "recording_rules": {
+        "message": "19 recording rules will be generated",
+        "rule_count": 19,
+        "status": "pass"
+      },
+      "slo_definition": {
+        "message": "4 SLOs defined",
+        "slo_count": 4,
+        "status": "pass"
       }
     },
     "command": "plan",
     "metadata": {
-      "resources": {},
+      "resources": {
+        "alerts": [],
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "payment-api",
+            "slo_count": 4,
+            "team": "payments",
+            "tier": "critical",
+            "type": "backstage_entity"
+          }
+        ],
+        "dashboard": [
+          {
+            "description": "Auto-generated monitoring dashboard",
+            "name": "payment-api-dashboard",
+            "panels": "12+"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 15,
+            "interval": "30s",
+            "type": "payment-api_slo_metrics"
+          },
+          {
+            "count": 4,
+            "interval": "30s",
+            "type": "payment-api_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "payment-api-availability",
+            "objective": 99.95,
+            "window": "30d"
+          },
+          {
+            "name": "payment-api-latency",
+            "objective": 99.0,
+            "window": "30d"
+          },
+          {
+            "name": "payment-api-error-rate",
+            "objective": 99.9,
+            "window": "30d"
+          },
+          {
+            "name": "payment-api-throughput",
+            "objective": 99.0,
+            "window": "30d"
+          }
+        ]
+      },
       "service_yaml": "<opensrm>/spec/v2/examples/migration/api-full-v2.yaml"
     },
-    "service": "api-full-v2",
+    "service": "payment-api",
     "summary": {
       "errors": 0,
-      "passed": 0,
-      "status": "warn",
-      "total": 2,
-      "total_resources": 0,
-      "warnings": 2
+      "passed": 4,
+      "status": "pass",
+      "total": 4,
+      "total_resources": 8,
+      "warnings": 0
     },
     "timestamp": "<masked>",
     "version": "1.0"
@@ -30,13 +95,64 @@
   "json_exit": 0,
   "plan": {
     "errors": [],
-    "resources": {},
-    "service_name": "api-full-v2",
+    "resources": {
+      "alerts": [],
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "payment-api",
+          "slo_count": 4,
+          "team": "payments",
+          "tier": "critical",
+          "type": "backstage_entity"
+        }
+      ],
+      "dashboard": [
+        {
+          "description": "Auto-generated monitoring dashboard",
+          "name": "payment-api-dashboard",
+          "panels": "12+"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 15,
+          "interval": "30s",
+          "type": "payment-api_slo_metrics"
+        },
+        {
+          "count": 4,
+          "interval": "30s",
+          "type": "payment-api_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "payment-api-availability",
+          "objective": 99.95,
+          "window": "30d"
+        },
+        {
+          "name": "payment-api-latency",
+          "objective": 99.0,
+          "window": "30d"
+        },
+        {
+          "name": "payment-api-error-rate",
+          "objective": 99.9,
+          "window": "30d"
+        },
+        {
+          "name": "payment-api-throughput",
+          "objective": 99.0,
+          "window": "30d"
+        }
+      ]
+    },
+    "service_name": "payment-api",
     "service_yaml": "<opensrm>/spec/v2/examples/migration/api-full-v2.yaml",
-    "warnings": [
-      "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources."
-    ]
+    "warnings": []
   },
   "success": true,
-  "total_resources": 0
+  "total_resources": 8
 }

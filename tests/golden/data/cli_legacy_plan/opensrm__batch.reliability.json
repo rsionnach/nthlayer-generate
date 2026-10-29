@@ -1,28 +1,83 @@
 {
   "json": {
     "checks": {
-      "resource_detection": {
-        "message": "No resources detected in service definition",
-        "status": "warn"
+      "alert_generation": {
+        "alert_count": 0,
+        "message": "0 alerts will be generated",
+        "status": "pass"
       },
-      "warning": {
-        "message": "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources.",
-        "status": "warn"
+      "dashboard_generation": {
+        "dashboard_count": 1,
+        "message": "1 dashboards will be generated",
+        "status": "pass"
+      },
+      "recording_rules": {
+        "message": "11 recording rules will be generated",
+        "rule_count": 11,
+        "status": "pass"
+      },
+      "slo_definition": {
+        "message": "2 SLOs defined",
+        "slo_count": 2,
+        "status": "pass"
       }
     },
     "command": "plan",
     "metadata": {
-      "resources": {},
+      "resources": {
+        "alerts": [],
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "daily-report-generator",
+            "slo_count": 2,
+            "team": "analytics",
+            "tier": "standard",
+            "type": "backstage_entity"
+          }
+        ],
+        "dashboard": [
+          {
+            "description": "Auto-generated monitoring dashboard",
+            "name": "daily-report-generator-dashboard",
+            "panels": "12+"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 7,
+            "interval": "30s",
+            "type": "daily-report-generator_slo_metrics"
+          },
+          {
+            "count": 4,
+            "interval": "30s",
+            "type": "daily-report-generator_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "availability",
+            "objective": 99.0,
+            "window": "30d"
+          },
+          {
+            "name": "error_rate",
+            "objective": 1.0,
+            "window": "7d"
+          }
+        ]
+      },
       "service_yaml": "examples/opensrm/batch.reliability.yaml"
     },
-    "service": "batch.reliability",
+    "service": "daily-report-generator",
     "summary": {
       "errors": 0,
-      "passed": 0,
-      "status": "warn",
-      "total": 2,
-      "total_resources": 0,
-      "warnings": 2
+      "passed": 4,
+      "status": "pass",
+      "total": 4,
+      "total_resources": 6,
+      "warnings": 0
     },
     "timestamp": "<masked>",
     "version": "1.0"
@@ -30,13 +85,54 @@
   "json_exit": 0,
   "plan": {
     "errors": [],
-    "resources": {},
-    "service_name": "batch.reliability",
+    "resources": {
+      "alerts": [],
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "daily-report-generator",
+          "slo_count": 2,
+          "team": "analytics",
+          "tier": "standard",
+          "type": "backstage_entity"
+        }
+      ],
+      "dashboard": [
+        {
+          "description": "Auto-generated monitoring dashboard",
+          "name": "daily-report-generator-dashboard",
+          "panels": "12+"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 7,
+          "interval": "30s",
+          "type": "daily-report-generator_slo_metrics"
+        },
+        {
+          "count": 4,
+          "interval": "30s",
+          "type": "daily-report-generator_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "availability",
+          "objective": 99.0,
+          "window": "30d"
+        },
+        {
+          "name": "error_rate",
+          "objective": 1.0,
+          "window": "7d"
+        }
+      ]
+    },
+    "service_name": "daily-report-generator",
     "service_yaml": "examples/opensrm/batch.reliability.yaml",
-    "warnings": [
-      "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources."
-    ]
+    "warnings": []
   },
   "success": true,
-  "total_resources": 0
+  "total_resources": 6
 }

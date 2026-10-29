@@ -27,9 +27,11 @@ No cell reaches a network:
   discovered metrics). ``validate-slo`` runs offline.
 * Kubernetes — the ownership provider's ``get_owner`` returns no signal.
 
-As in the library cells, every manifest is a case (the legacy parser's
-rejection of srm/v1 and v2 is pinned), and the env-overlay family reruns the
-commands that take ``--env`` over ``ENV_CASES``.
+As in the library cells, every manifest is a case: for the
+``parse_service_file`` commands the legacy parser's rejection of srm/v1 and
+v2 is pinned, while plan/apply load every format through nthlayer-common
+since opensrm-wo62.4.5. The env-overlay family reruns the commands that take
+``--env`` over ``ENV_CASES``.
 """
 
 from __future__ import annotations
@@ -591,7 +593,7 @@ def _validate_env_dir(directory: Path) -> Callable[[Env], Any]:
     return cell
 
 
-# apply's --skip / --only filter (orchestrator.py:234-237). Every CELLS run
+# apply's --skip / --only filter (ServiceOrchestrator._get_filtered_resources). Every CELLS run
 # passes neither, so without these the filter is unpinned. plan takes no
 # filter. checkout-service plans slos, recording-rules, backstage, alerts,
 # dashboard and pagerduty, so each filter visibly drops resources and files.

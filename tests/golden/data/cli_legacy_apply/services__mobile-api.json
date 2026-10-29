@@ -748,6 +748,24 @@
       "message": "Auto-generated dashboard for mobile-api",
       "overwrite": true
     },
+    "pagerduty-config.json": {
+      "note": "Set PAGERDUTY_API_KEY to create resources in PagerDuty",
+      "resources_to_create": {
+        "escalation_policy": "mobile-escalation",
+        "schedules": [
+          "mobile-primary",
+          "mobile-secondary",
+          "mobile-manager"
+        ],
+        "service": "mobile-api",
+        "team": "mobile"
+      },
+      "service_name": "mobile-api",
+      "support_model": "self",
+      "team": "mobile",
+      "tier": "critical",
+      "timezone": "America/New_York"
+    },
     "recording-rules.yaml": {
       "groups": [
         {
@@ -797,11 +815,11 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"mobile-api\",le=\"0.5\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"mobile-api\",le=\"2.0\"}[30d]))",
               "labels": {
                 "service": "mobile-api",
                 "slo": "latency-p95",
-                "threshold": "500ms"
+                "threshold": "2000ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },
@@ -847,11 +865,11 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"mobile-api\",le=\"0.5\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"mobile-api\",le=\"5.0\"}[30d]))",
               "labels": {
                 "service": "mobile-api",
                 "slo": "latency-p99",
-                "threshold": "500ms"
+                "threshold": "5000ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },
@@ -894,24 +912,33 @@
                 "service": "mobile-api",
                 "slo": "auth-success-rate"
               },
-              "record": "slo:error_requests_total:30d"
+              "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"mobile-api\",status=~\"5..\"}[30d]))",
+              "expr": "sum(increase(http_requests_total{service=\"mobile-api\",status!~\"5..\"}[30d]))",
               "labels": {
                 "service": "mobile-api",
                 "slo": "auth-success-rate"
               },
-              "record": "slo:error_requests_failed:30d"
+              "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:error_requests_failed:30d{service=\"mobile-api\",slo=\"auth-success-rate\"} / slo:error_requests_total:30d{service=\"mobile-api\",slo=\"auth-success-rate\"}",
+              "expr": "slo:requests_success:30d{service=\"mobile-api\",slo=\"auth-success-rate\"} / slo:requests_total:30d{service=\"mobile-api\",slo=\"auth-success-rate\"}",
               "labels": {
                 "objective": "99.9",
                 "service": "mobile-api",
                 "slo": "auth-success-rate"
               },
-              "record": "slo:error_rate:ratio"
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"mobile-api\",slo=\"auth-success-rate\"}) / (1 - 0.9990000000000001))",
+              "labels": {
+                "objective": "99.9",
+                "service": "mobile-api",
+                "slo": "auth-success-rate"
+              },
+              "record": "slo:error_budget_remaining:ratio"
             }
           ]
         },
@@ -1119,12 +1146,13 @@
       "alerts": 12,
       "backstage": 1,
       "dashboard": 1,
-      "recording-rules": 23,
+      "pagerduty": 1,
+      "recording-rules": 24,
       "slos": 4
     },
     "service_name": "mobile-api",
     "success": true,
-    "total_resources": 41
+    "total_resources": 43
   },
   "preamble": [],
   "stray": []

@@ -1,28 +1,136 @@
 {
   "json": {
     "checks": {
-      "resource_detection": {
-        "message": "No resources detected in service definition",
-        "status": "warn"
+      "alert_generation": {
+        "alert_count": 4,
+        "message": "4 alerts will be generated",
+        "status": "pass"
       },
-      "warning": {
-        "message": "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources.",
-        "status": "warn"
+      "dashboard_generation": {
+        "dashboard_count": 1,
+        "message": "1 dashboards will be generated",
+        "status": "pass"
+      },
+      "recording_rules": {
+        "message": "31 recording rules will be generated",
+        "rule_count": 31,
+        "status": "pass"
+      },
+      "slo_definition": {
+        "message": "4 SLOs defined",
+        "slo_count": 4,
+        "status": "pass"
       }
     },
     "command": "plan",
     "metadata": {
-      "resources": {},
+      "resources": {
+        "alerts": [
+          {
+            "count": 2,
+            "severity": "info"
+          },
+          {
+            "count": 2,
+            "severity": "warning"
+          }
+        ],
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "fraud-detector",
+            "slo_count": 4,
+            "team": "risk",
+            "tier": "critical",
+            "type": "backstage_entity"
+          }
+        ],
+        "dashboard": [
+          {
+            "description": "Auto-generated monitoring dashboard",
+            "name": "fraud-detector-dashboard",
+            "panels": "12+"
+          }
+        ],
+        "pagerduty": [
+          {
+            "name": "risk",
+            "type": "team"
+          },
+          {
+            "names": [
+              "risk-primary",
+              "risk-secondary",
+              "risk-manager"
+            ],
+            "type": "schedules"
+          },
+          {
+            "name": "risk-escalation",
+            "type": "escalation_policy"
+          },
+          {
+            "name": "fraud-detector",
+            "support_model": "self",
+            "tier": "critical",
+            "type": "service"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 10,
+            "interval": "30s",
+            "type": "fraud-detector_slo_metrics"
+          },
+          {
+            "count": 14,
+            "interval": "30s",
+            "type": "fraud-detector_judgment_metrics"
+          },
+          {
+            "count": 1,
+            "interval": "5m",
+            "type": "fraud-detector_judgment_thresholds_30d"
+          },
+          {
+            "count": 6,
+            "interval": "30s",
+            "type": "fraud-detector_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "availability",
+            "objective": 99.9,
+            "window": "30d"
+          },
+          {
+            "name": "latency",
+            "objective": 100.0,
+            "window": "30d"
+          },
+          {
+            "name": "reversal_rate",
+            "objective": 0.05,
+            "window": "7d"
+          },
+          {
+            "name": "high_confidence_failure",
+            "objective": 0.01,
+            "window": "7d"
+          }
+        ]
+      },
       "service_yaml": "examples/opensrm/ai-gate.reliability.yaml"
     },
-    "service": "ai-gate.reliability",
+    "service": "fraud-detector",
     "summary": {
       "errors": 0,
-      "passed": 0,
-      "status": "warn",
-      "total": 2,
-      "total_resources": 0,
-      "warnings": 2
+      "passed": 4,
+      "status": "pass",
+      "total": 4,
+      "total_resources": 16,
+      "warnings": 0
     },
     "timestamp": "<masked>",
     "version": "1.0"
@@ -30,13 +138,107 @@
   "json_exit": 0,
   "plan": {
     "errors": [],
-    "resources": {},
-    "service_name": "ai-gate.reliability",
+    "resources": {
+      "alerts": [
+        {
+          "count": 2,
+          "severity": "info"
+        },
+        {
+          "count": 2,
+          "severity": "warning"
+        }
+      ],
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "fraud-detector",
+          "slo_count": 4,
+          "team": "risk",
+          "tier": "critical",
+          "type": "backstage_entity"
+        }
+      ],
+      "dashboard": [
+        {
+          "description": "Auto-generated monitoring dashboard",
+          "name": "fraud-detector-dashboard",
+          "panels": "12+"
+        }
+      ],
+      "pagerduty": [
+        {
+          "name": "risk",
+          "type": "team"
+        },
+        {
+          "names": [
+            "risk-primary",
+            "risk-secondary",
+            "risk-manager"
+          ],
+          "type": "schedules"
+        },
+        {
+          "name": "risk-escalation",
+          "type": "escalation_policy"
+        },
+        {
+          "name": "fraud-detector",
+          "support_model": "self",
+          "tier": "critical",
+          "type": "service"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 10,
+          "interval": "30s",
+          "type": "fraud-detector_slo_metrics"
+        },
+        {
+          "count": 14,
+          "interval": "30s",
+          "type": "fraud-detector_judgment_metrics"
+        },
+        {
+          "count": 1,
+          "interval": "5m",
+          "type": "fraud-detector_judgment_thresholds_30d"
+        },
+        {
+          "count": 6,
+          "interval": "30s",
+          "type": "fraud-detector_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "availability",
+          "objective": 99.9,
+          "window": "30d"
+        },
+        {
+          "name": "latency",
+          "objective": 100.0,
+          "window": "30d"
+        },
+        {
+          "name": "reversal_rate",
+          "objective": 0.05,
+          "window": "7d"
+        },
+        {
+          "name": "high_confidence_failure",
+          "objective": 0.01,
+          "window": "7d"
+        }
+      ]
+    },
+    "service_name": "fraud-detector",
     "service_yaml": "examples/opensrm/ai-gate.reliability.yaml",
-    "warnings": [
-      "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources."
-    ]
+    "warnings": []
   },
   "success": true,
-  "total_resources": 0
+  "total_resources": 16
 }

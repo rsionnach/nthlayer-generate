@@ -2,8 +2,8 @@
   "json": {
     "checks": {
       "alert_generation": {
-        "alert_count": 6,
-        "message": "6 alerts will be generated",
+        "alert_count": 14,
+        "message": "14 alerts will be generated",
         "status": "pass"
       },
       "dashboard_generation": {
@@ -27,7 +27,7 @@
       "resources": {
         "alerts": [
           {
-            "count": 6,
+            "count": 14,
             "severity": "critical"
           }
         ],
@@ -37,7 +37,7 @@
             "service": "search-api",
             "slo_count": 3,
             "team": "search",
-            "tier": "high",
+            "tier": "low",
             "type": "backstage_entity"
           }
         ],
@@ -55,9 +55,7 @@
           },
           {
             "names": [
-              "search-primary",
-              "search-secondary",
-              "search-manager"
+              "search-primary"
             ],
             "type": "schedules"
           },
@@ -68,7 +66,7 @@
           {
             "name": "search-api",
             "support_model": "self",
-            "tier": "high",
+            "tier": "low",
             "type": "service"
           }
         ],
@@ -122,7 +120,7 @@
     "resources": {
       "alerts": [
         {
-          "count": 6,
+          "count": 14,
           "severity": "critical"
         }
       ],
@@ -132,7 +130,7 @@
           "service": "search-api",
           "slo_count": 3,
           "team": "search",
-          "tier": "high",
+          "tier": "low",
           "type": "backstage_entity"
         }
       ],
@@ -150,9 +148,7 @@
         },
         {
           "names": [
-            "search-primary",
-            "search-secondary",
-            "search-manager"
+            "search-primary"
           ],
           "type": "schedules"
         },
@@ -163,7 +159,7 @@
         {
           "name": "search-api",
           "support_model": "self",
-          "tier": "high",
+          "tier": "low",
           "type": "service"
         }
       ],

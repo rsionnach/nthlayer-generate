@@ -1,28 +1,121 @@
 {
   "json": {
     "checks": {
-      "resource_detection": {
-        "message": "No resources detected in service definition",
-        "status": "warn"
+      "alert_generation": {
+        "alert_count": 27,
+        "message": "27 alerts will be generated",
+        "status": "pass"
       },
-      "warning": {
-        "message": "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources.",
-        "status": "warn"
+      "dashboard_generation": {
+        "dashboard_count": 1,
+        "message": "1 dashboards will be generated",
+        "status": "pass"
+      },
+      "recording_rules": {
+        "message": "17 recording rules will be generated",
+        "rule_count": 17,
+        "status": "pass"
+      },
+      "slo_definition": {
+        "message": "3 SLOs defined",
+        "slo_count": 3,
+        "status": "pass"
       }
     },
     "command": "plan",
     "metadata": {
-      "resources": {},
+      "resources": {
+        "alerts": [
+          {
+            "count": 14,
+            "severity": "critical"
+          },
+          {
+            "count": 13,
+            "severity": "warning"
+          }
+        ],
+        "backstage": [
+          {
+            "output": "backstage.json",
+            "service": "payment-api",
+            "slo_count": 3,
+            "team": "payments",
+            "tier": "critical",
+            "type": "backstage_entity"
+          }
+        ],
+        "dashboard": [
+          {
+            "description": "Auto-generated monitoring dashboard",
+            "name": "payment-api-dashboard",
+            "panels": "12+"
+          }
+        ],
+        "pagerduty": [
+          {
+            "name": "payments",
+            "type": "team"
+          },
+          {
+            "names": [
+              "payments-primary",
+              "payments-secondary",
+              "payments-manager"
+            ],
+            "type": "schedules"
+          },
+          {
+            "name": "payments-escalation",
+            "type": "escalation_policy"
+          },
+          {
+            "name": "payment-api",
+            "support_model": "self",
+            "tier": "critical",
+            "type": "service"
+          }
+        ],
+        "recording-rules": [
+          {
+            "count": 13,
+            "interval": "30s",
+            "type": "payment-api_slo_metrics"
+          },
+          {
+            "count": 4,
+            "interval": "30s",
+            "type": "payment-api_health_metrics"
+          }
+        ],
+        "slos": [
+          {
+            "name": "availability",
+            "objective": 99.95,
+            "window": "30d"
+          },
+          {
+            "name": "latency",
+            "objective": 200.0,
+            "window": "30d"
+          },
+          {
+            "name": "error_rate",
+            "objective": 0.1,
+            "window": "7d"
+          }
+        ]
+      },
       "service_yaml": "examples/opensrm/api-critical.reliability.yaml"
     },
-    "service": "api-critical.reliability",
+    "service": "payment-api",
     "summary": {
       "errors": 0,
-      "passed": 0,
-      "status": "warn",
-      "total": 2,
-      "total_resources": 0,
-      "warnings": 2
+      "passed": 4,
+      "status": "pass",
+      "total": 4,
+      "total_resources": 13,
+      "warnings": 0
     },
     "timestamp": "<masked>",
     "version": "1.0"
@@ -30,13 +123,92 @@
   "json_exit": 0,
   "plan": {
     "errors": [],
-    "resources": {},
-    "service_name": "api-critical.reliability",
+    "resources": {
+      "alerts": [
+        {
+          "count": 14,
+          "severity": "critical"
+        },
+        {
+          "count": 13,
+          "severity": "warning"
+        }
+      ],
+      "backstage": [
+        {
+          "output": "backstage.json",
+          "service": "payment-api",
+          "slo_count": 3,
+          "team": "payments",
+          "tier": "critical",
+          "type": "backstage_entity"
+        }
+      ],
+      "dashboard": [
+        {
+          "description": "Auto-generated monitoring dashboard",
+          "name": "payment-api-dashboard",
+          "panels": "12+"
+        }
+      ],
+      "pagerduty": [
+        {
+          "name": "payments",
+          "type": "team"
+        },
+        {
+          "names": [
+            "payments-primary",
+            "payments-secondary",
+            "payments-manager"
+          ],
+          "type": "schedules"
+        },
+        {
+          "name": "payments-escalation",
+          "type": "escalation_policy"
+        },
+        {
+          "name": "payment-api",
+          "support_model": "self",
+          "tier": "critical",
+          "type": "service"
+        }
+      ],
+      "recording-rules": [
+        {
+          "count": 13,
+          "interval": "30s",
+          "type": "payment-api_slo_metrics"
+        },
+        {
+          "count": 4,
+          "interval": "30s",
+          "type": "payment-api_health_metrics"
+        }
+      ],
+      "slos": [
+        {
+          "name": "availability",
+          "objective": 99.95,
+          "window": "30d"
+        },
+        {
+          "name": "latency",
+          "objective": 200.0,
+          "window": "30d"
+        },
+        {
+          "name": "error_rate",
+          "objective": 0.1,
+          "window": "7d"
+        }
+      ]
+    },
+    "service_name": "payment-api",
     "service_yaml": "examples/opensrm/api-critical.reliability.yaml",
-    "warnings": [
-      "No resources detected. Service YAML may be missing SLO, Dependencies, Observability, or PagerDuty resources."
-    ]
+    "warnings": []
   },
   "success": true,
-  "total_resources": 0
+  "total_resources": 13
 }

@@ -1,14 +1,523 @@
 {
   "exit": 0,
-  "files": {},
+  "files": {
+    "backstage.json": {
+      "deploymentGate": {
+        "blockingThreshold": null,
+        "budgetRemainingPercent": null,
+        "message": null,
+        "recommendations": [],
+        "status": "APPROVED",
+        "warningThreshold": 20.0
+      },
+      "errorBudget": {
+        "burnRate": null,
+        "consumedMinutes": null,
+        "remainingMinutes": null,
+        "remainingPercent": null,
+        "status": null,
+        "totalMinutes": null
+      },
+      "generatedAt": "<masked>",
+      "links": {
+        "alertsYaml": "generated/email-sender/alerts.yaml",
+        "grafanaDashboard": null,
+        "runbook": "https://wiki/runbooks/email-sender",
+        "serviceManifest": "examples/opensrm/worker.reliability.yaml",
+        "slothSpec": "generated/email-sender/sloth/email-sender.yaml"
+      },
+      "schemaVersion": "v1",
+      "score": {
+        "band": null,
+        "components": {
+          "deploySuccessRate": null,
+          "errorBudgetRemaining": null,
+          "incidentScore": null,
+          "sloCompliance": null
+        },
+        "grade": null,
+        "score": null,
+        "trend": null
+      },
+      "service": {
+        "description": "Processes email jobs from the notification queue",
+        "name": "email-sender",
+        "supportModel": "self",
+        "team": "notifications",
+        "tier": "standard",
+        "type": "worker"
+      },
+      "slos": [
+        {
+          "currentValue": null,
+          "description": "Worker process availability",
+          "name": "availability",
+          "sloType": "availability",
+          "status": null,
+          "target": 99.9,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": "Sustained processing rate",
+          "name": "throughput",
+          "sloType": "throughput",
+          "status": null,
+          "target": 100.0,
+          "window": "30d"
+        },
+        {
+          "currentValue": null,
+          "description": "Job failure rate",
+          "name": "error_rate",
+          "sloType": "error_rate",
+          "status": null,
+          "target": 0.5,
+          "window": "7d"
+        }
+      ]
+    },
+    "dashboard.json": {
+      "dashboard": {
+        "annotations": {},
+        "description": "Auto-generated dashboard for email-sender service",
+        "editable": true,
+        "fiscalYearStartMonth": 0,
+        "graphTooltip": 0,
+        "panels": [
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 0
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "SLO Metrics",
+            "type": "row"
+          },
+          {
+            "description": "Target: 99.9%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(notifications_sent_total{service=\"email-sender\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "availability",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 100.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(notifications_sent_total{service=\"email-sender\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "throughput",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 0.5%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 10
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(notifications_sent_total{service=\"email-sender\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "error_rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 19
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Service Health",
+            "type": "row"
+          },
+          {
+            "description": "Jobs/notifications processed per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(notifications_sent_total{service=\"email-sender\"}[5m]))",
+                "legendFormat": "{{notifications}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Notification Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Percentage of jobs/notifications failing",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(notifications_sent_total{service=\"email-sender\",status=\"failed\"}[5m])) / sum(rate(notifications_sent_total{service=\"email-sender\"}[5m])) * 100",
+                "legendFormat": "error %",
+                "refId": "A"
+              }
+            ],
+            "title": "Error Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "95th percentile processing duration",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 29
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(notification_processing_duration_seconds_bucket{service=\"email-sender\"}[5m])))",
+                "legendFormat": "{{notification}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Processing Latency (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          }
+        ],
+        "schemaVersion": 36,
+        "style": "dark",
+        "tags": [
+          "notifications",
+          "standard",
+          "worker"
+        ],
+        "templating": {},
+        "time": {
+          "from": "now-6h",
+          "to": "now"
+        },
+        "timezone": "browser",
+        "title": "email-sender - Service Dashboard",
+        "uid": "email-sender-overview"
+      },
+      "message": "Auto-generated dashboard for email-sender",
+      "overwrite": true
+    },
+    "recording-rules.yaml": {
+      "groups": [
+        {
+          "interval": "30s",
+          "name": "email-sender_slo_metrics",
+          "rules": [
+            {
+              "expr": "sum(increase(http_requests_total{service=\"email-sender\"}[30d]))",
+              "labels": {
+                "service": "email-sender",
+                "slo": "availability"
+              },
+              "record": "slo:requests_total:30d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"email-sender\",status!~\"5..\"}[30d]))",
+              "labels": {
+                "service": "email-sender",
+                "slo": "availability"
+              },
+              "record": "slo:requests_success:30d"
+            },
+            {
+              "expr": "slo:requests_success:30d{service=\"email-sender\",slo=\"availability\"} / slo:requests_total:30d{service=\"email-sender\",slo=\"availability\"}",
+              "labels": {
+                "objective": "99.9",
+                "service": "email-sender",
+                "slo": "availability"
+              },
+              "record": "slo:availability:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:availability:ratio{service=\"email-sender\",slo=\"availability\"}) / (1 - 0.9990000000000001))",
+              "labels": {
+                "objective": "99.9",
+                "service": "email-sender",
+                "slo": "availability"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"email-sender\"}[5m]))",
+              "labels": {
+                "minimum": "100.0",
+                "service": "email-sender",
+                "slo": "throughput"
+              },
+              "record": "slo:throughput:rate5m"
+            },
+            {
+              "expr": "(slo:throughput:rate5m{service=\"email-sender\",slo=\"throughput\"} >= 100.0) or vector(0)",
+              "labels": {
+                "minimum": "100.0",
+                "service": "email-sender",
+                "slo": "throughput"
+              },
+              "record": "slo:throughput:compliance"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"email-sender\"}[7d]))",
+              "labels": {
+                "service": "email-sender",
+                "slo": "error_rate"
+              },
+              "record": "slo:error_requests_total:7d"
+            },
+            {
+              "expr": "sum(increase(http_requests_total{service=\"email-sender\",status=~\"5..\"}[7d]))",
+              "labels": {
+                "service": "email-sender",
+                "slo": "error_rate"
+              },
+              "record": "slo:error_requests_failed:7d"
+            },
+            {
+              "expr": "slo:error_requests_failed:7d{service=\"email-sender\",slo=\"error_rate\"} / slo:error_requests_total:7d{service=\"email-sender\",slo=\"error_rate\"}",
+              "labels": {
+                "objective": "0.5",
+                "service": "email-sender",
+                "slo": "error_rate"
+              },
+              "record": "slo:error_rate:ratio"
+            }
+          ]
+        },
+        {
+          "interval": "30s",
+          "name": "email-sender_health_metrics",
+          "rules": [
+            {
+              "expr": "sum(rate(http_requests_total{service=\"email-sender\"}[5m]))",
+              "labels": {
+                "service": "email-sender"
+              },
+              "record": "service:http_requests:rate5m"
+            },
+            {
+              "expr": "sum(rate(http_requests_total{service=\"email-sender\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"email-sender\"}[5m]))",
+              "labels": {
+                "service": "email-sender"
+              },
+              "record": "service:http_errors:rate5m"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"email-sender\"}[5m]))",
+              "labels": {
+                "service": "email-sender"
+              },
+              "record": "service:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"email-sender\"}[5m]))",
+              "labels": {
+                "service": "email-sender"
+              },
+              "record": "service:http_request_duration_seconds:p99"
+            }
+          ]
+        }
+      ]
+    },
+    "sloth/email-sender.yaml": {
+      "labels": {
+        "team": "notifications",
+        "tier": "standard",
+        "type": "worker"
+      },
+      "service": "email-sender",
+      "slos": [
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO availability for email-sender"
+            },
+            "labels": {
+              "service": "email-sender",
+              "tier": "standard"
+            },
+            "name": "EmailSenderAvailability",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on email-sender"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "Worker process availability",
+          "name": "availability",
+          "objective": 99.9,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO throughput for email-sender"
+            },
+            "labels": {
+              "service": "email-sender",
+              "tier": "standard"
+            },
+            "name": "EmailSenderThroughput",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on email-sender"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "Sustained processing rate",
+          "name": "throughput",
+          "objective": 100.0,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        },
+        {
+          "alerting": {
+            "annotations": {
+              "summary": "SLO error_rate for email-sender"
+            },
+            "labels": {
+              "service": "email-sender",
+              "tier": "standard"
+            },
+            "name": "EmailSenderError_rate",
+            "ticket_alert": {
+              "annotations": {
+                "summary": "Error budget burn on email-sender"
+              },
+              "labels": {
+                "severity": "warning"
+              }
+            }
+          },
+          "description": "Job failure rate",
+          "name": "error_rate",
+          "objective": 0.5,
+          "sli": {
+            "events": {
+              "error_query": "",
+              "total_query": ""
+            }
+          }
+        }
+      ],
+      "version": "prometheus/v1"
+    }
+  },
   "json": {
     "duration_seconds": "<masked>",
     "errors": [],
     "output_dir": "<tmp>/out",
-    "resources_created": {},
-    "service_name": "worker.reliability",
+    "resources_created": {
+      "alerts": 0,
+      "backstage": 1,
+      "dashboard": 1,
+      "recording-rules": 13,
+      "slos": 3
+    },
+    "service_name": "email-sender",
     "success": true,
-    "total_resources": 0
+    "total_resources": 18
   },
   "preamble": [],
   "stray": []

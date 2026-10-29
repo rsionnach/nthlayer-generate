@@ -12,13 +12,13 @@
         "status": "pass"
       },
       "recording_rules": {
-        "message": "7 recording rules will be generated",
-        "rule_count": 7,
+        "message": "16 recording rules will be generated",
+        "rule_count": 16,
         "status": "pass"
       },
       "slo_definition": {
-        "message": "2 SLOs defined",
-        "slo_count": 2,
+        "message": "3 SLOs defined",
+        "slo_count": 3,
         "status": "pass"
       }
     },
@@ -30,7 +30,7 @@
           {
             "output": "backstage.json",
             "service": "analytics-pipeline",
-            "slo_count": 2,
+            "slo_count": 3,
             "team": "data",
             "tier": "standard",
             "type": "backstage_entity"
@@ -45,7 +45,7 @@
         ],
         "recording-rules": [
           {
-            "count": 3,
+            "count": 12,
             "interval": "30s",
             "type": "analytics-pipeline_slo_metrics"
           },
@@ -56,6 +56,11 @@
           }
         ],
         "slos": [
+          {
+            "name": "success-rate",
+            "objective": 95.0,
+            "window": "30d"
+          },
           {
             "name": "freshness-p95",
             "objective": 90.0,
@@ -76,7 +81,7 @@
       "passed": 4,
       "status": "pass",
       "total": 4,
-      "total_resources": 6,
+      "total_resources": 7,
       "warnings": 0
     },
     "timestamp": "<masked>",
@@ -91,7 +96,7 @@
         {
           "output": "backstage.json",
           "service": "analytics-pipeline",
-          "slo_count": 2,
+          "slo_count": 3,
           "team": "data",
           "tier": "standard",
           "type": "backstage_entity"
@@ -106,7 +111,7 @@
       ],
       "recording-rules": [
         {
-          "count": 3,
+          "count": 12,
           "interval": "30s",
           "type": "analytics-pipeline_slo_metrics"
         },
@@ -117,6 +122,11 @@
         }
       ],
       "slos": [
+        {
+          "name": "success-rate",
+          "objective": 95.0,
+          "window": "30d"
+        },
         {
           "name": "freshness-p95",
           "objective": 90.0,
@@ -134,5 +144,5 @@
     "warnings": []
   },
   "success": true,
-  "total_resources": 6
+  "total_resources": 7
 }

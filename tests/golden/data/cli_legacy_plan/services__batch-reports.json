@@ -12,13 +12,13 @@
         "status": "pass"
       },
       "recording_rules": {
-        "message": "17 recording rules will be generated",
-        "rule_count": 17,
+        "message": "18 recording rules will be generated",
+        "rule_count": 18,
         "status": "pass"
       },
       "slo_definition": {
-        "message": "1 SLOs defined",
-        "slo_count": 1,
+        "message": "3 SLOs defined",
+        "slo_count": 3,
         "status": "pass"
       }
     },
@@ -35,7 +35,7 @@
           {
             "output": "backstage.json",
             "service": "batch-reports",
-            "slo_count": 1,
+            "slo_count": 3,
             "team": "data",
             "tier": "low",
             "type": "backstage_entity"
@@ -50,7 +50,7 @@
         ],
         "recording-rules": [
           {
-            "count": 13,
+            "count": 14,
             "interval": "30s",
             "type": "batch-reports_slo_metrics"
           },
@@ -61,6 +61,16 @@
           }
         ],
         "slos": [
+          {
+            "name": "availability",
+            "objective": 99.0,
+            "window": "30d"
+          },
+          {
+            "name": "latency-p95",
+            "objective": 90.0,
+            "window": "30d"
+          },
           {
             "name": "report-success-rate",
             "objective": 95.0,
@@ -76,7 +86,7 @@
       "passed": 4,
       "status": "pass",
       "total": 4,
-      "total_resources": 6,
+      "total_resources": 8,
       "warnings": 0
     },
     "timestamp": "<masked>",
@@ -96,7 +106,7 @@
         {
           "output": "backstage.json",
           "service": "batch-reports",
-          "slo_count": 1,
+          "slo_count": 3,
           "team": "data",
           "tier": "low",
           "type": "backstage_entity"
@@ -111,7 +121,7 @@
       ],
       "recording-rules": [
         {
-          "count": 13,
+          "count": 14,
           "interval": "30s",
           "type": "batch-reports_slo_metrics"
         },
@@ -122,6 +132,16 @@
         }
       ],
       "slos": [
+        {
+          "name": "availability",
+          "objective": 99.0,
+          "window": "30d"
+        },
+        {
+          "name": "latency-p95",
+          "objective": 90.0,
+          "window": "30d"
+        },
         {
           "name": "report-success-rate",
           "objective": 95.0,
@@ -134,5 +154,5 @@
     "warnings": []
   },
   "success": true,
-  "total_resources": 6
+  "total_resources": 8
 }

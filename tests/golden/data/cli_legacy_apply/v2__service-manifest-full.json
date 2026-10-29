@@ -1,13 +1,15 @@
 {
-  "exit": 0,
+  "exit": 1,
   "files": {},
   "json": {
     "duration_seconds": "<masked>",
-    "errors": [],
-    "output_dir": "<tmp>/out",
+    "errors": [
+      "Failed to load service: Error parsing OpenSLO documents: $ref './slos/payment-availability.yaml' not found at <opensrm>/spec/v2/examples/slos/payment-availability.yaml"
+    ],
+    "output_dir": ".",
     "resources_created": {},
     "service_name": "service-manifest-full",
-    "success": true,
+    "success": false,
     "total_resources": 0
   },
   "preamble": [],

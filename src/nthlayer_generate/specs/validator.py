@@ -33,8 +33,9 @@ from nthlayer_generate.specs.contracts import (
 from nthlayer_generate.specs.models import VALID_RESOURCE_KINDS
 from nthlayer_generate.specs.names import is_valid_service_name
 
-# The variables generate's legacy ${var} substitution knows (ServiceContext's
-# fields plus env); anything else in a resource spec is left as written.
+# The variables nthlayer-common's legacy substitution knows
+# (legacy.substitute_resource_specs; ${env} only with an environment), so
+# anything else in a loaded resource spec is still as written. Keep in sync.
 _TEMPLATE_VARIABLE = re.compile(r"\$\{(\w+)\}")
 _KNOWN_TEMPLATE_VARIABLES = {"service", "team", "tier", "type", "language", "framework", "env"}
 
@@ -170,8 +171,8 @@ def validate_service_file(
     Checks:
     1. File loads through nthlayer-common (which rejects an invalid tier or
        type, so the first such error is the only one reported)
-    2. Service name is valid format
-    3. Filename matches service name (optional)
+    2. Filename matches service name (optional)
+    3. Service name is valid format
     4. (legacy files) Resource names are present and unique
     5. (legacy files) Resource kinds are valid
     6. (legacy files) Resource specs use only known ${var}s (warning)
@@ -298,9 +299,6 @@ def validate_service_file(
             "Must start with a lowercase letter, contain only lowercase letters, "
             "numbers and hyphens, and not end with a hyphen."
         )
-
-    # Tier and type are checked by nthlayer-common as the manifest loads: an
-    # invalid one is a load error above, for every format (Rob, wo62.4.19).
 
     # Check for duplicate resource names (legacy resources only)
     resource_names = [str(r["name"]) for r in resources if r.get("name")]

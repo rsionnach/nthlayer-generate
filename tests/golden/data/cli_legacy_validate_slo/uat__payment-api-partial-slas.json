@@ -5,11 +5,15 @@
     "results": [
       {
         "all_found": true,
-        "error": "No metrics found in query",
-        "found_metrics": [],
-        "metrics": [],
+        "error": null,
+        "found_metrics": [
+          "http_requests_total"
+        ],
+        "metrics": [
+          "http_requests_total"
+        ],
         "missing_metrics": [],
-        "query": "",
+        "query": "sum(rate(http_requests_total{service=\"payment-api\",status=~\"[1234]..\"}[5m]))\n/\nsum(rate(http_requests_total{service=\"payment-api\"}[5m]))\n",
         "slo_name": "payment-api-availability"
       }
     ],

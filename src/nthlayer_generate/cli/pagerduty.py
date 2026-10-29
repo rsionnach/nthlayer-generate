@@ -7,12 +7,31 @@ from __future__ import annotations
 import os
 
 import structlog
+from nthlayer_common.manifest import SourceFormat, load_manifest
 
 from nthlayer_generate.cli.ux import console, error, header, info, success, warning
 
 logger = structlog.get_logger()
 from nthlayer_generate.integrations.pagerduty import PagerDutyClient
-from nthlayer_generate.specs.parser import parse_service_file
+
+# The shapes the missing-PagerDuty hint prints, indented as YAML under spec
+# (srm/v1) and resources (legacy). No service_id: a declared one is refused
+# below, so the hint must not suggest it. tests/test_cli_pagerduty.py loads
+# both and checks a dry run accepts them.
+SRM_V1_PAGERDUTY_HINT = (
+    "  ownership:",
+    "    team: my-team",
+    "    escalation: my-policy",
+    "    pagerduty:",
+    "      escalation_policy_id: PXXXXXX",
+)
+LEGACY_PAGERDUTY_HINT = (
+    "  - kind: PagerDuty",
+    "    name: primary",
+    "    spec:",
+    "      escalation_policy: my-policy",
+    "      urgency: high",
+)
 
 
 def setup_pagerduty_command(
@@ -57,47 +76,71 @@ def setup_pagerduty_command(
 
     # Parse service file with optional environment overrides
     try:
-        service_context, resources = parse_service_file(service_file, environment=environment)
+        manifest = load_manifest(
+            service_file, environment=environment, suppress_deprecation_warning=True
+        )
     except Exception as e:
         error(f"Error parsing service file: {e}")
         console.print()
         return 1
 
-    # Find PagerDuty resource
-    pagerduty_resources = [r for r in resources if r.kind == "PagerDuty"]
+    ownership = manifest.ownership
+    pagerduty = ownership.pagerduty if ownership else None
 
-    if not pagerduty_resources:
-        error(f"No PagerDuty resource found in {service_file}")
+    if pagerduty is None:
+        error(f"No PagerDuty configuration found in {service_file}")
         console.print()
-        console.print("[muted]Add a PagerDuty resource to your service definition:[/muted]")
-        console.print("  resources:")
-        console.print("    - kind: PagerDuty")
-        console.print("      name: primary")
-        console.print("      spec:")
-        console.print("        escalation_policy: my-policy")
-        console.print("        urgency: high")
+        console.print("[muted]Add one. srm/v1 (spec):[/muted]")
+        for line in SRM_V1_PAGERDUTY_HINT:
+            console.print(line)
+        console.print("[muted]Legacy service.yaml (resources):[/muted]")
+        for line in LEGACY_PAGERDUTY_HINT:
+            console.print(line)
         console.print()
         return 1
 
-    pagerduty_resource = pagerduty_resources[0]
-    spec = pagerduty_resource.spec
+    # Rob, 2026-10-29: a declared service_id names a service that already
+    # exists, but setup_service finds services by name and creates one when
+    # that misses, so it could make a duplicate. Refuse, live and dry run.
+    if pagerduty.service_id:
+        error(
+            f"{service_file} declares PagerDuty service_id {pagerduty.service_id}: "
+            "setup-pagerduty only creates services by name, and would not use it"
+        )
+        console.print()
+        console.print(
+            "[muted]Remove service_id to let setup-pagerduty create or match the "
+            "service by name.[/muted]"
+        )
+        console.print()
+        return 1
 
-    console.print(f"[bold]Service:[/bold] {service_context.name}")
-    console.print(f"   [muted]Team:[/muted] {service_context.team}")
-    console.print(f"   [muted]Tier:[/muted] {service_context.tier}")
+    # The policy NAME is ownership.escalation in every format. For the legacy
+    # format common also stores that name in PagerDutyConfig.escalation_policy_id
+    # (nthlayer-common parser/loader.py _extract_ownership), so only srm/v1 and v2 have a real
+    # ID there. No legacy example declares an ID; legacy read
+    # spec.escalation_policy_id, which common does not carry.
+    escalation_policy_name = ownership.escalation if ownership else None
+    escalation_policy_id = (
+        pagerduty.escalation_policy_id if manifest.source_format != SourceFormat.LEGACY else None
+    )
+
+    console.print(f"[bold]Service:[/bold] {manifest.name}")
+    console.print(f"   [muted]Team:[/muted] {manifest.team}")
+    console.print(f"   [muted]Tier:[/muted] {manifest.tier}")
     console.print()
 
     if dry_run:
         info("DRY RUN MODE - No changes will be made")
         console.print()
         console.print("[bold]Would create/verify:[/bold]")
-        console.print(f"  [muted]•[/muted] PagerDuty service: {service_context.name}")
+        console.print(f"  [muted]•[/muted] PagerDuty service: {manifest.name}")
 
-        if spec.get("escalation_policy"):
-            console.print(f"  [muted]•[/muted] Escalation policy: {spec['escalation_policy']}")
+        if escalation_policy_name:
+            console.print(f"  [muted]•[/muted] Escalation policy: {escalation_policy_name}")
 
-        if service_context.team:
-            console.print(f"  [muted]•[/muted] Team mapping: {service_context.team}")
+        if manifest.team:
+            console.print(f"  [muted]•[/muted] Team mapping: {manifest.team}")
 
         console.print()
         return 0
@@ -109,19 +152,15 @@ def setup_pagerduty_command(
     try:
         with PagerDutyClient(api_key) as client:
             # Prepare config
-            escalation_policy_name = spec.get("escalation_policy")
-            escalation_policy_id = spec.get("escalation_policy_id")
-            urgency = spec.get("urgency", "high")
-            auto_resolve_timeout = spec.get("auto_resolve_timeout")
+            urgency = pagerduty.urgency or "high"
+            auto_resolve_timeout = pagerduty.auto_resolve_timeout
 
             # Check if we should create escalation policy
-            create_ep_config = None
-            if spec.get("create_escalation_policy"):
-                create_ep_config = spec["create_escalation_policy"]
+            create_ep_config = pagerduty.create_escalation_policy or None
 
             result = client.setup_service(
-                service_name=service_context.name,
-                team_name=service_context.team,
+                service_name=manifest.name,
+                team_name=manifest.team,
                 escalation_policy_name=escalation_policy_name,
                 escalation_policy_id=escalation_policy_id,
                 urgency=urgency,
@@ -151,9 +190,9 @@ def setup_pagerduty_command(
 
         if result.team_id:
             if result.created_team:
-                success(f"Created team: {service_context.team}")
+                success(f"Created team: {manifest.team}")
             else:
-                success(f"Added to existing team: {service_context.team}")
+                success(f"Added to existing team: {manifest.team}")
             console.print(f"   [muted]Team ID:[/muted] {result.team_id}")
             console.print()
 
@@ -170,7 +209,7 @@ def setup_pagerduty_command(
         console.print("   [muted]2.[/muted] Configure integrations (email, webhooks, etc.)")
         console.print(
             f"   [muted]3.[/muted] Test alerting with: "
-            f"[info]nthlayer reslayer test-alert {service_context.name}[/info]"
+            f"[info]nthlayer reslayer test-alert {manifest.name}[/info]"
         )
         console.print()
 

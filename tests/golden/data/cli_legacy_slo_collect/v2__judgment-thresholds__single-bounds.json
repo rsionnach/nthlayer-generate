@@ -7,6 +7,6 @@
     "  Error Budget Status: single-bounds",
     "============================================================",
     "",
-    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/single-bounds.yaml"
+    "No SLOs defined in <opensrm>/spec/v2/examples/judgment-thresholds/single-bounds.yaml"
   ]
 }

@@ -5,20 +5,28 @@
     "results": [
       {
         "all_found": true,
-        "error": "No metrics found in query",
-        "found_metrics": [],
-        "metrics": [],
+        "error": null,
+        "found_metrics": [
+          "http_requests_total"
+        ],
+        "metrics": [
+          "http_requests_total"
+        ],
         "missing_metrics": [],
-        "query": "",
+        "query": "sum(rate(http_requests_total{service=\"admin-dashboard-api\",code!~\"5..\"}[5m]))\n/\nsum(rate(http_requests_total{service=\"admin-dashboard-api\"}[5m]))\n",
         "slo_name": "admin-dashboard-api-availability"
       },
       {
         "all_found": true,
-        "error": "No metrics found in query",
-        "found_metrics": [],
-        "metrics": [],
+        "error": null,
+        "found_metrics": [
+          "http_request_duration_seconds_bucket"
+        ],
+        "metrics": [
+          "http_request_duration_seconds_bucket"
+        ],
         "missing_metrics": [],
-        "query": "",
+        "query": "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"admin-dashboard-api\"}[5m])\n)\n",
         "slo_name": "admin-dashboard-api-latency-p95"
       }
     ],

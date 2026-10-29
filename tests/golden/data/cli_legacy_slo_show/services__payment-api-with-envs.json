@@ -13,7 +13,7 @@
     "  Error Budget: 43.2 minutes (0.10%)",
     "",
     "  Indicator: availability",
-    "  Query: sum(rate(http_requests_total{service=\"${service}\",code!~\"...",
+    "  Query: sum(rate(http_requests_total{service=\"payment-api\",code!~...",
     "",
     "SLO: latency-p95",
     "  Objective: 99.0%",

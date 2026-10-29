@@ -6,7 +6,7 @@
     "│ Setup PagerDuty Integration  │",
     "╰──╯",
     "",
-    "✗ Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/x-service-type.yaml",
+    "✗ Error parsing service file: metadata.labels.tier is required. Set to: critical, high, standard, or low",
     ""
   ],
   "no_key_exit": 1,

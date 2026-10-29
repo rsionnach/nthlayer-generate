@@ -1,6 +1,59 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in <opensrm>/spec/v2/examples/services/api.yaml"
-  ]
+  "dev..prod": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Service: <opensrm>/spec/v2/examples/services/api.yaml",
+      "Comparing: dev vs prod",
+      "",
+      "✗ Error parsing service: Error parsing OpenSLO documents: $ref './slos/checkout-latency-p99.yaml' not found at <opensrm>/spec/v2/examples/services/slos/checkout-latency-p99.yaml",
+      ""
+    ]
+  },
+  "dev..staging": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Service: <opensrm>/spec/v2/examples/services/api.yaml",
+      "Comparing: dev vs staging",
+      "",
+      "✗ Error parsing service: Error parsing OpenSLO documents: $ref './slos/checkout-latency-p99.yaml' not found at <opensrm>/spec/v2/examples/services/slos/checkout-latency-p99.yaml",
+      ""
+    ]
+  },
+  "staging..prod": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Service: <opensrm>/spec/v2/examples/services/api.yaml",
+      "Comparing: staging vs prod",
+      "",
+      "✗ Error parsing service: Error parsing OpenSLO documents: $ref './slos/checkout-latency-p99.yaml' not found at <opensrm>/spec/v2/examples/services/slos/checkout-latency-p99.yaml",
+      ""
+    ]
+  }
 }

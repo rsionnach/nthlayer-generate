@@ -1,7 +1,36 @@
 {
-  "exit": 2,
-  "json": null,
-  "text": [
-    "✗ Error parsing service file: Missing required 'service' section in examples/opensrm/stream.reliability.yaml"
-  ]
+  "exit": 0,
+  "json": {
+    "all_valid": true,
+    "results": [
+      {
+        "all_found": true,
+        "error": "No metrics found in query",
+        "found_metrics": [],
+        "metrics": [],
+        "missing_metrics": [],
+        "query": "",
+        "slo_name": "order-events-processor-availability"
+      },
+      {
+        "all_found": true,
+        "error": "No metrics found in query",
+        "found_metrics": [],
+        "metrics": [],
+        "missing_metrics": [],
+        "query": "",
+        "slo_name": "order-events-processor-throughput"
+      },
+      {
+        "all_found": true,
+        "error": "No metrics found in query",
+        "found_metrics": [],
+        "metrics": [],
+        "missing_metrics": [],
+        "query": "",
+        "slo_name": "order-events-processor-error_rate"
+      }
+    ],
+    "service": "order-events-processor"
+  }
 }

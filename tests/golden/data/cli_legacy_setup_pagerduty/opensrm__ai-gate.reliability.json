@@ -6,7 +6,9 @@
     "│ Setup PagerDuty Integration  │",
     "╰──╯",
     "",
-    "✗ Error parsing service file: Missing required 'service' section in examples/opensrm/ai-gate.reliability.yaml",
+    "✗ examples/opensrm/ai-gate.reliability.yaml declares PagerDuty service_id PFRAUD01: setup-pagerduty only creates services by name, and would not use it",
+    "",
+    "Remove service_id to let setup-pagerduty create or match the service by name.",
     ""
   ],
   "no_key_exit": 1,

@@ -1,7 +1,9 @@
 {
-  "exit": 2,
+  "exit": 0,
   "json": null,
   "text": [
-    "✗ Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/all-five-types.yaml"
+    "",
+    "No SLOs found in <opensrm>/spec/v2/examples/judgment-thresholds/all-five-types.yaml",
+    ""
   ]
 }

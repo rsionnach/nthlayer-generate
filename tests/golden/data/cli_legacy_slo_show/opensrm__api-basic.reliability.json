@@ -1,5 +1,5 @@
 {
-  "exit": 1,
+  "exit": 0,
   "text": [
     "",
     "",
@@ -7,6 +7,25 @@
     "│ SLO Status: api-basic.reliability  │",
     "╰──╯",
     "",
-    "Error parsing service file: Missing required 'service' section in examples/opensrm/api-basic.reliability.yaml"
+    "SLO: availability",
+    "  Objective: 99.9%",
+    "  Window: 30d",
+    "  Error Budget: 43.2 minutes (0.10%)",
+    "",
+    "  Indicator: availability",
+    "",
+    "SLO: latency",
+    "  Target: 200.0 ms",
+    "  Window: 30d",
+    "  Error Budget: n/a (target is not a 0-100 objective)",
+    "",
+    "  Indicator: latency",
+    "",
+    "──",
+    "Total: 2 SLO(s) defined",
+    "",
+    "To collect metrics and calculate actual budget:",
+    "  nthlayer slo collect api-basic.reliability",
+    ""
   ]
 }

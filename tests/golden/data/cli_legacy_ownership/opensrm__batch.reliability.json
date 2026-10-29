@@ -1,7 +1,27 @@
 {
-  "exit": 2,
-  "json": null,
-  "text": [
-    "✗ Error parsing service file: Missing required 'service' section in examples/opensrm/batch.reliability.yaml"
-  ]
+  "exit": 0,
+  "json": {
+    "confidence": 1.0,
+    "contact": {
+      "email": null,
+      "opsgenie_team": null,
+      "pagerduty_escalation": null,
+      "slack_channel": "#team-analytics"
+    },
+    "owner": "analytics",
+    "owner_type": "team",
+    "service": "daily-report-generator",
+    "signals": [
+      {
+        "confidence": 1.0,
+        "metadata": {
+          "field": "team"
+        },
+        "owner": "analytics",
+        "owner_type": "team",
+        "source": "declared"
+      }
+    ],
+    "source": "declared"
+  }
 }

@@ -1,6 +1,7 @@
 """Tests for validate-slo CLI command."""
 
 import json
+from unittest.mock import patch
 
 from nthlayer_generate.cli.validate_slo import (
     PROMQL_FUNCTIONS,
@@ -201,8 +202,8 @@ class TestValidateSLOCommand:
         )
         assert exit_code == 2
 
-    def test_service_file_without_slos(self, capsys, tmp_path):
-        """Test with service file that has no SLOs."""
+    def test_service_file_without_slos(self, tmp_path):
+        """A service with no SLOs exits 0 without validating anything."""
         service_file = tmp_path / "service.yaml"
         service_file.write_text("""
 service:
@@ -214,14 +215,14 @@ service:
 resources: []
 """)
 
-        exit_code = validate_slo_command(
-            service_file=str(service_file),
-            demo=False,
-        )
+        with patch("nthlayer_generate.cli.validate_slo.validate_slo_metrics") as validate:
+            exit_code = validate_slo_command(
+                service_file=str(service_file),
+                demo=False,
+            )
 
         assert exit_code == 0
-        captured = capsys.readouterr()
-        assert "No SLO resources found" in captured.out
+        validate.assert_not_called()
 
 
 class TestMetricExtractionEdgeCases:

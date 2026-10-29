@@ -1,6 +1,59 @@
 {
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in <opensrm>/spec/v2/examples/services/worker.yaml"
-  ]
+  "dev..prod": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Service: <opensrm>/spec/v2/examples/services/worker.yaml",
+      "Comparing: dev vs prod",
+      "",
+      "✗ Error parsing service: Error parsing OpenSLO documents: Cannot infer slo_type for OpenSLO 'reconciliation-success-rate'. The indicator shape is ambiguous. Add an opensrm.nthlayer.io/slo-type annotation.",
+      ""
+    ]
+  },
+  "dev..staging": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Service: <opensrm>/spec/v2/examples/services/worker.yaml",
+      "Comparing: dev vs staging",
+      "",
+      "✗ Error parsing service: Error parsing OpenSLO documents: Cannot infer slo_type for OpenSLO 'reconciliation-success-rate'. The indicator shape is ambiguous. Add an opensrm.nthlayer.io/slo-type annotation.",
+      ""
+    ]
+  },
+  "staging..prod": {
+    "exit": 1,
+    "text": [
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "╭──╮",
+      "│ NthLayer: List Environments  │",
+      "╰──╯",
+      "",
+      "Service: <opensrm>/spec/v2/examples/services/worker.yaml",
+      "Comparing: staging vs prod",
+      "",
+      "✗ Error parsing service: Error parsing OpenSLO documents: Cannot infer slo_type for OpenSLO 'reconciliation-success-rate'. The indicator shape is ambiguous. Add an opensrm.nthlayer.io/slo-type annotation.",
+      ""
+    ]
+  }
 }

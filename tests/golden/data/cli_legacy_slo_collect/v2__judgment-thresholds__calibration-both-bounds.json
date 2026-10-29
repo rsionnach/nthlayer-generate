@@ -7,6 +7,6 @@
     "  Error Budget Status: calibration-both-bounds",
     "============================================================",
     "",
-    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/calibration-both-bounds.yaml"
+    "No SLOs defined in <opensrm>/spec/v2/examples/judgment-thresholds/calibration-both-bounds.yaml"
   ]
 }

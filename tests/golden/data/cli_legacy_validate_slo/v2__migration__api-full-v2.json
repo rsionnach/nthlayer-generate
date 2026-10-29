@@ -1,7 +1,45 @@
 {
-  "exit": 2,
-  "json": null,
-  "text": [
-    "✗ Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/migration/api-full-v2.yaml"
-  ]
+  "exit": 0,
+  "json": {
+    "all_valid": true,
+    "results": [
+      {
+        "all_found": true,
+        "error": "No metrics found in query",
+        "found_metrics": [],
+        "metrics": [],
+        "missing_metrics": [],
+        "query": "",
+        "slo_name": "payment-api-payment-api-availability"
+      },
+      {
+        "all_found": true,
+        "error": "No metrics found in query",
+        "found_metrics": [],
+        "metrics": [],
+        "missing_metrics": [],
+        "query": "",
+        "slo_name": "payment-api-payment-api-latency"
+      },
+      {
+        "all_found": true,
+        "error": "No metrics found in query",
+        "found_metrics": [],
+        "metrics": [],
+        "missing_metrics": [],
+        "query": "",
+        "slo_name": "payment-api-payment-api-error-rate"
+      },
+      {
+        "all_found": true,
+        "error": "No metrics found in query",
+        "found_metrics": [],
+        "metrics": [],
+        "missing_metrics": [],
+        "query": "",
+        "slo_name": "payment-api-payment-api-throughput"
+      }
+    ],
+    "service": "payment-api"
+  }
 }

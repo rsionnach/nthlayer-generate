@@ -7,6 +7,18 @@
     "│ SLO Status: feedback-latency-p50-only  │",
     "╰──╯",
     "",
-    "Error parsing service file: Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/feedback-latency-p50-only.yaml"
+    "No SLOs defined in <opensrm>/spec/v2/examples/judgment-thresholds/feedback-latency-p50-only.yaml",
+    "",
+    "Add an SLO. srm/v1 (spec.slos):",
+    "  slos:",
+    "  availability:",
+    "  target: 99.95",
+    "  window: 30d",
+    "Legacy service.yaml (resources):",
+    "  - kind: SLO",
+    "  name: availability",
+    "  spec:",
+    "  objective: 99.95",
+    "  window: 30d"
   ]
 }

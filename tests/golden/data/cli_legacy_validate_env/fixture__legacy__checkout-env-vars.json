@@ -43,7 +43,7 @@
       "",
       "Testing with service file...",
       "✓ Successfully merged with checkout-env-vars.yaml",
-      "  Result: tier=critical, 2 resource(s)",
+      "  Result: tier=critical, 2 SLO(s), 0 dependency(ies)",
       "",
       "✓ Validation passed",
       ""

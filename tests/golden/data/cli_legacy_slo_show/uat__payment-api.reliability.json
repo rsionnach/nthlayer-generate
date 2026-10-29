@@ -1,5 +1,5 @@
 {
-  "exit": 1,
+  "exit": 0,
   "text": [
     "",
     "",
@@ -7,6 +7,28 @@
     "│ SLO Status: payment-api.reliability  │",
     "╰──╯",
     "",
-    "Error parsing service file: Missing required 'service' section in examples/uat/payment-api.reliability.yaml"
+    "SLO: availability",
+    "  Objective: 99.9%",
+    "  Window: 30d",
+    "  Error Budget: 43.2 minutes (0.10%)",
+    "",
+    "  Indicator: availability",
+    "  Query: sum(rate(http_requests_total{service=\"payment-api\",status...",
+    "",
+    "SLO: latency-p95",
+    "  Target: 99.0 ms",
+    "  Window: 30d",
+    "  Error Budget: n/a (target is not a 0-100 objective)",
+    "",
+    "  Indicator: latency",
+    "  Query: histogram_quantile(0.95,",
+    "  sum(rate(http_request_duration...",
+    "",
+    "──",
+    "Total: 2 SLO(s) defined",
+    "",
+    "To collect metrics and calculate actual budget:",
+    "  nthlayer slo collect payment-api.reliability",
+    ""
   ]
 }

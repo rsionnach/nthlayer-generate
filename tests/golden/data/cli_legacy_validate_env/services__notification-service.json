@@ -18,7 +18,7 @@
       "",
       "Testing with service file...",
       "✓ Successfully merged with notification-service.yaml",
-      "  Result: tier=low, 6 resource(s)",
+      "  Result: tier=low, 4 SLO(s), 1 dependency(ies)",
       "",
       "✓ Validation passed",
       ""
@@ -43,7 +43,7 @@
       "",
       "Testing with service file...",
       "✓ Successfully merged with notification-service.yaml",
-      "  Result: tier=critical, 4 resource(s)",
+      "  Result: tier=critical, 2 SLO(s), 1 dependency(ies)",
       "",
       "✓ Validation passed",
       ""
@@ -68,7 +68,7 @@
       "",
       "Testing with service file...",
       "✓ Successfully merged with notification-service.yaml",
-      "  Result: tier=standard, 6 resource(s)",
+      "  Result: tier=standard, 4 SLO(s), 1 dependency(ies)",
       "",
       "✓ Validation passed",
       ""

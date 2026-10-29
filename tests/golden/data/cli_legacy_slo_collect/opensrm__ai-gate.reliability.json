@@ -1,5 +1,5 @@
 {
-  "exit": 1,
+  "exit": 0,
   "queries": [],
   "text": [
     "",
@@ -7,6 +7,27 @@
     "  Error Budget Status: ai-gate.reliability",
     "============================================================",
     "",
-    "Error parsing service file: Missing required 'service' section in examples/opensrm/ai-gate.reliability.yaml"
+    "Prometheus: http://prometheus.invalid",
+    "",
+    "[-] SLO: availability (99.9%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "[-] SLO: latency (100.0 ms)",
+    "  Window: 30d rolling",
+    "  Error: Target is not a 0-100 objective: no error budget",
+    "",
+    "[-] SLO: reversal_rate (0.05)",
+    "  Window: 7d rolling",
+    "  Error: Target is not a 0-100 objective: no error budget",
+    "",
+    "[-] SLO: high_confidence_failure (0.01)",
+    "  Window: 7d rolling",
+    "  Error: Target is not a 0-100 objective: no error budget",
+    "",
+    "------------------------------------------------------------",
+    "Summary: 0/1 SLOs healthy",
+    "  3 without an error budget (not 0-100 objectives)",
+    ""
   ]
 }

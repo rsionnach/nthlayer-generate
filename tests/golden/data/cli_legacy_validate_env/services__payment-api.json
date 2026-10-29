@@ -18,7 +18,7 @@
       "",
       "Testing with service file...",
       "✓ Successfully merged with payment-api.yaml",
-      "  Result: tier=low, 6 resource(s)",
+      "  Result: tier=low, 3 SLO(s), 4 dependency(ies)",
       "",
       "✓ Validation passed",
       ""
@@ -43,7 +43,7 @@
       "",
       "Testing with service file...",
       "✓ Successfully merged with payment-api.yaml",
-      "  Result: tier=critical, 6 resource(s)",
+      "  Result: tier=critical, 3 SLO(s), 4 dependency(ies)",
       "",
       "✓ Validation passed",
       ""
@@ -68,7 +68,7 @@
       "",
       "Testing with service file...",
       "✓ Successfully merged with payment-api.yaml",
-      "  Result: tier=standard, 6 resource(s)",
+      "  Result: tier=standard, 3 SLO(s), 4 dependency(ies)",
       "",
       "✓ Validation passed",
       ""

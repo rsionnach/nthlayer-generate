@@ -1,5 +1,5 @@
 {
-  "exit": 1,
+  "exit": 0,
   "queries": [],
   "text": [
     "",
@@ -7,6 +7,23 @@
     "  Error Budget Status: worker.reliability",
     "============================================================",
     "",
-    "Error parsing service file: Missing required 'service' section in examples/opensrm/worker.reliability.yaml"
+    "Prometheus: http://prometheus.invalid",
+    "",
+    "[-] SLO: availability (99.9%)",
+    "  Window: 30d rolling",
+    "  Error: No query defined in SLO indicator",
+    "",
+    "[-] SLO: throughput (100.0 rps)",
+    "  Window: 30d rolling",
+    "  Error: Target is not a 0-100 objective: no error budget",
+    "",
+    "[-] SLO: error_rate (0.5)",
+    "  Window: 7d rolling",
+    "  Error: Target is not a 0-100 objective: no error budget",
+    "",
+    "------------------------------------------------------------",
+    "Summary: 0/1 SLOs healthy",
+    "  2 without an error budget (not 0-100 objectives)",
+    ""
   ]
 }

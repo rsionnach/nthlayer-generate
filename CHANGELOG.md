@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.5.0](https://github.com/rsionnach/nthlayer-generate/compare/v3.4.0...v3.5.0) (2026-10-29)
+
+
+### Features
+
+* validate loads legacy files through nthlayer-common (opensrm-wo62.4.19) ([62f52ec](https://github.com/rsionnach/nthlayer-generate/commit/62f52ecc65e688a5fbbb951d72e60b3873510176))
+* validate loads legacy files through nthlayer-common (opensrm-wo62.4.19) ([480e519](https://github.com/rsionnach/nthlayer-generate/commit/480e5198d735f777786bcccf494e31b7114fe81e))
+
 ## [3.4.0](https://github.com/rsionnach/nthlayer-generate/compare/v3.3.0...v3.4.0) (2026-10-29)
 
 

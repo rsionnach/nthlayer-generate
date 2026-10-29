@@ -89,9 +89,36 @@ def test_ownership_passes_the_declared_owner(path, owner):
     assert resolve.call_args.kwargs["declared_owner"] == owner
 
 
+def test_ownership_forwards_the_environment(tmp_path):
+    """--env reaches load_manifest: an overlay's service block is deep-merged
+    (examples/environments/dev.yaml overlays service.tier the same way), so a
+    prod overlay setting service.team changes the declared team. No committed
+    overlay changes a field ownership reports, so the env golden cannot see
+    this."""
+    (tmp_path / "environments").mkdir()
+    (tmp_path / "svc.yaml").write_text(
+        "service:\n  name: svc\n  team: platform\n  tier: standard\n  type: api\n"
+    )
+    (tmp_path / "environments" / "svc-prod.yaml").write_text(
+        "environment: prod\nservice:\n  team: platform-oncall\n"
+    )
+    resolve = AsyncMock(side_effect=RuntimeError("stop after the call"))
+    with patch("nthlayer_generate.cli.ownership.OwnershipResolver") as resolver_cls:
+        resolver_cls.return_value.resolve = resolve
+        assert (
+            ownership_command(str(tmp_path / "svc.yaml"), environment="prod", output_format="json")
+            == 2
+        )
+
+    assert resolve.call_args.kwargs["declared_team"] == "platform-oncall"
+
+
 # =============================================================================
 # diff-envs on a malformed resource spec
 # =============================================================================
+#
+# Negatives derived from where common's legacy loader fails (wo62.4.10), not
+# from a rule of the legacy format: they test the command's error boundary.
 
 _MALFORMED = {
     "dependencies-spec-str": "  - kind: Dependencies\n    name: upstream\n    spec: oops\n",

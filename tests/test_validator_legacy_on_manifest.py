@@ -180,3 +180,34 @@ def test_unreadable_env_overlay_is_a_validation_error(tmp_path: Path):
     result = _validate(base, "qa")
     assert not result.valid
     assert len(result.errors) == 1
+
+
+@pytest.mark.parametrize("name_yaml", ["", "    name: null\n"], ids=["missing", "null"])
+def test_nameless_resource_added_by_overlay_is_rejected(tmp_path: Path, name_yaml: str):
+    # The parser checked names after the env overlay merge (generate
+    # specs/parser.py: EnvironmentMerger, then Resource). A new overlay
+    # resource is appended after the file's, so it is resource 1 here.
+    base = tmp_path / "svc.yaml"
+    base.write_text(
+        "service:\n  name: svc\n  team: t\n  tier: critical\n  type: api\n"
+        "resources:\n  - kind: SLO\n    name: a\n    spec: {objective: 99.9}\n"
+    )
+    (tmp_path / "environments").mkdir()
+    (tmp_path / "environments" / "dev.yaml").write_text(
+        "environment: dev\nresources:\n  - kind: SLO\n" + name_yaml
+        + "    spec: {objective: 99.0}\n"
+    )
+    assert _validate(base).valid
+    result = _validate(base, "dev")
+    assert result.errors == [f"Invalid resource 1 in {base}: Resource name is required"]
+
+
+@pytest.mark.parametrize("name", ["0", "false"])
+def test_falsy_name_is_nameless(tmp_path: Path, name: str):
+    # The parser's Resource rejected any falsy name (`not self.name`).
+    path = tmp_path / "svc.yaml"
+    path.write_text(
+        "service:\n  name: svc\n  team: t\n  tier: critical\n  type: api\n"
+        f"resources:\n  - kind: SLO\n    name: {name}\n    spec: {{objective: 99.9}}\n"
+    )
+    assert _validate(path).errors == [f"Invalid resource 0 in {path}: Resource name is required"]

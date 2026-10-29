@@ -9,6 +9,7 @@ model. Legacy files also get resource-level checks on the loaded raw data
 
 from __future__ import annotations
 
+import copy
 import re
 import warnings as stdlib_warnings
 from dataclasses import dataclass, field
@@ -20,6 +21,7 @@ from nthlayer_common.manifest import (
     ManifestLoadError,
     load_manifest,
 )
+from nthlayer_common.manifest.parser import legacy as legacy_parser
 from nthlayer_common.manifest.parser.v1 import is_srm_v1_format
 from nthlayer_common.manifest.parser.v2 import is_opensrm_v2_format
 
@@ -107,12 +109,12 @@ def _legacy_resources(manifest: Any) -> list[dict[str, Any]]:
 
 
 def _first_nameless_resource(raw_data: Any) -> int | None:
-    """Index of the first resource in the file's own ``resources:`` list with
-    no name, or None.
+    """Index of the first resource with no name in ``raw_data``'s
+    ``resources:`` list (the file after its env overlay), or None.
 
     The legacy parser rejected such a file ("Resource name is required"),
-    counting only the file's resources; common would load it (an SLO named
-    '') or crash on it, so the check runs on the raw file, before the load.
+    indexing the overlaid list before template expansion; any falsy name
+    counts, as in its ``Resource`` model.
     """
     if not isinstance(raw_data, dict):
         return None
@@ -120,7 +122,7 @@ def _first_nameless_resource(raw_data: Any) -> int | None:
     if not isinstance(resources, list):
         return None
     for index, resource in enumerate(resources):
-        if isinstance(resource, dict) and resource.get("name") in (None, ""):
+        if isinstance(resource, dict) and not resource.get("name"):
             return index
     return None
 
@@ -210,15 +212,27 @@ def validate_service_file(
         is_srm_v1_format(raw_data) or is_opensrm_v2_format(raw_data)
     )
 
-    if not use_opensrm:
-        nameless = _first_nameless_resource(raw_data)
-        if nameless is not None:
-            return ValidationResult(
-                valid=False,
-                errors=[f"Invalid resource {nameless} in {file_path}: Resource name is required"],
-            )
-
     try:
+        if not use_opensrm:
+            # Before the load: common loads a nameless resource (an SLO named
+            # '') or crashes on it. The parser checked the list after the env
+            # overlay, so the check reads common's own overlay merge.
+            overlaid = (
+                legacy_parser.apply_environment_overlay(
+                    copy.deepcopy(raw_data), file_path, environment
+                )
+                if isinstance(raw_data, dict)
+                else raw_data
+            )
+            nameless = _first_nameless_resource(overlaid)
+            if nameless is not None:
+                return ValidationResult(
+                    valid=False,
+                    errors=[
+                        f"Invalid resource {nameless} in {file_path}: Resource name is required"
+                    ],
+                )
+
         with stdlib_warnings.catch_warnings():
             stdlib_warnings.simplefilter("ignore", LegacyFormatWarning)
             manifest = load_manifest(

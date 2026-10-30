@@ -238,11 +238,13 @@ resources:
 # --- manifest path (ported from the legacy builder's tests, opensrm-wo62.4.22) ---
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
-# Every shipped legacy and srm/v1 manifest. The count is pinned so a moved
-# examples directory fails here instead of leaving the loop empty.
+# Every shipped legacy and srm/v1 manifest. The count is pinned by
+# test_shipped_corpus_is_present, so a moved examples directory fails there
+# instead of leaving the parametrised loops empty.
 SHIPPED = sorted((EXAMPLES / "services").glob("*.yaml")) + sorted(
     (EXAMPLES / "opensrm").glob("*.reliability.yaml")
 )
+PAYMENT_API = EXAMPLES / "services" / "payment-api.yaml"
 
 
 def _load(path: Path):
@@ -279,9 +281,6 @@ def test_shipped_rules_carry_the_service_label(path: Path):
     assert rules, f"{path.name} produced no recording rules"
     for rule in rules:
         assert rule.labels.get("service") == service, (rule.record, rule.labels)
-
-
-PAYMENT_API = EXAMPLES / "services" / "payment-api.yaml"
 
 
 def _records_for_slo(path: Path, slo: str) -> set[str]:

@@ -27,7 +27,7 @@ from nthlayer_common.manifest import load_manifest
 
 from nthlayer_generate.dashboards.manifest_builder import build_dashboard_from_manifest
 
-SHIPPED = (
+SHIPPED_MANIFEST = (
     Path(__file__).resolve().parents[1] / "examples" / "services" / "payment-api-with-deps.yaml"
 )
 
@@ -42,7 +42,7 @@ def _panel_titles(manifest_path: Path) -> list[str]:
 
 
 def _with_postgres_twin(tmp_path: Path, twin_type: str) -> Path:
-    data: dict[str, Any] = yaml.safe_load(SHIPPED.read_text(encoding="utf-8"))
+    data: dict[str, Any] = yaml.safe_load(SHIPPED_MANIFEST.read_text(encoding="utf-8"))
     (deps,) = [r for r in data["resources"] if r["kind"] == "Dependencies"]
     databases = deps["spec"]["databases"]
     (postgres,) = [db for db in databases if db["name"] == "postgres-main"]
@@ -50,7 +50,7 @@ def _with_postgres_twin(tmp_path: Path, twin_type: str) -> Path:
     twin["name"] = "postgres-replica"
     twin["type"] = twin_type
     databases.append(twin)
-    path = tmp_path / SHIPPED.name
+    path = tmp_path / SHIPPED_MANIFEST.name
     path.write_text(yaml.safe_dump(data), encoding="utf-8")
     return path
 
@@ -59,7 +59,7 @@ def _with_postgres_twin(tmp_path: Path, twin_type: str) -> Path:
 # other shipped examples use, which resolves to the same dashboard template.
 @pytest.mark.parametrize("twin_type", ["postgres", "postgresql"])
 def test_a_second_dependency_on_a_technology_adds_no_panels(tmp_path: Path, twin_type: str):
-    baseline = _panel_titles(SHIPPED)
+    baseline = _panel_titles(SHIPPED_MANIFEST)
     assert "PostgreSQL Connections" in baseline  # the shipped file has postgres panels
 
     assert _panel_titles(_with_postgres_twin(tmp_path, twin_type)) == baseline

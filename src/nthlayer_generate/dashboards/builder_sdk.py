@@ -494,8 +494,8 @@ class DashboardBuilderSDK:
         # postgres dependency would add the same panels again
         # (opensrm-wo62.4.22). Keyed on the resolved template so aliases
         # (postgres/postgresql) count once; the first-declared spelling's set,
-        # and so its service label, is kept. A type with no template keeps its
-        # own key, unchanged.
+        # and so its service label, is kept. A type with no template is keyed
+        # on its own spelling.
         seen_technologies: set[str] = set()
 
         for dep_resource in self.dependency_resources:

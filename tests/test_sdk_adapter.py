@@ -5,7 +5,7 @@ import json
 import pytest
 
 from nthlayer_generate.dashboards.models import Panel, Target
-from nthlayer_generate.dashboards.sdk_adapter import SDKAdapter, create_service_dashboard
+from nthlayer_generate.dashboards.sdk_adapter import SDKAdapter
 from nthlayer_generate.specs.models import ServiceContext
 
 
@@ -700,31 +700,3 @@ class TestAddTemplateVariables:
 
         # Should return same dashboard (variables not yet supported)
         assert result == dash
-
-
-class TestCreateServiceDashboard:
-    """Tests for create_service_dashboard convenience function."""
-
-    def test_creates_dashboard_without_slos(self, api_service_context):
-        """Test dashboard creation without SLOs."""
-        dash = create_service_dashboard(api_service_context)
-        model = dash.build()
-
-        assert model.title == "test-api - Service Dashboard"
-
-    def test_creates_dashboard_with_slos(self, api_service_context):
-        """Test dashboard creation with SLOs (panels not added - documented limitation)."""
-        from unittest.mock import MagicMock
-
-        # Create mock SLOs
-        slo1 = MagicMock()
-        slo1.name = "availability"
-        slo2 = MagicMock()
-        slo2.name = "latency"
-        slos = [slo1, slo2]
-
-        dash = create_service_dashboard(api_service_context, slos=slos)
-        model = dash.build()
-
-        # Dashboard is created, but SLO panels not added (documented limitation)
-        assert model.title == "test-api - Service Dashboard"

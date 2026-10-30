@@ -203,18 +203,34 @@ class TestGeneratedServiceFile:
     def test_generated_file_validates(self, tmp_path, monkeypatch):
         """Generated file should pass validation."""
         monkeypatch.chdir(tmp_path)
+        # nthlayer-common walks up from the manifest for .nthlayer/templates;
+        # hide any user directory so critical-api is the builtin.
+        monkeypatch.setattr(
+            "nthlayer_common.manifest.parser.loader._find_template_dir", lambda path: None
+        )
 
         init_command("my-api", "my-team", "critical-api", interactive=False)
 
-        # Should be parseable by our parser
-        from nthlayer_generate.specs.parser import parse_service_file
+        # Loads through nthlayer-common, as every command does (opensrm-wo62.4.6).
+        from nthlayer_common.manifest import load_manifest
 
-        context, resources = parse_service_file(tmp_path / "my-api.yaml")
+        manifest = load_manifest(tmp_path / "my-api.yaml", suppress_deprecation_warning=True)
 
-        assert context.name == "my-api"
-        assert context.team == "my-team"
-        assert context.template == "critical-api"
-        assert len(resources) == 3  # From template
+        assert manifest.name == "my-api"
+        assert manifest.team == "my-team"
+        assert manifest.template == "critical-api"
+        # init writes all three resources itself, for a critical api
+        # (cli/init.py:519-567), and a user resource replaces the template's
+        # same-named one whole (nthlayer-common's legacy expand_template), so
+        # these are init's values: the critical-tier 99.95, not critical-api's
+        # 99.9. They load intact.
+        assert {s.name: s.target for s in manifest.slos} == {
+            "availability": 99.95,
+            "latency-p95": 99.0,
+        }
+        assert manifest.ownership is not None
+        assert manifest.ownership.pagerduty is not None
+        assert manifest.ownership.pagerduty.urgency == "high"
 
     def test_generated_file_includes_comments(self, tmp_path, monkeypatch):
         """Generated file should include helpful comments."""

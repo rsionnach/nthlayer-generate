@@ -1,76 +1,14 @@
 """Tests for nthlayer.generators.alerts — alert generation from manifests."""
 
-from pathlib import Path
 
 import pytest
 import yaml
 
 from nthlayer_generate.alerts import AlertRule
 from nthlayer_generate.generators.alerts import (
-    extract_dependencies,
     filter_by_tier,
-    generate_alerts_for_service,
     write_prometheus_yaml,
 )
-from nthlayer_generate.specs.models import Resource
-
-
-class TestExtractDependencies:
-    def test_empty_resources(self):
-        assert extract_dependencies([]) == []
-
-    def test_non_dependency_resources_ignored(self):
-        resources = [Resource(kind="SLO", name="avail", spec={})]
-        assert extract_dependencies(resources) == []
-
-    def test_extracts_database_type(self):
-        resources = [
-            Resource(
-                kind="Dependencies",
-                name="deps",
-                spec={"databases": [{"type": "postgresql", "name": "main"}]},
-            )
-        ]
-        deps = extract_dependencies(resources)
-        assert "postgresql" in deps
-
-    def test_infers_db_type_from_name(self):
-        resources = [
-            Resource(
-                kind="Dependencies",
-                name="deps",
-                spec={"databases": [{"name": "postgres-main"}]},
-            )
-        ]
-        deps = extract_dependencies(resources)
-        assert "postgres" in deps
-
-    def test_extracts_service_type(self):
-        resources = [
-            Resource(
-                kind="Dependencies",
-                name="deps",
-                spec={"services": [{"type": "redis", "name": "cache"}]},
-            )
-        ]
-        deps = extract_dependencies(resources)
-        assert "redis" in deps
-
-    def test_deduplicates(self):
-        resources = [
-            Resource(
-                kind="Dependencies",
-                name="deps",
-                spec={
-                    "databases": [
-                        {"type": "postgresql", "name": "a"},
-                        {"type": "postgresql", "name": "b"},
-                    ]
-                },
-            )
-        ]
-        deps = extract_dependencies(resources)
-        assert deps.count("postgresql") == 1
 
 
 class TestFilterByTier:
@@ -145,15 +83,3 @@ class TestWritePrometheusYaml:
         output_file = tmp_path / "sub" / "dir" / "alerts.yaml"
         write_prometheus_yaml(alerts, output_file, "svc")
         assert output_file.exists()
-
-
-class TestGenerateAlertsForService:
-    def test_with_example_service(self):
-        """Generate alerts from example checkout-service.yaml."""
-        service_file = Path("examples/services/checkout-service.yaml")
-        if not service_file.exists():
-            pytest.skip("Example service file not found")
-
-        alerts = generate_alerts_for_service(service_file, quiet=True)
-        # Should return a list (may be empty if no deps in example)
-        assert isinstance(alerts, list)

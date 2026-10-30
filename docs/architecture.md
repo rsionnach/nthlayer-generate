@@ -26,11 +26,16 @@
   - `errors.py` — DeploymentProviderError exception
 - `providers/` — External service integrations (grafana, prometheus, pagerduty, mimir)
 - `identity/` — Service identity resolution across naming conventions
-- `specs/` — Service specification models and parsing
-  - `helpers.py` — Shared utilities: `TECH_KEYWORDS`, `infer_technology_from_name()`
+- `specs/` — Service specification models, templates and validation
+  - `helpers.py` — Dependency technology mapping: `dependency_technology()`,
+    `extract_dependency_technologies()`
   - Manifest model and loading live in `nthlayer_common.manifest` (since 3.0.0);
     generate has no `manifest.py`, `loader.py` or `opensrm_parser.py`
-  - `parser.py` — Legacy format parser, `render_resource_spec()` for variable substitution
+  - Every format, legacy `service:` files included, loads through `load_manifest`.
+    The legacy `parser.py` and its environment/template/substitution modules
+    were removed in 4.0.0 (opensrm-wo62.4.6); `models.py` keeps
+    `ServiceContext`/`Resource` as an internal adapter for dashboards and the
+    metrics recommender (opensrm-wo62.4.20)
 - `slos/` — SLO definition, validation, and recording rule generation
   - `models.py` — SLO, ErrorBudget, SLOStatus, Incident dataclasses; default target: 0.999
   - `parser.py` — OpenSLO YAML parsing

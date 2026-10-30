@@ -132,7 +132,7 @@ def test_missing_required_service_field_is_a_load_error(tmp_path: Path):
 )
 def test_nameless_resource_is_rejected(tmp_path: Path, name_yaml: str, index: int):
     # The legacy parser rejected a resource with no name, stopping at the
-    # first (generate specs/parser.py, ServiceParseError wrapping
+    # first (generate's specs/parser.py, removed in 4.0.0; ServiceParseError wrapping
     # specs/models.py Resource: "Resource name is required"). common loads
     # the missing/empty case and crashes on null for an SLO.
     path = tmp_path / "svc.yaml"
@@ -250,3 +250,29 @@ def test_unknown_variables_inside_lists_are_reported(tmp_path: Path):
     assert _validate(path).warnings == [
         "Resource 'SLO/availability': Uses unknown template variables: CHANNEL"
     ]
+
+
+@pytest.mark.parametrize(
+    ("template", "valid"),
+    [("critical-api", True), ("nonexistent-template", False)],
+)
+def test_unknown_template_is_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, template: str, valid: bool
+):
+    # Ported from the legacy parser's test_unknown_template_error
+    # (opensrm-wo62.4.6). The known-template row is the control: the same
+    # file validates, so the rejection is about the template name alone.
+    # Only builtins count: hide any user .nthlayer/templates that
+    # nthlayer-common's walk-up from tmp_path could reach.
+    monkeypatch.setattr(
+        "nthlayer_common.manifest.parser.loader._find_template_dir", lambda path: None
+    )
+    path = tmp_path / "svc.yaml"
+    path.write_text(
+        f"service:\n  name: svc\n  team: t\n  tier: critical\n  type: api\n  template: {template}\n"
+    )
+    result = _validate(path)
+    assert result.valid is valid, result.errors
+    if not valid:
+        assert len(result.errors) == 1, result.errors
+        assert template in result.errors[0]

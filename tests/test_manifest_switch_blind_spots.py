@@ -616,8 +616,9 @@ def test_legacy_critical_dependencies_without_contract_are_warned() -> None:
 def test_validate_never_runs_contract_checks_on_a_legacy_file() -> None:
     """``validate`` routes only srm/v1 (and, after the switch, v2) to the
     manifest path (specs/validator.py:107-118; spec §5.2 "validator"). A
-    legacy file goes through ``parse_service_file`` and gets no dependency or
-    contract check on either side of the switch — so G5's "validate
+    legacy file loads through nthlayer-common (opensrm-wo62.4.19) but keeps
+    only its resource-level checks, so it gets no dependency or contract
+    check on either side of the switch — so G5's "validate
     ('critical dependency has no contract')" entry in spec §6.3 cannot show
     at ``validate``; it shows only where the check runs (test above)."""
     result = validate_service_file(

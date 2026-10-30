@@ -1,12 +1,16 @@
-# TEST-ONLY golden fixture (opensrm-wo62.4.2) — not a shipped example.
+# TEST-ONLY golden fixture (opensrm-wo62.4.2; re-cited opensrm-wo62.4.6) — not
+# a shipped example.
 #
-# Exists to reach two branches of extract_dependencies in
-# src/nthlayer_generate/generators/alerts.py:
+# Exists to reach two branches of the manifest path's dependency technology
+# extraction in src/nthlayer_generate/specs/helpers.py:
 #
-# * :45-48 — a database with no `type:` has its technology inferred from the
-#   first `-` segment of its name (mysql-orders -> mysql). Every shipped
-#   example gives databases an explicit type.
-# * :74 — `list(set(dependencies))`, the dedup of dependency technologies.
+# * :51-52 in dependency_technology — a database with no `type:` maps to no
+#   technology, so mysql-orders gets no database alerts. (The removed legacy
+#   extractor inferred mysql from the name; the manifest path deliberately
+#   does not.) No shipped legacy-format example has an untyped database;
+#   examples/opensrm/ai-gate.reliability.yaml (srm/v1, feature-store) is
+#   the only other file that reaches it.
+# * :70 in extract_dependency_technologies — the order-preserving dedup.
 #   postgres-main and postgres-replica both declare postgres; without the
 #   dedup the postgres alerts are emitted twice. No shipped example repeats a
 #   technology.

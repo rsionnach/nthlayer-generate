@@ -10,35 +10,6 @@ from nthlayer_common.manifest import Dependency, ReliabilityManifest
 
 logger = structlog.get_logger()
 
-# Shared technology keywords for name-based inference
-TECH_KEYWORDS: dict[str, str] = {
-    "redis": "redis",
-    "postgres": "postgres",
-    "postgresql": "postgres",
-    "mysql": "mysql",
-    "mongo": "mongodb",
-    "mongodb": "mongodb",
-    "kafka": "kafka",
-    "rabbit": "rabbitmq",
-    "rabbitmq": "rabbitmq",
-    "nginx": "nginx",
-    "haproxy": "haproxy",
-    "elasticsearch": "elasticsearch",
-    "elastic": "elasticsearch",
-    "memcache": "memcached",
-    "memcached": "memcached",
-    "sqs": "sqs",
-}
-
-
-def infer_technology_from_name(name: str) -> str | None:
-    """Infer technology from a service/dependency name using keyword matching."""
-    name_lower = name.lower()
-    for keyword, tech in TECH_KEYWORDS.items():
-        if keyword in name_lower:
-            return tech
-    return None
-
 
 def dependency_technology(dep: Dependency) -> str | None:
     """The technology one dependency maps to, or None (APIs, untyped databases).

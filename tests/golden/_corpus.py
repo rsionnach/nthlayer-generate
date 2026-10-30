@@ -10,13 +10,21 @@ the code under test. The one exception is ``LEGACY_FIXTURES``: test-only
 inputs, each adapted from a shipped example, that exist only to reach a
 legacy branch no shipped file reaches. Each names that branch and its source
 example in its header comment.
+
+Below the lists sit the cases and harness helpers the legacy CLI cells
+use: ``CASES``/``ENV_CASES`` and their ``EnvCase`` staging, the
+``rules_as_sets`` normalisation, and ``no_user_templates``, which hides user
+template directories from both template lookups.
 """
 
 from __future__ import annotations
 
+import json
+import shutil
 from pathlib import Path
 from typing import Any
 
+import pytest
 import yaml
 from nthlayer_common.manifest import ReliabilityManifest, load_manifest
 
@@ -26,6 +34,7 @@ from nthlayer_generate.dependencies.models import (
     ResolvedDependency,
 )
 from nthlayer_generate.identity import ServiceIdentity
+from nthlayer_generate.specs.custom_templates import CustomTemplateLoader
 
 # parents: [0]=golden/ [1]=tests/ [2]=nthlayer-generate/ [3]=<ecosystem>/
 REPO = Path(__file__).resolve().parents[2]
@@ -95,7 +104,7 @@ V2: tuple[Path, ...] = tuple(
 # provenance, wo62.4.2). Not part of the shipped corpus: each reaches a
 # legacy branch (named in its header comment) that no example reaches, so a
 # mutant there would otherwise leave every golden green. Explicit, and
-# test_golden_legacy_generators asserts the directory holds nothing else.
+# test_golden_legacy_cli asserts the directory holds nothing else.
 LEGACY_FIXTURES: tuple[Path, ...] = tuple(
     FIXTURES / "legacy" / n
     for n in (
@@ -169,3 +178,104 @@ def _graph_from_declared_dependencies(m: ReliabilityManifest) -> DependencyGraph
             )
         )
     return graph
+
+
+# --- legacy-format cases (moved from test_golden_legacy_generators, wo62.4.6) --
+
+# Every manifest, loadable or not, for the legacy CLI cells. The test-only
+# fixtures come last, so every corpus id is unchanged.
+CASES: tuple[tuple[str, Path], ...] = tuple(
+    (manifest_id(p), p) for p in SRM_V1 + LEGACY + V2 + LEGACY_FIXTURES
+)
+IDS = [i for i, _ in CASES]
+
+ENVIRONMENTS = ("dev", "staging", "prod")
+# Under the temp dir; kept apart so a cell listing what it wrote can skip it.
+STAGING = "_staged"
+
+
+class EnvCase:
+    """A service file run with ``environment`` set.
+
+    ``staged`` cases copy the service file into ``<tmp>/_staged/services/`` next to a
+    copy of ``examples/environments/``: that directory has no service file
+    beside it, so the overlay lookup (``{service_dir}/environments/...``,
+    nthlayer-common's ``legacy.find_environment_file``) can only reach it from
+    a staged layout. The layout is the one its README prescribes; the files
+    are copied unchanged.
+    """
+
+    def __init__(self, base: Path, environment: str, *, staged: bool) -> None:
+        self.base = base
+        self.environment = environment
+        self.staged = staged
+        prefix = f"staged__{base.stem}" if staged else manifest_id(base)
+        self.id = f"{prefix}__env-{environment}"
+
+    def target(self, tmp: Path) -> Path:
+        """The service file to pass to the command, staging it if needed."""
+        if not self.staged:
+            return self.base
+        services = tmp / STAGING / "services"
+        env_dir = services / "environments"
+        env_dir.mkdir(parents=True, exist_ok=True)
+        for overlay in sorted((EX / "environments").glob("*.yaml")):
+            shutil.copy(overlay, env_dir / overlay.name)
+        target = services / self.base.name
+        shutil.copy(self.base, target)
+        return target
+
+
+ENV_CASES: tuple[EnvCase, ...] = (
+    # examples/services/environments/{dev,staging,prod}.yaml, found in place.
+    *(
+        EnvCase(EX / "services" / "payment-api-with-envs.yaml", e, staged=False)
+        for e in ENVIRONMENTS
+    ),
+    # examples/environments/: payment-api-{dev,prod}.yaml and search-api-prod.yaml
+    # are service-specific; the rest fall through to the shared {env}.yaml.
+    *(EnvCase(EX / "services" / "payment-api.yaml", e, staged=True) for e in ENVIRONMENTS),
+    *(EnvCase(EX / "services" / "search-api.yaml", e, staged=True) for e in ENVIRONMENTS),
+    # Test-only: fixtures/legacy/environments/checkout-env-vars-prod.yaml, found
+    # in place. Reaches the ${env}/${team} substitution, which no shipped file
+    # reaches.
+    EnvCase(FIXTURES / "legacy" / "checkout-env-vars.yaml", "prod", staged=False),
+)
+ENV_IDS = [c.id for c in ENV_CASES]
+
+
+def rules_as_sets(doc: Any) -> Any:
+    """Sort each group's rules, and the groups, by full content.
+
+    The legacy dependency extractors returned ``list(set(...))``, so rule order
+    followed PYTHONHASHSEED and the goldens were recorded in this sorted form.
+    The manifest path is declaration-ordered
+    (specs/helpers.extract_dependency_technologies), so this now normalises an
+    order that is already deterministic; dropping it is a golden-only diff.
+    """
+    if not isinstance(doc, dict) or not isinstance(doc.get("groups"), list):
+        return doc
+    for group in doc["groups"]:
+        if isinstance(group, dict) and isinstance(group.get("rules"), list):
+            group["rules"] = sorted(group["rules"], key=lambda r: json.dumps(r, sort_keys=True))
+    doc["groups"] = sorted(doc["groups"], key=lambda g: json.dumps(g, sort_keys=True))
+    return doc
+
+
+def no_user_templates(mp: pytest.MonkeyPatch) -> None:
+    """Hide any user ``.nthlayer/templates`` from both template lookups.
+
+    nthlayer-common's ``_find_template_dir`` walks up to ten levels from the
+    *manifest*, and corpus files live in the checkout, so a templates dir in
+    the user's home or above the checkout would change, and be pinned into,
+    the goldens. ``CustomTemplateLoader.find_templates_directory`` walks up
+    from the *cwd* without limit. No golden uses custom templates; builtin
+    templates do not go through either lookup.
+
+    The common lookup is patched on the loader module, where both of its
+    callers look it up by name.
+    """
+    import nthlayer_common.manifest.parser.loader as common_loader
+
+    mp.setattr(CustomTemplateLoader, "find_templates_directory", staticmethod(lambda: None))
+    mp.setattr(common_loader, "_find_template_dir", lambda manifest_path: None)

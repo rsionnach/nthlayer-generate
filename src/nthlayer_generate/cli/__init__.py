@@ -3,10 +3,6 @@ CLI commands for NthLayer.
 """
 
 from nthlayer_generate.cli.dashboard import generate_dashboard_command
-from nthlayer_generate.cli.dashboard_validate import (
-    list_intents_command,
-    validate_dashboard_command,
-)
 from nthlayer_generate.cli.environments import (
     diff_envs_command,
     list_environments_command,
@@ -37,9 +33,6 @@ __all__ = [
     "validate_env_command",
     "generate_dashboard_command",
     "generate_recording_rules_command",
-    # Hybrid model validation
-    "validate_dashboard_command",
-    "list_intents_command",
     # SLO commands
     "handle_slo_command",
     "register_slo_parser",

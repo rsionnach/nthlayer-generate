@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nthlayer_generate.dashboards.builder_sdk import DashboardBuilderSDK, build_dashboard
+from nthlayer_generate.dashboards.builder_sdk import DashboardBuilderSDK
 from nthlayer_generate.specs.models import Resource, ServiceContext
 
 
@@ -991,27 +991,3 @@ class TestValidatePanels:
 
         # Validation is intentionally minimal in _validate_panels
         assert result == mock_panels
-
-
-class TestBuildDashboardFunction:
-    """Tests for build_dashboard convenience function."""
-
-    def test_builds_dashboard(self, api_context, slo_resource):
-        """Builds dashboard using convenience function."""
-        result = build_dashboard(
-            service_context=api_context,
-            resources=[slo_resource],
-        )
-
-        assert "dashboard" in result
-        assert result["dashboard"]["title"] == "test-api - Service Dashboard"
-
-    def test_passes_full_panels_flag(self, api_context, slo_resource):
-        """Passes full_panels flag to builder."""
-        result = build_dashboard(
-            service_context=api_context,
-            resources=[slo_resource],
-            full_panels=True,
-        )
-
-        assert "dashboard" in result

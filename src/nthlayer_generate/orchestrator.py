@@ -10,7 +10,7 @@ facade and detect_resource_types, which decides what plan/apply generate.
 
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from nthlayer_common.manifest import ReliabilityManifest, load_manifest
 
@@ -25,7 +25,6 @@ from nthlayer_generate.orchestration.results import ApplyResult, PlanResult
 __all__ = [
     "ApplyResult",
     "PlanResult",
-    "ResourceDetector",
     "ServiceOrchestrator",
     "detect_resource_types",
 ]
@@ -34,8 +33,9 @@ __all__ = [
 def detect_resource_types(manifest: ReliabilityManifest) -> List[str]:
     """Resource types plan/apply generate for ``manifest`` (opensrm-wo62.4.5).
 
-    The legacy ResourceDetector's rules, read from the manifest instead of
-    the raw YAML, so template-provided resources and every format count.
+    The former ResourceDetector's rules (removed in 4.0.0, opensrm-wo62.4.6),
+    read from the manifest instead of the raw YAML, so template-provided
+    resources and every format count.
     Rob's rulings, recorded on opensrm-wo62.4.5: any dependency (caches and
     queues included) triggers alerts and the dashboard; ownership.pagerduty
     triggers pagerduty in any format; judgment thresholds without SLOs add
@@ -58,87 +58,6 @@ def detect_resource_types(manifest: ReliabilityManifest) -> List[str]:
         resources.append("pagerduty")
 
     return resources
-
-
-class ResourceDetector:
-    """Detects what resources should be generated from a service definition.
-
-    Unused since opensrm-wo62.4.5: plan/apply detect with
-    ``detect_resource_types``. Kept for import compatibility until
-    opensrm-wo62.4.6 deletes it (generate 4.0.0).
-
-    Uses single-pass indexing to avoid redundant list scans.
-    """
-
-    def __init__(self, service_def: Dict[str, Any]):
-        self.service_def = service_def
-        self._resource_index: Optional[Dict[str, List[Dict[str, Any]]]] = None
-
-    def _build_index(self) -> Dict[str, List[Dict[str, Any]]]:
-        """Build single-pass resource index by kind.
-
-        Indexes all resources in one O(N) pass instead of scanning
-        multiple times for each resource type check.
-        """
-        if self._resource_index is not None:
-            return self._resource_index
-
-        index: Dict[str, List[Dict[str, Any]]] = {
-            "SLO": [],
-            "Dependencies": [],
-            "Observability": [],
-            "PagerDuty": [],
-        }
-
-        for resource in self.service_def.get("resources", []):
-            kind = resource.get("kind", "")
-            if kind in index:
-                index[kind].append(resource)
-
-        self._resource_index = index
-        return index
-
-    def detect(self) -> List[str]:
-        """Returns list of resource types to generate."""
-        index = self._build_index()
-        resources = []
-
-        # Always generate SLOs if defined
-        if index["SLO"]:
-            resources.append("slos")
-            # Auto-add recording rules if SLOs exist
-            resources.append("recording-rules")
-            # Auto-add Backstage entity if SLOs exist
-            resources.append("backstage")
-
-        # Auto-generate alerts if dependencies defined
-        if self._has_dependencies(index):
-            resources.append("alerts")
-
-        # Auto-generate dashboard if observability config or dependencies
-        if index["Observability"] or self._has_dependencies(index):
-            resources.append("dashboard")
-
-        # Generate PagerDuty if resource defined
-        if index["PagerDuty"]:
-            resources.append("pagerduty")
-
-        return resources
-
-    def _has_dependencies(self, index: Dict[str, List[Dict[str, Any]]]) -> bool:
-        """Check if service has dependencies (for alert generation)."""
-        deps_resources = index["Dependencies"]
-        if not deps_resources:
-            return False
-
-        # Check first Dependencies resource for actual dependency content
-        spec = deps_resources[0].get("spec", {})
-        return bool(spec.get("databases") or spec.get("services") or spec.get("external_apis"))
-
-    def get_resources_by_kind(self, kind: str) -> List[Dict[str, Any]]:
-        """Get all resources of a specific kind (cached)."""
-        index = self._build_index()
-        return index.get(kind, [])
 
 
 class ServiceOrchestrator:

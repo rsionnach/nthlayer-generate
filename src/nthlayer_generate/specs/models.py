@@ -49,9 +49,11 @@ class ServiceContext:
 
     def to_dict(self) -> dict[str, Any]:
         """
-        Convert to dict for template variable substitution.
+        The context as a dict keyed by ``${variable}`` name.
 
-        Returns dict with keys for use in ${variable} templates.
+        Its substitution caller, the legacy loader, was removed in 4.0.0;
+        ServiceContext remains as the internal dashboards/recommender
+        adapter (opensrm-wo62.4.20).
         """
         result = {
             "service": self.name,

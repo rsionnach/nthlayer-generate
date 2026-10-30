@@ -70,12 +70,13 @@ def test_validator_agrees_with_the_manifest_model(tmp_path, service_type: str):
 def test_service_context_normalises_its_type():
     """ServiceContext must resolve like ReliabilityManifest does.
 
-    specs/parser.py passes the raw YAML value straight in, and
-    ServiceContext did not normalise — so a `type: web` service file
-    produced a context holding `web` while every downstream branch was
-    updated to test for `x-web`. Web services would have silently lost
-    their HTTP dashboard panels (dashboards/validator.py) and their
-    latency docs section (generators/docs.py).
+    The legacy specs/parser.py (removed in 4.0.0) passed the raw YAML
+    value straight in, and ServiceContext did not normalise — so a
+    `type: web` service file produced a context holding `web` while
+    every downstream branch was updated to test for `x-web`. Web
+    services would have silently lost their HTTP dashboard panels
+    (dashboards/validator.py) and their latency docs section
+    (generators/docs.py).
 
     Normalising here rather than teaching each branch both spellings is
     the repo's own hard rule 1: validate inputs at the boundary, not
@@ -145,44 +146,6 @@ def test_init_emits_latency_slo_for_http_service_types(menu_type: str):
 # =============================================================================
 
 
-@pytest.mark.parametrize("authored", ["web", "background-job", "pipeline", "api"])
-def test_type_template_variable_keeps_the_authored_spelling(authored: str):
-    """``${type}`` substitutes into user-authored PromQL, so it must not be
-    silently renormalised (opensrm-z3ab R5 edge cases).
-
-    ServiceContext.to_dict feeds template substitution, and normalising
-    self.type meant an existing service.yaml with ``type: web`` and a query
-    matching ``svc_type="${type}"`` began generating ``svc_type="x-web"``.
-    That matcher selects ZERO series against the Prometheus the author
-    already runs, so the SLO reads no-data and its burn-rate alerts never
-    fire.
-
-    Nothing catches it: the generated rules are still schema-valid and still
-    parse. It is the same shape as the latency-SLO regression this bead's
-    correctness pass found — valid output, wrong content, silent at runtime.
-
-    The authored spelling is a label matcher against live data. It is not
-    ours to rewrite.
-    """
-    from nthlayer_generate.specs.models import Resource, ServiceContext
-    from nthlayer_generate.specs.parser import render_resource_spec
-
-    context = ServiceContext(name="shop", team="t", tier="critical", type=authored)
-    resource = Resource(
-        kind="SLO",
-        name="availability",
-        spec={"query": 'sum(rate(http_total{svc_type="${type}"}[5m]))'},
-        context=context,
-    )
-
-    rendered = render_resource_spec(resource)
-
-    assert f'svc_type="{authored}"' in rendered["query"], (
-        f"${{type}} rendered as {rendered['query']!r}; the authored spelling "
-        f"{authored!r} must survive into the query"
-    )
-
-
 def test_context_still_exposes_the_resolved_type_for_branching():
     """The resolved value is what internal branches compare against — that
     is why ServiceContext normalises at all. Both must be available: the
@@ -197,15 +160,15 @@ def test_context_still_exposes_the_resolved_type_for_branching():
 
 @pytest.mark.parametrize("authored", ["web", "background-job", "api"])
 def test_sloth_indicator_query_keeps_the_authored_type(tmp_path, authored: str):
-    """The same data-plane rule, exercised through sloth itself.
+    """``${type}`` keeps the authored spelling in user-authored PromQL.
 
     generators/sloth.py substitutes ``${type}`` into an SLO's
     indicator_query, which becomes a Sloth spec and then recording rules
     and burn-rate alerts. That one substitution is the line this bead
     changed, so the test drives the real generator rather than asserting
     on the dataclass — an earlier version of this test constructed a
-    manifest and checked ``authored_type``, which duplicated coverage
-    above and left sloth.py itself untested.
+    manifest and checked only ``authored_type``, which left sloth.py
+    itself untested.
     """
     from nthlayer_common.manifest import SLODefinition
 

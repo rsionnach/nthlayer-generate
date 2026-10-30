@@ -1,5 +1,18 @@
 # Changelog
 
+## [4.0.1](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.0...v4.0.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* one set of dashboard panels per dependency technology (opensrm-wo62.4.22) ([66841e9](https://github.com/rsionnach/nthlayer-generate/commit/66841e9a7dc52b25a9f8fbb04f921eeb4ea41ef3))
+* port legacy assertions onto the manifest path; dedupe dashboard technology panels (opensrm-wo62.4.22) ([35edcd7](https://github.com/rsionnach/nthlayer-generate/commit/35edcd7c4e0fc3cf7cb8446fd00de0f906b24ea3))
+
+
+### Documentation
+
+* dashboard technology panels appear once per technology (opensrm-wo62.4.22) ([0c47795](https://github.com/rsionnach/nthlayer-generate/commit/0c47795a60a715baa5b8c62ae7b5e74cd0580fef))
+
 ## [4.0.0](https://github.com/rsionnach/nthlayer-generate/compare/v3.5.0...v4.0.0) (2026-10-30)
 
 

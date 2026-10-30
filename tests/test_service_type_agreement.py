@@ -145,44 +145,6 @@ def test_init_emits_latency_slo_for_http_service_types(menu_type: str):
 # =============================================================================
 
 
-@pytest.mark.parametrize("authored", ["web", "background-job", "pipeline", "api"])
-def test_type_template_variable_keeps_the_authored_spelling(authored: str):
-    """``${type}`` substitutes into user-authored PromQL, so it must not be
-    silently renormalised (opensrm-z3ab R5 edge cases).
-
-    ServiceContext.to_dict feeds template substitution, and normalising
-    self.type meant an existing service.yaml with ``type: web`` and a query
-    matching ``svc_type="${type}"`` began generating ``svc_type="x-web"``.
-    That matcher selects ZERO series against the Prometheus the author
-    already runs, so the SLO reads no-data and its burn-rate alerts never
-    fire.
-
-    Nothing catches it: the generated rules are still schema-valid and still
-    parse. It is the same shape as the latency-SLO regression this bead's
-    correctness pass found — valid output, wrong content, silent at runtime.
-
-    The authored spelling is a label matcher against live data. It is not
-    ours to rewrite.
-    """
-    from nthlayer_generate.specs.models import Resource, ServiceContext
-    from nthlayer_generate.specs.parser import render_resource_spec
-
-    context = ServiceContext(name="shop", team="t", tier="critical", type=authored)
-    resource = Resource(
-        kind="SLO",
-        name="availability",
-        spec={"query": 'sum(rate(http_total{svc_type="${type}"}[5m]))'},
-        context=context,
-    )
-
-    rendered = render_resource_spec(resource)
-
-    assert f'svc_type="{authored}"' in rendered["query"], (
-        f"${{type}} rendered as {rendered['query']!r}; the authored spelling "
-        f"{authored!r} must survive into the query"
-    )
-
-
 def test_context_still_exposes_the_resolved_type_for_branching():
     """The resolved value is what internal branches compare against — that
     is why ServiceContext normalises at all. Both must be available: the

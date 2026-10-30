@@ -1,11 +1,14 @@
-# TEST-ONLY golden fixture (opensrm-wo62.4.2) — not a shipped example.
+# TEST-ONLY golden fixture (opensrm-wo62.4.2; re-cited opensrm-wo62.4.6) — not
+# a shipped example.
 #
-# Exists to reach: src/nthlayer_generate/specs/parser.py:104-112, the
-# parse-time `if environment:` substitution of ${env}/${service}/${team} over
-# the whole document. No shipped manifest or overlay uses ${env} or ${team}
-# outside a resource spec, and ${service} inside a spec is substituted again
-# later, so without this file that branch can be deleted with every golden
-# still green.
+# Exists to reach nthlayer-common's
+# src/nthlayer_common/manifest/parser/legacy.py substitute_environment (called
+# at parser/loader.py:159), the `if environment:` substitution of
+# ${env}/${service}/${team} over the whole document. No shipped manifest or
+# overlay uses ${env} or ${team} outside a resource spec, and ${service}
+# inside a spec is substituted again later (substitute_resource_specs), so
+# without this file that branch can be deleted with every golden still green.
+# It replaced generate's removed specs/parser.py:104-112.
 #
 # ${env} and ${team} sit in resource NAMES, which no later pass rewrites and
 # which reach the sloth, recording-rule, dashboard and plan/apply goldens.

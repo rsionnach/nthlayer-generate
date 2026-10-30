@@ -206,15 +206,18 @@ class TestGeneratedServiceFile:
 
         init_command("my-api", "my-team", "critical-api", interactive=False)
 
-        # Should be parseable by our parser
-        from nthlayer_generate.specs.parser import parse_service_file
+        # Loads through nthlayer-common, as every command does (opensrm-wo62.4.6).
+        from nthlayer_common.manifest import load_manifest
 
-        context, resources = parse_service_file(tmp_path / "my-api.yaml")
+        manifest = load_manifest(tmp_path / "my-api.yaml", suppress_deprecation_warning=True)
 
-        assert context.name == "my-api"
-        assert context.team == "my-team"
-        assert context.template == "critical-api"
-        assert len(resources) == 3  # From template
+        assert manifest.name == "my-api"
+        assert manifest.team == "my-team"
+        # critical-api's resources (legacy_templates/critical-api.yaml): two
+        # SLOs and a PagerDuty resource.
+        assert sorted(s.name for s in manifest.slos) == ["availability", "latency-p95"]
+        assert manifest.ownership is not None
+        assert manifest.ownership.pagerduty is not None
 
     def test_generated_file_includes_comments(self, tmp_path, monkeypatch):
         """Generated file should include helpful comments."""

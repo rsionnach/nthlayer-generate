@@ -1,7 +1,8 @@
-"""Legacy CLI cells: the ``parse_service_file`` commands and plan/apply (wo62.4.2).
+"""Legacy CLI cells: the formerly ``parse_service_file`` commands and plan/apply (wo62.4.2).
 
-These pin the wired legacy commands before wo62.4.3–4.5 move them onto
-nthlayer-common. Each cell drives a command's Python entry point and pins its
+These pinned the wired legacy commands before wo62.4.3–4.5 and 4.19 moved
+them onto nthlayer-common, so every output change those moves made was a
+golden diff; generate 4.0.0 removed the legacy loader (opensrm-wo62.4.6). Each cell drives a command's Python entry point and pins its
 exit code, the files it wrote under the temp dir (YAML/JSON parsed), and the
 JSON it printed where it offers JSON.
 
@@ -27,11 +28,9 @@ No cell reaches a network:
   discovered metrics). ``validate-slo`` runs offline.
 * Kubernetes — the ownership provider's ``get_owner`` returns no signal.
 
-As in the library cells, every manifest is a case: for the
-``parse_service_file`` commands the legacy parser's rejection of srm/v1 and
-v2 is pinned, while plan/apply load every format through nthlayer-common
-since opensrm-wo62.4.5. The env-overlay family reruns the commands that take
-``--env`` over ``ENV_CASES``.
+Every manifest is a case (``_corpus.CASES``), and every command now loads
+every format through nthlayer-common. The env-overlay family reruns the
+commands that take ``--env`` over ``ENV_CASES``.
 """
 
 from __future__ import annotations
@@ -1050,7 +1049,9 @@ def test_legacy_fixtures_are_listed_and_name_their_branch() -> None:
     for p in on_disk:
         header = p.read_text(encoding="utf-8").split("\n\n", 1)[0]
         assert header.startswith("# TEST-ONLY golden fixture"), p.name
-        assert "src/nthlayer_generate/" in header, p.name
+        # The branch is in generate or, since the legacy loader moved there,
+        # in nthlayer-common (opensrm-wo62.4.6).
+        assert "src/nthlayer_generate/" in header or "src/nthlayer_common/" in header, p.name
         assert "examples/" in header, p.name
 
 

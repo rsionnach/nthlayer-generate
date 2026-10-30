@@ -132,7 +132,7 @@ def _convert_slo_definition_to_sloth(
             manifest.name,
         )
 
-    # Substitute template variables (matching legacy render_resource_spec behavior)
+    # Substitute the service template variables into the query.
     query = query.replace("${service}", manifest.name)
     query = query.replace("${team}", manifest.team)
     query = query.replace("${tier}", manifest.tier)

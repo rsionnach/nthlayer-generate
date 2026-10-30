@@ -1,9 +1,11 @@
-# TEST-ONLY golden fixture (opensrm-wo62.4.2) — not a shipped example.
+# TEST-ONLY golden fixture (opensrm-wo62.4.2; re-cited opensrm-wo62.4.6) — not
+# a shipped example.
 #
-# Exists to reach: src/nthlayer_generate/orchestrator.py:79, the
-# `index["Observability"]` arm of `if index["Observability"] or
-# self._has_dependencies(index):` in ResourceDetector.detect. Every shipped
-# example that declares an Observability resource also declares
+# Exists to reach: src/nthlayer_generate/orchestrator.py:54, the
+# `manifest.observability is not None` arm of
+# `if manifest.observability is not None or manifest.dependencies:` in
+# detect_resource_types (which replaced the removed ResourceDetector). Every
+# shipped example that declares an Observability resource also declares
 # Dependencies, so the dashboard is always reached through the second arm and
 # the first can be deleted with every golden still green. This file has an
 # Observability resource and no Dependencies resource: `dashboard` is planned

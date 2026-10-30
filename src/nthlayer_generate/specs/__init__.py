@@ -12,17 +12,7 @@ nthlayer-generate 3.0.0 stopped re-exporting ``load_manifest``,
 ``ReliabilityManifest``, ``SLODefinition`` and ``ManifestLoadError`` here
 (opensrm-wo62.1); import them from ``nthlayer_common.manifest``.
 
-Legacy usage (still supported):
-    from nthlayer_generate.specs import parse_service_file
-
-    context, resources = parse_service_file("service.yaml")
+nthlayer-generate 4.0.0 removed the legacy ``parse_service_file`` loader and
+its ``ServiceContext``/``Resource`` re-exports here (opensrm-wo62.4.6); every
+format, legacy ``service:`` files included, loads through ``load_manifest``.
 """
-
-# Legacy API (backward compatibility)
-from nthlayer_generate.specs.parser import Resource, ServiceContext, parse_service_file
-
-__all__ = [
-    "parse_service_file",
-    "ServiceContext",
-    "Resource",
-]

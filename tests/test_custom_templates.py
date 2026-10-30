@@ -1,7 +1,6 @@
 """Tests for custom template system."""
 
 from nthlayer_generate.specs.custom_templates import CustomTemplateLoader
-from nthlayer_generate.specs.parser import parse_service_file
 
 
 class TestCustomTemplateLoader:
@@ -111,103 +110,6 @@ resources:
             assert "CUSTOM OVERRIDE" in template.description
             assert len(template.resources) == 1
             assert template.resources[0].name == "custom-override"
-        finally:
-            os.chdir(original_dir)
-
-
-class TestServiceWithCustomTemplate:
-    """Tests for parsing services that use custom templates."""
-    
-    def test_service_uses_custom_template(self, tmp_path):
-        """Should apply custom template to service."""
-        # Create custom template directory
-        templates_dir = tmp_path / ".nthlayer" / "templates"
-        templates_dir.mkdir(parents=True)
-        
-        # Create custom template
-        (templates_dir / "org-standard.yaml").write_text("""
-name: org-standard
-description: Organization standard template
-tier: standard
-type: api
-
-resources:
-  - kind: SLO
-    name: org-slo
-    spec:
-      objective: 99.8
-""")
-        
-        # Create service using custom template
-        service_yaml = tmp_path / "test-service.yaml"
-        service_yaml.write_text("""
-service:
-  name: test-service
-  team: test
-  tier: standard
-  type: api
-  template: org-standard
-""")
-        
-        # Parse from that directory
-        import os
-        original_dir = os.getcwd()
-        try:
-            os.chdir(tmp_path)
-            
-            context, resources = parse_service_file(service_yaml)
-            
-            # Should have custom template resource
-            assert len(resources) == 1
-            assert resources[0].name == "org-slo"
-            assert resources[0].spec["objective"] == 99.8
-        finally:
-            os.chdir(original_dir)
-    
-    def test_service_overrides_custom_template(self, tmp_path):
-        """Should allow overriding custom template resources."""
-        templates_dir = tmp_path / ".nthlayer" / "templates"
-        templates_dir.mkdir(parents=True)
-        
-        (templates_dir / "org-standard.yaml").write_text("""
-name: org-standard
-description: Org template
-tier: standard
-type: api
-
-resources:
-  - kind: SLO
-    name: availability
-    spec:
-      objective: 99.5
-""")
-        
-        service_yaml = tmp_path / "test-service.yaml"
-        service_yaml.write_text("""
-service:
-  name: test-service
-  team: test
-  tier: standard
-  type: api
-  template: org-standard
-
-resources:
-  - kind: SLO
-    name: availability
-    spec:
-      objective: 99.9  # Override
-""")
-        
-        import os
-        original_dir = os.getcwd()
-        try:
-            os.chdir(tmp_path)
-            
-            context, resources = parse_service_file(service_yaml)
-            
-            # Should have overridden value
-            assert len(resources) == 1
-            assert resources[0].spec["objective"] == 99.9  # User override
         finally:
             os.chdir(original_dir)
 

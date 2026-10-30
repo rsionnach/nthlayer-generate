@@ -12,7 +12,7 @@ from the detector's code:
 - E2: pagerduty when ``ownership.pagerduty`` is set, in any format;
 - E4: detection reads the manifest after the env overlay.
 
-The order is the legacy detector's (orchestrator.py ResourceDetector.detect):
+The order is the former legacy ResourceDetector's (removed in 4.0.0):
 slos, recording-rules, backstage, alerts, dashboard, pagerduty.
 """
 

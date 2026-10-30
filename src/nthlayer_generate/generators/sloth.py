@@ -14,9 +14,6 @@ import structlog
 import yaml
 from nthlayer_common.manifest import ReliabilityManifest, SLODefinition, SourceFormat
 
-from nthlayer_generate.specs.models import ServiceContext
-from nthlayer_generate.specs.parser import parse_service_file, render_resource_spec
-
 logger = structlog.get_logger()
 
 
@@ -29,124 +26,6 @@ class SlothGenerationResult:
     output_file: Path | None = None
     slo_count: int = 0
     error: str | None = None
-
-
-def generate_sloth_spec(
-    service_file: str | Path, output_dir: str | Path, environment: str | None = None
-) -> SlothGenerationResult:
-    """
-    Generate Sloth specification YAML from NthLayer service definition.
-
-    Args:
-        service_file: Path to NthLayer service YAML file
-        output_dir: Directory to write Sloth spec
-        environment: Optional environment name (dev, staging, prod)
-
-    Returns:
-        SlothGenerationResult with generation details
-
-    Example:
-        Input (services/payment-api.yaml):
-            service:
-              name: payment-api
-              team: payments
-              tier: critical
-            resources:
-              - kind: SLO
-                name: availability
-                spec:
-                  objective: 99.9
-                  window: 30d
-                  indicator:
-                    query: "..."
-
-        Output (generated/sloth/payment-api.yaml):
-            version: "prometheus/v1"
-            service: "payment-api"
-            labels:
-              tier: "critical"
-              team: "payments"
-            slos:
-              - name: "availability"
-                objective: 99.9
-                description: "99.9% availability"
-                sli:
-                  events:
-                    error_query: "..."
-                    total_query: "..."
-                alerting:
-                  name: PaymentAPIAvailability
-                  labels:
-                    tier: "critical"
-                  page_alert:
-                    labels:
-                      severity: critical
-    """
-    try:
-        # Parse service file with optional environment overrides
-        service_context, resources = parse_service_file(service_file, environment=environment)
-
-        # Filter SLO resources
-        slo_resources = [r for r in resources if r.kind == "SLO"]
-
-        if not slo_resources:
-            return SlothGenerationResult(
-                success=False,
-                service=service_context.name,
-                error="No SLO resources found in service definition",
-            )
-
-        # Build Sloth spec
-        slos: list[dict[str, Any]] = []
-        sloth_spec: dict[str, Any] = {
-            "version": "prometheus/v1",
-            "service": service_context.name,
-            "labels": {
-                "tier": service_context.tier,
-                "team": service_context.team,
-                # Resolved — an emitted label, not a matcher. See the note
-                # on the manifest path below (opensrm-z3ab).
-                "type": service_context.type,
-            },
-            "slos": slos,
-        }
-
-        # Convert each SLO resource to Sloth format
-        for slo_resource in slo_resources:
-            # Render spec with variable substitution
-            rendered_spec = render_resource_spec(slo_resource)
-
-            # Convert to Sloth SLO format
-            sloth_slo = convert_to_sloth_slo(
-                slo_resource.name or "default",
-                rendered_spec,
-                service_context,
-            )
-
-            slos.append(sloth_slo)
-
-        # Write output
-        output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        output_file = output_dir / f"{service_context.name}.yaml"
-        with open(output_file, "w") as f:
-            yaml.dump(sloth_spec, f, sort_keys=False, default_flow_style=False)
-
-        return SlothGenerationResult(
-            success=True,
-            service=service_context.name,
-            output_file=output_file,
-            slo_count=len(slo_resources),
-        )
-
-    except Exception as e:
-        logger.error("Sloth generation failed for %s: %s", service_file, e)
-        return SlothGenerationResult(
-            success=False,
-            service="unknown",
-            error=str(e),
-        )
 
 
 def generate_sloth_from_manifest(
@@ -291,44 +170,6 @@ def _convert_slo_definition_to_sloth(
         "name": slo.name,
         "objective": slo.target,
         "description": slo.description or f"{slo.target}% {slo.name.replace('-', ' ')}",
-        "sli": sli,
-        "alerting": alerting,
-    }
-
-
-def convert_to_sloth_slo(
-    slo_name: str,
-    spec: dict[str, Any],
-    service_context: ServiceContext,
-) -> dict[str, Any]:
-    """
-    Convert NthLayer SLO spec to Sloth SLO format.
-
-    Args:
-        slo_name: Name of the SLO
-        spec: Rendered SLO spec with variables substituted
-        service_context: Service context for labels
-
-    Returns:
-        Sloth SLO dict
-    """
-    objective = spec.get("objective", 99.9)
-    indicator = spec.get("indicator", {})
-
-    # Build SLI based on indicator type
-    sli = convert_indicator_to_sli(indicator)
-
-    # Build alerting config
-    alerting = generate_alerting_config(
-        slo_name,
-        service_context.name,
-        service_context.tier,
-    )
-
-    return {
-        "name": slo_name,
-        "objective": objective,
-        "description": f"{objective}% {slo_name.replace('-', ' ')}",
         "sli": sli,
         "alerting": alerting,
     }

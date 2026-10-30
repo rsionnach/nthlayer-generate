@@ -1,7 +1,8 @@
 """Tests for orchestrator.py and orchestration package.
 
 Tests for service orchestration including ApplyResult, PlanResult,
-ResourceDetector, ServiceOrchestrator (facade), and handler-level tests.
+ServiceOrchestrator (facade), and handler-level tests. Resource detection is
+in test_orchestrator_detection.py.
 """
 
 import json
@@ -26,7 +27,6 @@ from nthlayer_generate.orchestration.registry import OrchestratorContext, Resour
 from nthlayer_generate.orchestrator import (
     ApplyResult,
     PlanResult,
-    ResourceDetector,
     ServiceOrchestrator,
 )
 
@@ -222,150 +222,6 @@ class TestPlanResult:
         )
 
         assert result.success is False
-
-
-class TestResourceDetector:
-    """Tests for ResourceDetector class."""
-
-    def test_detect_slos(self):
-        """Test detecting SLO resources."""
-        service_def = {
-            "resources": [
-                {"kind": "SLO", "name": "availability", "spec": {"objective": 99.9}},
-            ]
-        }
-        detector = ResourceDetector(service_def)
-
-        resources = detector.detect()
-
-        assert "slos" in resources
-        assert "recording-rules" in resources  # Auto-added with SLOs
-
-    def test_detect_alerts_with_databases(self):
-        """Test detecting alerts when dependencies have databases."""
-        service_def = {
-            "resources": [
-                {
-                    "kind": "Dependencies",
-                    "name": "deps",
-                    "spec": {"databases": [{"type": "postgresql"}]},
-                },
-            ]
-        }
-        detector = ResourceDetector(service_def)
-
-        resources = detector.detect()
-
-        assert "alerts" in resources
-        assert "dashboard" in resources
-
-    def test_detect_alerts_with_services(self):
-        """Test detecting alerts when dependencies have services."""
-        service_def = {
-            "resources": [
-                {"kind": "Dependencies", "name": "deps", "spec": {"services": ["api"]}},
-            ]
-        }
-        detector = ResourceDetector(service_def)
-
-        resources = detector.detect()
-
-        assert "alerts" in resources
-
-    def test_detect_alerts_with_external_apis(self):
-        """Test detecting alerts when dependencies have external APIs."""
-        service_def = {
-            "resources": [
-                {"kind": "Dependencies", "name": "deps", "spec": {"external_apis": ["stripe"]}},
-            ]
-        }
-        detector = ResourceDetector(service_def)
-
-        resources = detector.detect()
-
-        assert "alerts" in resources
-
-    def test_detect_pagerduty(self):
-        """Test detecting PagerDuty resources."""
-        service_def = {
-            "resources": [
-                {"kind": "PagerDuty", "name": "main", "spec": {}},
-            ]
-        }
-        detector = ResourceDetector(service_def)
-
-        resources = detector.detect()
-
-        assert "pagerduty" in resources
-
-    def test_detect_dashboard_with_observability(self):
-        """Test detecting dashboard when Observability defined."""
-        service_def = {
-            "resources": [
-                {"kind": "Observability", "name": "main", "spec": {}},
-            ]
-        }
-        detector = ResourceDetector(service_def)
-
-        resources = detector.detect()
-
-        assert "dashboard" in resources
-
-    def test_detect_empty_dependencies(self):
-        """Test detection with empty dependencies spec."""
-        service_def = {
-            "resources": [
-                {"kind": "Dependencies", "name": "deps", "spec": {}},
-            ]
-        }
-        detector = ResourceDetector(service_def)
-
-        resources = detector.detect()
-
-        assert "alerts" not in resources
-
-    def test_detect_no_resources(self):
-        """Test detection with no resources."""
-        service_def = {"resources": []}
-        detector = ResourceDetector(service_def)
-
-        resources = detector.detect()
-
-        assert resources == []
-
-    def test_get_resources_by_kind(self):
-        """Test getting resources by kind."""
-        service_def = {
-            "resources": [
-                {"kind": "SLO", "name": "slo1"},
-                {"kind": "SLO", "name": "slo2"},
-                {"kind": "PagerDuty", "name": "pd"},
-            ]
-        }
-        detector = ResourceDetector(service_def)
-
-        slos = detector.get_resources_by_kind("SLO")
-        pagerduty = detector.get_resources_by_kind("PagerDuty")
-        unknown = detector.get_resources_by_kind("Unknown")
-
-        assert len(slos) == 2
-        assert len(pagerduty) == 1
-        assert len(unknown) == 0
-
-    def test_index_caching(self):
-        """Test that index is built once and cached."""
-        service_def = {"resources": [{"kind": "SLO", "name": "slo1"}]}
-        detector = ResourceDetector(service_def)
-
-        # First call builds index
-        detector.detect()
-        index1 = detector._resource_index
-
-        # Second call returns cached index
-        detector.detect()
-        index2 = detector._resource_index
-
-        assert index1 is index2  # Same object reference
 
 
 class TestServiceOrchestrator:

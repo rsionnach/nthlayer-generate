@@ -12,7 +12,6 @@ from grafana_foundation_sdk.builders.dashboard import Row
 from grafana_foundation_sdk.cog.encoder import JSONEncoder
 
 from nthlayer_generate.dashboards.models import Panel, TemplateVariable
-from nthlayer_generate.slos.models import SLO
 from nthlayer_generate.specs.models import ServiceContext
 
 
@@ -469,29 +468,3 @@ class SDKAdapter:
 # Note: These functions are not currently used by the main dashboard
 # generation flow (DashboardBuilderSDK.build()). They exist as helpers
 # for potential future use cases or direct SDK usage.
-
-
-def create_service_dashboard(
-    service: ServiceContext, slos: Optional[List[SLO]] = None
-) -> dashboard.Dashboard:
-    """
-    Create complete dashboard for a service with SLO panels.
-
-    Note: This convenience function is not used by the main dashboard
-    generation flow. Use DashboardBuilderSDK.build() for full functionality.
-
-    Args:
-        service: Service context
-        slos: List of SLOs to visualize (currently not added to dashboard)
-
-    Returns:
-        Basic dashboard without SLO panels (panel addition not implemented)
-    """
-    adapter = SDKAdapter()
-    dash = adapter.create_dashboard(service)
-
-    # Note: SLO panel addition is not implemented in this convenience function.
-    # Use DashboardBuilderSDK.build() which handles SLO panels via templates.
-    # This function exists for direct SDK usage but is incomplete.
-
-    return dash

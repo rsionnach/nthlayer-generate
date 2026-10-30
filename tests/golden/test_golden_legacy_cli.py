@@ -863,9 +863,10 @@ def generate_dashboard_dry_run(env: Env) -> Any:
 
 
 def generate_dashboard_full_panels(env: Env) -> Any:
-    # --full-panels changes only the "Mode:" log line today: build_dashboard
-    # passes it to DashboardBuilderSDK, which stores self.full_panels and never
-    # reads it (dashboards/builder_sdk.py:57).
+    # --full-panels changes only the "Mode:" log line today:
+    # build_dashboard_from_manifest passes it through ManifestDashboardBuilder
+    # to DashboardBuilderSDK, which stores self.full_panels and never reads it
+    # (dashboards/builder_sdk.py:57).
     env.discard_output()
     out = env.tmp / "out" / "dashboard.json"
     code = generate_dashboard_command(str(APPLY_FILTER_SERVICE), output=str(out), full_panels=True)

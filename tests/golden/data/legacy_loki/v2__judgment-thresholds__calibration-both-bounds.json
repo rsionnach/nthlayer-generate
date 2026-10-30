@@ -1,6 +1,0 @@
-{
-  "error": [
-    "ServiceParseError",
-    "Missing required 'service' section in <opensrm>/spec/v2/examples/judgment-thresholds/calibration-both-bounds.yaml"
-  ]
-}

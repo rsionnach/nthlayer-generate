@@ -10,11 +10,9 @@ from nthlayer_generate.generators.sloth import (
     _extract_error_query,
     _extract_total_query,
     convert_indicator_to_sli,
-    convert_to_sloth_slo,
     generate_alerting_config,
     generate_sloth_from_manifest,
 )
-from nthlayer_generate.specs.models import ServiceContext
 
 
 class TestSlothGenerationResult:
@@ -103,21 +101,6 @@ class TestGenerateAlertingConfig:
     def test_alert_name_pascal_case(self):
         config = generate_alerting_config("p99-latency", "payment-api", "critical")
         assert config["name"] == "PaymentApiP99Latency"
-
-
-class TestConvertToSlothSlo:
-    def test_basic_conversion(self):
-        spec = {
-            "objective": 99.9,
-            "indicator": {"type": "availability", "query": "test_query"},
-        }
-        ctx = ServiceContext(name="checkout", team="platform", tier="critical", type="api")
-        result = convert_to_sloth_slo("availability", spec, ctx)
-
-        assert result["name"] == "availability"
-        assert result["objective"] == 99.9
-        assert "sli" in result
-        assert "alerting" in result
 
 
 class TestGenerateSlothFromManifest:

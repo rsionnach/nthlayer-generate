@@ -1,4 +1,0 @@
-{
-  "error": "Missing required 'service' section in examples/uat/payment-api.reliability.yaml",
-  "service": "unknown"
-}

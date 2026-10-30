@@ -13,7 +13,6 @@ import yaml
 from nthlayer_common.manifest import ReliabilityManifest
 
 from nthlayer_generate.specs.helpers import extract_dependency_technologies
-from nthlayer_generate.specs.models import Resource
 
 from .models import LogQLAlert
 from .templates import LogPattern, get_patterns_for_technology
@@ -307,40 +306,6 @@ class LokiAlertGenerator:
         return output_path
 
 
-def extract_dependencies_from_resources(resources: list[Resource]) -> list[str]:
-    """Extract technology dependencies from service resources.
-
-    Args:
-        resources: List of Resource objects from service definition
-
-    Returns:
-        List of technology names
-    """
-    dependencies = []
-
-    for resource in resources:
-        if resource.kind != "Dependencies":
-            continue
-
-        spec = resource.spec
-
-        for db in spec.get("databases", []):
-            db_type = db.get("type", "")
-            if not db_type:
-                name = db.get("name", "")
-                if name:
-                    db_type = name.split("-")[0].lower()
-            if db_type:
-                dependencies.append(db_type.lower())
-
-        for svc in spec.get("services", []):
-            svc_type = svc.get("type", "")
-            if svc_type:
-                dependencies.append(svc_type.lower())
-
-    return list(set(dependencies))
-
-
 def generate_loki_alerts_from_manifest(
     manifest: ReliabilityManifest,
     output_dir: str | Path | None = None,
@@ -362,44 +327,5 @@ def generate_loki_alerts_from_manifest(
         output_dir = Path(output_dir)
         output_path = output_dir / manifest.name / "loki-alerts.yaml"
         generator.write_ruler_file(alerts, output_path, group_name=manifest.name)
-
-    return alerts, output_path
-
-
-def generate_loki_alerts_for_service_file(
-    service_file: str | Path,
-    output_dir: str | Path | None = None,
-) -> tuple[list[LogQLAlert], Path | None]:
-    """Generate Loki alerts from a service.yaml file.
-
-    Args:
-        service_file: Path to service.yaml
-        output_dir: Optional output directory for ruler file
-
-    Returns:
-        Tuple of (alerts list, output file path or None)
-    """
-    from nthlayer_generate.specs.parser import parse_service_file
-
-    service_file = Path(service_file)
-    context, resources = parse_service_file(str(service_file))
-
-    generator = LokiAlertGenerator()
-
-    dependencies = extract_dependencies_from_resources(resources)
-
-    alerts = generator.generate_for_service(
-        service_name=context.name,
-        service_type=context.type,
-        dependencies=dependencies,
-        tier=context.tier,
-        labels={"team": context.team} if context.team else {},
-    )
-
-    output_path = None
-    if output_dir:
-        output_dir = Path(output_dir)
-        output_path = output_dir / context.name / "loki-alerts.yaml"
-        generator.write_ruler_file(alerts, output_path, group_name=context.name)
 
     return alerts, output_path

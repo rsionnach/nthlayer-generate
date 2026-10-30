@@ -99,7 +99,7 @@ V2: tuple[Path, ...] = tuple(
 # provenance, wo62.4.2). Not part of the shipped corpus: each reaches a
 # legacy branch (named in its header comment) that no example reaches, so a
 # mutant there would otherwise leave every golden green. Explicit, and
-# test_golden_legacy_generators asserts the directory holds nothing else.
+# test_golden_legacy_cli asserts the directory holds nothing else.
 LEGACY_FIXTURES: tuple[Path, ...] = tuple(
     FIXTURES / "legacy" / n
     for n in (

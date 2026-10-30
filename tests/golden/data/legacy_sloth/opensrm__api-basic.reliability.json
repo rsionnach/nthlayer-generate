@@ -1,4 +1,0 @@
-{
-  "error": "Missing required 'service' section in examples/opensrm/api-basic.reliability.yaml",
-  "service": "unknown"
-}

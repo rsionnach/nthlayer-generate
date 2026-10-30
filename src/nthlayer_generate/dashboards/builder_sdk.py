@@ -686,32 +686,3 @@ class DashboardBuilderSDK:
         # to allow offline dashboard generation. The validator checks intents
         # against Prometheus metrics, but this requires connectivity.
         return panels
-
-
-def build_dashboard(
-    service_context: ServiceContext,
-    resources: List[Resource],
-    full_panels: bool = False,
-    prometheus_url: Optional[str] = None,
-) -> Dict[str, Any]:
-    """
-    Build Grafana dashboard from service specification.
-
-    Convenience function for backward compatibility.
-
-    Args:
-        service_context: Service metadata
-        resources: List of resources
-        full_panels: Include all template panels
-        prometheus_url: Optional Prometheus URL for metric discovery
-
-    Returns:
-        Dashboard JSON dictionary
-    """
-    builder = DashboardBuilderSDK(
-        service_context=service_context,
-        resources=resources,
-        full_panels=full_panels,
-        prometheus_url=prometheus_url,
-    )
-    return builder.build()

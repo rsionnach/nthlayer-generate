@@ -180,7 +180,8 @@ def build_dashboard_from_manifest(
 ) -> Dict[str, Any]:
     """Build Grafana dashboard from ReliabilityManifest.
 
-    Convenience function matching the pattern of build_dashboard().
+    Convenience wrapper: builds a ManifestDashboardBuilder for the manifest and
+    returns its result.
 
     Args:
         manifest: ReliabilityManifest instance

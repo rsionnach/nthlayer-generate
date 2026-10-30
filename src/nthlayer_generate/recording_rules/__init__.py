@@ -2,11 +2,10 @@
 
 Generate recording rules for efficient SLO calculations.
 
-Supports both legacy (ServiceContext, Resources) and manifest
-(nthlayer_common.manifest.ReliabilityManifest) APIs.
+Built from nthlayer_common.manifest.ReliabilityManifest (the legacy
+build_recording_rules was removed in 4.0.0, opensrm-wo62.4.6).
 """
 
-from nthlayer_generate.recording_rules.builder import build_recording_rules
 from nthlayer_generate.recording_rules.manifest_builder import (
     ManifestRecordingRuleBuilder,
     build_recording_rules_from_manifest,
@@ -16,9 +15,6 @@ from nthlayer_generate.recording_rules.models import RecordingRule, RecordingRul
 __all__ = [
     "RecordingRule",
     "RecordingRuleGroup",
-    # Legacy API
-    "build_recording_rules",
-    # Manifest API (nthlayer_common.manifest.ReliabilityManifest)
     "build_recording_rules_from_manifest",
     "ManifestRecordingRuleBuilder",
 ]

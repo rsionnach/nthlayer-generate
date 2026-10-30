@@ -1,6 +1,0 @@
-{
-  "error": [
-    "KeyError",
-    "'No template found for technology: sqs'"
-  ]
-}

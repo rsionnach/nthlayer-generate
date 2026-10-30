@@ -64,19 +64,26 @@ from nthlayer_generate.cli.validate_slo import validate_slo_command
 from nthlayer_generate.integrations.pagerduty import PagerDutySetupResult
 from nthlayer_generate.orchestrator import ServiceOrchestrator
 
-from ._corpus import EX, REPO, _error
-from ._golden import check
-from .test_golden_legacy_generators import (
+from ._corpus import (
     CASES,
     ENV_CASES,
     ENV_IDS,
     ENVIRONMENTS,
+    EX,
+    FIXTURES,
     IDS,
+    LEGACY,
+    LEGACY_FIXTURES,
+    REPO,
+    SRM_V1,
     STAGING,
+    V2,
     EnvCase,
+    _error,
     no_user_templates,
     rules_as_sets,
 )
+from ._golden import check
 
 # Wide enough that no line wraps whatever the checkout path; runs of box
 # rules and padding are collapsed afterwards (Env.text).
@@ -156,8 +163,9 @@ class Env:
         """Every file under ``root`` (default tmp/out), parsed where JSON/YAML.
 
         YAML keeps its written order, except files ``rules_unordered`` names:
-        their rules come from a ``list(set(...))`` extractor and are pinned
-        with ``rules_as_sets``.
+        their rules are pinned with ``rules_as_sets``, the form these goldens
+        were recorded in while a ``list(set(...))`` extractor fed them (see
+        ``_corpus.rules_as_sets``).
         """
         root = root or self.tmp / "out"
         out: dict[str, Any] = {}
@@ -290,8 +298,11 @@ def generate_loki_alerts(path: Path, env: Env, environment: str | None) -> Any:
 
 
 def _sorted_dependencies(lines: list[str]) -> list[str]:
-    """The legacy loki extractor returns list(set(...)), so the printed
-    "Dependencies: a, b" line has no stable order. Pin it sorted."""
+    """Pin the printed "Dependencies: a, b" line sorted.
+
+    Recorded sorted while the legacy loki extractor returned list(set(...));
+    the manifest path is declaration-ordered, so this is now a golden-format
+    normalisation only (see ``_corpus.rules_as_sets``)."""
     prefix = "Dependencies: "
     return [
         prefix + ", ".join(sorted(line[len(prefix) :].split(", ")))
@@ -493,7 +504,7 @@ def apply(
         "exit": code,
         "json": json.loads(printed[start:]),
         "preamble": _lines(printed[:start]),
-        # alerts.yaml comes from generators/alerts.py list(set(...)); the
+        # alerts.yaml was recorded as a set (see _corpus.rules_as_sets); the
         # rest of apply's YAML keeps its written order.
         "files": env.files(rules_unordered=lambda rel: rel == "alerts.yaml"),
         # Anything written outside the output dir (relative default paths).
@@ -671,30 +682,6 @@ PD_API_FAILURE_AT_LIMIT = _PD_BOUNDARY_BASE + "x" * (51 - len(_PD_BOUNDARY_BASE)
 PD_API_FAILURE_OVER_LIMIT = _PD_BOUNDARY_BASE + "x" * (52 - len(_PD_BOUNDARY_BASE))
 
 
-def _sorted_dependency_extractors(env: Env) -> None:
-    """Fix the order of both legacy list(set(...)) extractors.
-
-    The dry-run previews print rules in extraction order, as text that cannot
-    be re-sorted afterwards (the loki preview is cut at 2,000 characters), so
-    hand the commands the same dependencies sorted. generate_alerts looks
-    extract_dependencies up in its own module; cli/generate_loki.py imports
-    the loki one in its function body, so both are patched at their source.
-
-    Unlike _sorted_dependencies, which re-sorts printed lines afterwards, this
-    sorts at the source. Like it, it is a determinism fix that would also hide
-    a future, deliberate change to extraction order.
-    """
-    import nthlayer_generate.generators.alerts as alerts_gen
-    import nthlayer_generate.loki.generator as loki_gen
-
-    for module, name in (
-        (alerts_gen, "extract_dependencies"),
-        (loki_gen, "extract_dependencies_from_resources"),
-    ):
-        real = getattr(module, name)
-        env.monkeypatch.setattr(module, name, lambda resources, _r=real: sorted(_r(resources)))
-
-
 def plan_table(env: Env) -> Any:
     # The default table renderer (cli/plan.py:20-111). payment-api-pagerduty-demo
     # plans every resource kind, including all four PagerDuty sub-resources.
@@ -825,7 +812,6 @@ def generate_slo_unsupported_format(env: Env) -> Any:
 
 
 def generate_alerts_dry_run(env: Env) -> Any:
-    _sorted_dependency_extractors(env)
     env.discard_output()
     out = env.tmp / "out" / "alerts.yaml"
     code = generate_alerts_command(str(APPLY_FILTER_SERVICE), output=str(out), dry_run=True)
@@ -843,8 +829,8 @@ def generate_alerts_links(env: Env) -> Any:
         notification_channel="slack",
         grafana_url="https://grafana.example.invalid",
     )
-    # The written rule file comes from the same list(set(...)) extractor and is
-    # pinned as a set; only the printed preview needs the source-side sort.
+    # The written rule file is pinned as a set (see _corpus.rules_as_sets); the
+    # printed preview is in the manifest's declaration order.
     return {"exit": code, "files": env.files(rules_unordered=lambda rel: True), "text": env.text()}
 
 
@@ -855,7 +841,6 @@ def generate_recording_rules_dry_run(env: Env) -> Any:
 
 
 def generate_loki_dry_run(env: Env) -> Any:
-    _sorted_dependency_extractors(env)
     env.discard_output()
     code = generate_loki_command(str(APPLY_FILTER_SERVICE), dry_run=True)
     return {"exit": code, "files": env.files(env.tmp), "text": env.text()}
@@ -1016,14 +1001,64 @@ def test_legacy_cli_singleton(
     _check(cell, sid, lambda: SINGLETONS[cell][sid](env), tmp_path)
 
 
-def test_isolate_hides_user_templates_above_the_cwd(
+def test_isolate_hides_user_templates_above_the_cwd_and_the_manifest(
     tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """R5 edge-cases: a .nthlayer/templates above TMPDIR changed 141 cells."""
+    """R5 edge-cases: a .nthlayer/templates above TMPDIR changed 141 cells.
+
+    Both lookups are covered: generate's walks up from the cwd, and
+    nthlayer-common's, which every CLI cell now loads through, walks up from
+    the manifest. Corpus files live in the checkout, so ``~/.nthlayer/templates``
+    is within common's reach (wo62.4.6).
+    """
+    import nthlayer_common.manifest.parser.loader as common_loader
+
     from nthlayer_generate.specs.custom_templates import CustomTemplateLoader
 
-    (tmp_path / ".nthlayer" / "templates").mkdir(parents=True)
+    templates = tmp_path / ".nthlayer" / "templates"
+    templates.mkdir(parents=True)
     work = tmp_path / "work"
     work.mkdir()
+    manifest = work / "services" / "service.yaml"
+    manifest.parent.mkdir()
+    manifest.write_text("service: {name: probe, team: t, tier: low}\n", encoding="utf-8")
+    monkeypatch.chdir(work)
+    # Anti-vacuity: unpatched, both walks find the dir above them.
+    assert CustomTemplateLoader.find_templates_directory() is not None
+    assert common_loader._find_template_dir(manifest) == templates.resolve()
+
     _isolate(Env(work, capsys, monkeypatch))
     assert CustomTemplateLoader.find_templates_directory() is None
+    assert common_loader._find_template_dir(manifest) is None
+
+
+def test_corpus_and_env_cases_are_non_empty() -> None:
+    # A zero-case parametrise would leave these cells green and empty.
+    assert CASES
+    assert len(CASES) == len(SRM_V1) + len(LEGACY) + len(V2) + len(LEGACY_FIXTURES)
+    assert len(ENV_CASES) == 10
+    assert all(c.base.is_file() for c in ENV_CASES)
+
+
+def test_legacy_fixtures_are_listed_and_name_their_branch() -> None:
+    # A fixture file nobody lists is never run; one with no provenance header
+    # cannot be checked against the branch it claims to reach.
+    on_disk = sorted((FIXTURES / "legacy").rglob("*.yaml"))
+    overlays = [p for p in on_disk if p.parent.name == "environments"]
+    assert sorted(LEGACY_FIXTURES) == sorted(set(on_disk) - set(overlays))
+    for p in on_disk:
+        header = p.read_text(encoding="utf-8").split("\n\n", 1)[0]
+        assert header.startswith("# TEST-ONLY golden fixture"), p.name
+        assert "src/nthlayer_generate/" in header, p.name
+        assert "examples/" in header, p.name
+
+
+def test_every_env_case_finds_an_overlay(tmp_path: Path) -> None:
+    # An env case with no overlay file would pin the base output under an
+    # env name and test nothing about the merge. This is the lookup the CLI
+    # loads through (nthlayer-common), not generate's former EnvironmentLoader.
+    from nthlayer_common.manifest.parser.legacy import find_environment_file
+
+    for case in ENV_CASES:
+        target = case.target(tmp_path / case.id)
+        assert find_environment_file(target, case.environment), case.id

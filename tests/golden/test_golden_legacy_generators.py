@@ -32,8 +32,6 @@ env-overlay cell.
 
 from __future__ import annotations
 
-import json
-import shutil
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -48,79 +46,28 @@ from nthlayer_generate.loki.generator import generate_loki_alerts_for_service_fi
 from nthlayer_generate.metrics.recommender import recommend_metrics
 from nthlayer_generate.recording_rules.builder import build_recording_rules
 from nthlayer_generate.recording_rules.models import create_rule_groups
-from nthlayer_generate.specs.custom_templates import CustomTemplateLoader
 from nthlayer_generate.specs.parser import parse_service_file
 
-from ._corpus import EX, FIXTURES, LEGACY, LEGACY_FIXTURES, SRM_V1, V2, _error, manifest_id
+from ._corpus import (
+    CASES,
+    ENV_CASES,
+    ENV_IDS,
+    IDS,
+    LEGACY,
+    LEGACY_FIXTURES,
+    EnvCase,
+    _error,
+    manifest_id,
+    no_user_templates,
+    rules_as_sets,
+)
 from ._golden import check
 
-# Every manifest, loadable or not: the legacy parser's rejections are pinned.
-# The test-only fixtures come last, so every corpus id is unchanged.
-CASES: tuple[tuple[str, Path], ...] = tuple(
-    (manifest_id(p), p) for p in SRM_V1 + LEGACY + V2 + LEGACY_FIXTURES
-)
-IDS = [i for i, _ in CASES]
 # Legacy-format inputs only: srm/v1 and v2 fail to parse before any builder.
 NO_INTENT_CASES: tuple[tuple[str, Path], ...] = tuple(
     (manifest_id(p), p) for p in LEGACY + LEGACY_FIXTURES
 )
 NO_INTENT_IDS = [i for i, _ in NO_INTENT_CASES]
-
-
-# --- environment-overlay cases ------------------------------------------------
-
-ENVIRONMENTS = ("dev", "staging", "prod")
-# Under the temp dir; kept apart so a cell listing what it wrote can skip it.
-STAGING = "_staged"
-
-
-class EnvCase:
-    """A service file run with ``environment`` set.
-
-    ``staged`` cases copy the service file into ``<tmp>/_staged/services/`` next to a
-    copy of ``examples/environments/``: that directory has no service file
-    beside it, so the overlay lookup (``{service_dir}/environments/...``,
-    specs/environments.py:84) can only reach it from a staged layout. The
-    layout is the one its README prescribes; the files are copied unchanged.
-    """
-
-    def __init__(self, base: Path, environment: str, *, staged: bool) -> None:
-        self.base = base
-        self.environment = environment
-        self.staged = staged
-        prefix = f"staged__{base.stem}" if staged else manifest_id(base)
-        self.id = f"{prefix}__env-{environment}"
-
-    def target(self, tmp: Path) -> Path:
-        """The service file to pass to the command, staging it if needed."""
-        if not self.staged:
-            return self.base
-        services = tmp / STAGING / "services"
-        env_dir = services / "environments"
-        env_dir.mkdir(parents=True, exist_ok=True)
-        for overlay in sorted((EX / "environments").glob("*.yaml")):
-            shutil.copy(overlay, env_dir / overlay.name)
-        target = services / self.base.name
-        shutil.copy(self.base, target)
-        return target
-
-
-ENV_CASES: tuple[EnvCase, ...] = (
-    # examples/services/environments/{dev,staging,prod}.yaml, found in place.
-    *(
-        EnvCase(EX / "services" / "payment-api-with-envs.yaml", e, staged=False)
-        for e in ENVIRONMENTS
-    ),
-    # examples/environments/: payment-api-{dev,prod}.yaml and search-api-prod.yaml
-    # are service-specific; the rest fall through to the shared {env}.yaml.
-    *(EnvCase(EX / "services" / "payment-api.yaml", e, staged=True) for e in ENVIRONMENTS),
-    *(EnvCase(EX / "services" / "search-api.yaml", e, staged=True) for e in ENVIRONMENTS),
-    # Test-only: fixtures/legacy/environments/checkout-env-vars-prod.yaml, found
-    # in place. Reaches the parse-time ${env}/${team} substitution
-    # (specs/parser.py:104-112), which no shipped file reaches.
-    EnvCase(FIXTURES / "legacy" / "checkout-env-vars.yaml", "prod", staged=False),
-)
-ENV_IDS = [c.id for c in ENV_CASES]
 
 
 # --- normalisation ------------------------------------------------------------
@@ -131,22 +78,6 @@ def _read_yaml(path: Path | None) -> Any:
     if path is None or not path.is_file():
         return None
     return yaml.safe_load(path.read_text(encoding="utf-8"))
-
-
-def rules_as_sets(doc: Any) -> Any:
-    """Sort each group's rules, and the groups, by full content.
-
-    Both legacy dependency extractors return ``list(set(...))``
-    (generators/alerts.py:74, loki/generator.py:341), so rule order follows
-    PYTHONHASHSEED. Every rule is still pinned; only that arbitrary order is not.
-    """
-    if not isinstance(doc, dict) or not isinstance(doc.get("groups"), list):
-        return doc
-    for group in doc["groups"]:
-        if isinstance(group, dict) and isinstance(group.get("rules"), list):
-            group["rules"] = sorted(group["rules"], key=lambda r: json.dumps(r, sort_keys=True))
-    doc["groups"] = sorted(doc["groups"], key=lambda g: json.dumps(g, sort_keys=True))
-    return doc
 
 
 # --- cells: (service file, tmp, environment) -> golden value ------------------
@@ -223,60 +154,6 @@ def _run(fn: Cell, cell: str, mid: str, path: Path, tmp: Path, environment: str 
     except Exception as e:  # noqa: BLE001 — today's failure is the golden
         value = _error(e)
     check(cell, mid, value, tmp=tmp)
-
-
-def test_corpus_and_env_cases_are_non_empty() -> None:
-    # A zero-case parametrise would leave these cells green and empty.
-    assert CASES
-    assert len(CASES) == len(SRM_V1) + len(LEGACY) + len(V2) + len(LEGACY_FIXTURES)
-    assert len(NO_INTENT_CASES) == len(LEGACY) + len(LEGACY_FIXTURES)
-    assert len(ENV_CASES) == 10
-    assert all(c.base.is_file() for c in ENV_CASES)
-
-
-def test_legacy_fixtures_are_listed_and_name_their_branch() -> None:
-    # A fixture file nobody lists is never run; one with no provenance header
-    # cannot be checked against the branch it claims to reach.
-    on_disk = sorted((FIXTURES / "legacy").rglob("*.yaml"))
-    overlays = [p for p in on_disk if p.parent.name == "environments"]
-    assert sorted(LEGACY_FIXTURES) == sorted(set(on_disk) - set(overlays))
-    for p in on_disk:
-        header = p.read_text(encoding="utf-8").split("\n\n", 1)[0]
-        assert header.startswith("# TEST-ONLY golden fixture"), p.name
-        assert "src/nthlayer_generate/" in header, p.name
-        assert "examples/" in header, p.name
-
-
-def test_every_env_case_finds_an_overlay(tmp_path: Path) -> None:
-    # An env case with no overlay file would pin the base output under an
-    # env name and test nothing about the merge.
-    from nthlayer_generate.specs.environments import EnvironmentLoader
-
-    for case in ENV_CASES:
-        target = case.target(tmp_path / case.id)
-        assert EnvironmentLoader.find_environment_file(target, case.environment), case.id
-
-
-def no_user_templates(mp: pytest.MonkeyPatch) -> None:
-    """Hide any .nthlayer/templates above the cwd.
-
-    CustomTemplateLoader.find_templates_directory walks up from the cwd
-    without limit (specs/custom_templates.py), so a templates dir above
-    TMPDIR or the checkout would change, and be pinned into, the goldens.
-    """
-    mp.setattr(CustomTemplateLoader, "find_templates_directory", staticmethod(lambda: None))
-
-
-def test_user_templates_above_the_cwd_are_hidden(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    (tmp_path / ".nthlayer" / "templates").mkdir(parents=True)
-    (tmp_path / "work").mkdir()
-    monkeypatch.chdir(tmp_path / "work")
-    # Anti-vacuity: unpatched, the walk-up finds it.
-    assert CustomTemplateLoader.find_templates_directory() is not None
-    no_user_templates(monkeypatch)
-    assert CustomTemplateLoader.find_templates_directory() is None
 
 
 @pytest.mark.parametrize("cell", sorted(CELLS))

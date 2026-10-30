@@ -256,10 +256,17 @@ def test_unknown_variables_inside_lists_are_reported(tmp_path: Path):
     ("template", "valid"),
     [("critical-api", True), ("nonexistent-template", False)],
 )
-def test_unknown_template_is_rejected(tmp_path: Path, template: str, valid: bool):
+def test_unknown_template_is_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, template: str, valid: bool
+):
     # Ported from the legacy parser's test_unknown_template_error
     # (opensrm-wo62.4.6). The known-template row is the control: the same
     # file validates, so the rejection is about the template name alone.
+    # Only builtins count: hide any user .nthlayer/templates that
+    # nthlayer-common's walk-up from tmp_path could reach.
+    monkeypatch.setattr(
+        "nthlayer_common.manifest.parser.loader._find_template_dir", lambda path: None
+    )
     path = tmp_path / "svc.yaml"
     path.write_text(
         f"service:\n  name: svc\n  team: t\n  tier: critical\n  type: api\n  template: {template}\n"

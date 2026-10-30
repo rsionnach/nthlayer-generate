@@ -203,6 +203,11 @@ class TestGeneratedServiceFile:
     def test_generated_file_validates(self, tmp_path, monkeypatch):
         """Generated file should pass validation."""
         monkeypatch.chdir(tmp_path)
+        # nthlayer-common walks up from the manifest for .nthlayer/templates;
+        # hide any user directory so critical-api is the builtin.
+        monkeypatch.setattr(
+            "nthlayer_common.manifest.parser.loader._find_template_dir", lambda path: None
+        )
 
         init_command("my-api", "my-team", "critical-api", interactive=False)
 

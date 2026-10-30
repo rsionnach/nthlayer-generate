@@ -71,11 +71,12 @@ def test_service_context_normalises_its_type():
     """ServiceContext must resolve like ReliabilityManifest does.
 
     The legacy specs/parser.py (removed in 4.0.0) passed the raw YAML
-    value straight in, and ServiceContext did not normalise — so a `type: web` service file
-    produced a context holding `web` while every downstream branch was
-    updated to test for `x-web`. Web services would have silently lost
-    their HTTP dashboard panels (dashboards/validator.py) and their
-    latency docs section (generators/docs.py).
+    value straight in, and ServiceContext did not normalise — so a
+    `type: web` service file produced a context holding `web` while
+    every downstream branch was updated to test for `x-web`. Web
+    services would have silently lost their HTTP dashboard panels
+    (dashboards/validator.py) and their latency docs section
+    (generators/docs.py).
 
     Normalising here rather than teaching each branch both spellings is
     the repo's own hard rule 1: validate inputs at the boundary, not

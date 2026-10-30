@@ -1,10 +1,13 @@
-"""Legacy CLI cells: the formerly ``parse_service_file`` commands and plan/apply (wo62.4.2).
+"""Legacy CLI cells: the commands that used ``parse_service_file``, and plan/apply.
 
-These pinned the wired legacy commands before wo62.4.3–4.5 and 4.19 moved
-them onto nthlayer-common, so every output change those moves made was a
-golden diff; generate 4.0.0 removed the legacy loader (opensrm-wo62.4.6). Each cell drives a command's Python entry point and pins its
-exit code, the files it wrote under the temp dir (YAML/JSON parsed), and the
-JSON it printed where it offers JSON.
+Added in wo62.4.2.
+
+These pinned the wired legacy commands before wo62.4.3–4.5 and 4.19 moved them
+onto nthlayer-common, so every output change those moves made was a golden
+diff; generate 4.0.0 removed the legacy loader (opensrm-wo62.4.6). Each cell
+drives a command's Python entry point and pins its exit code, the files it
+wrote under the temp dir (YAML/JSON parsed), and the JSON it printed where it
+offers JSON.
 
 Commands whose only result is console text (``slo show/list/collect``,
 ``diff-envs``, ``validate-env``, ``setup-pagerduty --dry-run``) have that

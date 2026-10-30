@@ -10,6 +10,11 @@ the code under test. The one exception is ``LEGACY_FIXTURES``: test-only
 inputs, each adapted from a shipped example, that exist only to reach a
 legacy branch no shipped file reaches. Each names that branch and its source
 example in its header comment.
+
+Below the lists sit the cases and harness helpers the generator and CLI
+cells share: ``CASES``/``ENV_CASES`` and their ``EnvCase`` staging, the
+``rules_as_sets`` normalisation, and ``no_user_templates``, which hides user
+template directories from both template lookups.
 """
 
 from __future__ import annotations

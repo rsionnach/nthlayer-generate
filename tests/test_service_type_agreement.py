@@ -70,8 +70,8 @@ def test_validator_agrees_with_the_manifest_model(tmp_path, service_type: str):
 def test_service_context_normalises_its_type():
     """ServiceContext must resolve like ReliabilityManifest does.
 
-    specs/parser.py passes the raw YAML value straight in, and
-    ServiceContext did not normalise — so a `type: web` service file
+    The legacy specs/parser.py (removed in 4.0.0) passed the raw YAML
+    value straight in, and ServiceContext did not normalise — so a `type: web` service file
     produced a context holding `web` while every downstream branch was
     updated to test for `x-web`. Web services would have silently lost
     their HTTP dashboard panels (dashboards/validator.py) and their
@@ -159,15 +159,15 @@ def test_context_still_exposes_the_resolved_type_for_branching():
 
 @pytest.mark.parametrize("authored", ["web", "background-job", "api"])
 def test_sloth_indicator_query_keeps_the_authored_type(tmp_path, authored: str):
-    """The same data-plane rule, exercised through sloth itself.
+    """``${type}`` keeps the authored spelling in user-authored PromQL.
 
     generators/sloth.py substitutes ``${type}`` into an SLO's
     indicator_query, which becomes a Sloth spec and then recording rules
     and burn-rate alerts. That one substitution is the line this bead
     changed, so the test drives the real generator rather than asserting
     on the dataclass — an earlier version of this test constructed a
-    manifest and checked ``authored_type``, which duplicated coverage
-    above and left sloth.py itself untested.
+    manifest and checked only ``authored_type``, which left sloth.py
+    itself untested.
     """
     from nthlayer_common.manifest import SLODefinition
 

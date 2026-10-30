@@ -7,7 +7,9 @@
 # * :51-52 in dependency_technology — a database with no `type:` maps to no
 #   technology, so mysql-orders gets no database alerts. (The removed legacy
 #   extractor inferred mysql from the name; the manifest path deliberately
-#   does not.) Every shipped example gives databases an explicit type.
+#   does not.) No shipped legacy-format example has an untyped database;
+#   examples/opensrm/ai-gate.reliability.yaml (srm/v1, feature-store) is
+#   the only other file that reaches it.
 # * :70 in extract_dependency_technologies — the order-preserving dedup.
 #   postgres-main and postgres-replica both declare postgres; without the
 #   dedup the postgres alerts are emitted twice. No shipped example repeats a

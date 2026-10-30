@@ -218,11 +218,19 @@ class TestGeneratedServiceFile:
 
         assert manifest.name == "my-api"
         assert manifest.team == "my-team"
-        # critical-api's resources (legacy_templates/critical-api.yaml): two
-        # SLOs and a PagerDuty resource.
-        assert sorted(s.name for s in manifest.slos) == ["availability", "latency-p95"]
+        assert manifest.template == "critical-api"
+        # init writes all three resources itself, for a critical api
+        # (cli/init.py:519-567), and a user resource replaces the template's
+        # same-named one whole (nthlayer-common's legacy expand_template), so
+        # these are init's values: the critical-tier 99.95, not critical-api's
+        # 99.9. They load intact.
+        assert {s.name: s.target for s in manifest.slos} == {
+            "availability": 99.95,
+            "latency-p95": 99.0,
+        }
         assert manifest.ownership is not None
         assert manifest.ownership.pagerduty is not None
+        assert manifest.ownership.pagerduty.urgency == "high"
 
     def test_generated_file_includes_comments(self, tmp_path, monkeypatch):
         """Generated file should include helpful comments."""

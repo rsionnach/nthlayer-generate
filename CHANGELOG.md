@@ -1,5 +1,25 @@
 # Changelog
 
+## [4.0.0](https://github.com/rsionnach/nthlayer-generate/compare/v3.5.0...v4.0.0) (2026-10-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* nthlayer_generate.specs no longer exports parse_service_file, ServiceContext or Resource, and the modules specs.parser, specs.environments, specs.environment_merger, specs.variable_substitution and specs.template are removed. Load any manifest format with nthlayer_common.manifest.load_manifest(path, environment=...). The ServiceContext/Resource dataclasses remain internal in specs.models (opensrm-wo62.4.20).
+* removed nthlayer_generate.generators.generate_sloth_spec, nthlayer_generate.recording_rules.build_recording_rules (and the recording_rules.builder module), nthlayer_generate.orchestrator.ResourceDetector, generators.sloth.convert_to_sloth_slo, generators.alerts.generate_alerts_for_service / extract_dependencies, specs.helpers.infer_technology_from_name / TECH_KEYWORDS, loki.generator.generate_loki_alerts_for_service_file / extract_dependencies_from_resources, dashboards.builder_sdk.build_dashboard, dashboards.sdk_adapter.create_service_dashboard and dashboards.validator.extract_technologies / extract_custom_overrides. Use the *_from_manifest functions with nthlayer_common.manifest.load_manifest.
+* nthlayer_generate.cli no longer exports validate_dashboard_command or list_intents_command, and the modules nthlayer_generate.cli.dashboard_validate, nthlayer_generate.cli.dependencies and nthlayer_generate.slos.dependencies are removed.
+
+### Code Refactoring
+
+* delete the legacy parse_service_file loader (opensrm-wo62.4.6) ([bae7693](https://github.com/rsionnach/nthlayer-generate/commit/bae7693045ff914ee57aa56efb74f3fb49882ea5))
+* delete the legacy ServiceContext/Resource generator entry points (opensrm-wo62.4.6) ([ea3db85](https://github.com/rsionnach/nthlayer-generate/commit/ea3db853d8f266384a8b23225346675db9f741e0))
+* delete the unwired dependencies and dashboard-validate commands (opensrm-wo62.4.6) ([b50469b](https://github.com/rsionnach/nthlayer-generate/commit/b50469b29e58aae9d4979db6e83da17ef6659cbe))
+
+
+### Documentation
+
+* 4.0.0 upgrade note and docs for the removed legacy stack (opensrm-wo62.4.6) ([f733dd3](https://github.com/rsionnach/nthlayer-generate/commit/f733dd30a05c6ec093a1938c1de75f144c7aa689))
+
 ## [3.5.0](https://github.com/rsionnach/nthlayer-generate/compare/v3.4.0...v3.5.0) (2026-10-29)
 
 

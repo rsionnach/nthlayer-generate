@@ -2,6 +2,8 @@
 Tests for alert generation module.
 """
 
+from pathlib import Path
+
 import pytest
 
 from nthlayer_generate.alerts import AlertRule, AlertTemplateLoader
@@ -501,3 +503,40 @@ class TestForDurationOverride:
             for_duration_override=None,
         )
         assert customized.duration == "5m"
+
+
+def test_manifest_alerts_go_through_validation():
+    """A template's ``for: 0m`` is raised to 1m on the manifest path.
+
+    Ported from the legacy TestAlertValidationIntegration (opensrm-wo62.4.22).
+    alerts/templates/brokers/rabbitmq.yaml ships two ``for: 0m`` rules, and
+    examples/services/email-worker.yaml depends on rabbitmq, so validation
+    has a real zero to fix.
+    """
+    from nthlayer_common.manifest import load_manifest
+
+    from nthlayer_generate.generators.alerts import generate_alerts_from_manifest
+
+    zero_durations = {"0m", "0s", ""}
+    zero_rules_in_template = {
+        rule.name
+        for rule in AlertTemplateLoader().load_technology("rabbitmq")
+        if rule.duration in zero_durations
+    }
+    assert zero_rules_in_template, "rabbitmq.yaml no longer ships a for: 0m rule; pick another"
+
+    manifest = load_manifest(
+        Path(__file__).resolve().parents[1] / "examples" / "services" / "email-worker.yaml",
+        suppress_deprecation_warning=True,
+    )
+    # A list, not a name-keyed dict: a same-named alert from another
+    # dependency must not hide a rabbitmq one.
+    alerts = [
+        (alert.name, alert.duration)
+        for alert in generate_alerts_from_manifest(manifest, quiet=True)
+    ]
+    from_zero_rules = [(name, d) for name, d in alerts if name in zero_rules_in_template]
+
+    assert {name for name, _ in from_zero_rules} == zero_rules_in_template
+    assert all(duration == "1m" for _, duration in from_zero_rules), from_zero_rules
+    assert not [name for name, duration in alerts if duration in zero_durations]

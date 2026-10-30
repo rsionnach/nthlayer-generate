@@ -235,5 +235,80 @@ resources:
             assert len(rules_data["groups"]) >= 1
 
 
+# --- manifest path (ported from the legacy builder's tests, opensrm-wo62.4.22) ---
+
+EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
+# Every shipped legacy and srm/v1 manifest. The count is pinned by
+# test_shipped_corpus_is_present, so a moved examples directory fails there
+# instead of leaving the parametrised loops empty.
+SHIPPED = sorted((EXAMPLES / "services").glob("*.yaml")) + sorted(
+    (EXAMPLES / "opensrm").glob("*.reliability.yaml")
+)
+PAYMENT_API = EXAMPLES / "services" / "payment-api.yaml"
+
+
+def _load(path: Path):
+    from nthlayer_common.manifest import load_manifest
+
+    return load_manifest(path, suppress_deprecation_warning=True)
+
+
+def _rules(path: Path):
+    from nthlayer_generate.recording_rules import build_recording_rules_from_manifest
+
+    return [r for g in build_recording_rules_from_manifest(_load(path)) for r in g.rules]
+
+
+def test_shipped_corpus_is_present():
+    assert len(SHIPPED) == 23, [p.name for p in SHIPPED]
+
+
+@pytest.mark.parametrize("path", SHIPPED, ids=lambda p: p.name)
+def test_shipped_rules_follow_prometheus_conventions(path: Path):
+    """Every record is level:metric:operation style, no edge underscores."""
+    rules = _rules(path)
+    assert rules, f"{path.name} produced no recording rules"
+    for rule in rules:
+        assert ":" in rule.record, rule.record
+        assert not rule.record.startswith("_"), rule.record
+        assert not rule.record.endswith("_"), rule.record
+
+
+@pytest.mark.parametrize("path", SHIPPED, ids=lambda p: p.name)
+def test_shipped_rules_carry_the_service_label(path: Path):
+    service = _load(path).name
+    rules = _rules(path)
+    assert rules, f"{path.name} produced no recording rules"
+    for rule in rules:
+        assert rule.labels.get("service") == service, (rule.record, rule.labels)
+
+
+def _records_for_slo(path: Path, slo: str) -> set[str]:
+    return {r.record for r in _rules(path) if r.labels.get("slo") == slo}
+
+
+def test_availability_slo_rules():
+    # payment-api.yaml declares an availability SLO with a 30d window.
+    assert _records_for_slo(PAYMENT_API, "availability") >= {
+        "slo:requests_total:30d",
+        "slo:requests_success:30d",
+        "slo:availability:ratio",
+        "slo:error_budget_remaining:ratio",
+    }
+
+
+def test_latency_slo_rules():
+    # payment-api.yaml declares latency-p95 (a legacy latency SLO with a
+    # threshold, 30d window). Not an srm/v1 example: those write latency as
+    # target: <ms>, which the v1 schema rejects (opensrm-jlbm).
+    assert _records_for_slo(PAYMENT_API, "latency-p95") >= {
+        "slo:latency_requests_total:30d",
+        "slo:latency_requests_fast:30d",
+        "slo:latency:ratio",
+        "slo:http_request_duration_seconds:p95",
+        "slo:http_request_duration_seconds:p99",
+    }
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

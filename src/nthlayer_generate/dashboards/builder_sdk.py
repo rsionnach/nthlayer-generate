@@ -490,6 +490,13 @@ class DashboardBuilderSDK:
         - Uses legacy templates with hardcoded metrics
         """
         panels = []
+        # Technology panels describe the technology, not an instance: a second
+        # postgres dependency would add the same panels again
+        # (opensrm-wo62.4.22). Keyed on the resolved template so aliases
+        # (postgres/postgresql) count once; the first-declared spelling's set,
+        # and so its service label, is kept. A type with no template is keyed
+        # on its own spelling.
+        seen_technologies: set[str] = set()
 
         for dep_resource in self.dependency_resources:
             dep_spec = dep_resource.spec
@@ -525,6 +532,12 @@ class DashboardBuilderSDK:
 
             # Build panels for each dependency
             for _dep_category, dep_type in all_deps:
+                template = get_template_or_none(dep_type)
+                technology_key = template.name if template is not None else dep_type
+                if technology_key in seen_technologies:
+                    continue
+                seen_technologies.add(technology_key)
+
                 if self.use_intent_templates:
                     # Use intent-based templates with resolver
                     tech_panels = self._build_intent_panels(dep_type)

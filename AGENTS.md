@@ -239,7 +239,6 @@ make migrate                 # Run database migrations
 
 # Demo commands
 python -m nthlayer.demo --help           # CLI help
-python scripts/regenerate_hybrid_dashboards.py   # Regenerate all dashboards
 python scripts/validate_dashboard_metrics.py  # Validate metric coverage
 ```
 
@@ -263,7 +262,7 @@ src/nthlayer/
 ├── discovery/     → Live Prometheus metric discovery
 ├── slos/          → SLO definitions and error budget tracking
 ├── alerts/        → Alert rule generation
-├── specs/         → Service specification models (ServiceContext, Resource); manifests load via nthlayer_common.manifest
+├── specs/         → Validation and templates; manifests load via nthlayer_common.manifest (ServiceContext/Resource remain as an internal adapter)
 ├── recording_rules/ → Prometheus recording rule generation
 ├── orchestrator.py  → Unified plan/apply workflow
 └── demo.py        → CLI entrypoint (60KB, comprehensive demo)

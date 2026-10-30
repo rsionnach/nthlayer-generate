@@ -58,7 +58,7 @@ NthLayer is organized into these modules:
 
 | Module | Purpose | Key Components |
 |--------|---------|----------------|
-| `specs/` | Parse and validate service.yaml files | `ServiceContext`, `Resource`, `parse_service_file()` |
+| `specs/` | Validate service manifests (loaded through `nthlayer_common.manifest.load_manifest`) | `validate_service_file()`, templates |
 | `orchestrator.py` | Coordinate the generation workflow | `ServiceOrchestrator`, `ApplyResult`, `PlanResult` |
 | `config/` | Configuration and secrets management | `Settings`, `get_settings()`, secrets providers |
 
@@ -68,7 +68,7 @@ NthLayer is organized into these modules:
 |--------|---------|----------------|
 | `dashboards/` | Generate Grafana dashboards with 18+ technology templates | `DashboardBuilder`, `IntentResolver`, technology templates |
 | `alerts/` | Generate Prometheus alerting rules | `AlertTemplateLoader`, `AlertRule` |
-| `recording_rules/` | Generate Prometheus recording rules for performance | `build_recording_rules()`, `RecordingRule` |
+| `recording_rules/` | Generate Prometheus recording rules for performance | `build_recording_rules_from_manifest()`, `RecordingRule` |
 | `slos/` | SLO definitions, error budgets, and tracking | `SLO`, `ErrorBudgetCalculator`, `SLOCollector` |
 | `loki/` | Generate LogQL alerting rules | `LokiAlertGenerator`, `LogQLAlert` |
 
@@ -164,8 +164,8 @@ architecture-beta
 
 When you run `nthlayer apply`, the following happens:
 
-1. **Parse**: `specs/parser.py` reads service.yaml into `ServiceContext`
-2. **Detect**: `orchestrator.py` determines which resources to generate
+1. **Load**: `nthlayer_common.manifest.load_manifest` reads service.yaml (any format) into a `ReliabilityManifest`
+2. **Detect**: `orchestrator.detect_resource_types` determines which resources to generate
 3. **Generate**: Each generator module creates its artifacts
 4. **Output**: Files written to `generated/` directory
 

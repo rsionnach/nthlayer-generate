@@ -138,6 +138,42 @@ $ nthlayer validate service.yaml --policies policies.yaml
 
 ---
 
+## ⚠️ Upgrading to 4.0.0: the legacy `parse_service_file` API is removed
+
+Since 3.5.0 every command, legacy `service:` files included, loads manifests
+through `nthlayer_common.manifest.load_manifest`. 4.0.0 deletes the legacy
+loader and the builders that took its `(ServiceContext, resources)` output.
+**The CLI is unchanged**: legacy, srm/v1 and v2 files plan, apply, validate
+and generate exactly as in 3.5.0.
+
+**Breaking, for code that imports generate.** Earlier release notes said
+`parse_service_file()` "remains available for direct import"; it does not
+from 4.0.0.
+
+| Removed | Use instead |
+|---|---|
+| `specs.parse_service_file`, and the `specs` re-exports of `ServiceContext` and `Resource` | `nthlayer_common.manifest.load_manifest(path, environment=...)` |
+| modules `specs.parser`, `specs.environments`, `specs.environment_merger`, `specs.variable_substitution`, `specs.template` | `load_manifest` applies environment overlays, `${var}` substitution and templates |
+| `generators.generate_sloth_spec`, `generators.sloth.convert_to_sloth_slo` | `generators.generate_sloth_from_manifest` |
+| `generators.alerts.generate_alerts_for_service`, `extract_dependencies` | `generators.generate_alerts_from_manifest`; `specs.helpers.extract_dependency_technologies` |
+| `specs.helpers.infer_technology_from_name`, `TECH_KEYWORDS` | `specs.helpers.dependency_technology` (no name inference for databases) |
+| `recording_rules.build_recording_rules` and module `recording_rules.builder` | `recording_rules.build_recording_rules_from_manifest` |
+| `loki.generator.generate_loki_alerts_for_service_file`, `extract_dependencies_from_resources` | `loki.generator.generate_loki_alerts_from_manifest` |
+| `dashboards.builder_sdk.build_dashboard`, `dashboards.sdk_adapter.create_service_dashboard` | `dashboards.manifest_builder.build_dashboard_from_manifest` |
+| `dashboards.validator.extract_technologies`, `extract_custom_overrides` | none (they served only the removed dashboard-validate command) |
+| `orchestrator.ResourceDetector` | `orchestrator.detect_resource_types(manifest)` |
+| `cli.validate_dashboard_command`, `cli.list_intents_command`; modules `cli.dashboard_validate`, `cli.dependencies`, `slos.dependencies` | none: neither command was ever registered with the `nthlayer` CLI |
+
+```python
+# 3.x
+from nthlayer_generate.specs import parse_service_file
+context, resources = parse_service_file("service.yaml", environment="prod")
+
+# 4.0.0
+from nthlayer_common.manifest import load_manifest
+manifest = load_manifest("service.yaml", environment="prod")
+```
+
 ## ⚠️ Upgrading to 3.0.0: manifests load through `nthlayer-common`
 
 generate no longer carries its own manifest model. It reads manifests through

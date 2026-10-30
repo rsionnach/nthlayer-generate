@@ -4,8 +4,9 @@ NthLayer Metrics Recommendation Engine.
 Provides metric recommendations based on OpenTelemetry Semantic Conventions
 for different service types and validates metric coverage against Prometheus.
 
-Supports both legacy (ServiceContext) and manifest
-(nthlayer_common.manifest.ReliabilityManifest) APIs.
+Built from nthlayer_common.manifest.ReliabilityManifest via
+recommend_metrics_from_manifest, which adapts the manifest to the internal
+ServiceContext model (rewrite tracked as opensrm-wo62.4.20).
 """
 
 from nthlayer_generate.metrics.models import (

@@ -2,6 +2,7 @@
 
 **Date:** 2026-04-06
 **Updated:** 2026-04-06 (corrected routing per `NTHLAYER-OBSERVE-SPEC.md`)
+**Updated:** 2026-10-30, generate 4.0.0 (opensrm-wo62.4.6): the legacy loader stack is removed; legacy files load through `nthlayer_common.manifest`. Rows marked *Removed in 4.0.0* are kept as the original audit recorded them.
 **Scope:** Complete inventory of `nthlayer/src/nthlayer/` — 296 Python source files, 46 CLI commands
 **Purpose:** Classify every capability as STAYS, MOVE, SHARE, or REMOVE to restore generate as a pure, deterministic, stateless compiler. Runtime infrastructure moves to nthlayer-observe; only agentic (LLM-dependent) code goes to measure/correlate/respond/learn.
 
@@ -21,13 +22,13 @@ For each capability:
 
 | Capability | Current Location | Justification |
 |---|---|---|
-| Manifest parsing (legacy) | `specs/parser.py` | Pure text-to-data. Same YAML always produces same parse tree. |
+| Manifest parsing (legacy) | `specs/parser.py` | Pure text-to-data. Same YAML always produces same parse tree. **Removed in 4.0.0 (opensrm-wo62.4.6).** |
 | Manifest parsing, loading, model | `nthlayer_common.manifest` | Moved out of generate in 3.0.0 (opensrm-wo62.1); generate consumes it. Still deterministic; BudgetPolicy parsing is compile-time, enforcement is gate. |
 | Resource models | `specs/models.py` | Pure data structures. |
 | Schema validation | `specs/validator.py` | Deterministic structural validation. |
 | Alerting config model | `specs/alerting.py` | Static config model (AlertingConfig, ForDuration). |
 | Contract definitions | `specs/contracts.py` | Data models. |
-| Spec helpers | `specs/helpers.py` | Utility functions (infer_technology_from_name). |
+| Spec helpers | `specs/helpers.py` | Utility functions (infer_technology_from_name). 4.0.0: now `dependency_technology` / `extract_dependency_technologies`; `infer_technology_from_name` removed. |
 | SLO YAML generation (Sloth) | `generators/sloth.py` | Manifest in, Sloth YAML out. |
 | Prometheus alert rule generation | `generators/alerts.py` | Manifest in, alert YAML out. Uses awesome-prometheus-alerts templates. |
 | Backstage entity generation | `generators/backstage.py` | Manifest in, Backstage JSON out. |
@@ -37,10 +38,10 @@ For each capability:
 | PagerDuty resource generation | `pagerduty/` (all files) | Generates PD config from manifest. Deterministic. |
 | Grafana dashboard generation | `dashboards/` (all 18+ files) | Intent-based generation. Same manifest always produces same dashboard JSON. |
 | Recording rule generation | `recording_rules/` (all files) | Manifest in, recording rules out. |
-| Template system | `specs/template.py`, `specs/template_loader.py`, `specs/custom_templates.py`, `specs/builtin_templates/` | Pure template expansion. |
+| Template system | `specs/template.py`, `specs/template_loader.py`, `specs/custom_templates.py`, `specs/builtin_templates/` | Pure template expansion. 4.0.0: `specs/template.py` removed. |
 | Service init/scaffolding | `cli/init.py` | Creates initial manifest structure. Deterministic. |
-| Environment management | `specs/environments.py`, `specs/environment_merger.py`, `specs/environment_detection.py`, `specs/environment_alerts.py`, `specs/environment_gates.py` | Environment-aware config merging. Stateless. |
-| Variable substitution | `specs/variable_substitution.py` | Pure string replacement. |
+| Environment management | `specs/environments.py`, `specs/environment_merger.py`, `specs/environment_detection.py`, `specs/environment_alerts.py`, `specs/environment_gates.py` | Environment-aware config merging. Stateless. 4.0.0: `environments.py` and `environment_merger.py` removed. |
+| Variable substitution | `specs/variable_substitution.py` | Pure string replacement. **Removed in 4.0.0 (opensrm-wo62.4.6).** |
 | Build-time policy engine | `policies/engine.py`, `policies/rules.py`, `policies/models.py` | Validates manifests against policy rules at build time. Same input, same violations. |
 | CLI formatters | `cli/formatters/` (json_fmt.py, sarif.py, junit.py, markdown.py, models.py) | Pure output formatting (JSON, SARIF, JUnit, Markdown). |
 | Tier definitions | `core/tiers.py` | Static tier configuration. Also extract to common. |
@@ -69,7 +70,7 @@ For each capability:
 | Migrate command | `cli/migrate.py` | Format migration tool. |
 | Templates command | `cli/templates.py` | Template management. |
 | Recording rules command | `cli/recording_rules.py` | Generation CLI. |
-| Dashboard commands | `cli/dashboard.py`, `cli/dashboard_validate.py` | Dashboard generation + validation CLI. |
+| Dashboard commands | `cli/dashboard.py`, `cli/dashboard_validate.py` | Dashboard generation + validation CLI. 4.0.0: `cli/dashboard_validate.py` removed. |
 | Backstage command | `cli/backstage.py` | Generation CLI. |
 | Docs command | `cli/docs.py` | Documentation generation CLI. |
 | PagerDuty command | `cli/pagerduty.py` | PD config generation CLI. |
@@ -79,7 +80,7 @@ For each capability:
 | Alerts command | `cli/alerts.py` | Alert rule management CLI. |
 | SLO command (generation portions) | `cli/slo.py` | SLO generation is pure. Live-query portions should be extracted. |
 | SLO CLI helpers | `slos/cli_helpers.py` | Shared CLI utilities. |
-| SLO dependencies | `slos/dependencies.py` | Static dependency tracking. |
+| SLO dependencies | `slos/dependencies.py` | Static dependency tracking. **Removed in 4.0.0 (opensrm-wo62.4.6).** |
 | PromQL validation | `validation/promql.py`, `validation/promruval.py` | Static syntax validation. |
 | Metadata validation | `validation/metadata.py` | Static metadata checks. |
 | Config module | `config/` (all files) | Application config loading. |
@@ -147,7 +148,7 @@ Live dependency discovery (querying K8s, Consul, Prometheus for service graphs) 
 | Deployment correlator | `slos/correlator.py` (DeploymentCorrelator) | `observe/gate/correlator.py` | 5-factor weighted scoring is a deterministic heuristic. Same inputs, same score. Not LLM reasoning — nthlayer-correlate adds the judgment layer on top. |
 | Live dependency discovery | `dependencies/discovery.py`, `dependencies/providers/` (kubernetes.py, prometheus.py, consul.py, etcd.py, zookeeper.py, backstage.py) | `observe/dependencies/` | Queries live systems for dependency relationships. Infrastructure observation, not causal reasoning. |
 | Blast radius calculation | `cli/blast_radius.py` | `observe/cli.py` as `nthlayer-observe blast-radius` | Calculates downstream impact from live dependency graph. Deterministic graph traversal. |
-| Dependencies command | `cli/dependencies.py`, `cli/deps.py` | `observe/cli.py` as `nthlayer-observe dependencies` | CLI for live dependency discovery. |
+| Dependencies command | `cli/dependencies.py`, `cli/deps.py` | `observe/cli.py` as `nthlayer-observe dependencies` | CLI for live dependency discovery. 4.0.0: `cli/dependencies.py` removed. |
 | Topology export command (live portions) | `cli/topology.py` (with `--prometheus-url`) | `observe/cli.py` | Static topology export from manifest stays in generate; live discovery moves. |
 
 ### E. MOVE to respond (Actions / Notifications)
@@ -282,7 +283,7 @@ Self-contained observation modules:
 - `discovery/` -> `observe/discovery/`
 - `dependencies/discovery.py` + `dependencies/providers/` -> `observe/dependencies/`
 - `cli/blast_radius.py` -> observe CLI
-- `cli/dependencies.py` -> observe CLI
+- `cli/dependencies.py` -> observe CLI (removed in 4.0.0 instead)
 - Create CLI commands: `nthlayer-observe verify`, `nthlayer-observe discover`, `nthlayer-observe drift`, `nthlayer-observe blast-radius`, `nthlayer-observe dependencies`
 
 ### Phase 4: Move Gate Infrastructure to Observe

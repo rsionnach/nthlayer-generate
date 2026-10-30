@@ -101,7 +101,10 @@ resources:
 **Auto-generates:**
 - PostgreSQL panels (connections, cache, queries)
 - Redis panels (memory, hit rate, evictions)
-- Kubernetes panels (pods, CPU, memory) - auto-added for API services
+
+Each technology gets one set of panels, however many dependencies use it.
+Aliases (`postgres`/`postgresql`) count once, using the first-declared
+spelling, including in the panels' `service` label.
 
 ### Output Format
 

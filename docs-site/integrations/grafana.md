@@ -83,11 +83,18 @@ Generated dashboards include:
 
 ### Dependencies Row
 
-One row per dependency with technology-specific panels:
+One set of technology-specific panels per dependency technology:
 
 - **PostgreSQL**: Connections, replication lag, locks
 - **Redis**: Memory usage, hit rate, connections
 - **Kafka**: Consumer lag, partition status
+
+A technology's panels appear once however many dependencies use it, since
+they describe the technology rather than an instance. Aliases such as
+`postgres` and `postgresql` count as one technology: the panels use the
+spelling declared first, including in their `service` label. This applies
+across environment overlays too (an overlay adding `postgres` to a base that
+declares `postgresql` keeps the base's spelling).
 
 ## Dashboard Variables
 

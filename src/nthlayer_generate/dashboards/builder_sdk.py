@@ -491,9 +491,11 @@ class DashboardBuilderSDK:
         """
         panels = []
         # Technology panels describe the technology, not an instance: a second
-        # postgres dependency would add identical panels (opensrm-wo62.4.22).
-        # Keyed on the resolved template so aliases (postgres/postgresql)
-        # count once; a type with no template keeps its own key, unchanged.
+        # postgres dependency would add the same panels again
+        # (opensrm-wo62.4.22). Keyed on the resolved template so aliases
+        # (postgres/postgresql) count once; the first-declared spelling's set,
+        # and so its service label, is kept. A type with no template keeps its
+        # own key, unchanged.
         seen_technologies: set[str] = set()
 
         for dep_resource in self.dependency_resources:

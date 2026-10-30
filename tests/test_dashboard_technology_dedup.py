@@ -2,8 +2,10 @@
 
 Ported from the legacy builder's test_templates_avoid_duplicates
 (opensrm-wo62.4.22, ruling J2). On the manifest path a second postgres
-dependency used to add the ten PostgreSQL panels again, with identical
-queries: the panels describe the technology, not the instance.
+dependency used to add the ten PostgreSQL panels again: identical queries
+for a repeated type, and for an alias (postgresql) the same queries under
+that spelling's service label. The panels describe the technology, not the
+instance; the first-declared spelling's set is kept.
 
 The input is examples/services/payment-api-with-deps.yaml with its own
 postgres-main entry copied under a new name, so the dependency shape is the

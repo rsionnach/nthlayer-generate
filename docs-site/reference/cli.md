@@ -13,6 +13,19 @@ nthlayer [--help] [--version] <command>
 | `--help` | Show help message |
 | `--version` | Show version number |
 
+### Output streams
+
+stdout carries only a command's output, so `nthlayer plan --format json` and
+`nthlayer apply --output json` can be piped straight into `jq` or a CI step.
+Logs and warnings go to stderr:
+
+- WARNING and above by default; a command's `-v`/`--verbose` adds INFO.
+- Colour only when stderr is a terminal, and never when `NO_COLOR` is set.
+- Tracebacks are plain, without local variables.
+
+Since generate 4.0.2, warnings are no longer printed to stdout, so capture
+stderr too (`2>&1`) if a script looked for them there.
+
 ## Commands
 
 ### apply
@@ -30,6 +43,8 @@ nthlayer apply <service.yaml> [options]
 | `--output-dir DIR` | Custom output directory |
 | `--dry-run` | Preview without writing |
 | `--lint` | Validate generated alerts with pint |
+| `--output {text,json}` | Result format on stdout |
+| `-v`, `--verbose` | Show detailed progress |
 
 ### setup
 
@@ -92,7 +107,7 @@ Options for `show`:
 Preview what would be generated.
 
 ```bash
-nthlayer plan <service.yaml>
+nthlayer plan <service.yaml> [--format {table,json,sarif,junit,markdown}] [-v]
 ```
 
 ### validate

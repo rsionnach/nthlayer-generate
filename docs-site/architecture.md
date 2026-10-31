@@ -44,7 +44,7 @@ NthLayer is built on these core technologies:
 | **Dashboard SDK** | grafana-foundation-sdk | Type-safe Grafana dashboard generation |
 | **Database** | SQLAlchemy + PostgreSQL | State storage (optional, for SLO history) |
 | **Cache** | Redis | Caching layer (optional) |
-| **Logging** | structlog | Structured JSON logging |
+| **Logging** | structlog | Human-readable console logs on stderr |
 | **Resilience** | tenacity + circuitbreaker | Retry logic and circuit breakers |
 | **Config** | PyYAML + Pydantic Settings | YAML parsing and environment config |
 

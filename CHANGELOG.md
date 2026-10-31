@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.0.6](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.5...v4.0.6) (2026-10-31)
+
+
+### Bug Fixes
+
+* Docker image and contributor docs state Apache-2.0, not MIT (opensrm-bqfj) ([a4133db](https://github.com/rsionnach/nthlayer-generate/commit/a4133db6631b3ac6cd29248b052d8c91bdbfeff0))
+* Docker image and contributor docs state Apache-2.0, not MIT (opensrm-bqfj) ([28466f1](https://github.com/rsionnach/nthlayer-generate/commit/28466f15443904cc21505b3226d1becd18d67e7b))
+* require nthlayer-common 5.8.1 ([a000a74](https://github.com/rsionnach/nthlayer-generate/commit/a000a74c2d210cef61161298a3939b83e773320e))
+* require nthlayer-common 5.8.1 ([c0a93ae](https://github.com/rsionnach/nthlayer-generate/commit/c0a93ae80e9f5932d013b1a6de3489db4b1f2ff1))
+
 ## [4.0.5](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.4...v4.0.5) (2026-10-31)
 
 

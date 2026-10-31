@@ -14,10 +14,12 @@ template loader that logged; api-minimal.yaml has none (see _helpers).
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
-from _helpers import API_MINIMAL, PAYMENT_API, run_nthlayer
+from _helpers import API_MINIMAL, PAYMENT_API, PROJECT_ROOT, run_nthlayer
 
 pytestmark = pytest.mark.smoke
 
@@ -58,3 +60,23 @@ def test_apply_json_stdout_is_only_json(
     report = _json_stdout("apply", manifest, "--output", "json", "--output-dir", str(tmp_path))
     assert isinstance(report, dict) and not report.get("errors"), report
     assert ("alerts" in report["resources_created"]) is expects_alerts, report
+
+
+def test_plan_json_stdout_survives_a_closed_stderr() -> None:
+    """``2>&-`` (some CI wrappers and daemons): Python sets sys.stderr to None.
+
+    Logging setup must not touch it in a way that fails, or the command dies
+    before printing the JSON (R5 edge-cases, opensrm-iiay).
+    """
+    # The venv's own console script, not `uv run`: uv opens files of its own,
+    # one of which lands on the freed fd 2, so the child would get a stderr.
+    nthlayer = str(Path(sys.executable).with_name("nthlayer"))
+    result = subprocess.run(
+        ["sh", "-c", 'exec 2>&-; exec "$0" plan "$1" --format json', nthlayer, PAYMENT_API],
+        stdout=subprocess.PIPE,
+        text=True,
+        timeout=60,
+        cwd=str(PROJECT_ROOT),
+    )
+    assert result.returncode == 0, result.stdout[:600]
+    json.loads(result.stdout)

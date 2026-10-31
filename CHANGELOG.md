@@ -1,5 +1,18 @@
 # Changelog
 
+## [4.0.2](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.1...v4.0.2) (2026-10-31)
+
+
+### Bug Fixes
+
+* send CLI logs to stderr so plan/apply JSON stdout parses (opensrm-iiay) ([2bb26b9](https://github.com/rsionnach/nthlayer-generate/commit/2bb26b9bd593c33fd5741e47b18b250db5b97a40))
+* send CLI logs to stderr so plan/apply JSON stdout parses (opensrm-iiay) ([d76609d](https://github.com/rsionnach/nthlayer-generate/commit/d76609d3c76cedaba11c071649c82d82aa96c1c5))
+
+
+### Documentation
+
+* CLI warnings now print to stderr, DEBUG/INFO hidden unless -v (opensrm-iiay) ([aacc6f2](https://github.com/rsionnach/nthlayer-generate/commit/aacc6f291278dc5806f7d1df136cfe154cb10fee))
+
 ## [4.0.1](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.0...v4.0.1) (2026-10-30)
 
 

@@ -72,7 +72,7 @@ def test_apply_dry_run_json_stdout_is_plan_json(
     manifest: str, expects_alerts: bool, verbose: tuple[str, ...], tmp_path: Path
 ) -> None:
     """--dry-run delegates to plan, so --output json yields plan's JSON (opensrm-wlt1)."""
-    # Not tmp_path itself: run_nthlayer puts its fake HOME there.
+    # A fresh subdir, since tmp_path already holds conftest's fake HOME.
     out_dir = tmp_path / "out"
     plan = _json_stdout(
         "apply", manifest, "--dry-run", "--output", "json", "--output-dir", str(out_dir), *verbose

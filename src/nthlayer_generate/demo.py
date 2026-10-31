@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import logging
 import os
 import sys
 from importlib.metadata import version as get_version
@@ -51,6 +52,7 @@ from nthlayer_generate.cli.validate_spec import (
     handle_validate_spec_command,
     register_validate_spec_parser,
 )
+from nthlayer_generate.logging import configure_logging
 from nthlayer_generate.providers.grafana import GrafanaProvider, GrafanaProviderError
 
 # Version from package metadata (single source of truth: pyproject.toml)
@@ -874,6 +876,13 @@ def _print_welcome() -> None:
 def main(argv: Sequence[str] | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    # Logs go to stderr, so a command's stdout carries only its output: plan
+    # --format json and apply --output json were unparseable while structlog's
+    # default logger printed debug events to stdout (opensrm-iiay). Left alone
+    # when the caller already configured structlog (tests, embedding code).
+    if not structlog.is_configured():
+        configure_logging(logging.INFO if getattr(args, "verbose", False) else logging.WARNING)
 
     # Show version with banner
     if args.version:

@@ -27,7 +27,8 @@ pytestmark = pytest.mark.smoke
 # that reached the alert template loader, whose debug events leaked.
 MANIFESTS = [(PAYMENT_API, True), (API_MINIMAL, False)]
 MANIFEST_IDS = [Path(m).name for m, _ in MANIFESTS]
-# -v raises the log level to INFO; stdout must stay JSON either way.
+# -v raises the log level to INFO and, for apply, adds orchestration
+# progress prints; stdout must stay JSON either way.
 VERBOSITY = pytest.mark.parametrize("verbose", [(), ("-v",)], ids=["default", "verbose"])
 
 

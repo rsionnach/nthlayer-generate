@@ -158,14 +158,15 @@ def apply_command(
         orchestrator.output_dir = Path(output_dir)
 
     # Apply. With --output json, stdout must carry only the JSON report, so
-    # the orchestration's -v progress prints go to stderr (opensrm-f751).
-    # Text mode keeps them on stdout, where users and goldens expect them.
-    progress = (
+    # every print() during apply goes to stderr: the -v progress lines and
+    # the handlers' unconditional warnings (opensrm-f751). Text mode keeps
+    # them on stdout, where users and goldens expect them.
+    stdout_guard = (
         contextlib.redirect_stdout(sys.stderr)
         if output_format == "json"
         else contextlib.nullcontext()
     )
-    with progress:
+    with stdout_guard:
         result = orchestrator.apply(skip=skip, only=only, force=force, verbose=verbose)
 
     # Print result

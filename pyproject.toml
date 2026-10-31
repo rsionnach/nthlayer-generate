@@ -7,6 +7,7 @@ name = "nthlayer-generate"
 version = "4.0.4"
 description = "NthLayer - The Missing Layer of Reliability"
 readme = "README.md"
+license = {text = "Apache-2.0"}
 requires-python = ">=3.11"
 dependencies = [
     # WHY 5.0.0 (opensrm-7zpz, opensrm-1rnr): for `nthlayer migrate-manifest`,

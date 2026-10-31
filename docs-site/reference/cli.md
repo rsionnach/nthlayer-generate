@@ -15,16 +15,21 @@ nthlayer [--help] [--version] <command>
 
 ### Output streams
 
-stdout carries only a command's output, so `nthlayer plan --format json` and
-`nthlayer apply --output json` can be piped straight into `jq` or a CI step.
-Logs and warnings go to stderr:
+With JSON output, stdout carries only the JSON, so `nthlayer plan --format json`
+and `nthlayer apply --output json` can be piped straight into `jq` or a CI
+step. Logs go to stderr in every mode:
 
 - WARNING and above by default; a command's `-v`/`--verbose` adds INFO.
 - Colour only when stderr is a terminal, and never when `NO_COLOR` is set.
 - Tracebacks are plain, without local variables.
 
-Since generate 4.0.2, warnings are no longer printed to stdout, so capture
-stderr too (`2>&1`) if a script looked for them there.
+`apply` also prints its own progress (with `-v`) and warnings such as
+"Grafana not configured". In text mode these are part of its human-readable
+report on stdout; with `--output json` they go to stderr.
+
+Since generate 4.0.2, log warnings are no longer printed to stdout, and since
+4.0.3 neither is anything `apply --output json` prints besides the report.
+Capture stderr too (`2>&1`) if a script looked for them on stdout.
 
 ## Commands
 

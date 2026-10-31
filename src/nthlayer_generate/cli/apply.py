@@ -2,7 +2,9 @@
 CLI command for applying (generating) all service resources.
 """
 
+import contextlib
 import json
+import sys
 from pathlib import Path
 from typing import List, Optional
 
@@ -155,8 +157,17 @@ def apply_command(
     if output_dir:
         orchestrator.output_dir = Path(output_dir)
 
-    # Apply
-    result = orchestrator.apply(skip=skip, only=only, force=force, verbose=verbose)
+    # Apply. With --output json, stdout must carry only the JSON report, so
+    # every print() during apply goes to stderr: the -v progress lines and
+    # the handlers' unconditional warnings (opensrm-f751). Text mode keeps
+    # them on stdout, where users and goldens expect them.
+    stdout_guard = (
+        contextlib.redirect_stdout(sys.stderr)
+        if output_format == "json"
+        else contextlib.nullcontext()
+    )
+    with stdout_guard:
+        result = orchestrator.apply(skip=skip, only=only, force=force, verbose=verbose)
 
     # Print result
     if output_format == "json":

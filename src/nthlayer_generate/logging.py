@@ -23,8 +23,15 @@ def configure_logging(level: int | str = logging.INFO) -> None:
             structlog.processors.add_log_level,
             timestamper,
             structlog.processors.StackInfoRenderer(),
-            structlog.processors.format_exc_info,
-            structlog.dev.ConsoleRenderer(colors=sys.stderr.isatty()),
+            # No format_exc_info: ConsoleRenderer formats exc_info itself, and
+            # warns on every exception log when a processor already has.
+            # plain_traceback, not structlog's rich default: that one prints
+            # local variables (which can hold API keys) and colour codes even
+            # when stderr is not a terminal.
+            structlog.dev.ConsoleRenderer(
+                colors=sys.stderr.isatty(),
+                exception_formatter=structlog.dev.plain_traceback,
+            ),
         ],
         logger_factory=structlog.stdlib.LoggerFactory(),
         wrapper_class=structlog.stdlib.BoundLogger,

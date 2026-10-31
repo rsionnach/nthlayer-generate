@@ -27,7 +27,7 @@ FROM python:3.11-slim
 
 LABEL org.opencontainers.image.source="https://github.com/rsionnach/nthlayer"
 LABEL org.opencontainers.image.description="NthLayer - Reliability validation for CI/CD pipelines"
-LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
 
 # Copy virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv

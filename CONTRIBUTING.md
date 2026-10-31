@@ -111,8 +111,8 @@ tooling.
 
 ## License
 
-nthlayer-generate is MIT licensed. By contributing, you agree that your
-contributions will be licensed under the same terms (see `LICENSE`).
+nthlayer-generate is licensed under the Apache License 2.0. By contributing, you
+agree that your contributions will be licensed under the same terms (see `LICENSE`).
 
 ---
 

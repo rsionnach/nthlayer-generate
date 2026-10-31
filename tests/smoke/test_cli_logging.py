@@ -82,6 +82,9 @@ def test_main_sets_warning_by_default_and_info_with_verbose(
 import contextlib, io, logging, sys
 from nthlayer_generate.demo import main
 
+# The root logger already defaults to WARNING; start from NOTSET so the
+# default case cannot pass without main() setting a level.
+logging.getLogger().setLevel(logging.NOTSET)
 with contextlib.redirect_stdout(io.StringIO()):
     try:
         main(["plan", {PAYMENT_API!r}, "--format", "json", *{list(flags)!r}])

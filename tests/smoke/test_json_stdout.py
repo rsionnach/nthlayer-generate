@@ -58,13 +58,27 @@ def test_plan_json_stdout_is_only_json(
 def test_apply_json_stdout_is_only_json(
     manifest: str, expects_alerts: bool, verbose: tuple[str, ...], tmp_path: Path
 ) -> None:
-    # A real apply into tmp_path: --dry-run delegates to plan and ignores
-    # --output json altogether (opensrm-wlt1).
+    # A real apply into tmp_path; --dry-run is covered separately below.
     report = _json_stdout(
         "apply", manifest, "--output", "json", "--output-dir", str(tmp_path), *verbose
     )
     assert isinstance(report, dict) and not report.get("errors"), report
     assert ("alerts" in report["resources_created"]) is expects_alerts, report
+
+
+@VERBOSITY
+@pytest.mark.parametrize(("manifest", "expects_alerts"), MANIFESTS, ids=MANIFEST_IDS)
+def test_apply_dry_run_json_stdout_is_plan_json(
+    manifest: str, expects_alerts: bool, verbose: tuple[str, ...], tmp_path: Path
+) -> None:
+    """--dry-run delegates to plan, so --output json yields plan's JSON (opensrm-wlt1)."""
+    # Not tmp_path itself: run_nthlayer puts its fake HOME there.
+    out_dir = tmp_path / "out"
+    plan = _json_stdout(
+        "apply", manifest, "--dry-run", "--output", "json", "--output-dir", str(out_dir), *verbose
+    )
+    assert ("alert_generation" in plan["checks"]) is expects_alerts, plan
+    assert not out_dir.exists(), "dry-run wrote files"
 
 
 @pytest.mark.parametrize(

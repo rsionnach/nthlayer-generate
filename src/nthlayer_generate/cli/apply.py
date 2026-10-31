@@ -144,9 +144,11 @@ def apply_command(
     Returns:
         Exit code (0 for success, 1 for error)
     """
-    # Dry-run delegates to plan command
+    # Dry-run delegates to plan command. apply's --output json maps to plan's
+    # --format json; text maps to plan's default table (opensrm-wlt1).
     if dry_run:
-        return plan_command(service_yaml, env=env, verbose=verbose)
+        plan_format = "json" if output_format == "json" else "table"
+        return plan_command(service_yaml, env=env, output_format=plan_format, verbose=verbose)
 
     # Create orchestrator
     orchestrator = ServiceOrchestrator(

@@ -46,7 +46,7 @@ def test_plan_json_stdout_is_only_json(
     manifest: str, expects_alerts: bool, verbose: tuple[str, ...]
 ) -> None:
     plan = _json_stdout("plan", manifest, "--format", "json", *verbose)
-    assert ("alerts" in json.dumps(plan)) is expects_alerts, plan
+    assert ("alert_generation" in plan["checks"]) is expects_alerts, plan
 
 
 # No -v here: apply -v prints orchestration progress to stdout even with

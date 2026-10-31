@@ -14,6 +14,9 @@ CHECKOUT_SERVICE = str(PROJECT_ROOT / "examples" / "services" / "checkout-servic
 # api-minimal has none.
 PAYMENT_API = str(PROJECT_ROOT / "examples" / "services" / "payment-api.yaml")
 API_MINIMAL = str(PROJECT_ROOT / "examples" / "services" / "api-minimal.yaml")
+# analytics-stream's SLOs have no indicator_query, so apply logs a %-style
+# warning per SLO (generators/sloth.py).
+ANALYTICS_STREAM = str(PROJECT_ROOT / "examples" / "services" / "analytics-stream.yaml")
 PAYMENT_API_OPENSRM = str(PROJECT_ROOT / "examples" / "uat" / "payment-api.reliability.yaml")
 
 

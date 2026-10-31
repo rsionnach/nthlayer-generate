@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.0.4](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.3...v4.0.4) (2026-10-31)
+
+
+### Bug Fixes
+
+* apply --dry-run honours --output json (opensrm-wlt1) ([222aa0a](https://github.com/rsionnach/nthlayer-generate/commit/222aa0a751afd948158b411bec9690f0850652be))
+* apply --dry-run honours --output json (opensrm-wlt1) ([b471afd](https://github.com/rsionnach/nthlayer-generate/commit/b471afd56c7ce80b9fc28b37e3a2c702072e05a3))
+
 ## [4.0.3](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.2...v4.0.3) (2026-10-31)
 
 

@@ -7,9 +7,7 @@ compiler: specs → artifacts (Python, stateless, no runtime).
 ## Stack
 
 - Python ≥3.11, `uv`-managed.
-- MIT licensed (note: `nthlayer-workers` — the consolidated runtime
-  tier containing observe/measure/correlate/respond/learn modules — is
-  Apache 2.0).
+- Apache 2.0 licensed, like every repo in the ecosystem.
 - Package: PyPI name `nthlayer-generate`, Python import name
   `nthlayer_generate` (underscore). All imports use
   `from nthlayer_generate.*` — not `from nthlayer.*`. Entry points:

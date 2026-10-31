@@ -49,15 +49,18 @@ def test_plan_json_stdout_is_only_json(
     assert ("alert_generation" in plan["checks"]) is expects_alerts, plan
 
 
-# No -v here: apply -v prints orchestration progress to stdout even with
-# --output json, a separate print() leak tracked as opensrm-f751.
+# -v adds orchestration progress prints, which go to stderr in JSON mode
+# (opensrm-f751).
+@VERBOSITY
 @pytest.mark.parametrize(("manifest", "expects_alerts"), MANIFESTS, ids=MANIFEST_IDS)
 def test_apply_json_stdout_is_only_json(
-    manifest: str, expects_alerts: bool, tmp_path: Path
+    manifest: str, expects_alerts: bool, verbose: tuple[str, ...], tmp_path: Path
 ) -> None:
     # A real apply into tmp_path: --dry-run delegates to plan and ignores
     # --output json altogether (opensrm-wlt1).
-    report = _json_stdout("apply", manifest, "--output", "json", "--output-dir", str(tmp_path))
+    report = _json_stdout(
+        "apply", manifest, "--output", "json", "--output-dir", str(tmp_path), *verbose
+    )
     assert isinstance(report, dict) and not report.get("errors"), report
     assert ("alerts" in report["resources_created"]) is expects_alerts, report
 

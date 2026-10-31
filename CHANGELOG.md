@@ -1,5 +1,18 @@
 # Changelog
 
+## [4.0.3](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.2...v4.0.3) (2026-10-31)
+
+
+### Bug Fixes
+
+* keep apply -v progress off stdout in JSON mode (opensrm-f751) ([5f1ee1e](https://github.com/rsionnach/nthlayer-generate/commit/5f1ee1e482dce7d11b8da82556a1d0452c8fe0e0))
+* keep apply -v progress off stdout in JSON mode (opensrm-f751) ([f973c0a](https://github.com/rsionnach/nthlayer-generate/commit/f973c0ac1199223bc475ff1088d8fb3ff47f8de1))
+
+
+### Documentation
+
+* apply --output json keeps progress and warnings off stdout (opensrm-f751) ([471b2a7](https://github.com/rsionnach/nthlayer-generate/commit/471b2a7298a1ccfc17b82138dd69839131abb712))
+
 ## [4.0.2](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.1...v4.0.2) (2026-10-31)
 
 

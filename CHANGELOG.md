@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.0.5](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.4...v4.0.5) (2026-10-31)
+
+
+### Bug Fixes
+
+* ship the Apache-2.0 LICENSE and declare it in package metadata (opensrm-bqfj) ([36e7dfc](https://github.com/rsionnach/nthlayer-generate/commit/36e7dfccf5d312f57ce6baacbd172434b1d947b5))
+* ship the Apache-2.0 LICENSE and declare it in package metadata (opensrm-bqfj) ([b9e78ef](https://github.com/rsionnach/nthlayer-generate/commit/b9e78ef72d9ba6836ceabb01ab9f2a93e35f8dcd))
+
 ## [4.0.4](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.3...v4.0.4) (2026-10-31)
 
 

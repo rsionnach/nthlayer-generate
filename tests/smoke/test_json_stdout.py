@@ -14,6 +14,7 @@ template loader that logged; api-minimal.yaml has none (see _helpers).
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -66,17 +67,27 @@ def test_apply_json_stdout_is_only_json(
     assert ("alerts" in report["resources_created"]) is expects_alerts, report
 
 
-def test_plan_json_stdout_survives_a_closed_stderr() -> None:
+@pytest.mark.parametrize(
+    "command",
+    [
+        ("plan", PAYMENT_API, "--format", "json"),
+        ("apply", PAYMENT_API, "--output", "json", "-v"),
+    ],
+    ids=["plan", "apply-verbose"],
+)
+def test_json_stdout_survives_a_closed_stderr(command: tuple[str, ...], tmp_path: Path) -> None:
     """``2>&-`` (some CI wrappers and daemons): Python sets sys.stderr to None.
 
-    Logging setup must not touch it in a way that fails, or the command dies
-    before printing the JSON (R5 edge-cases, opensrm-iiay).
+    Logging setup must not fail on it (opensrm-iiay), and apply's redirect of
+    its prints to stderr must drop them rather than raise (opensrm-f751).
     """
+    if command[0] == "apply":
+        command = (*command, "--output-dir", str(tmp_path))
     # The venv's own console script, not `uv run`: uv opens files of its own,
     # one of which lands on the freed fd 2, so the child would get a stderr.
     nthlayer = str(Path(sys.executable).with_name("nthlayer"))
     result = subprocess.run(
-        ["sh", "-c", 'exec 2>&-; exec "$0" plan "$1" --format json', nthlayer, PAYMENT_API],
+        ["sh", "-c", 'exec 2>&-; exec "$@"', "sh", nthlayer, *command],
         stdout=subprocess.PIPE,
         text=True,
         timeout=60,
@@ -84,3 +95,32 @@ def test_plan_json_stdout_survives_a_closed_stderr() -> None:
     )
     assert result.returncode == 0, result.stdout[:600]
     json.loads(result.stdout)
+
+
+def test_apply_json_stdout_survives_an_unconditional_handler_warning(tmp_path: Path) -> None:
+    """A handler print that does not depend on -v also goes to stderr.
+
+    --push-grafana with Grafana unconfigured prints "Grafana not configured"
+    (orchestration/handlers.py) with or without -v (opensrm-f751).
+    """
+    env = {k: v for k, v in os.environ.items() if not k.startswith("NTHLAYER_GRAFANA_")}
+    result = subprocess.run(
+        [
+            str(Path(sys.executable).with_name("nthlayer")),
+            "apply",
+            PAYMENT_API,
+            "--output",
+            "json",
+            "--push-grafana",
+            "--output-dir",
+            str(tmp_path),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        cwd=str(PROJECT_ROOT),
+        env=env,
+    )
+    assert result.returncode == 0, result.stderr[:600]
+    json.loads(result.stdout)
+    assert "Grafana not configured" in result.stderr, result.stderr[:600]

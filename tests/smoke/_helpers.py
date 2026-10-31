@@ -10,6 +10,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 # Example manifests used across smoke tests
 CHECKOUT_SERVICE = str(PROJECT_ROOT / "examples" / "services" / "checkout-service.yaml")
+# payment-api has a postgres dependency (reaches the alert template loader);
+# api-minimal has none.
+PAYMENT_API = str(PROJECT_ROOT / "examples" / "services" / "payment-api.yaml")
+API_MINIMAL = str(PROJECT_ROOT / "examples" / "services" / "api-minimal.yaml")
 PAYMENT_API_OPENSRM = str(PROJECT_ROOT / "examples" / "uat" / "payment-api.reliability.yaml")
 
 

@@ -9,9 +9,11 @@ def configure_logging(level: int | str = logging.INFO) -> None:
     """Route structlog through stdlib logging to stderr, human-readable.
 
     The CLI calls this at startup (demo.main) so that stdout carries only a
-    command's output (opensrm-iiay). Rendering matches what users saw before,
-    when structlog's default logger printed to stdout: a console line with the
-    message's %-style arguments filled in. Colour only on a terminal.
+    command's output (opensrm-iiay). The line format matches what users saw
+    before, when structlog's default logger printed to stdout: a console line
+    with the message's %-style arguments filled in. Colour only on a terminal.
+    Fewer lines appear: the CLI passes WARNING (INFO with -v), where the
+    unconfigured default printed DEBUG.
     """
 
     timestamper = structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S")

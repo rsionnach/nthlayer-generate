@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nthlayer-generate"
-version = "4.0.6"
+version = "4.0.7"
 description = "NthLayer - The Missing Layer of Reliability"
 readme = "README.md"
 license = {text = "Apache-2.0"}

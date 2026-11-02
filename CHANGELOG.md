@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.0.9](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.8...v4.0.9) (2026-11-02)
+
+
+### Bug Fixes
+
+* **recording-rules:** take the error-budget series from the shared contract (opensrm-h0at) ([de9773a](https://github.com/rsionnach/nthlayer-generate/commit/de9773aa7e9f68edfb4df35faa68c45178b60071))
+* **recording-rules:** take the error-budget series from the shared contract (opensrm-h0at) ([aba8a4b](https://github.com/rsionnach/nthlayer-generate/commit/aba8a4bf8afa406f85972dd4f39eacf5dc813c4c))
+* require nthlayer-common 5.10.0 ([b62e252](https://github.com/rsionnach/nthlayer-generate/commit/b62e2521b1c65ca1ed2c0e1ef748098981c52732))
+* require nthlayer-common 5.10.0 ([5601579](https://github.com/rsionnach/nthlayer-generate/commit/56015790b2be7a4344f7a04c215708ac81c40c66))
+
 ## [4.0.8](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.7...v4.0.8) (2026-11-01)
 
 

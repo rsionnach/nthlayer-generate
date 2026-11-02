@@ -87,40 +87,6 @@
             "slo": "processing-latency-p95"
           },
           "record": "slo:http_request_duration_seconds:p99"
-        },
-        {
-          "expr": "sum(increase(http_requests_total{service=\"notification-worker\"}[30d]))",
-          "labels": {
-            "service": "notification-worker",
-            "slo": "queue-lag"
-          },
-          "record": "slo:requests_total:30d"
-        },
-        {
-          "expr": "sum(increase(http_requests_total{service=\"notification-worker\",status!~\"5..\"}[30d]))",
-          "labels": {
-            "service": "notification-worker",
-            "slo": "queue-lag"
-          },
-          "record": "slo:requests_success:30d"
-        },
-        {
-          "expr": "slo:requests_success:30d{service=\"notification-worker\",slo=\"queue-lag\"} / slo:requests_total:30d{service=\"notification-worker\",slo=\"queue-lag\"}",
-          "labels": {
-            "objective": "99.0",
-            "service": "notification-worker",
-            "slo": "queue-lag"
-          },
-          "record": "slo:availability:ratio"
-        },
-        {
-          "expr": "1 - ((1 - slo:availability:ratio{service=\"notification-worker\",slo=\"queue-lag\"}) / (1 - 0.99))",
-          "labels": {
-            "objective": "99.0",
-            "service": "notification-worker",
-            "slo": "queue-lag"
-          },
-          "record": "slo:error_budget_remaining:ratio"
         }
       ]
     },

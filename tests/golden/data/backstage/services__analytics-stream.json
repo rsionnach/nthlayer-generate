@@ -58,7 +58,7 @@
       "currentValue": null,
       "description": null,
       "name": "stream-lag",
-      "sloType": "availability",
+      "sloType": "custom",
       "status": null,
       "target": 99.0,
       "window": "30d"

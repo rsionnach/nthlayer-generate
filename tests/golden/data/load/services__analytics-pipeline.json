@@ -29,7 +29,7 @@
     ],
     [
       "freshness-p95",
-      "availability",
+      "latency",
       90.0,
       "30d",
       false

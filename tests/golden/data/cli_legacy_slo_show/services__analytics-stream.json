@@ -19,7 +19,7 @@
     "  Window: 30d",
     "  Error Budget: 432.0 minutes (1.00%)",
     "",
-    "  Indicator: availability",
+    "  Indicator: custom",
     "",
     "SLO: event-latency-p99",
     "  Objective: 95.0%",

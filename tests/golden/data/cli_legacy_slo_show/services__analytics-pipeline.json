@@ -20,7 +20,7 @@
     "  Window: 30d",
     "  Error Budget: 4320.0 minutes (10.00%)",
     "",
-    "  Indicator: availability",
+    "  Indicator: latency",
     "",
     "SLO: data-quality",
     "  Objective: 99.0%",

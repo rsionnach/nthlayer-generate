@@ -67,7 +67,7 @@
       "currentValue": null,
       "description": null,
       "name": "queue-lag",
-      "sloType": "availability",
+      "sloType": "custom",
       "status": null,
       "target": 99.0,
       "window": "30d"

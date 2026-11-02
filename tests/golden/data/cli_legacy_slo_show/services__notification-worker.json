@@ -26,7 +26,7 @@
     "  Window: 30d",
     "  Error Budget: 432.0 minutes (1.00%)",
     "",
-    "  Indicator: availability",
+    "  Indicator: custom",
     "",
     "──",
     "Total: 3 SLO(s) defined",

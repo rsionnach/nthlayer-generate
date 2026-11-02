@@ -191,9 +191,10 @@ class ManifestRecordingRuleBuilder:
             )
         )
 
-        # Error budget remaining (as ratio). The name and labels are
-        # nthlayer-common's contract, which measure, correlate and drift read
-        # back (opensrm-h0at).
+        # Error budget remaining (as ratio). The name is nthlayer-common's
+        # contract, which measure, correlate and drift read back
+        # (opensrm-h0at); the label keys below must stay the contract's
+        # labels, pinned by test_error_budget_rule_follows_the_shared_contract.
         rules.append(
             RecordingRule(
                 record=ERROR_BUDGET_REMAINING.metric,

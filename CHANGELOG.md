@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.0.10](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.9...v4.0.10) (2026-11-02)
+
+
+### Bug Fixes
+
+* require nthlayer-common 5.10.1 (opensrm-e9ts goldens) ([2b62749](https://github.com/rsionnach/nthlayer-generate/commit/2b62749e6bf52139f8a3e1cd37f75f2f05d52f3c))
+* require nthlayer-common 5.10.1; legacy lag/freshness SLOs lose their error budget (opensrm-e9ts) ([97d6a9a](https://github.com/rsionnach/nthlayer-generate/commit/97d6a9a836f60baf4344e919971918b94a2d899e))
+
 ## [4.0.9](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.8...v4.0.9) (2026-11-02)
 
 

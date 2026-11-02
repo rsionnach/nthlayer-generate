@@ -24,7 +24,7 @@
     ],
     [
       "stream-lag",
-      "availability",
+      "custom",
       99.0,
       "30d",
       false

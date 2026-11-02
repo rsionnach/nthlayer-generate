@@ -61,7 +61,7 @@
           "currentValue": null,
           "description": null,
           "name": "freshness-p95",
-          "sloType": "availability",
+          "sloType": "latency",
           "status": null,
           "target": 90.0,
           "window": "30d"
@@ -118,38 +118,54 @@
               "record": "slo:error_budget_remaining:ratio"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_count{service=\"analytics-pipeline\"}[30d]))",
               "labels": {
                 "service": "analytics-pipeline",
                 "slo": "freshness-p95"
               },
-              "record": "slo:requests_total:30d"
+              "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\",status!~\"5..\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"analytics-pipeline\",le=\"43200.0\"}[30d]))",
               "labels": {
                 "service": "analytics-pipeline",
-                "slo": "freshness-p95"
+                "slo": "freshness-p95",
+                "threshold": "4.32e+07ms"
               },
-              "record": "slo:requests_success:30d"
+              "record": "slo:latency_requests_fast:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"analytics-pipeline\",slo=\"freshness-p95\"} / slo:requests_total:30d{service=\"analytics-pipeline\",slo=\"freshness-p95\"}",
+              "expr": "slo:latency_requests_fast:30d{service=\"analytics-pipeline\",slo=\"freshness-p95\"} / slo:latency_requests_total:30d{service=\"analytics-pipeline\",slo=\"freshness-p95\"}",
               "labels": {
                 "objective": "90.0",
                 "service": "analytics-pipeline",
                 "slo": "freshness-p95"
               },
-              "record": "slo:availability:ratio"
+              "record": "slo:latency:ratio"
             },
             {
-              "expr": "1 - ((1 - slo:availability:ratio{service=\"analytics-pipeline\",slo=\"freshness-p95\"}) / (1 - 0.9))",
+              "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"analytics-pipeline\"}[5m]))",
               "labels": {
-                "objective": "90.0",
                 "service": "analytics-pipeline",
                 "slo": "freshness-p95"
               },
-              "record": "slo:error_budget_remaining:ratio"
+              "record": "slo:http_request_duration_seconds:p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"analytics-pipeline\"}[5m]))",
+              "labels": {
+                "service": "analytics-pipeline",
+                "slo": "freshness-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"analytics-pipeline\"}[5m]))",
+              "labels": {
+                "service": "analytics-pipeline",
+                "slo": "freshness-p95"
+              },
+              "record": "slo:http_request_duration_seconds:p99"
             },
             {
               "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\"}[30d]))",
@@ -331,12 +347,12 @@
     "resources_created": {
       "alerts": 0,
       "backstage": 1,
-      "recording-rules": 16,
+      "recording-rules": 18,
       "slos": 3
     },
     "service_name": "analytics-pipeline",
     "success": false,
-    "total_resources": 20
+    "total_resources": 22
   },
   "preamble": [],
   "stray": []

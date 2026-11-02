@@ -61,7 +61,7 @@
           "currentValue": null,
           "description": null,
           "name": "freshness-p95",
-          "sloType": "availability",
+          "sloType": "latency",
           "status": null,
           "target": 90.0,
           "window": "30d"

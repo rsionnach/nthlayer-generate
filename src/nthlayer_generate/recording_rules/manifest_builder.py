@@ -16,6 +16,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from nthlayer_common.manifest import (
+    ERROR_BUDGET_REMAINING,
     FEEDBACK_LATENCY_WINDOW,
     JudgmentThreshold,
     ReliabilityManifest,
@@ -190,10 +191,13 @@ class ManifestRecordingRuleBuilder:
             )
         )
 
-        # Error budget remaining (as ratio)
+        # Error budget remaining (as ratio). The name is nthlayer-common's
+        # contract, which measure, correlate and drift read back
+        # (opensrm-h0at); the label keys below must stay the contract's
+        # labels, pinned by test_error_budget_rule_follows_the_shared_contract.
         rules.append(
             RecordingRule(
-                record="slo:error_budget_remaining:ratio",
+                record=ERROR_BUDGET_REMAINING.metric,
                 expr=(
                     f'1 - ((1 - slo:availability:ratio{{service="{service}",slo="{slo_name}"}}) / '
                     f"(1 - {objective / 100}))"

@@ -297,6 +297,24 @@ def test_availability_slo_rules():
     }
 
 
+def test_error_budget_rule_follows_the_shared_contract():
+    # opensrm-h0at: measure read slo:error_budget:ratio, a name nothing wrote.
+    # Writer and readers now share nthlayer-common's ERROR_BUDGET_REMAINING;
+    # every rule generate writes under that name must carry exactly the
+    # labels the contract promises readers they can filter on.
+    from nthlayer_common.manifest import ERROR_BUDGET_REMAINING
+
+    written = [
+        rule
+        for path in SHIPPED
+        for rule in _rules(path)
+        if rule.record == ERROR_BUDGET_REMAINING.metric
+    ]
+    assert written, "no shipped manifest wrote the error-budget series"
+    for rule in written:
+        assert set(rule.labels) == set(ERROR_BUDGET_REMAINING.labels), rule.labels
+
+
 def test_latency_slo_rules():
     # payment-api.yaml declares latency-p95 (a legacy latency SLO with a
     # threshold, 30d window). Not an srm/v1 example: those write latency as

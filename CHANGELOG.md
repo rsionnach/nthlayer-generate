@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.0.12](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.11...v4.0.12) (2026-11-04)
+
+
+### Bug Fixes
+
+* require nthlayer-common 5.12.0 ([7465f68](https://github.com/rsionnach/nthlayer-generate/commit/7465f688d7c7d3dcbd0498606d5862a6f2fde8de))
+* require nthlayer-common 5.12.0 ([4f22dd7](https://github.com/rsionnach/nthlayer-generate/commit/4f22dd7e145ef91e7875acbf258e435c7d7fb5df))
+
 ## [4.0.11](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.10...v4.0.11) (2026-11-02)
 
 

@@ -30,7 +30,7 @@
           "record": "slo:availability:ratio"
         },
         {
-          "expr": "sum(rate(events_processed_total{service=\"analytics-stream\",status=\"success\"}[5m]))",
+          "expr": "sum(sum(rate(events_processed_total{service=\"analytics-stream\",status=\"success\"}[5m])))",
           "labels": {
             "service": "analytics-stream",
             "slo": "processing-availability"
@@ -38,7 +38,7 @@
           "record": "slo:sli_good:rate"
         },
         {
-          "expr": "sum(rate(events_processed_total{service=\"analytics-stream\"}[5m]))",
+          "expr": "sum(sum(rate(events_processed_total{service=\"analytics-stream\"}[5m])))",
           "labels": {
             "service": "analytics-stream",
             "slo": "processing-availability"
@@ -88,15 +88,6 @@
             "slo": "event-latency-p99"
           },
           "record": "slo:latency:ratio"
-        },
-        {
-          "expr": "1 - ((1 - slo:latency:ratio{service=\"analytics-stream\",slo=\"event-latency-p99\"}) / (1 - 0.95))",
-          "labels": {
-            "objective": "95.0",
-            "service": "analytics-stream",
-            "slo": "event-latency-p99"
-          },
-          "record": "slo:error_budget_remaining:ratio"
         },
         {
           "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"analytics-stream\"}[5m]))",

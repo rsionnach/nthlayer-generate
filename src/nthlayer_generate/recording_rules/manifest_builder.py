@@ -23,7 +23,6 @@ from nthlayer_common.manifest import (
     JudgmentThreshold,
     ReliabilityManifest,
     SLODefinition,
-    SourceFormat,
     duration_seconds,
 )
 from nthlayer_common.manifest.thresholds import DURATION, THRESHOLD_BOUNDS
@@ -166,8 +165,8 @@ class ManifestRecordingRuleBuilder:
     ) -> list[RecordingRule]:
         """Record an SLO's own good/total queries and its budget (ruling Z3).
 
-        The author's queries are recorded as-is, placeholders substituted and
-        nothing else rewritten. With only a bad query (OpenSLO's {bad, total}
+        The author's queries are recorded as-is inside sum(), placeholders
+        substituted and nothing else rewritten. With only a bad query (OpenSLO's {bad, total}
         form), good is total minus bad. The ratio sums both over the SLO's
         window, and the budget is built from it with the same formula as
         every other path.
@@ -175,11 +174,13 @@ class ManifestRecordingRuleBuilder:
         objective = slo.target
         window = slo.window
         # _has_own_queries guarantees total and one of good/bad.
-        total = self._substitute(slo.total_query or "")
+        # sum(): one series per (service, slo) whatever labels the author's
+        # query leaves, so the ratio's `/` always matches exactly one pair.
+        total = f"sum({self._substitute(slo.total_query or '')})"
         if slo.good_query:
-            good = self._substitute(slo.good_query)
+            good = f"sum({self._substitute(slo.good_query)})"
         else:
-            good = f"({total}) - ({self._substitute(slo.bad_query or '')})"
+            good = f"{total} - sum({self._substitute(slo.bad_query or '')})"
         series_labels = {"service": service, "slo": slo_name}
 
         return [
@@ -204,7 +205,7 @@ class ManifestRecordingRuleBuilder:
     def _budget_rules(
         self, service: str, slo: SLODefinition, ratio_selector: str
     ) -> list[RecordingRule]:
-        return _error_budget_rules(service, slo, ratio_selector, self.manifest.source_format)
+        return _error_budget_rules(service, slo, ratio_selector)
 
     def _build_availability_rules(
         self, service: str, slo_name: str, slo: SLODefinition, with_budget: bool = True
@@ -900,7 +901,7 @@ def _slo_kind(slo: SLODefinition) -> str | None:
     return None
 
 
-def _budget_skip_reason(slo: SLODefinition, source_format: SourceFormat) -> str | None:
+def _budget_skip_reason(slo: SLODefinition) -> str | None:
     """Why ``slo`` must get no error budget, or None when it may have one.
 
     Both cases are targets common's parsers pass through unconverted from
@@ -914,22 +915,19 @@ def _budget_skip_reason(slo: SLODefinition, source_format: SourceFormat) -> str 
     # to divide by.
     if not 50 <= slo.target < 100:
         return "objective_not_a_success_percentage"
-    # opensrm-t13c: srm/v1 latency writes the bound in target, with unit (200
-    # with unit "ms" is "under 200ms"), so target is not an objective at all.
-    # srm/v1 only: the v2 parser also sets unit "ms" on a latency SLO, but
-    # its target is a real objective (0.99 -> 99.0).
-    if (
-        source_format == SourceFormat.SRM_V1
-        and _slo_kind(slo) == "latency"
-        and slo.threshold_ms is None
-        and slo.unit is not None
-    ):
-        return "latency_bound_in_target"
+    # A canned latency ratio counts requests under a bound; without one the
+    # manifest declared (threshold_ms), the builder falls back to the target
+    # (srm/v1 writes the bound there, opensrm-t13c; v2 gets "99ms" for
+    # "under 200ms", opensrm-8jpp) or to 500ms (a legacy plural indicators[]
+    # threshold_ms is not read). A budget on a guessed bound is confidently
+    # wrong. An SLO with its own queries carries its bound in the good query.
+    if _slo_kind(slo) == "latency" and slo.threshold_ms is None and not _has_own_queries(slo):
+        return "latency_bound_not_declared"
     return None
 
 
 def _error_budget_rules(
-    service: str, slo: SLODefinition, ratio_selector: str, source_format: SourceFormat
+    service: str, slo: SLODefinition, ratio_selector: str
 ) -> list[RecordingRule]:
     """The error budget remaining for one SLO, from its GOOD ratio, or none.
 
@@ -940,7 +938,7 @@ def _error_budget_rules(
     test_error_budget_rule_follows_the_shared_contract. ``ratio_selector``
     must evaluate to the fraction of good events, 0-1.
     """
-    reason = _budget_skip_reason(slo, source_format)
+    reason = _budget_skip_reason(slo)
     if reason is not None:
         logger.debug(
             "error budget skipped",

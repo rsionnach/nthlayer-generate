@@ -100,7 +100,7 @@
               "record": "slo:availability:ratio"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"checkout-env-vars\",status!~\"5..\"}[5m]))",
+              "expr": "sum(sum(rate(http_requests_total{service=\"checkout-env-vars\",status!~\"5..\"}[5m])))",
               "labels": {
                 "service": "checkout-env-vars",
                 "slo": "availability-prod"
@@ -108,7 +108,7 @@
               "record": "slo:sli_good:rate"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"checkout-env-vars\"}[5m]))",
+              "expr": "sum(sum(rate(http_requests_total{service=\"checkout-env-vars\"}[5m])))",
               "labels": {
                 "service": "checkout-env-vars",
                 "slo": "availability-prod"
@@ -158,15 +158,6 @@
                 "slo": "latency-p95-commerce"
               },
               "record": "slo:latency:ratio"
-            },
-            {
-              "expr": "1 - ((1 - slo:latency:ratio{service=\"checkout-env-vars\",slo=\"latency-p95-commerce\"}) / (1 - 0.99))",
-              "labels": {
-                "objective": "99.0",
-                "service": "checkout-env-vars",
-                "slo": "latency-p95-commerce"
-              },
-              "record": "slo:error_budget_remaining:ratio"
             },
             {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"checkout-env-vars\"}[5m]))",
@@ -322,12 +313,12 @@
     "output_dir": "<tmp>/out",
     "resources_created": {
       "backstage": 1,
-      "recording-rules": 18,
+      "recording-rules": 17,
       "slos": 2
     },
     "service_name": "checkout-env-vars",
     "success": true,
-    "total_resources": 21
+    "total_resources": 20
   },
   "preamble": [],
   "stray": []

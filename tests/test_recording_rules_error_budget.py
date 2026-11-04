@@ -217,8 +217,9 @@ def test_legacy_success_ratio_is_recorded_as_is():
 
     good = by_record["slo:sli_good:rate"]
     total = by_record["slo:sli_total:rate"]
-    assert good.expr == slo.good_query
-    assert total.expr == slo.total_query
+    # Recorded as-is inside sum(), so each is one series per (service, slo).
+    assert good.expr == f"sum({slo.good_query})"
+    assert total.expr == f"sum({slo.total_query})"
     assert (
         good.labels
         == total.labels
@@ -263,8 +264,8 @@ def test_openslo_bad_over_total_records_total_minus_bad(tmp_path: Path):
     }
     total = 'sum(rate(http_requests_total{service="checkout-api"}[5m]))'
     bad = 'sum(rate(http_requests_total{service="checkout-api",code=~"5.."}[5m]))'
-    assert by_record["slo:sli_total:rate"].expr == total
-    assert by_record["slo:sli_good:rate"].expr == f"({total}) - ({bad})"
+    assert by_record["slo:sli_total:rate"].expr == f"sum({total})"
+    assert by_record["slo:sli_good:rate"].expr == f"sum({total}) - sum({bad})"
     # W is the SLO's own window, 28d here, not the 30d default.
     assert "[28d]" in by_record["slo:sli:ratio"].expr
     (budget,) = _budgets(manifest)["checkout-availability"]
@@ -298,7 +299,12 @@ def test_own_queries_win_over_the_canned_latency_budget(tmp_path: Path):
 def test_exactly_one_budget_per_request_ratio_slo(path: Path):
     manifest = _load(path)
     expected = {
-        str(s.name) for s in manifest.get_standard_slos() if s.slo_type in REQUEST_RATIO_KINDS
+        str(s.name)
+        for s in manifest.get_standard_slos()
+        if s.slo_type in REQUEST_RATIO_KINDS
+        # A canned latency ratio needs the bound the manifest declares; an SLO
+        # with its own queries carries it in the good query.
+        and not (s.slo_type == "latency" and s.threshold_ms is None and not s.total_query)
     } - V1_UNUSABLE.get(path.name, set())
     budgets = _budgets(manifest)
     assert set(budgets) == expected
@@ -386,12 +392,11 @@ _V2_CANNED_LATENCY = """\
 """
 
 
-def test_v2_latency_at_99_gets_a_budget(tmp_path: Path):
+def test_v2_latency_without_a_declared_bound_gets_no_budget(tmp_path: Path):
+    """The parser reads no bound from "99% under 200ms" (opensrm-8jpp), so the
+    canned ratio counts requests under a guessed one; no budget on that."""
     manifest = _v2(tmp_path, _V2_CANNED_LATENCY)
-    (rule,) = _budgets(manifest)["checkout-latency-p99"]
-    assert rule.expr == _budget_expr(
-        _sel("slo:latency:ratio", "checkout-api", "checkout-latency-p99"), 99.0
-    )
+    assert "checkout-latency-p99" not in _budgets(manifest)
 
 
 def test_v2_error_rate_at_99_9_gets_a_budget(tmp_path: Path):

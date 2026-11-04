@@ -33,7 +33,7 @@
               "record": "slo:availability:ratio"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"checkout-db-deps\",status!~\"5..\"}[5m]))",
+              "expr": "sum(sum(rate(http_requests_total{service=\"checkout-db-deps\",status!~\"5..\"}[5m])))",
               "labels": {
                 "service": "checkout-db-deps",
                 "slo": "availability"
@@ -41,7 +41,7 @@
               "record": "slo:sli_good:rate"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"checkout-db-deps\"}[5m]))",
+              "expr": "sum(sum(rate(http_requests_total{service=\"checkout-db-deps\"}[5m])))",
               "labels": {
                 "service": "checkout-db-deps",
                 "slo": "availability"

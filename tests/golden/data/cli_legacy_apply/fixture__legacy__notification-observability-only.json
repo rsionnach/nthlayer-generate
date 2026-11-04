@@ -248,7 +248,7 @@
               "record": "slo:availability:ratio"
             },
             {
-              "expr": "sum(rate(notifications_sent_total{service=\"notification-observability-only\",status=\"delivered\"}[5m]))",
+              "expr": "sum(sum(rate(notifications_sent_total{service=\"notification-observability-only\",status=\"delivered\"}[5m])))",
               "labels": {
                 "service": "notification-observability-only",
                 "slo": "delivery-success"
@@ -256,7 +256,7 @@
               "record": "slo:sli_good:rate"
             },
             {
-              "expr": "sum(rate(notifications_sent_total{service=\"notification-observability-only\"}[5m]))",
+              "expr": "sum(sum(rate(notifications_sent_total{service=\"notification-observability-only\"}[5m])))",
               "labels": {
                 "service": "notification-observability-only",
                 "slo": "delivery-success"

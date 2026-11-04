@@ -33,7 +33,7 @@
               "record": "slo:availability:ratio"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"identity-service\",status!~\"5..\"}[5m]))",
+              "expr": "sum(sum(rate(http_requests_total{service=\"identity-service\",status!~\"5..\"}[5m])))",
               "labels": {
                 "service": "identity-service",
                 "slo": "availability"
@@ -41,7 +41,7 @@
               "record": "slo:sli_good:rate"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"identity-service\"}[5m]))",
+              "expr": "sum(sum(rate(http_requests_total{service=\"identity-service\"}[5m])))",
               "labels": {
                 "service": "identity-service",
                 "slo": "availability"
@@ -93,15 +93,6 @@
               "record": "slo:latency:ratio"
             },
             {
-              "expr": "1 - ((1 - slo:latency:ratio{service=\"identity-service\",slo=\"latency-p95\"}) / (1 - 0.995))",
-              "labels": {
-                "objective": "99.5",
-                "service": "identity-service",
-                "slo": "latency-p95"
-              },
-              "record": "slo:error_budget_remaining:ratio"
-            },
-            {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"identity-service\"}[5m]))",
               "labels": {
                 "service": "identity-service",
@@ -150,15 +141,6 @@
                 "slo": "latency-p99"
               },
               "record": "slo:latency:ratio"
-            },
-            {
-              "expr": "1 - ((1 - slo:latency:ratio{service=\"identity-service\",slo=\"latency-p99\"}) / (1 - 0.98))",
-              "labels": {
-                "objective": "98.0",
-                "service": "identity-service",
-                "slo": "latency-p99"
-              },
-              "record": "slo:error_budget_remaining:ratio"
             },
             {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"identity-service\"}[5m]))",
@@ -241,8 +223,8 @@
     "",
     "Building recording rules...",
     "  Groups: 2",
-    "  Rules: 25",
-    "  • identity-service_slo_metrics: 21 rules (interval: 30s)",
+    "  Rules: 23",
+    "  • identity-service_slo_metrics: 19 rules (interval: 30s)",
     "  • identity-service_health_metrics: 4 rules (interval: 30s)",
     "",
     "Writing recording rules to <tmp>/out/recording-rules.yaml...",

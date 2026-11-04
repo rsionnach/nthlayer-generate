@@ -30,7 +30,7 @@
           "record": "slo:availability:ratio"
         },
         {
-          "expr": "sum(rate(notifications_sent_total{service=\"notification-worker\",status=\"delivered\"}[5m]))",
+          "expr": "sum(sum(rate(notifications_sent_total{service=\"notification-worker\",status=\"delivered\"}[5m])))",
           "labels": {
             "service": "notification-worker",
             "slo": "delivery-success"
@@ -38,7 +38,7 @@
           "record": "slo:sli_good:rate"
         },
         {
-          "expr": "sum(rate(notifications_sent_total{service=\"notification-worker\"}[5m]))",
+          "expr": "sum(sum(rate(notifications_sent_total{service=\"notification-worker\"}[5m])))",
           "labels": {
             "service": "notification-worker",
             "slo": "delivery-success"
@@ -88,15 +88,6 @@
             "slo": "processing-latency-p95"
           },
           "record": "slo:latency:ratio"
-        },
-        {
-          "expr": "1 - ((1 - slo:latency:ratio{service=\"notification-worker\",slo=\"processing-latency-p95\"}) / (1 - 0.98))",
-          "labels": {
-            "objective": "98.0",
-            "service": "notification-worker",
-            "slo": "processing-latency-p95"
-          },
-          "record": "slo:error_budget_remaining:ratio"
         },
         {
           "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"notification-worker\"}[5m]))",

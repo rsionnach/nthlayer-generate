@@ -127,7 +127,7 @@
               "record": "slo:availability:ratio"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"checkout-service\",status!~\"5..\"}[5m]))",
+              "expr": "sum(sum(rate(http_requests_total{service=\"checkout-service\",status!~\"5..\"}[5m])))",
               "labels": {
                 "service": "checkout-service",
                 "slo": "availability"
@@ -135,7 +135,7 @@
               "record": "slo:sli_good:rate"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"checkout-service\"}[5m]))",
+              "expr": "sum(sum(rate(http_requests_total{service=\"checkout-service\"}[5m])))",
               "labels": {
                 "service": "checkout-service",
                 "slo": "availability"
@@ -187,15 +187,6 @@
               "record": "slo:latency:ratio"
             },
             {
-              "expr": "1 - ((1 - slo:latency:ratio{service=\"checkout-service\",slo=\"latency-p95\"}) / (1 - 0.99))",
-              "labels": {
-                "objective": "99.0",
-                "service": "checkout-service",
-                "slo": "latency-p95"
-              },
-              "record": "slo:error_budget_remaining:ratio"
-            },
-            {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"checkout-service\"}[5m]))",
               "labels": {
                 "service": "checkout-service",
@@ -244,15 +235,6 @@
                 "slo": "latency-p99"
               },
               "record": "slo:latency:ratio"
-            },
-            {
-              "expr": "1 - ((1 - slo:latency:ratio{service=\"checkout-service\",slo=\"latency-p99\"}) / (1 - 0.95))",
-              "labels": {
-                "objective": "95.0",
-                "service": "checkout-service",
-                "slo": "latency-p99"
-              },
-              "record": "slo:error_budget_remaining:ratio"
             },
             {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"checkout-service\"}[5m]))",
@@ -446,12 +428,12 @@
     "resources_created": {
       "backstage": 1,
       "pagerduty": 1,
-      "recording-rules": 25,
+      "recording-rules": 23,
       "slos": 3
     },
     "service_name": "checkout-service",
     "success": true,
-    "total_resources": 30
+    "total_resources": 28
   },
   "preamble": [],
   "stray": []

@@ -180,7 +180,10 @@ class ManifestRecordingRuleBuilder:
         if slo.good_query:
             good = f"sum({self._substitute(slo.good_query)})"
         else:
-            good = f"{total} - sum({self._substitute(slo.bad_query or '')})"
+            # `or vector(0)`: a bad query with no series yet (no errors since
+            # the exporter started) sums to nothing, and total - nothing is
+            # nothing; every clean sample would then count as zero good.
+            good = f"{total} - (sum({self._substitute(slo.bad_query or '')}) or vector(0))"
         series_labels = {"service": service, "slo": slo_name}
 
         return [

@@ -265,7 +265,8 @@ def test_openslo_bad_over_total_records_total_minus_bad(tmp_path: Path):
     total = 'sum(rate(http_requests_total{service="checkout-api"}[5m]))'
     bad = 'sum(rate(http_requests_total{service="checkout-api",code=~"5.."}[5m]))'
     assert by_record["slo:sli_total:rate"].expr == f"sum({total})"
-    assert by_record["slo:sli_good:rate"].expr == f"sum({total}) - sum({bad})"
+    # A bad query with no series is no errors, not no data (`or vector(0)`).
+    assert by_record["slo:sli_good:rate"].expr == f"sum({total}) - (sum({bad}) or vector(0))"
     # W is the SLO's own window, 28d here, not the 30d default.
     assert "[28d]" in by_record["slo:sli:ratio"].expr
     (budget,) = _budgets(manifest)["checkout-availability"]

@@ -33,7 +33,32 @@
               "record": "slo:availability:ratio"
             },
             {
-              "expr": "1 - ((1 - slo:availability:ratio{service=\"notification-observability-only\",slo=\"delivery-success\"}) / (1 - 0.995))",
+              "expr": "sum(rate(notifications_sent_total{service=\"notification-observability-only\",status=\"delivered\"}[5m]))",
+              "labels": {
+                "service": "notification-observability-only",
+                "slo": "delivery-success"
+              },
+              "record": "slo:sli_good:rate"
+            },
+            {
+              "expr": "sum(rate(notifications_sent_total{service=\"notification-observability-only\"}[5m]))",
+              "labels": {
+                "service": "notification-observability-only",
+                "slo": "delivery-success"
+              },
+              "record": "slo:sli_total:rate"
+            },
+            {
+              "expr": "sum_over_time(slo:sli_good:rate{service=\"notification-observability-only\",slo=\"delivery-success\"}[30d]) / sum_over_time(slo:sli_total:rate{service=\"notification-observability-only\",slo=\"delivery-success\"}[30d])",
+              "labels": {
+                "objective": "99.5",
+                "service": "notification-observability-only",
+                "slo": "delivery-success"
+              },
+              "record": "slo:sli:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:sli:ratio{service=\"notification-observability-only\",slo=\"delivery-success\"}) / (1 - 0.995))",
               "labels": {
                 "objective": "99.5",
                 "service": "notification-observability-only",
@@ -98,8 +123,8 @@
     "",
     "Building recording rules...",
     "  Groups: 2",
-    "  Rules: 8",
-    "  • notification-observability-only_slo_metrics: 4 rules (interval: 30s)",
+    "  Rules: 11",
+    "  • notification-observability-only_slo_metrics: 7 rules (interval: 30s)",
     "  • notification-observability-only_health_metrics: 4 rules (interval: 30s)",
     "",
     "Writing recording rules to <tmp>/out/recording-rules.yaml...",

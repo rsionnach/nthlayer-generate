@@ -68,6 +68,15 @@
               "record": "slo:latency:ratio"
             },
             {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"payment-api\",slo=\"latency-p95\"}) / (1 - 0.99))",
+              "labels": {
+                "objective": "99.0",
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
               "labels": {
                 "service": "payment-api",
@@ -118,6 +127,15 @@
               "record": "slo:latency:ratio"
             },
             {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"payment-api\",slo=\"latency-p99\"}) / (1 - 0.95))",
+              "labels": {
+                "objective": "95.0",
+                "service": "payment-api",
+                "slo": "latency-p99"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
               "labels": {
                 "service": "payment-api",
@@ -166,6 +184,15 @@
                 "slo": "latency"
               },
               "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"payment-api\",slo=\"latency\"}) / (1 - 0.95))",
+              "labels": {
+                "objective": "95.0",
+                "service": "payment-api",
+                "slo": "latency"
+              },
+              "record": "slo:error_budget_remaining:ratio"
             },
             {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
@@ -249,8 +276,8 @@
     "",
     "Building recording rules...",
     "  Groups: 2",
-    "  Rules: 26",
-    "  • payment-api_slo_metrics: 22 rules (interval: 30s)",
+    "  Rules: 29",
+    "  • payment-api_slo_metrics: 25 rules (interval: 30s)",
     "  • payment-api_health_metrics: 4 rules (interval: 30s)",
     "",
     "Writing recording rules to <tmp>/out/recording-rules.yaml...",

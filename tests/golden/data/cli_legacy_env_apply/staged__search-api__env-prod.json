@@ -1450,6 +1450,15 @@
               "record": "slo:latency:ratio"
             },
             {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"search-api\",slo=\"search-latency-p95\"}) / (1 - 0.99))",
+              "labels": {
+                "objective": "99.0",
+                "service": "search-api",
+                "slo": "search-latency-p95"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m]))",
               "labels": {
                 "service": "search-api",
@@ -1534,6 +1543,15 @@
               "record": "slo:latency:ratio"
             },
             {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"search-api\",slo=\"latency-p95\"}) / (1 - 0.99))",
+              "labels": {
+                "objective": "99.0",
+                "service": "search-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m]))",
               "labels": {
                 "service": "search-api",
@@ -1582,6 +1600,15 @@
                 "slo": "latency-p99"
               },
               "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"search-api\",slo=\"latency-p99\"}) / (1 - 0.95))",
+              "labels": {
+                "objective": "95.0",
+                "service": "search-api",
+                "slo": "latency-p99"
+              },
+              "record": "slo:error_budget_remaining:ratio"
             },
             {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m]))",
@@ -1888,12 +1915,12 @@
       "backstage": 1,
       "dashboard": 1,
       "pagerduty": 1,
-      "recording-rules": 30,
+      "recording-rules": 33,
       "slos": 6
     },
     "service_name": "search-api",
     "success": true,
-    "total_resources": 70
+    "total_resources": 73
   },
   "preamble": [],
   "stray": []

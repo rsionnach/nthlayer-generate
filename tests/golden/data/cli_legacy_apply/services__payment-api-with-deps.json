@@ -1279,6 +1279,15 @@
               "record": "slo:latency:ratio"
             },
             {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"payment-api\",slo=\"latency-p95\"}) / (1 - 0.99))",
+              "labels": {
+                "objective": "99.0",
+                "service": "payment-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"payment-api\"}[5m]))",
               "labels": {
                 "service": "payment-api",
@@ -1435,12 +1444,12 @@
       "backstage": 1,
       "dashboard": 1,
       "pagerduty": 1,
-      "recording-rules": 14,
+      "recording-rules": 15,
       "slos": 2
     },
     "service_name": "payment-api",
     "success": true,
-    "total_resources": 46
+    "total_resources": 47
   },
   "preamble": [],
   "stray": []

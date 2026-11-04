@@ -65,6 +65,15 @@
           "record": "slo:latency:ratio"
         },
         {
+          "expr": "1 - ((1 - slo:latency:ratio{service=\"analytics-pipeline\",slo=\"freshness-p95\"}) / (1 - 0.9))",
+          "labels": {
+            "objective": "90.0",
+            "service": "analytics-pipeline",
+            "slo": "freshness-p95"
+          },
+          "record": "slo:error_budget_remaining:ratio"
+        },
+        {
           "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"analytics-pipeline\"}[5m]))",
           "labels": {
             "service": "analytics-pipeline",

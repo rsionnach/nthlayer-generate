@@ -12,8 +12,8 @@
         "status": "pass"
       },
       "recording_rules": {
-        "message": "19 recording rules will be generated",
-        "rule_count": 19,
+        "message": "21 recording rules will be generated",
+        "rule_count": 21,
         "status": "pass"
       },
       "slo_definition": {
@@ -45,7 +45,7 @@
         ],
         "recording-rules": [
           {
-            "count": 15,
+            "count": 17,
             "interval": "30s",
             "type": "payment-api_slo_metrics"
           },
@@ -116,7 +116,7 @@
       ],
       "recording-rules": [
         {
-          "count": 15,
+          "count": 17,
           "interval": "30s",
           "type": "payment-api_slo_metrics"
         },

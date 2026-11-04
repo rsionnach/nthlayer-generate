@@ -68,6 +68,15 @@
               "record": "slo:latency:ratio"
             },
             {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"mobile-api\",slo=\"latency-p95\"}) / (1 - 0.95))",
+              "labels": {
+                "objective": "95.0",
+                "service": "mobile-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m]))",
               "labels": {
                 "service": "mobile-api",
@@ -116,6 +125,15 @@
                 "slo": "latency-p99"
               },
               "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"mobile-api\",slo=\"latency-p99\"}) / (1 - 0.9))",
+              "labels": {
+                "objective": "90.0",
+                "service": "mobile-api",
+                "slo": "latency-p99"
+              },
+              "record": "slo:error_budget_remaining:ratio"
             },
             {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m]))",
@@ -232,8 +250,8 @@
     "",
     "Building recording rules...",
     "  Groups: 2",
-    "  Rules: 24",
-    "  • mobile-api_slo_metrics: 20 rules (interval: 30s)",
+    "  Rules: 26",
+    "  • mobile-api_slo_metrics: 22 rules (interval: 30s)",
     "  • mobile-api_health_metrics: 4 rules (interval: 30s)",
     "",
     "Writing recording rules to <tmp>/out/recording-rules.yaml...",

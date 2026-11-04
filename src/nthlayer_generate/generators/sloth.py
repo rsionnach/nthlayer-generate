@@ -14,6 +14,8 @@ import structlog
 import yaml
 from nthlayer_common.manifest import ReliabilityManifest, SLODefinition, SourceFormat
 
+from nthlayer_generate.core.placeholders import substitute_manifest_placeholders
+
 logger = structlog.get_logger()
 
 
@@ -133,14 +135,7 @@ def _convert_slo_definition_to_sloth(
         )
 
     # Substitute the service template variables into the query.
-    query = query.replace("${service}", manifest.name)
-    query = query.replace("${team}", manifest.team)
-    query = query.replace("${tier}", manifest.tier)
-    # `or manifest.type` for the type-checker only: authored_type is
-    # declared Optional so it can default to None and mean "derive from
-    # type", and __post_init__ always fills it. The fallback is unreachable
-    # after construction.
-    query = query.replace("${type}", manifest.authored_type or manifest.type)
+    query = substitute_manifest_placeholders(query, manifest)
 
     # Build SLI based on indicator type
     indicator: dict[str, Any] = {

@@ -12,8 +12,8 @@
         "status": "pass"
       },
       "recording_rules": {
-        "message": "20 recording rules will be generated",
-        "rule_count": 20,
+        "message": "25 recording rules will be generated",
+        "rule_count": 25,
         "status": "pass"
       },
       "slo_definition": {
@@ -78,7 +78,7 @@
         ],
         "recording-rules": [
           {
-            "count": 16,
+            "count": 21,
             "interval": "30s",
             "type": "identity-service_slo_metrics"
           },
@@ -177,7 +177,7 @@
       ],
       "recording-rules": [
         {
-          "count": 16,
+          "count": 21,
           "interval": "30s",
           "type": "identity-service_slo_metrics"
         },

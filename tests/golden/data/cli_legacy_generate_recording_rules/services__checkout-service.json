@@ -33,7 +33,7 @@
               "record": "slo:availability:ratio"
             },
             {
-              "expr": "sum(sum(rate(http_requests_total{service=\"checkout-service\",status!~\"5..\"}[5m])))",
+              "expr": "(sum(sum(rate(http_requests_total{service=\"checkout-service\",status!~\"5..\"}[5m]))\n) or (0 * sum(sum(rate(http_requests_total{service=\"checkout-service\"}[5m]))\n)))",
               "labels": {
                 "service": "checkout-service",
                 "slo": "availability"
@@ -41,7 +41,7 @@
               "record": "slo:sli_good:rate"
             },
             {
-              "expr": "sum(sum(rate(http_requests_total{service=\"checkout-service\"}[5m])))",
+              "expr": "sum(sum(rate(http_requests_total{service=\"checkout-service\"}[5m]))\n)",
               "labels": {
                 "service": "checkout-service",
                 "slo": "availability"

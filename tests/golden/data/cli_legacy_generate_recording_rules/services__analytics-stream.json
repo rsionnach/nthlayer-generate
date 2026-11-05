@@ -33,7 +33,7 @@
               "record": "slo:availability:ratio"
             },
             {
-              "expr": "sum(sum(rate(events_processed_total{service=\"analytics-stream\",status=\"success\"}[5m])))",
+              "expr": "(sum(sum(rate(events_processed_total{service=\"analytics-stream\",status=\"success\"}[5m]))\n) or (0 * sum(sum(rate(events_processed_total{service=\"analytics-stream\"}[5m]))\n)))",
               "labels": {
                 "service": "analytics-stream",
                 "slo": "processing-availability"
@@ -41,7 +41,7 @@
               "record": "slo:sli_good:rate"
             },
             {
-              "expr": "sum(sum(rate(events_processed_total{service=\"analytics-stream\"}[5m])))",
+              "expr": "sum(sum(rate(events_processed_total{service=\"analytics-stream\"}[5m]))\n)",
               "labels": {
                 "service": "analytics-stream",
                 "slo": "processing-availability"

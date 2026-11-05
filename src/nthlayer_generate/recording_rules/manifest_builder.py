@@ -181,14 +181,17 @@ class ManifestRecordingRuleBuilder:
         # _has_own_queries guarantees total and one of good/bad.
         # sum(): one series per (service, slo) whatever labels the author's
         # query leaves, so the ratio's `/` always matches exactly one pair.
-        total = f"sum({self._substitute(slo.total_query or '')})"
+        total = self._summed(slo.total_query)
         if slo.good_query:
-            good = f"sum({self._substitute(slo.good_query)})"
+            # `or (0 * total)`: a good query that matches nothing (a typo, or
+            # no success yet) is zero good, an exhausted budget, rather than
+            # no series at all, which readers take as no data.
+            good = f"({self._summed(slo.good_query)} or (0 * {total}))"
         else:
             # `or vector(0)`: a bad query with no series yet (no errors since
             # the exporter started) sums to nothing, and total - nothing is
             # nothing; every clean sample would then count as zero good.
-            good = f"{total} - (sum({self._substitute(slo.bad_query or '')}) or vector(0))"
+            good = f"{total} - ({self._summed(slo.bad_query)} or vector(0))"
         series_labels = {"service": service, "slo": slo_name}
 
         return [
@@ -209,6 +212,12 @@ class ManifestRecordingRuleBuilder:
 
     def _substitute(self, query: str) -> str:
         return substitute_manifest_placeholders(query, self.manifest)
+
+    def _summed(self, query: str | None) -> str:
+        """``sum(<author query>)``, the closing paren on its own line: a
+        trailing ``# comment`` in the author's query would otherwise swallow
+        it, and Prometheus would refuse the whole rule file."""
+        return f"sum({self._substitute(query or '')}\n)"
 
     def _build_availability_rules(
         self, service: str, slo_name: str, slo: SLODefinition, *, with_budget: bool

@@ -218,8 +218,10 @@ def test_legacy_success_ratio_is_recorded_as_is():
     good = by_record["slo:sli_good:rate"]
     total = by_record["slo:sli_total:rate"]
     # Recorded as-is inside sum(), so each is one series per (service, slo).
-    assert good.expr == f"sum({slo.good_query})"
-    assert total.expr == f"sum({slo.total_query})"
+    total_expr = f"sum({slo.total_query}\n)"
+    assert total.expr == total_expr
+    # A good query that matches nothing is zero good, not missing.
+    assert good.expr == f"(sum({slo.good_query}\n) or (0 * {total_expr}))"
     assert (
         good.labels
         == total.labels
@@ -264,9 +266,11 @@ def test_openslo_bad_over_total_records_total_minus_bad(tmp_path: Path):
     }
     total = 'sum(rate(http_requests_total{service="checkout-api"}[5m]))'
     bad = 'sum(rate(http_requests_total{service="checkout-api",code=~"5.."}[5m]))'
-    assert by_record["slo:sli_total:rate"].expr == f"sum({total})"
+    assert by_record["slo:sli_total:rate"].expr == f"sum({total}\n)"
     # A bad query with no series is no errors, not no data (`or vector(0)`).
-    assert by_record["slo:sli_good:rate"].expr == f"sum({total}) - (sum({bad}) or vector(0))"
+    assert by_record["slo:sli_good:rate"].expr == (
+        f"sum({total}\n) - (sum({bad}\n) or vector(0))"
+    )
     # W is the SLO's own window, 28d here, not the 30d default.
     assert "[28d]" in by_record["slo:sli:ratio"].expr
     (budget,) = _budgets(manifest)["checkout-availability"]
@@ -459,3 +463,22 @@ def test_srm_v1_latency_bound_in_range_still_gets_no_budget(tmp_path: Path):
     assert next(s for s in manifest.slos if s.name == "latency").target == 80
     assert "latency" not in _budgets(manifest)
     assert "slo:latency:ratio" in {r.record for r in _rules(manifest)}
+
+
+def test_a_trailing_comment_in_an_author_query_cannot_swallow_the_wrapper(tmp_path: Path):
+    """PromQL comments run to end of line. Each author query is closed on a
+    new line, so a trailing `# ...` cannot eat the closing paren and make
+    Prometheus refuse the whole rule file."""
+    manifest = _v2(
+        tmp_path,
+        # Single-quoted, so YAML keeps the `#` as part of the query.
+        _V2_BAD_TOTAL_AVAILABILITY.replace(
+            'query: sum(rate(http_requests_total{service="${service}",code=~"5.."}[5m]))',
+            """query: 'sum(rate(http_requests_total{service="${service}",code=~"5.."}[5m]))  # 5xx only'""",
+        ),
+    )
+    good = next(r for r in _rules(manifest) if r.record == "slo:sli_good:rate")
+    assert "# 5xx only" in good.expr, good.expr
+    for line in good.expr.splitlines():
+        if "#" in line:
+            assert line.rstrip().endswith("# 5xx only"), line

@@ -30,7 +30,7 @@
           "record": "slo:availability:ratio"
         },
         {
-          "expr": "sum(sum(rate(notifications_sent_total{service=\"notification-worker\",status=\"delivered\"}[5m])))",
+          "expr": "(sum(sum(rate(notifications_sent_total{service=\"notification-worker\",status=\"delivered\"}[5m]))\n) or (0 * sum(sum(rate(notifications_sent_total{service=\"notification-worker\"}[5m]))\n)))",
           "labels": {
             "service": "notification-worker",
             "slo": "delivery-success"
@@ -38,7 +38,7 @@
           "record": "slo:sli_good:rate"
         },
         {
-          "expr": "sum(sum(rate(notifications_sent_total{service=\"notification-worker\"}[5m])))",
+          "expr": "sum(sum(rate(notifications_sent_total{service=\"notification-worker\"}[5m]))\n)",
           "labels": {
             "service": "notification-worker",
             "slo": "delivery-success"

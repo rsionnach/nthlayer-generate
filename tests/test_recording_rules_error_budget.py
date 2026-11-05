@@ -161,6 +161,22 @@ _V2_ERROR_RATE = """\
             target: 0.999
 """
 
+# opensrm/spec/v2/examples/migration/api-full-v2.yaml's payment-api-throughput,
+# copied (service renamed to the envelope's): a v2 throughput SLO whose
+# objective, 99.0, passes the [50, 100) guard, so only ruling D5 keeps its
+# budget out.
+_V2_THROUGHPUT = """\
+    - apiVersion: openslo/v1
+      kind: SLO
+      metadata:
+        name: checkout-throughput
+      spec:
+        service: checkout-api
+        objectives:
+          - displayName: "Sustains 1000 rps over a 1 hour window"
+            target: 0.99
+"""
+
 
 def _v2(tmp_path: Path, *slos: str) -> ReliabilityManifest:
     path = tmp_path / "checkout-api.yaml"
@@ -338,6 +354,28 @@ def test_non_request_ratio_kinds_get_no_budget(path: Path, slo: str):
     manifest = _load(path)
     assert slo in {s.name for s in manifest.slos}
     assert slo not in _budgets(manifest)
+
+
+def test_a_v2_throughput_slo_inside_the_guard_still_gets_no_budget(tmp_path: Path):
+    """The shipped throughput SLOs (5000, 100) are outside [50, 100), so the
+    guard alone would hide a broken D5 branch; this one is inside it."""
+    manifest = _v2(tmp_path, _V2_THROUGHPUT)
+    (slo,) = [s for s in manifest.slos if s.name == "checkout-throughput"]
+    assert slo.slo_type == "throughput" and 50 <= slo.target < 100
+    assert "checkout-throughput" not in _budgets(manifest)
+
+
+def test_every_manifest_placeholder_is_substituted():
+    """The helper the Sloth spec and the recording rules share: each of the
+    four placeholders becomes the manifest's value. payment-api.yaml is
+    team payments, tier critical, type api."""
+    from nthlayer_generate.core.placeholders import substitute_manifest_placeholders
+
+    manifest = _load(SERVICES / "payment-api.yaml")
+    out = substitute_manifest_placeholders(
+        'x{service="${service}",team="${team}",tier="${tier}",type="${type}"}', manifest
+    )
+    assert out == 'x{service="payment-api",team="payments",tier="critical",type="api"}'
 
 
 @pytest.mark.parametrize("path", SHIPPED, ids=lambda p: p.name)

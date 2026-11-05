@@ -121,13 +121,12 @@ class ManifestRecordingRuleBuilder:
         return groups
 
     def _build_standard_slo_rules(self, slo: SLODefinition) -> list[RecordingRule]:
-        """Build recording rules for a standard SLO.
+        """Build recording rules for a standard SLO, dispatched on its kind.
 
-        Args:
-            slo: SLO definition
-
-        Returns:
-            List of RecordingRule objects
+        Availability, latency and error_rate get their canned rules and one
+        error budget: from the SLO's own queries if it has them (ruling Z3),
+        else from the kind's canned good ratio. Throughput, freshness, lag
+        and custom get no budget (ruling D5).
         """
         rules: list[RecordingRule] = []
         service = self.manifest.name
@@ -143,11 +142,17 @@ class ManifestRecordingRuleBuilder:
         canned_budget = not own_queries
 
         if kind == "availability":
-            rules.extend(self._build_availability_rules(service, slo_name, slo, canned_budget))
+            rules.extend(
+                self._build_availability_rules(service, slo_name, slo, with_budget=canned_budget)
+            )
         elif kind == "latency":
-            rules.extend(self._build_latency_rules(service, slo_name, slo, canned_budget))
+            rules.extend(
+                self._build_latency_rules(service, slo_name, slo, with_budget=canned_budget)
+            )
         elif kind == "error_rate":
-            rules.extend(self._build_error_rate_rules(service, slo_name, slo, canned_budget))
+            rules.extend(
+                self._build_error_rate_rules(service, slo_name, slo, with_budget=canned_budget)
+            )
         elif kind == "throughput":
             # Ruling D5: not a request ratio, so no budget (opensrm-vcxm).
             return self._build_throughput_rules(service, slo_name, slo)
@@ -166,10 +171,10 @@ class ManifestRecordingRuleBuilder:
         """Record an SLO's own good/total queries and its budget (ruling Z3).
 
         The author's queries are recorded as-is inside sum(), placeholders
-        substituted and nothing else rewritten. With only a bad query (OpenSLO's {bad, total}
-        form), good is total minus bad. The ratio sums both over the SLO's
-        window, and the budget is built from it with the same formula as
-        every other path.
+        substituted and nothing else rewritten. With only a bad query
+        (OpenSLO's {bad, total} form), good is total minus bad. The ratio
+        sums both over the SLO's window, and the budget is built from it
+        with the same formula as every other path.
         """
         objective = slo.target
         window = slo.window
@@ -199,19 +204,14 @@ class ManifestRecordingRuleBuilder:
                 ),
                 labels={**series_labels, "objective": str(objective)},
             ),
-            *self._budget_rules(service, slo, _slo_selector("slo:sli:ratio", service, slo_name)),
+            *_error_budget_rules(service, slo, _slo_selector("slo:sli:ratio", service, slo_name)),
         ]
 
     def _substitute(self, query: str) -> str:
         return substitute_manifest_placeholders(query, self.manifest)
 
-    def _budget_rules(
-        self, service: str, slo: SLODefinition, ratio_selector: str
-    ) -> list[RecordingRule]:
-        return _error_budget_rules(service, slo, ratio_selector)
-
     def _build_availability_rules(
-        self, service: str, slo_name: str, slo: SLODefinition, with_budget: bool = True
+        self, service: str, slo_name: str, slo: SLODefinition, *, with_budget: bool
     ) -> list[RecordingRule]:
         """Build recording rules for availability SLO."""
         objective = slo.target
@@ -261,7 +261,7 @@ class ManifestRecordingRuleBuilder:
 
         if with_budget:
             rules.extend(
-                self._budget_rules(
+                _error_budget_rules(
                     service,
                     slo,
                     _slo_selector("slo:availability:ratio", service, slo_name),
@@ -271,7 +271,7 @@ class ManifestRecordingRuleBuilder:
         return rules
 
     def _build_latency_rules(
-        self, service: str, slo_name: str, slo: SLODefinition, with_budget: bool = True
+        self, service: str, slo_name: str, slo: SLODefinition, *, with_budget: bool
     ) -> list[RecordingRule]:
         """Build recording rules for latency SLO."""
         objective = slo.target  # Target percentage under threshold
@@ -334,7 +334,7 @@ class ManifestRecordingRuleBuilder:
         # Good is the fraction of requests under the threshold.
         if with_budget:
             rules.extend(
-                self._budget_rules(
+                _error_budget_rules(
                     service,
                     slo,
                     _slo_selector("slo:latency:ratio", service, slo_name),
@@ -360,7 +360,7 @@ class ManifestRecordingRuleBuilder:
         return rules
 
     def _build_error_rate_rules(
-        self, service: str, slo_name: str, slo: SLODefinition, with_budget: bool = True
+        self, service: str, slo_name: str, slo: SLODefinition, *, with_budget: bool
     ) -> list[RecordingRule]:
         """Build recording rules for error rate SLO."""
         objective = slo.target
@@ -411,7 +411,7 @@ class ManifestRecordingRuleBuilder:
         # slo:error_rate:ratio is the BAD fraction; good is its complement.
         if with_budget:
             rules.extend(
-                self._budget_rules(
+                _error_budget_rules(
                     service,
                     slo,
                     f"(1 - {_slo_selector('slo:error_rate:ratio', service, slo_name)})",
@@ -907,10 +907,19 @@ def _slo_kind(slo: SLODefinition) -> str | None:
 def _budget_skip_reason(slo: SLODefinition) -> str | None:
     """Why ``slo`` must get no error budget, or None when it may have one.
 
-    Both cases are targets common's parsers pass through unconverted from
-    srm/v1, where a budget built from them is nonsense (opensrm-t13c, the
-    fix in common). Until that lands, writing no budget is better than
-    writing a wrong one: a reader treats a missing series as no data.
+    Applies to every manifest format. (a) An objective outside [50, 100)
+    is not a usable success percentage; it catches srm/v1 error_rate
+    targets, which are maxima. (b) A canned latency SLO with no declared
+    threshold_ms counts requests under a guessed bound: srm/v1 keeps the
+    bound in its target, v2 reads "99ms" from "under 200ms", and the
+    legacy plural indicators[].threshold_ms is not read. An SLO with its
+    own queries is exempt from (b): its bound is in the good query.
+    Writing no budget is better than writing a wrong one: a reader treats
+    a missing series as no data.
+
+    TODO(opensrm-t13c): drop (a)'s error_rate case and (b)'s srm/v1 case
+    once common converts srm/v1 targets.
+    TODO(opensrm-8jpp): drop (b)'s v2 case once common reads the bound.
     """
     # opensrm-t13c: a request-ratio objective is a success percentage. Under
     # 50 it is not one -- srm/v1 error_rate targets are MAXIMUM error rates
@@ -935,8 +944,9 @@ def _error_budget_rules(
     """The error budget remaining for one SLO, from its GOOD ratio, or none.
 
     Every path writes its budget here, so the formula, the labels and the
-    guard against unusable targets (``_budget_skip_reason``) live once. The name is nthlayer-common's contract, which measure, correlate
-    and drift read back (opensrm-h0at); the label keys must stay the
+    guard against unusable targets (``_budget_skip_reason``) live once.
+    The name is nthlayer-common's contract, which measure, correlate and
+    drift read back (opensrm-h0at); the label keys must stay the
     contract's labels, pinned by
     test_error_budget_rule_follows_the_shared_contract. ``ratio_selector``
     must evaluate to the fraction of good events, 0-1.

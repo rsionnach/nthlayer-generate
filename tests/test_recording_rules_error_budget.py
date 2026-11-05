@@ -448,7 +448,7 @@ def test_z3_path_is_guarded_too(tmp_path: Path):
 
 def test_srm_v1_latency_bound_in_range_still_gets_no_budget(tmp_path: Path):
     # api-basic's latency with an 80ms bound: 80 sits inside the 50-100
-    # objective range, so only the bound-in-target rule keeps it out.
+    # objective range, so only the latency_bound_not_declared rule keeps it out.
     text = (EXAMPLES / "opensrm" / "api-basic.reliability.yaml").read_text()
     assert "      target: 200\n      unit: ms\n" in text
     path = tmp_path / "api-basic.reliability.yaml"

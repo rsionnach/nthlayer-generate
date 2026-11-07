@@ -337,6 +337,15 @@
               "record": "slo:latency:ratio"
             },
             {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"notification-service\",slo=\"processing-time-p95\"}) / (1 - 0.95))",
+              "labels": {
+                "objective": "95.0",
+                "service": "notification-service",
+                "slo": "processing-time-p95"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"notification-service\"}[5m]))",
               "labels": {
                 "service": "notification-service",
@@ -477,12 +486,12 @@
       "backstage": 1,
       "dashboard": 1,
       "pagerduty": 1,
-      "recording-rules": 14,
+      "recording-rules": 15,
       "slos": 2
     },
     "service_name": "notification-service",
     "success": true,
-    "total_resources": 19
+    "total_resources": 20
   },
   "preamble": [],
   "stray": []

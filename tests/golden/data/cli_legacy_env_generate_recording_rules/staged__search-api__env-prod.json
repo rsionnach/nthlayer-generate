@@ -68,6 +68,15 @@
               "record": "slo:latency:ratio"
             },
             {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"search-api\",slo=\"search-latency-p95\"}) / (1 - 0.99))",
+              "labels": {
+                "objective": "99.0",
+                "service": "search-api",
+                "slo": "search-latency-p95"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m]))",
               "labels": {
                 "service": "search-api",
@@ -152,6 +161,15 @@
               "record": "slo:latency:ratio"
             },
             {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"search-api\",slo=\"latency-p95\"}) / (1 - 0.99))",
+              "labels": {
+                "objective": "99.0",
+                "service": "search-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m]))",
               "labels": {
                 "service": "search-api",
@@ -200,6 +218,15 @@
                 "slo": "latency-p99"
               },
               "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"search-api\",slo=\"latency-p99\"}) / (1 - 0.95))",
+              "labels": {
+                "objective": "95.0",
+                "service": "search-api",
+                "slo": "latency-p99"
+              },
+              "record": "slo:error_budget_remaining:ratio"
             },
             {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m]))",
@@ -283,8 +310,8 @@
     "",
     "Building recording rules...",
     "  Groups: 2",
-    "  Rules: 30",
-    "  • search-api_slo_metrics: 26 rules (interval: 30s)",
+    "  Rules: 33",
+    "  • search-api_slo_metrics: 29 rules (interval: 30s)",
     "  • search-api_health_metrics: 4 rules (interval: 30s)",
     "",
     "Writing recording rules to <tmp>/out/recording-rules.yaml...",

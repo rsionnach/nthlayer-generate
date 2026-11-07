@@ -36,7 +36,7 @@
     were removed in 4.0.0 (opensrm-wo62.4.6); `models.py` keeps
     `ServiceContext`/`Resource` as an internal adapter for dashboards and the
     metrics recommender (opensrm-wo62.4.20)
-- `slos/` — SLO definition, validation, and recording rule generation
+- `slos/` — SLO definition and validation (recording rules live in `recording_rules/`)
   - `models.py` — SLO, ErrorBudget, SLOStatus, Incident dataclasses; default target: 0.999
   - `parser.py` — OpenSLO YAML parsing
   - `collector.py` — SLOCollector: Prometheus queries for live budget data
@@ -45,6 +45,16 @@
   - `deployment.py` — DeploymentRecorder for storing deployment events
   - `correlator.py` — DeploymentCorrelator: weighted scoring for deployment-incident correlation
   - `ceiling.py` — SLO ceiling validation against upstream SLAs
+- `recording_rules/` — Prometheus recording rules from the manifest
+  - `manifest_builder.py` — `build_recording_rules_from_manifest`: per-kind
+    SLO ratios, and `slo:error_budget_remaining:ratio` for every availability,
+    latency and error_rate SLO through one writer (`_error_budget_rules`), with
+    `_budget_skip_reason` refusing unusable objectives and guessed latency
+    bounds. An SLO's own good/total queries are recorded as
+    `slo:sli_good:rate` / `slo:sli_total:rate` and summed into `slo:sli:ratio`
+    (opensrm-zo0o)
+- `core/placeholders.py` — `${service}`-style placeholder substitution shared
+  by the Sloth generator and the recording-rule builder
 - `alerts/` — Alert rule generation from dependencies and SLOs
 - `validation/` — Metadata and resource validation
 - `generators/` — Resource generation from manifests

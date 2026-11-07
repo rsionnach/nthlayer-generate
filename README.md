@@ -138,6 +138,54 @@ $ nthlayer validate service.yaml --policies policies.yaml
 
 ---
 
+## ⚠️ Upgrading: an error budget for every request-ratio SLO
+
+`generate-recording-rules` (and `apply`) used to write
+`slo:error_budget_remaining:ratio` for availability SLOs only. It now writes
+one for every **availability, latency and error_rate** SLO, labelled
+`{service, slo, objective}` as `nthlayer-common`'s series contract defines it.
+Throughput, freshness, lag and custom SLOs still get no budget: they are not
+good/total ratios (opensrm-vcxm tracks time-slice budgets for them).
+
+**New series.** An SLO that declares its own good/total (or bad/total)
+queries, through an OpenSLO `ratioMetric` or a legacy `indicators[]`
+`success_ratio`, has them recorded as written and summed over the SLO's
+window:
+
+| Series | Labels | Value |
+|---|---|---|
+| `slo:sli_good:rate` | `service`, `slo` | the SLO's good query |
+| `slo:sli_total:rate` | `service`, `slo` | the SLO's total query |
+| `slo:sli:ratio` | `service`, `slo`, `objective` | `sum_over_time(good[window]) / sum_over_time(total[window])` |
+
+Latency budgets come from `slo:latency:ratio`, and error_rate budgets from
+`1 - slo:error_rate:ratio`.
+
+**Budget values change for SLOs with their own queries.** Their budget is now
+computed from `slo:sli:ratio`, not from the canned `http_requests_total`
+ratio. In the bundled examples that is the availability SLO of
+`examples/services/analytics-stream.yaml`, `checkout-service.yaml`,
+`identity-service.yaml` and `notification-worker.yaml`.
+
+**There is no backfill.** `slo:sli:ratio` sums recorded series, so for the
+first SLO window after you deploy the new rules it covers only the time since
+deployment, and a new budget can read well away from its eventual value. Wait
+one window before acting on it, or backfill with
+`promtool tsdb create-blocks-from rules`.
+
+**Some budgets are skipped on purpose.** Writing no budget is safer than
+writing a wrong one, because readers treat a missing series as no data. The
+ratio rules are still written. A budget is skipped when:
+
+- the objective is not a success percentage in `[50, 100)`. This catches
+  srm/v1 error_rate targets, which are maximum error rates (opensrm-t13c);
+- a latency SLO has no `threshold_ms` and no queries of its own, so its bound
+  would be guessed: srm/v1 keeps the bound in `target` (opensrm-t13c), v2
+  reads it from the objective (opensrm-8jpp), and a legacy `indicators[]`
+  `threshold_ms` is not read.
+
+Skips are logged at debug level as `error budget skipped`, with a `reason`.
+
 ## ⚠️ Upgrading to 4.0.0: the legacy `parse_service_file` API is removed
 
 Since 3.5.0 every command, legacy `service:` files included, loads manifests

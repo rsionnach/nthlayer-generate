@@ -340,7 +340,32 @@
               "record": "slo:availability:ratio"
             },
             {
-              "expr": "1 - ((1 - slo:availability:ratio{service=\"checkout-db-deps\",slo=\"availability\"}) / (1 - 0.9995))",
+              "expr": "(sum(sum(rate(http_requests_total{service=\"checkout-db-deps\",status!~\"5..\"}[5m]))\n) or (0 * sum(sum(rate(http_requests_total{service=\"checkout-db-deps\"}[5m]))\n)))",
+              "labels": {
+                "service": "checkout-db-deps",
+                "slo": "availability"
+              },
+              "record": "slo:sli_good:rate"
+            },
+            {
+              "expr": "sum(sum(rate(http_requests_total{service=\"checkout-db-deps\"}[5m]))\n)",
+              "labels": {
+                "service": "checkout-db-deps",
+                "slo": "availability"
+              },
+              "record": "slo:sli_total:rate"
+            },
+            {
+              "expr": "sum_over_time(slo:sli_good:rate{service=\"checkout-db-deps\",slo=\"availability\"}[30d]) / sum_over_time(slo:sli_total:rate{service=\"checkout-db-deps\",slo=\"availability\"}[30d])",
+              "labels": {
+                "objective": "99.95",
+                "service": "checkout-db-deps",
+                "slo": "availability"
+              },
+              "record": "slo:sli:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:sli:ratio{service=\"checkout-db-deps\",slo=\"availability\"}) / (1 - 0.9995))",
               "labels": {
                 "objective": "99.95",
                 "service": "checkout-db-deps",
@@ -444,12 +469,12 @@
     "resources_created": {
       "alerts": 15,
       "backstage": 1,
-      "recording-rules": 8,
+      "recording-rules": 11,
       "slos": 1
     },
     "service_name": "checkout-db-deps",
     "success": false,
-    "total_resources": 25
+    "total_resources": 28
   },
   "preamble": [],
   "stray": []

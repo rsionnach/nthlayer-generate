@@ -1073,7 +1073,32 @@
               "record": "slo:availability:ratio"
             },
             {
-              "expr": "1 - ((1 - slo:availability:ratio{service=\"checkout-service\",slo=\"availability\"}) / (1 - 0.9995))",
+              "expr": "(sum(sum(rate(http_requests_total{service=\"checkout-service\",status!~\"5..\"}[5m]))\n) or (0 * sum(sum(rate(http_requests_total{service=\"checkout-service\"}[5m]))\n)))",
+              "labels": {
+                "service": "checkout-service",
+                "slo": "availability"
+              },
+              "record": "slo:sli_good:rate"
+            },
+            {
+              "expr": "sum(sum(rate(http_requests_total{service=\"checkout-service\"}[5m]))\n)",
+              "labels": {
+                "service": "checkout-service",
+                "slo": "availability"
+              },
+              "record": "slo:sli_total:rate"
+            },
+            {
+              "expr": "sum_over_time(slo:sli_good:rate{service=\"checkout-service\",slo=\"availability\"}[30d]) / sum_over_time(slo:sli_total:rate{service=\"checkout-service\",slo=\"availability\"}[30d])",
+              "labels": {
+                "objective": "99.95",
+                "service": "checkout-service",
+                "slo": "availability"
+              },
+              "record": "slo:sli:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:sli:ratio{service=\"checkout-service\",slo=\"availability\"}) / (1 - 0.9995))",
               "labels": {
                 "objective": "99.95",
                 "service": "checkout-service",
@@ -1351,12 +1376,12 @@
       "backstage": 1,
       "dashboard": 1,
       "pagerduty": 1,
-      "recording-rules": 20,
+      "recording-rules": 23,
       "slos": 3
     },
     "service_name": "checkout-service",
     "success": true,
-    "total_resources": 52
+    "total_resources": 55
   },
   "preamble": [],
   "stray": []

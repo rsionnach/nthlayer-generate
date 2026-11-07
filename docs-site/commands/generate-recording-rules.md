@@ -76,17 +76,13 @@ groups:
         labels:
           service: payment-api
 
-      # Error budget remaining
+      # Error budget remaining, one per availability, latency and error_rate SLO
       - record: slo:error_budget_remaining:ratio
-        expr: |
-          1 - (
-            sum_over_time(service:http_errors:ratio_rate5m{service="payment-api"}[30d])
-            /
-            (30 * 24 * 12)  # 30 days of 5-minute windows
-          ) / (1 - 0.999)  # 99.9% SLO target
+        expr: 1 - ((1 - slo:availability:ratio{service="payment-api",slo="availability"}) / (1 - 0.9995))
         labels:
           service: payment-api
           slo: availability
+          objective: '99.95'
 ```
 
 ### Preview Mode
@@ -111,7 +107,12 @@ nthlayer generate-recording-rules services/api.yaml --env prod
 | `service:http_request_duration_seconds:p50` | p50 latency | Performance baseline |
 | `service:http_request_duration_seconds:p95` | p95 latency | Performance monitoring |
 | `service:http_request_duration_seconds:p99` | p99 latency | SLO calculation |
-| `slo:error_budget_remaining:ratio` | Budget remaining | Error budget tracking |
+| `slo:availability:ratio` | Good fraction over the SLO window | Availability SLO |
+| `slo:latency:ratio` | Fraction under the latency bound | Latency SLO |
+| `slo:error_rate:ratio` | Failed fraction | Error-rate SLO |
+| `slo:sli_good:rate`, `slo:sli_total:rate` | The SLO's own good/total queries, as written | SLOs that declare their own queries |
+| `slo:sli:ratio` | Own good/total summed over the SLO window | SLOs that declare their own queries |
+| `slo:error_budget_remaining:ratio` | Budget remaining, labelled `service`, `slo`, `objective` | One per availability, latency and error_rate SLO; see the README's upgrade note for when a budget is skipped |
 
 ## Performance Impact
 

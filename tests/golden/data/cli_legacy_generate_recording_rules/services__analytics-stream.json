@@ -33,7 +33,32 @@
               "record": "slo:availability:ratio"
             },
             {
-              "expr": "1 - ((1 - slo:availability:ratio{service=\"analytics-stream\",slo=\"processing-availability\"}) / (1 - 0.995))",
+              "expr": "(sum(sum(rate(events_processed_total{service=\"analytics-stream\",status=\"success\"}[5m]))\n) or (0 * sum(sum(rate(events_processed_total{service=\"analytics-stream\"}[5m]))\n)))",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "processing-availability"
+              },
+              "record": "slo:sli_good:rate"
+            },
+            {
+              "expr": "sum(sum(rate(events_processed_total{service=\"analytics-stream\"}[5m]))\n)",
+              "labels": {
+                "service": "analytics-stream",
+                "slo": "processing-availability"
+              },
+              "record": "slo:sli_total:rate"
+            },
+            {
+              "expr": "sum_over_time(slo:sli_good:rate{service=\"analytics-stream\",slo=\"processing-availability\"}[30d]) / sum_over_time(slo:sli_total:rate{service=\"analytics-stream\",slo=\"processing-availability\"}[30d])",
+              "labels": {
+                "objective": "99.5",
+                "service": "analytics-stream",
+                "slo": "processing-availability"
+              },
+              "record": "slo:sli:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:sli:ratio{service=\"analytics-stream\",slo=\"processing-availability\"}) / (1 - 0.995))",
               "labels": {
                 "objective": "99.5",
                 "service": "analytics-stream",
@@ -148,8 +173,8 @@
     "",
     "Building recording rules...",
     "  Groups: 2",
-    "  Rules: 14",
-    "  • analytics-stream_slo_metrics: 10 rules (interval: 30s)",
+    "  Rules: 17",
+    "  • analytics-stream_slo_metrics: 13 rules (interval: 30s)",
     "  • analytics-stream_health_metrics: 4 rules (interval: 30s)",
     "",
     "Writing recording rules to <tmp>/out/recording-rules.yaml...",

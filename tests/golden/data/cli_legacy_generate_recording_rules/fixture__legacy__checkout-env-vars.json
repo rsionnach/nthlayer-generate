@@ -33,7 +33,32 @@
               "record": "slo:availability:ratio"
             },
             {
-              "expr": "1 - ((1 - slo:availability:ratio{service=\"checkout-env-vars\",slo=\"availability-${env}\"}) / (1 - 0.9995))",
+              "expr": "(sum(sum(rate(http_requests_total{service=\"checkout-env-vars\",status!~\"5..\"}[5m]))\n) or (0 * sum(sum(rate(http_requests_total{service=\"checkout-env-vars\"}[5m]))\n)))",
+              "labels": {
+                "service": "checkout-env-vars",
+                "slo": "availability-${env}"
+              },
+              "record": "slo:sli_good:rate"
+            },
+            {
+              "expr": "sum(sum(rate(http_requests_total{service=\"checkout-env-vars\"}[5m]))\n)",
+              "labels": {
+                "service": "checkout-env-vars",
+                "slo": "availability-${env}"
+              },
+              "record": "slo:sli_total:rate"
+            },
+            {
+              "expr": "sum_over_time(slo:sli_good:rate{service=\"checkout-env-vars\",slo=\"availability-${env}\"}[30d]) / sum_over_time(slo:sli_total:rate{service=\"checkout-env-vars\",slo=\"availability-${env}\"}[30d])",
+              "labels": {
+                "objective": "99.95",
+                "service": "checkout-env-vars",
+                "slo": "availability-${env}"
+              },
+              "record": "slo:sli:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:sli:ratio{service=\"checkout-env-vars\",slo=\"availability-${env}\"}) / (1 - 0.9995))",
               "labels": {
                 "objective": "99.95",
                 "service": "checkout-env-vars",
@@ -148,8 +173,8 @@
     "",
     "Building recording rules...",
     "  Groups: 2",
-    "  Rules: 14",
-    "  • checkout-env-vars_slo_metrics: 10 rules (interval: 30s)",
+    "  Rules: 17",
+    "  • checkout-env-vars_slo_metrics: 13 rules (interval: 30s)",
     "  • checkout-env-vars_health_metrics: 4 rules (interval: 30s)",
     "",
     "Writing recording rules to <tmp>/out/recording-rules.yaml...",

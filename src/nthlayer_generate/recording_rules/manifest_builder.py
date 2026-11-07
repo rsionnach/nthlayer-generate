@@ -1,7 +1,8 @@
 """Builder for generating Prometheus recording rules from ReliabilityManifest.
 
 This module provides recording rule generation for:
-- Standard SLOs (availability, latency, error_rate, throughput)
+- Standard SLOs (availability, latency, error_rate, throughput), with an
+  error budget for each request-ratio SLO (opensrm-zo0o)
 - AI Gate judgment SLOs (reversal_rate, high_confidence_failure)
 - AI Gate judgment thresholds (calibration, feedback_latency), from nthlayer-common's
   JudgmentThreshold (opensrm-wo62.1, spec §5.3)
@@ -15,6 +16,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+import structlog
 from nthlayer_common.manifest import (
     ERROR_BUDGET_REMAINING,
     FEEDBACK_LATENCY_WINDOW,
@@ -25,7 +27,10 @@ from nthlayer_common.manifest import (
 )
 from nthlayer_common.manifest.thresholds import DURATION, THRESHOLD_BOUNDS
 
+from nthlayer_generate.core.placeholders import substitute_manifest_placeholders
 from nthlayer_generate.recording_rules.models import RecordingRule, RecordingRuleGroup
+
+logger = structlog.get_logger()
 
 # The recording rule a threshold bound's alerts compare against, per type and
 # bound (wo62.2). Only types with a data source in common's THRESHOLD_SERIES
@@ -116,34 +121,106 @@ class ManifestRecordingRuleBuilder:
         return groups
 
     def _build_standard_slo_rules(self, slo: SLODefinition) -> list[RecordingRule]:
-        """Build recording rules for a standard SLO.
+        """Build recording rules for a standard SLO, dispatched on its kind.
 
-        Args:
-            slo: SLO definition
-
-        Returns:
-            List of RecordingRule objects
+        Availability, latency and error_rate get their canned rules and one
+        error budget: from the SLO's own queries if it has them (ruling Z3),
+        else from the kind's canned good ratio. Throughput, freshness, lag
+        and custom get no budget (ruling D5).
         """
         rules: list[RecordingRule] = []
         service = self.manifest.name
         slo_name = slo.name
 
-        # Determine SLO type by name or explicit type
-        slo_type = slo.slo_type or slo.name
+        kind = _slo_kind(slo)
 
-        if "availability" in slo_type.lower():
-            rules.extend(self._build_availability_rules(service, slo_name, slo))
-        elif "latency" in slo_type.lower():
-            rules.extend(self._build_latency_rules(service, slo_name, slo))
-        elif "error" in slo_type.lower():
-            rules.extend(self._build_error_rate_rules(service, slo_name, slo))
-        elif "throughput" in slo_type.lower():
-            rules.extend(self._build_throughput_rules(service, slo_name, slo))
+        # Ruling Z3 (opensrm-zo0o): an SLO with its own good/total queries
+        # gets its budget from them, whatever its request-ratio kind; the
+        # kind's canned rules are still written, for dashboards, but without
+        # a budget, so no SLO has two.
+        own_queries = _has_own_queries(slo)
+        canned_budget = not own_queries
+
+        if kind == "availability":
+            rules.extend(
+                self._build_availability_rules(service, slo_name, slo, with_budget=canned_budget)
+            )
+        elif kind == "latency":
+            rules.extend(
+                self._build_latency_rules(service, slo_name, slo, with_budget=canned_budget)
+            )
+        elif kind == "error_rate":
+            rules.extend(
+                self._build_error_rate_rules(service, slo_name, slo, with_budget=canned_budget)
+            )
+        elif kind == "throughput":
+            # Ruling D5: not a request ratio, so no budget (opensrm-vcxm).
+            return self._build_throughput_rules(service, slo_name, slo)
+        else:
+            # freshness, lag, custom: no rules and no budget (D5).
+            return rules
+
+        if own_queries:
+            rules.extend(self._build_own_query_rules(service, slo_name, slo))
 
         return rules
 
-    def _build_availability_rules(
+    def _build_own_query_rules(
         self, service: str, slo_name: str, slo: SLODefinition
+    ) -> list[RecordingRule]:
+        """Record an SLO's own good/total queries and its budget (ruling Z3).
+
+        The author's queries are recorded as-is inside sum(), placeholders
+        substituted and nothing else rewritten. With only a bad query
+        (OpenSLO's {bad, total} form), good is total minus bad. The ratio
+        sums both over the SLO's window, and the budget is built from it
+        with the same formula as every other path.
+        """
+        objective = slo.target
+        window = slo.window
+        # _has_own_queries guarantees total and one of good/bad.
+        # sum(): one series per (service, slo) whatever labels the author's
+        # query leaves, so the ratio's `/` always matches exactly one pair.
+        total = self._summed(slo.total_query)
+        if slo.good_query:
+            # `or (0 * total)`: a good query that matches nothing (a typo, or
+            # no success yet) is zero good, an exhausted budget, rather than
+            # no series at all, which readers take as no data.
+            good = f"({self._summed(slo.good_query)} or (0 * {total}))"
+        else:
+            # `or vector(0)`: a bad query with no series yet (no errors since
+            # the exporter started) sums to nothing, and total - nothing is
+            # nothing; every clean sample would then count as zero good.
+            good = f"{total} - ({self._summed(slo.bad_query)} or vector(0))"
+        series_labels = {"service": service, "slo": slo_name}
+
+        return [
+            RecordingRule(record="slo:sli_good:rate", expr=good, labels=dict(series_labels)),
+            RecordingRule(record="slo:sli_total:rate", expr=total, labels=dict(series_labels)),
+            RecordingRule(
+                record="slo:sli:ratio",
+                expr=(
+                    f"sum_over_time({_slo_selector('slo:sli_good:rate', service, slo_name)}"
+                    f"[{window}]) / "
+                    f"sum_over_time({_slo_selector('slo:sli_total:rate', service, slo_name)}"
+                    f"[{window}])"
+                ),
+                labels={**series_labels, "objective": str(objective)},
+            ),
+            *_error_budget_rules(service, slo, _slo_selector("slo:sli:ratio", service, slo_name)),
+        ]
+
+    def _substitute(self, query: str) -> str:
+        return substitute_manifest_placeholders(query, self.manifest)
+
+    def _summed(self, query: str | None) -> str:
+        """``sum(<author query>)``, the closing paren on its own line: a
+        trailing ``# comment`` in the author's query would otherwise swallow
+        it, and Prometheus would refuse the whole rule file."""
+        return f"sum({self._substitute(query or '')}\n)"
+
+    def _build_availability_rules(
+        self, service: str, slo_name: str, slo: SLODefinition, *, with_budget: bool
     ) -> list[RecordingRule]:
         """Build recording rules for availability SLO."""
         objective = slo.target
@@ -191,29 +268,19 @@ class ManifestRecordingRuleBuilder:
             )
         )
 
-        # Error budget remaining (as ratio). The name is nthlayer-common's
-        # contract, which measure, correlate and drift read back
-        # (opensrm-h0at); the label keys below must stay the contract's
-        # labels, pinned by test_error_budget_rule_follows_the_shared_contract.
-        rules.append(
-            RecordingRule(
-                record=ERROR_BUDGET_REMAINING.metric,
-                expr=(
-                    f'1 - ((1 - slo:availability:ratio{{service="{service}",slo="{slo_name}"}}) / '
-                    f"(1 - {objective / 100}))"
-                ),
-                labels={
-                    "service": service,
-                    "slo": slo_name,
-                    "objective": str(objective),
-                },
+        if with_budget:
+            rules.extend(
+                _error_budget_rules(
+                    service,
+                    slo,
+                    _slo_selector("slo:availability:ratio", service, slo_name),
+                )
             )
-        )
 
         return rules
 
     def _build_latency_rules(
-        self, service: str, slo_name: str, slo: SLODefinition
+        self, service: str, slo_name: str, slo: SLODefinition, *, with_budget: bool
     ) -> list[RecordingRule]:
         """Build recording rules for latency SLO."""
         objective = slo.target  # Target percentage under threshold
@@ -273,6 +340,16 @@ class ManifestRecordingRuleBuilder:
             )
         )
 
+        # Good is the fraction of requests under the threshold.
+        if with_budget:
+            rules.extend(
+                _error_budget_rules(
+                    service,
+                    slo,
+                    _slo_selector("slo:latency:ratio", service, slo_name),
+                )
+            )
+
         # Percentiles for dashboards
         for quantile in [0.50, 0.95, 0.99]:
             rules.append(
@@ -292,7 +369,7 @@ class ManifestRecordingRuleBuilder:
         return rules
 
     def _build_error_rate_rules(
-        self, service: str, slo_name: str, slo: SLODefinition
+        self, service: str, slo_name: str, slo: SLODefinition, *, with_budget: bool
     ) -> list[RecordingRule]:
         """Build recording rules for error rate SLO."""
         objective = slo.target
@@ -339,6 +416,16 @@ class ManifestRecordingRuleBuilder:
                 },
             )
         )
+
+        # slo:error_rate:ratio is the BAD fraction; good is its complement.
+        if with_budget:
+            rules.extend(
+                _error_budget_rules(
+                    service,
+                    slo,
+                    f"(1 - {_slo_selector('slo:error_rate:ratio', service, slo_name)})",
+                )
+            )
 
         return rules
 
@@ -796,6 +883,106 @@ def prometheus_le(value: float) -> str:
     digits = "".join(map(str, shortest.as_tuple().digits)).rstrip("0") or "0"
     mantissa = digits[0] + (f".{digits[1:]}" if len(digits) > 1 else "")
     return f"{mantissa}e{'+' if exponent >= 0 else '-'}{abs(exponent):02d}"
+
+
+def _has_own_queries(slo: SLODefinition) -> bool:
+    """True when the SLO declares its own total query and a good or bad one.
+
+    nthlayer-common fills these from OpenSLO's ratioMetric or the legacy
+    indicators[].success_ratio, and refuses good and bad together.
+    """
+    return bool(slo.total_query) and bool(slo.good_query or slo.bad_query)
+
+
+def _slo_selector(record: str, service: str, slo_name: str) -> str:
+    """``record{service="...",slo="..."}``, as every SLO rule here selects."""
+    return f'{record}{{service="{service}",slo="{slo_name}"}}'
+
+
+def _slo_kind(slo: SLODefinition) -> str | None:
+    """The rule family an SLO dispatches to, by its type (or, unset, its name)."""
+    slo_type = (slo.slo_type or slo.name).lower()
+    for needle, kind in (
+        ("availability", "availability"),
+        ("latency", "latency"),
+        ("error", "error_rate"),
+        ("throughput", "throughput"),
+    ):
+        if needle in slo_type:
+            return kind
+    return None
+
+
+def _budget_skip_reason(slo: SLODefinition) -> str | None:
+    """Why ``slo`` must get no error budget, or None when it may have one.
+
+    Applies to every manifest format. (a) An objective outside [50, 100)
+    is not a usable success percentage; it catches srm/v1 error_rate
+    targets, which are maxima. (b) A canned latency SLO with no declared
+    threshold_ms counts requests under a guessed bound: srm/v1 keeps the
+    bound in its target, v2 reads "99ms" from "under 200ms", and the
+    legacy plural indicators[].threshold_ms is not read. An SLO with its
+    own queries is exempt from (b): its bound is in the good query.
+    Writing no budget is better than writing a wrong one: a reader treats
+    a missing series as no data.
+
+    TODO(opensrm-t13c): drop (a)'s error_rate case and (b)'s srm/v1 case
+    once common converts srm/v1 targets.
+    TODO(opensrm-8jpp): drop (b)'s v2 case once common reads the bound.
+    """
+    # opensrm-t13c: a request-ratio objective is a success percentage. Under
+    # 50 it is not one -- srm/v1 error_rate targets are MAXIMUM error rates
+    # (0.1 means at most 0.1% errors) -- and 100 or more leaves no budget
+    # to divide by.
+    if not 50 <= slo.target < 100:
+        return "objective_not_a_success_percentage"
+    # A canned latency ratio counts requests under a bound; without one the
+    # manifest declared (threshold_ms), the builder falls back to the target
+    # (srm/v1 writes the bound there, opensrm-t13c; v2 gets "99ms" for
+    # "under 200ms", opensrm-8jpp) or to 500ms (a legacy plural indicators[]
+    # threshold_ms is not read). A budget on a guessed bound is confidently
+    # wrong. An SLO with its own queries carries its bound in the good query.
+    if _slo_kind(slo) == "latency" and slo.threshold_ms is None and not _has_own_queries(slo):
+        return "latency_bound_not_declared"
+    return None
+
+
+def _error_budget_rules(
+    service: str, slo: SLODefinition, ratio_selector: str
+) -> list[RecordingRule]:
+    """The error budget remaining for one SLO, from its GOOD ratio, or none.
+
+    Every path writes its budget here, so the formula, the labels and the
+    guard against unusable targets (``_budget_skip_reason``) live once.
+    The name is nthlayer-common's contract, which measure, correlate and
+    drift read back (opensrm-h0at); the label keys must stay the
+    contract's labels, pinned by
+    test_error_budget_rule_follows_the_shared_contract. ``ratio_selector``
+    must evaluate to the fraction of good events, 0-1.
+    """
+    reason = _budget_skip_reason(slo)
+    if reason is not None:
+        logger.debug(
+            "error budget skipped",
+            component="recording_rules",
+            service=service,
+            slo=slo.name,
+            reason=reason,
+            target=slo.target,
+        )
+        return []
+    objective = slo.target
+    return [
+        RecordingRule(
+            record=ERROR_BUDGET_REMAINING.metric,
+            expr=f"1 - ((1 - {ratio_selector}) / (1 - {objective / 100}))",
+            labels={
+                "service": service,
+                "slo": slo.name,
+                "objective": str(objective),
+            },
+        )
+    ]
 
 
 def _add_unique(group: RecordingRuleGroup, rule: RecordingRule) -> None:

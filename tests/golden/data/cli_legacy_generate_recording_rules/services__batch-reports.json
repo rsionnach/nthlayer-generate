@@ -68,6 +68,15 @@
               "record": "slo:latency:ratio"
             },
             {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"batch-reports\",slo=\"latency-p95\"}) / (1 - 0.9))",
+              "labels": {
+                "objective": "90.0",
+                "service": "batch-reports",
+                "slo": "latency-p95"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"batch-reports\"}[5m]))",
               "labels": {
                 "service": "batch-reports",
@@ -182,8 +191,8 @@
     "",
     "Building recording rules...",
     "  Groups: 2",
-    "  Rules: 18",
-    "  • batch-reports_slo_metrics: 14 rules (interval: 30s)",
+    "  Rules: 19",
+    "  • batch-reports_slo_metrics: 15 rules (interval: 30s)",
     "  • batch-reports_health_metrics: 4 rules (interval: 30s)",
     "",
     "Writing recording rules to <tmp>/out/recording-rules.yaml...",

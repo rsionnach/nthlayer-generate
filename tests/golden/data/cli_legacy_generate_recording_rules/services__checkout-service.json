@@ -33,7 +33,32 @@
               "record": "slo:availability:ratio"
             },
             {
-              "expr": "1 - ((1 - slo:availability:ratio{service=\"checkout-service\",slo=\"availability\"}) / (1 - 0.9995))",
+              "expr": "(sum(sum(rate(http_requests_total{service=\"checkout-service\",status!~\"5..\"}[5m]))\n) or (0 * sum(sum(rate(http_requests_total{service=\"checkout-service\"}[5m]))\n)))",
+              "labels": {
+                "service": "checkout-service",
+                "slo": "availability"
+              },
+              "record": "slo:sli_good:rate"
+            },
+            {
+              "expr": "sum(sum(rate(http_requests_total{service=\"checkout-service\"}[5m]))\n)",
+              "labels": {
+                "service": "checkout-service",
+                "slo": "availability"
+              },
+              "record": "slo:sli_total:rate"
+            },
+            {
+              "expr": "sum_over_time(slo:sli_good:rate{service=\"checkout-service\",slo=\"availability\"}[30d]) / sum_over_time(slo:sli_total:rate{service=\"checkout-service\",slo=\"availability\"}[30d])",
+              "labels": {
+                "objective": "99.95",
+                "service": "checkout-service",
+                "slo": "availability"
+              },
+              "record": "slo:sli:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:sli:ratio{service=\"checkout-service\",slo=\"availability\"}) / (1 - 0.9995))",
               "labels": {
                 "objective": "99.95",
                 "service": "checkout-service",
@@ -198,8 +223,8 @@
     "",
     "Building recording rules...",
     "  Groups: 2",
-    "  Rules: 20",
-    "  • checkout-service_slo_metrics: 16 rules (interval: 30s)",
+    "  Rules: 23",
+    "  • checkout-service_slo_metrics: 19 rules (interval: 30s)",
     "  • checkout-service_health_metrics: 4 rules (interval: 30s)",
     "",
     "Writing recording rules to <tmp>/out/recording-rules.yaml...",

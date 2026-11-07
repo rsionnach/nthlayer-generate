@@ -833,6 +833,15 @@
               "record": "slo:latency:ratio"
             },
             {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"mobile-api\",slo=\"latency-p95\"}) / (1 - 0.95))",
+              "labels": {
+                "objective": "95.0",
+                "service": "mobile-api",
+                "slo": "latency-p95"
+              },
+              "record": "slo:error_budget_remaining:ratio"
+            },
+            {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m]))",
               "labels": {
                 "service": "mobile-api",
@@ -881,6 +890,15 @@
                 "slo": "latency-p99"
               },
               "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"mobile-api\",slo=\"latency-p99\"}) / (1 - 0.9))",
+              "labels": {
+                "objective": "90.0",
+                "service": "mobile-api",
+                "slo": "latency-p99"
+              },
+              "record": "slo:error_budget_remaining:ratio"
             },
             {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"mobile-api\"}[5m]))",
@@ -1147,12 +1165,12 @@
       "backstage": 1,
       "dashboard": 1,
       "pagerduty": 1,
-      "recording-rules": 24,
+      "recording-rules": 26,
       "slos": 4
     },
     "service_name": "mobile-api",
     "success": true,
-    "total_resources": 43
+    "total_resources": 45
   },
   "preamble": [],
   "stray": []

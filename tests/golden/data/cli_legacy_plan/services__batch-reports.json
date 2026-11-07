@@ -12,8 +12,8 @@
         "status": "pass"
       },
       "recording_rules": {
-        "message": "18 recording rules will be generated",
-        "rule_count": 18,
+        "message": "19 recording rules will be generated",
+        "rule_count": 19,
         "status": "pass"
       },
       "slo_definition": {
@@ -50,7 +50,7 @@
         ],
         "recording-rules": [
           {
-            "count": 14,
+            "count": 15,
             "interval": "30s",
             "type": "batch-reports_slo_metrics"
           },
@@ -121,7 +121,7 @@
       ],
       "recording-rules": [
         {
-          "count": 14,
+          "count": 15,
           "interval": "30s",
           "type": "batch-reports_slo_metrics"
         },

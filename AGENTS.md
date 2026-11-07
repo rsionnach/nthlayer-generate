@@ -263,7 +263,7 @@ src/nthlayer/
 ├── slos/          → SLO definitions and error budget tracking
 ├── alerts/        → Alert rule generation
 ├── specs/         → Validation and templates; manifests load via nthlayer_common.manifest (ServiceContext/Resource remain as an internal adapter)
-├── recording_rules/ → Prometheus recording rule generation
+├── recording_rules/ → Prometheus recording rules, incl. an error budget per availability/latency/error_rate SLO
 ├── orchestrator.py  → Unified plan/apply workflow
 └── demo.py        → CLI entrypoint (60KB, comprehensive demo)
 

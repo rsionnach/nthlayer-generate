@@ -6,7 +6,6 @@
 ### Features
 
 * **recording-rules:** an error budget for every request-ratio SLO (opensrm-zo0o) ([f975bb5](https://github.com/rsionnach/nthlayer-generate/commit/f975bb5275905f551eb9c26becf30cf1fde092f7))
-* **recording-rules:** an error budget for every request-ratio SLO [opensrm-zo0o] ([765cfb4](https://github.com/rsionnach/nthlayer-generate/commit/765cfb4f183ea79e650c5e469952389ade6816c4))
 
 
 ### Bug Fixes

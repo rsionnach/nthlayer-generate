@@ -1,5 +1,24 @@
 # Changelog
 
+## [4.1.0](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.11...v4.1.0) (2026-11-07)
+
+
+### Features
+
+* **recording-rules:** an error budget for every request-ratio SLO (opensrm-zo0o) ([f975bb5](https://github.com/rsionnach/nthlayer-generate/commit/f975bb5275905f551eb9c26becf30cf1fde092f7))
+* **recording-rules:** an error budget for every request-ratio SLO [opensrm-zo0o] ([765cfb4](https://github.com/rsionnach/nthlayer-generate/commit/765cfb4f183ea79e650c5e469952389ade6816c4))
+
+
+### Bug Fixes
+
+* require nthlayer-common 5.12.0 ([7465f68](https://github.com/rsionnach/nthlayer-generate/commit/7465f688d7c7d3dcbd0498606d5862a6f2fde8de))
+* require nthlayer-common 5.12.0 ([4f22dd7](https://github.com/rsionnach/nthlayer-generate/commit/4f22dd7e145ef91e7875acbf258e435c7d7fb5df))
+
+
+### Documentation
+
+* upgrade note and doc drift for per-SLO error budgets (opensrm-zo0o) ([8166326](https://github.com/rsionnach/nthlayer-generate/commit/81663268dba807fb564427ef4368038de7d71084))
+
 ## [4.0.11](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.10...v4.0.11) (2026-11-02)
 
 

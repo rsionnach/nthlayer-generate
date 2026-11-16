@@ -5,11 +5,15 @@
     "results": [
       {
         "all_found": true,
-        "error": "No metrics found in query",
-        "found_metrics": [],
-        "metrics": [],
+        "error": null,
+        "found_metrics": [
+          "http_requests_total"
+        ],
+        "metrics": [
+          "http_requests_total"
+        ],
         "missing_metrics": [],
-        "query": "",
+        "query": "(sum(rate(http_requests_total{service=\"checkout-env-vars\",status!~\"5..\"}[5m]))) / (sum(rate(http_requests_total{service=\"checkout-env-vars\"}[5m])))",
         "slo_name": "checkout-env-vars-availability-prod"
       },
       {

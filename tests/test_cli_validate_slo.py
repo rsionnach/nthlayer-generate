@@ -314,6 +314,36 @@ resources:
             good_query: sum(rate(ledger_requests_succeeded_total{service="ledger-api"}[5m]))
 """
 
+# The legacy loader reads the singular spec.indicator.query and the plural
+# spec.indicators[].success_ratio independently (nthlayer-common
+# manifest/parser/loader.py, the legacy SLO construction), so one SLO can
+# carry both. The singular shape is the one examples/services/payment-api.yaml
+# ships. {indicator_query} is filled per test.
+_LEGACY_QUERY_AND_RATIO = """\
+apiVersion: nthlayer.dev/v1
+kind: Service
+
+service:
+  name: ledger-api
+  team: payments
+  tier: critical
+  type: api
+
+resources:
+  - kind: SLO
+    name: availability
+    spec:
+      objective: 99.9
+      window: 30d
+      indicator:
+        query: {indicator_query}
+      indicators:
+        - type: availability
+          success_ratio:
+            total_query: sum(rate(ledger_requests_total{{service="ledger-api"}}[5m]))
+            good_query: sum(rate(ledger_requests_succeeded_total{{service="ledger-api"}}[5m]))
+"""
+
 _V2_BAD_TOTAL = """\
 apiVersion: opensrm.nthlayer.io/v2
 kind: ServiceManifest
@@ -411,6 +441,9 @@ class TestRatioShapedSLOs:
             "ledger_requests_total",
         ]
         assert result["error"] is None
+        total = 'sum(rate(ledger_requests_total{service="ledger-api"}[5m]))'
+        good = 'sum(rate(ledger_requests_succeeded_total{service="ledger-api"}[5m]))'
+        assert result["query"] == f"({good}) / ({total})"
 
     def test_openslo_bad_total_ratio_reads_both_queries(self, capsys, tmp_path):
         service_file = tmp_path / "checkout-api.yaml"
@@ -422,6 +455,40 @@ class TestRatioShapedSLOs:
         assert sorted(result["metrics"]) == [
             "checkout_failures_total",
             "checkout_requests_total",
+        ]
+        assert result["error"] is None
+        # OpenSLO gives good or bad, never both: the good count is total - bad.
+        total = 'sum(rate(checkout_requests_total{service="checkout-api"}[5m]))'
+        bad = 'sum(rate(checkout_failures_total{service="checkout-api"}[5m]))'
+        assert result["query"] == f"(({total}) - ({bad})) / ({total})"
+
+    def test_indicator_query_wins_over_a_ratio(self, capsys, tmp_path):
+        """An SLO with its own single query is validated on that query, as
+        before, whatever ratio it also carries."""
+        service_file = tmp_path / "ledger-api.yaml"
+        service_file.write_text(
+            _LEGACY_QUERY_AND_RATIO.format(
+                indicator_query='sum(rate(ledger_availability_total{service="ledger-api"}[5m]))'
+            )
+        )
+
+        _code, doc = _run_json(capsys, service_file)
+
+        result = _result(doc, "ledger-api-availability")
+        assert result["metrics"] == ["ledger_availability_total"]
+        assert result["query"] == 'sum(rate(ledger_availability_total{service="ledger-api"}[5m]))'
+
+    def test_blank_indicator_query_falls_back_to_the_ratio(self, capsys, tmp_path):
+        """A whitespace-only query is no query: the ratio is validated."""
+        service_file = tmp_path / "ledger-api.yaml"
+        service_file.write_text(_LEGACY_QUERY_AND_RATIO.format(indicator_query='"   "'))
+
+        _code, doc = _run_json(capsys, service_file)
+
+        result = _result(doc, "ledger-api-availability")
+        assert sorted(result["metrics"]) == [
+            "ledger_requests_succeeded_total",
+            "ledger_requests_total",
         ]
         assert result["error"] is None
 

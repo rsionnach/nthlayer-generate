@@ -12,6 +12,7 @@ the port must now equal every golden exactly.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 from pathlib import Path
 from typing import Any
@@ -101,8 +102,26 @@ def test_round_trip_covers_every_loadable_legacy_example() -> None:
     assert len(with_slos) >= 10
 
 
-def _slo_set(manifest: Any) -> set[tuple[str, str, float, str]]:
-    return {(s.name, s.slo_type, s.target, s.window) for s in manifest.slos}
+def _slo_set(manifest: Any) -> set[tuple[str, str, float, str, str | None]]:
+    return {(s.name, s.slo_type, s.target, s.window, s.unit) for s in manifest.slos}
+
+
+def _expected_after_migration(legacy: Any) -> set[tuple[str, str, float, str, str | None]]:
+    """What the migrated file must load as (opensrm-wo62.4.9, Rob 2026-11-16).
+
+    srm/v1 carries a latency SLO's bound in ``target`` with a unit (common's
+    SLODefinition.threshold_ms note; examples/opensrm/api-critical.reliability.yaml
+    writes ``target: 200, unit: ms``), so a legacy latency SLO comes back with
+    its bound as the target, and one that loaded with no bound is not written.
+    Every other SLO comes back as it was.
+    """
+    expected = set()
+    for s in legacy.slos:
+        if s.slo_type != "latency":
+            expected.add((s.name, s.slo_type, s.target, s.window, s.unit))
+        elif s.threshold_ms is not None:
+            expected.add((s.name, "latency", s.threshold_ms, s.window, "ms"))
+    return expected
 
 
 @pytest.mark.parametrize(
@@ -118,7 +137,85 @@ def test_migrated_file_loads_in_common_with_the_same_slos(path: Path, tmp_path: 
     out.write_text(yaml.safe_dump(_legacy_to_srm_v1(legacy), sort_keys=False), encoding="utf-8")
     migrated = load_manifest(out)
 
-    assert _slo_set(migrated) == _slo_set(legacy)
+    assert _slo_set(migrated) == _expected_after_migration(legacy)
+
+
+# --- legacy latency SLOs (opensrm-wo62.4.9) ---------------------------------
+#
+# Rulings (Rob, 2026-11-16): a legacy latency SLO's bound is written as the
+# srm/v1 target with unit ms and its objective is reported as not carried; one
+# that loaded with no bound is left out and reported. Both examples are
+# committed files, loaded unmodified; the values are what the files declare.
+
+AUTH_API = REPO / "examples" / "services" / "auth-api.yaml"
+CHECKOUT_SERVICE = REPO / "examples" / "services" / "checkout-service.yaml"
+
+
+def test_latency_bound_is_written_as_the_srm_v1_target() -> None:
+    """examples/services/auth-api.yaml: latency-p95 is "99.5% of requests under
+    200ms" (threshold_ms: 200, objective: 99.5) and token-generation-latency
+    "99% under 100ms" (indicator.threshold_ms: 100, objective: 99.0, window
+    30d). The migrated file used to say target 99.5 and 99.0, which srm/v1
+    reads as bounds."""
+    lost: list[str] = []
+
+    doc = _legacy_to_srm_v1(load_manifest(AUTH_API, suppress_deprecation_warning=True), lost)
+
+    slos = doc["spec"]["slos"]
+    assert slos["latency-p95"] == {"type": "latency", "target": 200, "unit": "ms", "window": "30d"}
+    assert slos["token-generation-latency"] == {
+        "type": "latency",
+        "target": 100,
+        "unit": "ms",
+        "window": "30d",
+    }
+    # An integral bound is written as srm/v1 examples write it: 200, not 200.0.
+    assert isinstance(slos["latency-p95"]["target"], int)
+    # The availability SLO is untouched.
+    assert slos["availability"] == {"type": "availability", "target": 99.9, "window": "30d"}
+    assert lost == [
+        "latency-p95: objective=99.5 (srm/v1 carries a latency SLO's bound as its target, "
+        "and has no form for the objective)",
+        "token-generation-latency: objective=99.0 (srm/v1 carries a latency SLO's bound as "
+        "its target, and has no form for the objective)",
+    ]
+
+
+def test_latency_slo_that_loaded_with_no_bound_is_left_out_and_reported() -> None:
+    """examples/services/checkout-service.yaml declares latency-p95 and
+    latency-p99 with their bound under the plural ``indicators[]``, which
+    nthlayer-common's legacy loader does not read (opensrm-h9jj), so both load
+    with no bound. Written with the objective as the target they would read
+    as bounds of 99.0 and 95.0."""
+    legacy = load_manifest(CHECKOUT_SERVICE, suppress_deprecation_warning=True)
+    loaded = {s.name: s for s in legacy.slos}
+    assert loaded["latency-p95"].threshold_ms is None, "common now carries the bound: re-pin"
+    assert loaded["latency-p99"].threshold_ms is None, "common now carries the bound: re-pin"
+    lost: list[str] = []
+
+    doc = _legacy_to_srm_v1(legacy, lost)
+
+    assert set(doc["spec"]["slos"]) == {"availability"}
+    assert lost == [
+        "latency-p95: latency SLO objective=99.0 window='30d' (no latency bound was loaded "
+        "for it, and srm/v1 carries the bound as the target)",
+        "latency-p99: latency SLO objective=95.0 window='30d' (no latency bound was loaded "
+        "for it, and srm/v1 carries the bound as the target)",
+    ]
+
+
+def test_fractional_latency_bound_is_written_as_it_is() -> None:
+    """Derived: auth-api's token-generation-latency with its bound set to
+    2.5 ms, which a legacy file can declare (threshold_ms is any number)."""
+    legacy = load_manifest(AUTH_API, suppress_deprecation_warning=True)
+    slos = [
+        dataclasses.replace(s, threshold_ms=2.5) if s.name == "token-generation-latency" else s
+        for s in legacy.slos
+    ]
+
+    doc = _legacy_to_srm_v1(dataclasses.replace(legacy, slos=slos))
+
+    assert doc["spec"]["slos"]["token-generation-latency"]["target"] == 2.5
 
 
 def test_migrated_ai_gate_judgment_slos_load_as_thresholds(tmp_path: Path) -> None:

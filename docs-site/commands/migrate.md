@@ -104,6 +104,19 @@ The output file uses the naming convention `<service-name>.reliability.yaml` and
 | `resources[kind=Dependencies]` | `spec.dependencies` |
 | `environments` | `spec.deployment.environments` |
 
+### Latency SLOs
+
+A legacy latency SLO has two numbers: the objective (`objective: 99.0`) and the
+bound (`threshold_ms: 100`), "99% of requests under 100 ms". An srm/v1 latency
+SLO carries the bound as its `target`, with a `unit`, and has no field for the
+objective. So `migrate` writes `target: 100` and `unit: ms`, and prints the
+objective in a `Not carried into srm/v1: ...` warning.
+
+A latency SLO that was loaded with no bound is not written, because its
+objective would read as a bound. It is listed in a warning with its objective
+and window. This includes a bound written under the plural `indicators:` list,
+which the loader does not read yet.
+
 ## See Also
 
 - [OpenSRM Format](../concepts/opensrm.md) — Format guide and schema overview

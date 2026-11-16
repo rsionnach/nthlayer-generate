@@ -162,6 +162,11 @@ def _lift_dropped_fields(raw: Any) -> list[str]:
     return lost
 
 
+def _whole_number_as_int(value: float) -> float:
+    """``200.0`` -> ``200``, as srm/v1 files write a whole bound; ``2.5`` stays."""
+    return int(value) if value == int(value) else value
+
+
 def _legacy_to_srm_v1(
     manifest: ReliabilityManifest, lost: list[str] | None = None
 ) -> dict[str, Any]:
@@ -223,13 +228,34 @@ def _legacy_to_srm_v1(
             # Key order is the written file's order: ``type`` first. The
             # names srm/v1 lifts into thresholds (and rejects ``type`` on)
             # never reach here: common's legacy loader lifts them too.
+            target: float = slo.target
+            unit = slo.unit
+            if slo.slo_type == "latency":
+                # A legacy latency SLO keeps its bound in threshold_ms and its
+                # 0-100 objective in target; srm/v1 carries the bound as the
+                # target, with a unit, and has no form for the objective.
+                # Written with the objective, "99% under 100ms" would read as
+                # a bound of 99 (opensrm-wo62.4.9; Rob, 2026-11-16).
+                if slo.threshold_ms is None:
+                    lost.append(
+                        f"{slo.name}: latency SLO objective={slo.target!r} "
+                        f"window={slo.window!r} (no latency bound was loaded for it, "
+                        "and srm/v1 carries the bound as the target)"
+                    )
+                    continue
+                lost.append(
+                    f"{slo.name}: objective={slo.target!r} (srm/v1 carries a latency "
+                    "SLO's bound as its target, and has no form for the objective)"
+                )
+                target = _whole_number_as_int(slo.threshold_ms)
+                unit = "ms"
             slo_data: dict[str, Any] = {
                 "type": slo.slo_type,
-                "target": slo.target,
+                "target": target,
                 "window": slo.window,
             }
-            if slo.unit:
-                slo_data["unit"] = slo.unit
+            if unit:
+                slo_data["unit"] = unit
             if slo.percentile:
                 slo_data["percentile"] = slo.percentile
             if slo.description:

@@ -19,6 +19,7 @@ import warnings
 from pathlib import Path
 
 import pytest
+import structlog
 import yaml
 from nthlayer_common.manifest import Dependency, ReliabilityManifest, load_manifest
 
@@ -262,3 +263,108 @@ def test_cache_declaring_an_untemplated_technology_is_skipped():
     builder = ManifestDashboardBuilder(manifest=dataclasses.replace(manifest, dependencies=deps))
 
     assert builder.build()["dashboard"]["panels"]
+
+
+# --- untemplated database technologies (opensrm-wo62.4.16) ------------------
+#
+# Every manifest is a committed file, loaded unmodified. The expectations are
+# what each file declares: `kept` are its database dependencies whose declared
+# technology has a dashboard template (dashboards/templates/__init__.py,
+# TECHNOLOGY_TEMPLATES), `skipped` those whose technology has none or which
+# declare none at all.
+
+GOLDEN_FIXTURES = Path(__file__).resolve().parent / "golden" / "fixtures"
+
+UNTEMPLATED_DATABASE_MANIFESTS = [
+    pytest.param(
+        SERVICES / "analytics-pipeline.yaml",
+        {},
+        {"analytics-warehouse", "raw-data-lake"},
+        id="bigquery-and-s3",
+    ),
+    pytest.param(
+        SERVICES / "batch-reports.yaml",
+        {"analytics-db": "postgresql"},
+        {"reports-storage"},
+        id="s3-beside-postgresql",
+    ),
+    pytest.param(
+        GOLDEN_FIXTURES / "legacy" / "checkout-db-deps.yaml",
+        {"postgres-main": "postgres", "postgres-replica": "postgres"},
+        {"mysql-orders"},
+        id="untyped-beside-postgres",
+    ),
+    pytest.param(
+        EXAMPLES / "opensrm" / "ai-gate.reliability.yaml",
+        {},
+        {"feature-store"},
+        id="untyped",
+    ),
+    pytest.param(
+        EXAMPLES / "opensrm" / "batch.reliability.yaml",
+        {},
+        {"redshift", "s3-bucket"},
+        id="redshift-and-s3",
+    ),
+    pytest.param(
+        EXAMPLES / "opensrm" / "stream.reliability.yaml",
+        {},
+        {"clickhouse"},
+        id="clickhouse",
+    ),
+]
+
+
+def test_untemplated_database_manifests_are_listed():
+    """Guard the parametrize list: an empty one collects nothing."""
+    assert len(UNTEMPLATED_DATABASE_MANIFESTS) == 6
+    for param in UNTEMPLATED_DATABASE_MANIFESTS:
+        assert param.values[0].is_file()
+
+
+@pytest.mark.parametrize(("path", "kept", "skipped"), UNTEMPLATED_DATABASE_MANIFESTS)
+def test_database_without_a_dashboard_template_is_skipped(path, kept, skipped):
+    """Ruling E6 (Rob, 2026-10-29): a database technology with no dashboard
+    template is left out with a warning, as a cache or queue is, and the
+    dashboard is written without its panels. It used to fail the dashboard
+    with "No template found for technology"."""
+    manifest = _load(path)
+    declared = {d.name for d in manifest.dependencies if d.type == "database"}
+    assert declared == set(kept) | skipped, "the file's databases changed"
+
+    builder = ManifestDashboardBuilder(manifest=manifest)
+    with structlog.testing.capture_logs() as logs:
+        resources = builder._manifest_to_resources(builder._manifest_to_context())
+    spec = next(r.spec for r in resources if r.kind == "Dependencies")
+
+    assert {d["name"]: d["type"] for d in spec["databases"]} == kept
+    # The warning's arguments are (dependency type, name, technology).
+    warned = {
+        entry["positional_args"][1]
+        for entry in logs
+        if entry["log_level"] == "warning" and entry.get("positional_args", ("",))[0] == "database"
+    }
+    assert warned == skipped
+
+    assert builder.build()["dashboard"]["panels"]
+
+
+def test_declared_database_technology_is_normalised_like_a_cache_or_queue():
+    """Derived: examples/services/batch-reports.yaml's analytics-db (type:
+    postgresql), re-declared with the spelling " PostgreSQL ". The legacy
+    format's `type:` is a free string, so a file can carry it. A database now
+    goes through dependency_technology, as a cache or queue does (wo62.4 D5),
+    so the dashboard gets the technology stripped and lower-cased; the raw
+    spelling used to reach the panels' service label, and with the padding it
+    matched no template at all."""
+    manifest = _load(SERVICES / "batch-reports.yaml")
+    assert "analytics-db" in {d.name for d in manifest.dependencies}
+    deps = [
+        dataclasses.replace(d, database_type=" PostgreSQL ") if d.name == "analytics-db" else d
+        for d in manifest.dependencies
+    ]
+    builder = ManifestDashboardBuilder(manifest=dataclasses.replace(manifest, dependencies=deps))
+    resources = builder._manifest_to_resources(builder._manifest_to_context())
+    spec = next(r.spec for r in resources if r.kind == "Dependencies")
+
+    assert {d["name"]: d["type"] for d in spec["databases"]} == {"analytics-db": "postgresql"}

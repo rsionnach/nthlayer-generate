@@ -21,6 +21,10 @@ from nthlayer_generate.specs.models import Resource, ServiceContext
 
 logger = structlog.get_logger()
 
+# Dependency types drawn from a technology template, and the key each is
+# listed under in the Dependencies resource.
+_TECHNOLOGY_SPEC_KEYS = {"database": "databases", "cache": "caches", "queue": "queues"}
+
 
 class ManifestDashboardBuilder:
     """Builds Grafana dashboards from ReliabilityManifest using Foundation SDK.
@@ -117,21 +121,15 @@ class ManifestDashboardBuilder:
                 "queues": [],
             }
             for dep in self.manifest.dependencies:
-                if dep.type == "database":
-                    dep_spec["databases"].append(
-                        {
-                            "name": dep.name,
-                            "type": dep.database_type or "unknown",
-                        }
-                    )
-                elif dep.type in ("cache", "queue"):
+                if dep.type in _TECHNOLOGY_SPEC_KEYS:
                     # One rule set with alerts and loki (wo62.4 D5,
                     # specs.helpers.dependency_technology): the declared
-                    # technology, else name inference, else its redis/kafka
-                    # defaults.
+                    # technology; without one, a cache or queue is inferred
+                    # from its name and then defaulted, a database is not.
                     technology = dependency_technology(dep)
                     if technology is None or get_template_or_none(technology) is None:
-                        # Rob, 2026-10-28: a technology with no dashboard
+                        # Rob, 2026-10-28, and for databases 2026-10-29 (E6,
+                        # opensrm-wo62.4.16): a technology with no dashboard
                         # template is left out with a warning, as alerts skip
                         # it, rather than failing the whole dashboard.
                         logger.warning(
@@ -141,7 +139,7 @@ class ManifestDashboardBuilder:
                             technology,
                         )
                         continue
-                    dep_spec["caches" if dep.type == "cache" else "queues"].append(
+                    dep_spec[_TECHNOLOGY_SPEC_KEYS[dep.type]].append(
                         {
                             "name": dep.name,
                             "type": technology,

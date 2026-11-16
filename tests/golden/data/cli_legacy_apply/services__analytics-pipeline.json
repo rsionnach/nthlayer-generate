@@ -1,5 +1,5 @@
 {
-  "exit": 1,
+  "exit": 0,
   "files": {
     "backstage.json": {
       "deploymentGate": {
@@ -76,6 +76,215 @@
           "window": "30d"
         }
       ]
+    },
+    "dashboard.json": {
+      "dashboard": {
+        "annotations": {},
+        "description": "Auto-generated dashboard for analytics-pipeline service",
+        "editable": true,
+        "fiscalYearStartMonth": 0,
+        "graphTooltip": 0,
+        "panels": [
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 0
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "SLO Metrics",
+            "type": "row"
+          },
+          {
+            "description": "Target: 95.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(pipeline_success_total{service=\"analytics-pipeline\"}[5m]))\n/\nsum(rate(pipeline_runs_total{service=\"analytics-pipeline\"}[5m]))\n",
+                "legendFormat": "success-rate",
+                "refId": "A"
+              }
+            ],
+            "title": "success-rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 90.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 1
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"analytics-pipeline\"}[5m]))",
+                "refId": "A"
+              }
+            ],
+            "title": "freshness-p95",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Target: 99.0%",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 10
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(pipeline_valid_records_total{service=\"analytics-pipeline\"}[5m]))\n/\nsum(rate(pipeline_processed_records_total{service=\"analytics-pipeline\"}[5m]))\n",
+                "legendFormat": "data-quality",
+                "refId": "A"
+              }
+            ],
+            "title": "data-quality",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "collapsed": false,
+            "gridPos": {
+              "h": 1,
+              "w": 24,
+              "x": 0,
+              "y": 19
+            },
+            "id": "<masked>",
+            "panels": [],
+            "title": "Service Health",
+            "type": "row"
+          },
+          {
+            "description": "Total requests per second",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"analytics-pipeline\"}[5m]))",
+                "legendFormat": "{{http}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Request Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "Percentage of requests returning 5xx errors",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 12,
+              "y": 20
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{service=\"analytics-pipeline\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"analytics-pipeline\"}[5m])) * 100",
+                "legendFormat": "error %",
+                "refId": "A"
+              }
+            ],
+            "title": "Error Rate",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          },
+          {
+            "description": "95th percentile request duration",
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 12,
+              "x": 0,
+              "y": 29
+            },
+            "options": null,
+            "repeatDirection": "h",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{service=\"analytics-pipeline\"}[5m])))",
+                "legendFormat": "{{http}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Request Latency (p95)",
+            "transformations": [],
+            "transparent": false,
+            "type": "timeseries"
+          }
+        ],
+        "schemaVersion": 36,
+        "style": "dark",
+        "tags": [
+          "data",
+          "standard",
+          "batch"
+        ],
+        "templating": {},
+        "time": {
+          "from": "now-6h",
+          "to": "now"
+        },
+        "timezone": "browser",
+        "title": "analytics-pipeline - Service Dashboard",
+        "uid": "analytics-pipeline-overview"
+      },
+      "message": "Auto-generated dashboard for analytics-pipeline",
+      "overwrite": true
     },
     "recording-rules.yaml": {
       "groups": [
@@ -349,19 +558,18 @@
   },
   "json": {
     "duration_seconds": "<masked>",
-    "errors": [
-      "Dashboard generation failed: 'No template found for technology: bigquery'"
-    ],
+    "errors": [],
     "output_dir": "<tmp>/out",
     "resources_created": {
       "alerts": 0,
       "backstage": 1,
+      "dashboard": 1,
       "recording-rules": 19,
       "slos": 3
     },
     "service_name": "analytics-pipeline",
-    "success": false,
-    "total_resources": 23
+    "success": true,
+    "total_resources": 24
   },
   "preamble": [],
   "stray": []

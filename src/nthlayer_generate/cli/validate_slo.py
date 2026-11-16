@@ -18,7 +18,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional
 
-from nthlayer_common.manifest import load_manifest
+from nthlayer_common.manifest import SLODefinition, load_manifest
 from rich.table import Table
 
 from nthlayer_generate.cli.ux import console, error, header
@@ -278,6 +278,34 @@ async def validate_metric_exists(
         return True
 
 
+def _validation_query(slo: SLODefinition) -> str:
+    """The PromQL whose metrics validate-slo checks for ``slo``, or ``""``
+    when the SLO carries no query.
+
+    A single ``indicator_query`` is used as written. An SLO that carries a
+    ratio instead (the legacy ``indicators[].success_ratio``, or an OpenSLO
+    ``ratioMetric`` with bad and total) has none, so the ratio is composed
+    from its parts and both sides are checked. Reading ``indicator_query``
+    alone validated nothing for those SLOs (opensrm-tuwx), as the read
+    before it did for every SLO (opensrm-2ykh).
+    """
+    if _is_query(slo.indicator_query):
+        return slo.indicator_query or ""
+    total = slo.total_query
+    if not _is_query(total):
+        return ""
+    if _is_query(slo.good_query):
+        return f"({slo.good_query}) / ({total})"
+    if _is_query(slo.bad_query):
+        # OpenSLO takes good or bad, never both: good = total - bad.
+        return f"(({total}) - ({slo.bad_query})) / ({total})"
+    return ""
+
+
+def _is_query(value: str | None) -> bool:
+    return bool(value and value.strip())
+
+
 async def validate_slo_metrics(
     slo_name: str,
     query: str,
@@ -381,10 +409,8 @@ def validate_slo_command(
         # Validate each SLO
         results = []
         for slo in manifest.slos:
-            # The legacy loader has already substituted ${var}. The legacy
-            # read here (spec.query, objectives[0]...) matched no shipped
-            # manifest, so every SLO validated nothing (opensrm-2ykh).
-            query = slo.indicator_query or ""
+            # The loader has already substituted ${var}.
+            query = _validation_query(slo)
 
             slo_name = f"{service_name}-{slo.name}"
 

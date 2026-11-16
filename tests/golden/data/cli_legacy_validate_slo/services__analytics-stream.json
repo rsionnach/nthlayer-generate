@@ -5,11 +5,15 @@
     "results": [
       {
         "all_found": true,
-        "error": "No metrics found in query",
-        "found_metrics": [],
-        "metrics": [],
+        "error": null,
+        "found_metrics": [
+          "events_processed_total"
+        ],
+        "metrics": [
+          "events_processed_total"
+        ],
         "missing_metrics": [],
-        "query": "",
+        "query": "(sum(rate(events_processed_total{service=\"analytics-stream\",status=\"success\"}[5m]))) / (sum(rate(events_processed_total{service=\"analytics-stream\"}[5m])))",
         "slo_name": "analytics-stream-processing-availability"
       },
       {

@@ -1,7 +1,10 @@
 """Tests for validate-slo CLI command."""
 
 import json
+from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 from nthlayer_generate.cli.validate_slo import (
     PROMQL_FUNCTIONS,
@@ -260,3 +263,182 @@ class TestMetricExtractionEdgeCases:
         query = 'job:http_requests_total:rate5m{job="api"}'
         metrics = extract_metric_names(query)
         assert "job:http_requests_total:rate5m" in metrics
+
+
+# --- ratio-shaped SLOs (opensrm-tuwx) ---------------------------------------
+#
+# Fixture provenance. The legacy shape, spec.indicators[].success_ratio with a
+# total_query and a good_query, is the one the shipped examples under
+# examples/services/ use (documented in README.md, "success_ratio"); they are
+# loaded from disk, unmodified. The OpenSLO shape is the envelope of
+# opensrm/spec/v2/examples/services/api.yaml with an inline OpenSLO v1 SLO
+# whose ratioMetric follows the vendored excerpt
+# nthlayer-common/tests/fixtures/openslo/ratio-metric-v1.md ("{good, total},
+# {bad, total} or raw"; a Prometheus metricSource's spec.query).
+
+SERVICES = Path(__file__).resolve().parents[1] / "examples" / "services"
+
+# (shipped file, SLO name, the one metric both of its ratio queries read)
+SHIPPED_RATIO_SLOS = [
+    ("checkout-service.yaml", "checkout-service-availability", "http_requests_total"),
+    ("identity-service.yaml", "identity-service-availability", "http_requests_total"),
+    (
+        "notification-worker.yaml",
+        "notification-worker-delivery-success",
+        "notifications_sent_total",
+    ),
+]
+
+# The shipped examples read one metric on both sides of the ratio, so they
+# cannot tell "both queries are read" from "one of them is". This one can.
+_LEGACY_DISTINCT_RATIO = """\
+apiVersion: nthlayer.dev/v1
+kind: Service
+
+service:
+  name: ledger-api
+  team: payments
+  tier: critical
+  type: api
+
+resources:
+  - kind: SLO
+    name: availability
+    spec:
+      objective: 99.9
+      window: 30d
+      indicators:
+        - type: availability
+          success_ratio:
+            total_query: sum(rate(ledger_requests_total{service="ledger-api"}[5m]))
+            good_query: sum(rate(ledger_requests_succeeded_total{service="ledger-api"}[5m]))
+"""
+
+_V2_BAD_TOTAL = """\
+apiVersion: opensrm.nthlayer.io/v2
+kind: ServiceManifest
+metadata:
+  name: checkout-api
+  namespace: default
+  labels:
+    domain: commerce
+    tier: critical
+spec:
+  owner:
+    group: "group:default/sre-checkout"
+  service:
+    name: checkout-api
+    type: api
+  slo:
+    - apiVersion: openslo/v1
+      kind: SLO
+      metadata:
+        name: checkout-availability
+      spec:
+        service: checkout-api
+        budgetingMethod: Occurrences
+        indicator:
+          metadata:
+            name: availability
+          spec:
+            ratioMetric:
+              counter: true
+              bad:
+                metricSource:
+                  type: Prometheus
+                  spec:
+                    query: sum(rate(checkout_failures_total{service="checkout-api"}[5m]))
+              total:
+                metricSource:
+                  type: Prometheus
+                  spec:
+                    query: sum(rate(checkout_requests_total{service="checkout-api"}[5m]))
+        timeWindow:
+          - duration: 28d
+            isRolling: true
+        objectives:
+          - displayName: "99.95% of checkout sessions served successfully"
+            target: 0.9995
+"""
+
+
+def _run_json(capsys, service_file, **kwargs):
+    """Run validate-slo in JSON mode; return (exit code, parsed document)."""
+    capsys.readouterr()
+    code = validate_slo_command(service_file=str(service_file), output_format="json", **kwargs)
+    return code, json.loads(capsys.readouterr().out)
+
+
+def _result(doc, slo_name):
+    matches = [r for r in doc["results"] if r["slo_name"] == slo_name]
+    assert len(matches) == 1, f"expected one result for {slo_name}, got {len(matches)}"
+    return matches[0]
+
+
+class TestRatioShapedSLOs:
+    """An SLO that carries its query as a ratio is validated, not skipped."""
+
+    @pytest.fixture(autouse=True)
+    def _offline(self, monkeypatch):
+        monkeypatch.delenv("PROMETHEUS_URL", raising=False)
+
+    def test_shipped_ratio_slos_are_listed(self):
+        """Guard the parametrize list: an empty one collects nothing."""
+        assert len(SHIPPED_RATIO_SLOS) == 3
+        for file_name, _slo, _metric in SHIPPED_RATIO_SLOS:
+            assert (SERVICES / file_name).is_file()
+
+    @pytest.mark.parametrize(("file_name", "slo_name", "metric"), SHIPPED_RATIO_SLOS)
+    def test_shipped_legacy_success_ratio_is_validated(self, capsys, file_name, slo_name, metric):
+        code, doc = _run_json(capsys, SERVICES / file_name)
+
+        result = _result(doc, slo_name)
+        assert result["metrics"] == [metric]
+        assert result["found_metrics"] == [metric]
+        assert result["error"] is None
+        assert result["query"] != ""
+        assert code == 0
+
+    def test_legacy_ratio_reads_both_queries(self, capsys, tmp_path):
+        service_file = tmp_path / "ledger-api.yaml"
+        service_file.write_text(_LEGACY_DISTINCT_RATIO)
+
+        _code, doc = _run_json(capsys, service_file)
+
+        result = _result(doc, "ledger-api-availability")
+        assert sorted(result["metrics"]) == [
+            "ledger_requests_succeeded_total",
+            "ledger_requests_total",
+        ]
+        assert result["error"] is None
+
+    def test_openslo_bad_total_ratio_reads_both_queries(self, capsys, tmp_path):
+        service_file = tmp_path / "checkout-api.yaml"
+        service_file.write_text(_V2_BAD_TOTAL)
+
+        _code, doc = _run_json(capsys, service_file)
+
+        result = _result(doc, "checkout-api-checkout-availability")
+        assert sorted(result["metrics"]) == [
+            "checkout_failures_total",
+            "checkout_requests_total",
+        ]
+        assert result["error"] is None
+
+    def test_missing_ratio_metric_fails_the_command(self, capsys, tmp_path):
+        """With Prometheus reachable, a ratio metric that does not exist is
+        reported missing and the command exits 1."""
+        service_file = tmp_path / "ledger-api.yaml"
+        service_file.write_text(_LEGACY_DISTINCT_RATIO)
+
+        async def exists(_url, metric):
+            return metric != "ledger_requests_succeeded_total"
+
+        with patch("nthlayer_generate.cli.validate_slo.validate_metric_exists", exists):
+            code, doc = _run_json(capsys, service_file, prometheus_url="http://prometheus.invalid")
+
+        result = _result(doc, "ledger-api-availability")
+        assert result["missing_metrics"] == ["ledger_requests_succeeded_total"]
+        assert result["found_metrics"] == ["ledger_requests_total"]
+        assert doc["all_valid"] is False
+        assert code == 1

@@ -141,7 +141,7 @@ See `docs/golden-principles.md` for the full list with rationale.
 
 ```bash
 bd ready              # Show tasks ready to work on
-bd update <id> --status in_progress
+bd update <id> --claim           # Claim it (in_progress + assignee)
 bd close <id> --reason "What was done"
 bd create --title "..." --description "..." --priority 1 --type feature
 ```

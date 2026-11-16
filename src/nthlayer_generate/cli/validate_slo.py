@@ -285,9 +285,7 @@ def _validation_query(slo: SLODefinition) -> str:
     A single ``indicator_query`` is used as written. An SLO that carries a
     ratio instead (the legacy ``indicators[].success_ratio``, or an OpenSLO
     ``ratioMetric`` with bad and total) has none, so the ratio is composed
-    from its parts and both sides are checked. Reading ``indicator_query``
-    alone validated nothing for those SLOs (opensrm-tuwx), as the read
-    before it did for every SLO (opensrm-2ykh).
+    from its parts and both sides are checked (opensrm-tuwx).
     """
     if _is_query(slo.indicator_query):
         return slo.indicator_query or ""

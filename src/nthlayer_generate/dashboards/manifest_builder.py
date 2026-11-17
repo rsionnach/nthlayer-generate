@@ -28,9 +28,11 @@ _TECHNOLOGY_SPEC_KEYS = {"database": "databases", "cache": "caches", "queue": "q
 # How a manifest declares a database's technology, by the format it was
 # loaded from: where nthlayer-common's parsers read Dependency.database_type.
 # The legacy loader takes it from the entry's ``type:`` (parser/loader.py),
-# the srm/v1 parser from ``database_type`` (parser/v1.py). A v2 dependency
-# has no type (opensrm spec/v2 AUTHORING.md 7.5) and loads as an api
-# dependency, so it is never a database here and needs no hint.
+# the srm/v1 parser from ``database_type`` (parser/v1.py). The v2 format has
+# no type key on a dependency (opensrm spec/v2 AUTHORING.md 7.5), so it loads
+# as an api dependency; a leftover ``type: database`` is still read, and has
+# no key for its technology, hence no v2 hint. The legacy hint fits an entry
+# under ``databases:``; one under the flat ``services:`` list has no such key.
 _DECLARE_TECHNOLOGY_HINTS = {
     SourceFormat.LEGACY: "set type on the database entry",
     SourceFormat.SRM_V1: "set database_type on the dependency",

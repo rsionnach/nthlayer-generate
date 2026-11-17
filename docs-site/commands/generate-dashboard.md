@@ -126,12 +126,16 @@ command still exits 0: the dashboard is written without panels for that
 dependency.
 
 A database that declares no technology is skipped the same way, and the
-warning carries a hint naming the key to set: `type` on the database entry in
-a legacy manifest, `database_type` on the dependency in an srm/v1 manifest.
+warning carries a hint naming the key to set: `type` on the entry under
+`databases:` in a legacy manifest, `database_type` on the dependency in an
+srm/v1 manifest. A legacy database listed under the flat `services:` list has
+no key for its technology; move it under `databases:` to give it one.
 
-The dependencies of an `opensrm.nthlayer.io/v2` manifest carry no type, so none
-of them is drawn as a database, cache or queue, and none is reported as
-skipped.
+The `opensrm.nthlayer.io/v2` format gives a dependency no `type` key, so a
+manifest written to the spec has no database, cache or queue dependencies to
+draw or to skip. A `type: database` left over from an srm/v1 file is still
+read: that dependency is skipped, with no hint, because v2 has no key for its
+technology.
 
 ## Output Structure
 

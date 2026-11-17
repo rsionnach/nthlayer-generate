@@ -383,3 +383,68 @@ def test_declared_database_technology_is_normalised_like_a_cache_or_queue():
     spec = next(r.spec for r in resources if r.kind == "Dependencies")
 
     assert {d["name"]: d["type"] for d in spec["databases"]} == {"analytics-db": "postgresql"}
+
+
+# The hint names the key each format's parser reads the technology from
+# (nthlayer-common: the legacy loader takes a database's `type:`,
+# parser/loader.py; the srm/v1 parser takes `database_type`, parser/v1.py).
+# Each case is a committed file with an untyped database, and the edit that
+# follows the hint, applied to the file's parsed YAML.
+
+
+def _declare_legacy_type(data):
+    (deps,) = [r for r in data["resources"] if r.get("kind") == "Dependencies"]
+    (db,) = [d for d in deps["spec"]["databases"] if d["name"] == "mysql-orders"]
+    db["type"] = "mysql"
+
+
+def _declare_srm_v1_database_type(data):
+    (dep,) = [d for d in data["spec"]["dependencies"] if d["name"] == "feature-store"]
+    dep["database_type"] = "postgresql"
+
+
+DECLARE_TECHNOLOGY_HINTS = [
+    pytest.param(
+        GOLDEN_FIXTURES / "legacy" / "checkout-db-deps.yaml",
+        "mysql-orders",
+        "set type on the database entry",
+        _declare_legacy_type,
+        "mysql",
+        id="legacy",
+    ),
+    pytest.param(
+        EXAMPLES / "opensrm" / "ai-gate.reliability.yaml",
+        "feature-store",
+        "set database_type on the dependency",
+        _declare_srm_v1_database_type,
+        "postgresql",
+        id="srm-v1",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    ("path", "name", "hint", "follow_hint", "technology"), DECLARE_TECHNOLOGY_HINTS
+)
+def test_skip_hint_names_the_key_the_manifest_format_reads(
+    path, name, hint, follow_hint, technology, tmp_path
+):
+    """opensrm-ip9r: a database that declares no technology is skipped with a
+    hint, and doing what the hint says gets it its panels."""
+    builder = ManifestDashboardBuilder(manifest=_load(path))
+    with structlog.testing.capture_logs() as logs:
+        builder._manifest_to_resources(builder._manifest_to_context())
+    (entry,) = [e for e in logs if e.get("dependency") == name]
+    assert (entry["reason"], entry["hint"]) == (NO_TECHNOLOGY, hint)
+
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    follow_hint(data)
+    declared = tmp_path / path.name
+    declared.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    builder = ManifestDashboardBuilder(manifest=_load(declared))
+    with structlog.testing.capture_logs() as logs:
+        resources = builder._manifest_to_resources(builder._manifest_to_context())
+    spec = next(r.spec for r in resources if r.kind == "Dependencies")
+    assert {d["name"]: d["type"] for d in spec["databases"]}[name] == technology
+    assert name not in _skipped_dependencies(logs, "database")

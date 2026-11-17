@@ -123,8 +123,13 @@ Adds technology-specific panels:
 A database, cache or queue whose technology has no dashboard template is left
 out of the dashboard with a `dashboard_dependency_skipped` warning, and the
 command still exits 0: the dashboard is written without panels for that
-dependency. A database that declares no technology is skipped the same way;
-set its `database_type` to get panels.
+dependency.
+
+A database that declares no technology is skipped the same way, and the
+warning carries a hint naming the key to set: `type` on the database entry in
+a legacy manifest, `database_type` on the dependency in an srm/v1 manifest. An
+`opensrm.nthlayer.io/v2` manifest has no key for a dependency's technology, so
+its database dependencies get no panels.
 
 ## Output Structure
 

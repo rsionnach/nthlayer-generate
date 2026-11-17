@@ -39,8 +39,9 @@ _TECHNOLOGY_KEYS = {
     SourceFormat.SRM_V1: ("database_type", "the dependency"),
 }
 
-# A technology that has a dashboard template, named in the hint so that
-# following it yields panels and not a second skip.
+# A technology that has a dashboard template, named in the hint as an example
+# of a value that yields panels and not a second skip. It is an example: the
+# value to set is the database's own technology.
 _EXAMPLE_TECHNOLOGY = "postgresql"
 
 
@@ -167,8 +168,9 @@ class ManifestDashboardBuilder:
                                 skipped["technology_key"] = key
                                 skipped["example_technology"] = _EXAMPLE_TECHNOLOGY
                                 skipped["hint"] = (
-                                    f"set {key} on {where} to a technology with a "
-                                    f"dashboard template, such as {_EXAMPLE_TECHNOLOGY}"
+                                    f"set {key} on {where} to the database's technology; "
+                                    f"one with a dashboard template, such as "
+                                    f"{_EXAMPLE_TECHNOLOGY}, gets panels"
                                 )
                         logger.warning("dashboard_dependency_skipped", **skipped)
                         continue

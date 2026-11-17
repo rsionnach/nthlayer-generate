@@ -130,9 +130,10 @@ warning says what to set. Its `technology_key` field names the key: `type` on
 the entry under `databases:` in a legacy manifest, `database_type` on the
 dependency in an srm/v1 manifest. Its `example_technology` field names a
 technology that has a template (`postgresql`), and `hint` puts the two in one
-sentence. If the key is set to a technology with no template, the dependency
-is still skipped, with reason `no_dashboard_template` and none of these three
-fields. A legacy database listed under the flat `services:` list has
+sentence. `postgresql` is only an example: set the database's real technology.
+If that technology has no template, the dependency is still skipped, with
+reason `no_dashboard_template` and none of these three fields. A technology
+the dashboard already draws for another dependency adds no further panels. A legacy database listed under the flat `services:` list has
 no key for its technology; move it under `databases:` to give it one.
 
 The `opensrm.nthlayer.io/v2` format gives a dependency no `type` key, so a

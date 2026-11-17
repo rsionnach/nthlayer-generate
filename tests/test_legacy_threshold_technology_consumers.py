@@ -448,7 +448,8 @@ def test_skip_event_says_which_key_to_set_and_to_what(path, name, key, where, fi
     assert get_template_or_none(example) is not None, "the example has no template"
     # The sentence an operator reads is made of the same parts.
     assert entry["hint"] == (
-        f"set {key} on {where} to a technology with a dashboard template, such as {example}"
+        f"set {key} on {where} to the database's technology; "
+        f"one with a dashboard template, such as {example}, gets panels"
     )
 
     data = yaml.safe_load(path.read_text(encoding="utf-8"))

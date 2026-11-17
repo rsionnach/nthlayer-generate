@@ -44,6 +44,9 @@ def _migrated_goldens() -> list[tuple[str, Path, Any]]:
 
 
 CASES = _migrated_goldens()
+# At import, so a moved golden directory fails collection instead of
+# parametrising over nothing; test_every_legacy_golden_is_covered pins the count.
+assert CASES, f"no cli_migrate goldens with a migrated file under {GOLDENS}"
 
 
 def test_every_legacy_golden_is_covered() -> None:
@@ -88,6 +91,9 @@ _SHIPPED_LEGACY = sorted((REPO / "examples" / "services").glob("*.yaml")) + [
 # to ``stream`` (opensrm-wo62.4.7 R3). Not filtered by catching errors, so an
 # unloadable example fails the loop below instead of vanishing.
 _ROUND_TRIP = _SHIPPED_LEGACY
+# At import, for the same reason; the count is pinned in
+# test_round_trip_covers_every_loadable_legacy_example.
+assert _ROUND_TRIP, "no shipped legacy examples found under examples/"
 ANALYTICS_STREAM = REPO / "examples" / "services" / "analytics-stream.yaml"
 
 

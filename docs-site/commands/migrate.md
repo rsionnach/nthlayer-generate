@@ -117,6 +117,10 @@ objective would read as a bound. It is listed in a warning with its objective
 and window. This includes a bound written under the plural `indicators:` list,
 which the loader does not read yet.
 
+A `threshold_ms` on an SLO of any other type is not written either, since only a
+latency SLO has a bound in srm/v1; it is listed in a warning. So is a `unit`
+other than `ms` declared beside a latency bound.
+
 ## See Also
 
 - [OpenSRM Format](../concepts/opensrm.md) — Format guide and schema overview

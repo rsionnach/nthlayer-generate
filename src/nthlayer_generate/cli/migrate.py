@@ -247,8 +247,21 @@ def _legacy_to_srm_v1(
                     f"{slo.name}: objective={slo.target!r} (srm/v1 carries a latency "
                     "SLO's bound as its target, and has no form for the objective)"
                 )
+                if slo.unit and slo.unit != "ms":
+                    lost.append(
+                        f"{slo.name}: unit={slo.unit!r} (the bound is threshold_ms, written in ms)"
+                    )
                 target = _whole_number_as_int(slo.threshold_ms)
                 unit = "ms"
+            elif slo.threshold_ms is not None:
+                # common's legacy loader fills threshold_ms whatever the type
+                # (`errors-p99` is error_rate by its name; an indicator.type
+                # is kept as written). Only a latency SLO has a bound in
+                # srm/v1.
+                lost.append(
+                    f"{slo.name}: threshold_ms={slo.threshold_ms!r} (srm/v1 carries a bound "
+                    f"only on a latency SLO, and this one is typed {slo.slo_type!r})"
+                )
             slo_data: dict[str, Any] = {
                 "type": slo.slo_type,
                 "target": target,

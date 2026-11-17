@@ -479,3 +479,77 @@ def test_feedback_latency_past_the_srm_v1_cap_is_reported(tmp_path: Path) -> Non
 
     assert "slos" not in doc["spec"]
     assert len(lost) == 1 and bound in lost[0]
+
+
+def _auth_api_with(tmp_path: Path, edit: Any) -> Any:
+    """examples/services/auth-api.yaml with *edit* applied to its parsed
+    YAML, written out and loaded through common's legacy loader."""
+    data = yaml.safe_load(AUTH_API.read_text(encoding="utf-8"))
+    edit(data)
+    path = tmp_path / "auth-api.yaml"
+    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    return load_manifest(path, suppress_deprecation_warning=True)
+
+
+# A bound on an SLO that is not typed ``latency``. Both shapes come from
+# nthlayer-common's legacy loader, not from migrate: it fills threshold_ms for
+# every SLO (parser/loader.py, the legacy SLO construction), types `errors-p99`
+# by its name ("`errors-p99` with a threshold stays error_rate",
+# _infer_legacy_slo_type), and keeps an indicator.type as written.
+_NON_LATENCY_BOUNDS = [
+    pytest.param(
+        {"kind": "SLO", "name": "errors-p99",
+         "spec": {"objective": 99, "window": "30d", "threshold_ms": 300}},
+        "error_rate",
+        id="typed-by-name",
+    ),
+    pytest.param(
+        {"kind": "SLO", "name": "p99",
+         "spec": {"objective": 99, "window": "30d",
+                  "indicator": {"type": "Latency", "threshold_ms": 300}}},
+        "Latency",
+        id="type-as-written",
+    ),
+]
+
+
+@pytest.mark.parametrize(("resource", "loaded_type"), _NON_LATENCY_BOUNDS)
+def test_bound_on_a_non_latency_slo_is_reported(
+    resource: dict[str, Any], loaded_type: str, tmp_path: Path
+) -> None:
+    """srm/v1 has a bound only on a latency SLO, so the SLO is written as
+    before and its bound is reported, not dropped silently."""
+    legacy = _auth_api_with(tmp_path, lambda data: data["resources"].append(resource))
+    name = resource["name"]
+    (loaded,) = [s for s in legacy.slos if s.name == name]
+    assert (loaded.slo_type, loaded.threshold_ms) == (loaded_type, 300.0), "fixture drifted"
+    lost: list[str] = []
+
+    doc = _legacy_to_srm_v1(legacy, lost)
+
+    assert doc["spec"]["slos"][name] == {"type": loaded_type, "target": 99.0, "window": "30d"}
+    assert (
+        f"{name}: threshold_ms=300.0 (srm/v1 carries a bound only on a latency SLO, "
+        f"and this one is typed {loaded_type!r})"
+    ) in lost
+
+
+def test_unit_declared_beside_a_latency_bound_is_reported(tmp_path: Path) -> None:
+    """Derived: auth-api's latency-p95 (threshold_ms: 200) with ``unit: s``
+    added, which the legacy loader keeps (spec.unit). The bound is in
+    milliseconds by its key, so the file says ms; the declared unit is
+    reported."""
+
+    def add_unit(data: Any) -> None:
+        (slo,) = [r for r in data["resources"] if r.get("name") == "latency-p95"]
+        slo["spec"]["unit"] = "s"
+
+    legacy = _auth_api_with(tmp_path, add_unit)
+    assert {s.name: s.unit for s in legacy.slos}["latency-p95"] == "s", "fixture drifted"
+    lost: list[str] = []
+
+    doc = _legacy_to_srm_v1(legacy, lost)
+
+    slo = doc["spec"]["slos"]["latency-p95"]
+    assert (slo["target"], slo["unit"]) == (200, "ms")
+    assert "latency-p95: unit='s' (the bound is threshold_ms, written in ms)" in lost

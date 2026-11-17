@@ -553,3 +553,26 @@ def test_unit_declared_beside_a_latency_bound_is_reported(tmp_path: Path) -> Non
     slo = doc["spec"]["slos"]["latency-p95"]
     assert (slo["target"], slo["unit"]) == (200, "ms")
     assert "latency-p95: unit='s' (the bound is threshold_ms, written in ms)" in lost
+
+
+def test_unit_ms_declared_beside_a_latency_bound_is_not_reported(tmp_path: Path) -> None:
+    """Derived, as the test above, with ``unit: ms``: the written unit is the
+    declared one, so there is nothing to report about it. Only the objective
+    is not carried."""
+
+    def add_unit(data: Any) -> None:
+        (slo,) = [r for r in data["resources"] if r.get("name") == "latency-p95"]
+        slo["spec"]["unit"] = "ms"
+
+    legacy = _auth_api_with(tmp_path, add_unit)
+    assert {s.name: s.unit for s in legacy.slos}["latency-p95"] == "ms", "fixture drifted"
+    lost: list[str] = []
+
+    doc = _legacy_to_srm_v1(legacy, lost)
+
+    slo = doc["spec"]["slos"]["latency-p95"]
+    assert (slo["target"], slo["unit"]) == (200, "ms")
+    assert [item for item in lost if item.startswith("latency-p95:")] == [
+        "latency-p95: objective=99.5 (srm/v1 carries a latency SLO's bound as its target, "
+        "and has no form for the objective)"
+    ]

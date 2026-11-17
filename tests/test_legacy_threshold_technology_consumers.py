@@ -24,6 +24,7 @@ import yaml
 from nthlayer_common.manifest import Dependency, ReliabilityManifest, load_manifest
 
 from nthlayer_generate.dashboards.manifest_builder import ManifestDashboardBuilder
+from nthlayer_generate.dashboards.templates import get_template_or_none
 from nthlayer_generate.generators.sloth import generate_sloth_from_manifest
 from nthlayer_generate.recording_rules.manifest_builder import (
     build_recording_rules_from_manifest,
@@ -359,7 +360,11 @@ def test_database_without_a_dashboard_template_is_skipped(path, kept, skipped):
     assert {d["name"]: d["type"] for d in spec["databases"]} == kept
     assert _skipped_dependencies(logs, "database") == skipped
     # Only a dependency that declares no technology is told how to get panels.
-    hinted = {e["dependency"] for e in logs if e.get("hint")}
+    hinted = {
+        e["dependency"]
+        for e in logs
+        if e.get("hint") or e.get("technology_key") or e.get("example_technology")
+    }
     assert hinted == {name for name, (reason, _) in skipped.items() if reason == NO_TECHNOLOGY}
 
     assert builder.build()["dashboard"]["panels"]
@@ -405,46 +410,50 @@ def _srm_v1_dependency(data, name):
 
 
 # (file, untyped database, the key its format declares a technology with,
-#  how to find the database's entry in the parsed YAML, a templated technology)
-DECLARE_TECHNOLOGY_HINTS = [
+#  where that key goes, how to find the database's entry in the parsed YAML)
+UNTYPED_DATABASE_HINT_CASES = [
     pytest.param(
         GOLDEN_FIXTURES / "legacy" / "checkout-db-deps.yaml",
         "mysql-orders",
         "type",
+        "the database entry",
         _legacy_database_entry,
-        "mysql",
         id="legacy",
     ),
     pytest.param(
         EXAMPLES / "opensrm" / "ai-gate.reliability.yaml",
         "feature-store",
         "database_type",
+        "the dependency",
         _srm_v1_dependency,
-        "postgresql",
         id="srm-v1",
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    ("path", "name", "key", "find_entry", "technology"), DECLARE_TECHNOLOGY_HINTS
+    ("path", "name", "key", "where", "find_entry"), UNTYPED_DATABASE_HINT_CASES
 )
-def test_skip_hint_names_the_key_the_manifest_format_reads(
-    path, name, key, find_entry, technology, tmp_path
-):
-    """opensrm-ip9r: a database that declares no technology is skipped with a
-    hint, and setting the key the hint names gets it its panels."""
+def test_skip_event_says_which_key_to_set_and_to_what(path, name, key, where, find_entry, tmp_path):
+    """opensrm-ip9r, opensrm-sjgi: a database that declares no technology is
+    skipped with the key its manifest format reads and a technology that has
+    a template, and setting that key to that technology gets it its panels."""
     builder = ManifestDashboardBuilder(manifest=_load(path))
     with structlog.testing.capture_logs() as logs:
         builder._manifest_to_resources(builder._manifest_to_context())
     (entry,) = [e for e in logs if e.get("dependency") == name]
     assert entry["reason"] == NO_TECHNOLOGY
-    # The hint reads "set <key> on ...": the key it names is the one set below.
-    verb, hinted_key = entry["hint"].split()[:2]
-    assert (verb, hinted_key) == ("set", key)
+    assert entry["technology_key"] == key
+    example = entry["example_technology"]
+    assert get_template_or_none(example) is not None, "the example has no template"
+    # The sentence an operator reads is made of the same parts.
+    assert entry["hint"] == (
+        f"set {key} on {where} to the database's technology; "
+        f"one with a dashboard template, such as {example}, gets panels"
+    )
 
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    find_entry(data, name)[hinted_key] = technology
+    find_entry(data, name)[entry["technology_key"]] = example
     declared = tmp_path / path.name
     declared.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
 
@@ -452,5 +461,5 @@ def test_skip_hint_names_the_key_the_manifest_format_reads(
     with structlog.testing.capture_logs() as logs:
         resources = builder._manifest_to_resources(builder._manifest_to_context())
     spec = next(r.spec for r in resources if r.kind == "Dependencies")
-    assert {d["name"]: d["type"] for d in spec["databases"]}[name] == technology
+    assert {d["name"]: d["type"] for d in spec["databases"]}[name] == example
     assert name not in _skipped_dependencies(logs, "database")

@@ -126,9 +126,12 @@ command still exits 0: the dashboard is written without panels for that
 dependency.
 
 A database that declares no technology is skipped the same way, and the
-warning carries a hint naming the key to set: `type` on the entry under
-`databases:` in a legacy manifest, `database_type` on the dependency in an
-srm/v1 manifest. A legacy database listed under the flat `services:` list has
+warning says what to set. Its `technology_key` field names the key: `type` on
+the entry under `databases:` in a legacy manifest, `database_type` on the
+dependency in an srm/v1 manifest. Its `example_technology` field names a
+technology that has a template (`postgresql`), and `hint` puts the two in one
+sentence. Setting the key to a technology with no template only changes the
+reason to `no_dashboard_template`. A legacy database listed under the flat `services:` list has
 no key for its technology; move it under `databases:` to give it one.
 
 The `opensrm.nthlayer.io/v2` format gives a dependency no `type` key, so a

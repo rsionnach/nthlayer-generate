@@ -162,7 +162,7 @@ def _lift_dropped_fields(raw: Any) -> list[str]:
     return lost
 
 
-def _whole_number_as_int(value: float) -> float:
+def _whole_number_as_int(value: float) -> int | float:
     """``200.0`` -> ``200``, as srm/v1 files write a whole bound; ``2.5`` stays."""
     return int(value) if value == int(value) else value
 
@@ -222,12 +222,6 @@ def _legacy_to_srm_v1(
                     f"(srm/v1 rejects '{slo.name}'); {_V2_NEXT_STEP}"
                 )
                 continue
-            # ``type`` always: common's srm/v1 parser infers it only from a
-            # few names and indicator shapes, and rejects the file otherwise
-            # (``_infer_slo_type``) — six shipped legacy examples included.
-            # Key order is the written file's order: ``type`` first. The
-            # names srm/v1 lifts into thresholds (and rejects ``type`` on)
-            # never reach here: common's legacy loader lifts them too.
             target: float = slo.target
             unit = slo.unit
             if slo.slo_type == "latency":
@@ -262,6 +256,12 @@ def _legacy_to_srm_v1(
                     f"{slo.name}: threshold_ms={slo.threshold_ms!r} (srm/v1 carries a bound "
                     f"only on a latency SLO, and this one is typed {slo.slo_type!r})"
                 )
+            # ``type`` always: common's srm/v1 parser infers it only from a
+            # few names and indicator shapes, and rejects the file otherwise
+            # (``_infer_slo_type``) — six shipped legacy examples included.
+            # Key order is the written file's order: ``type`` first. The
+            # names srm/v1 lifts into thresholds (and rejects ``type`` on)
+            # never reach here: common's legacy loader lifts them too.
             slo_data: dict[str, Any] = {
                 "type": slo.slo_type,
                 "target": target,

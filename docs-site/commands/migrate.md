@@ -114,12 +114,16 @@ objective in a `Not carried into srm/v1: ...` warning.
 
 A latency SLO that was loaded with no bound is not written, because its
 objective would read as a bound. It is listed in a warning with its objective
-and window. This includes a bound written under the plural `indicators:` list,
-which the loader does not read yet.
+and window. This includes a latency SLO whose bound is under the plural
+`indicators:` list, which the loader does not read yet.
 
 A `threshold_ms` on an SLO of any other type is not written either, since only a
-latency SLO has a bound in srm/v1; it is listed in a warning. So is a `unit`
-other than `ms` declared beside a latency bound.
+latency SLO has a bound in srm/v1; the SLO is written without it and the bound
+is listed in a warning.
+
+A latency SLO that declares a `unit` other than `ms` beside its bound is written
+with `unit: ms`, because `threshold_ms` is in milliseconds, and the declared
+unit is listed in a warning.
 
 ## See Also
 

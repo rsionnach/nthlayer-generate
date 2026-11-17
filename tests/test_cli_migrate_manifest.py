@@ -138,9 +138,8 @@ class TestDemoSpecsViaCLI:
     """End-to-end: every demo spec converts via the CLI command + writes a parseable v2 file.
 
     The specs are the front door's demo/specs, vendored under
-    tests/fixtures/demo_specs (its README records the source commit). They used
-    to be read from a sibling checkout of the front door and skipped when it
-    was absent, which was every CI run (opensrm-w658). Nothing here skips.
+    tests/fixtures/demo_specs (see its README for the source and why).
+    Nothing here skips: a missing directory or file fails.
     """
 
     def test_vendored_demo_specs_are_the_listed_files(self):

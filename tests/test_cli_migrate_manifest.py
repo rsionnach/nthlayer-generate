@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from golden._corpus import OPENSRM
 
 
 def _v1_payload() -> dict:
@@ -129,29 +130,31 @@ class TestMigrateManifestCommand:
         assert rc == 1
 
 
+DEMO_SPECS = Path(__file__).resolve().parent / "fixtures" / "demo_specs"
+DEMO_FILES = ["payment-api.yaml", "fraud-detect.yaml", "order-service.yaml", "checkout-svc.yaml"]
+
+
 class TestDemoSpecsViaCLI:
-    """End-to-end: every demo spec converts via the CLI command + writes a parseable v2 file."""
+    """End-to-end: every demo spec converts via the CLI command + writes a parseable v2 file.
 
-    DEMO_FILES = ["payment-api.yaml", "fraud-detect.yaml", "order-service.yaml", "checkout-svc.yaml"]
+    The specs are the front door's demo/specs, vendored under
+    tests/fixtures/demo_specs (its README records the source commit). They used
+    to be read from a sibling checkout of the front door and skipped when it
+    was absent, which was every CI run (opensrm-w658). Nothing here skips.
+    """
 
-    @pytest.fixture
-    def demo_dir(self) -> Path:
-        # nthlayer-generate is at ecosystem/nthlayer-generate; demo specs at
-        # ecosystem/nthlayer/demo/specs.
-        candidate = Path(__file__).resolve().parents[2] / "nthlayer" / "demo" / "specs"
-        if not candidate.exists():
-            pytest.skip(f"Demo specs directory not found at {candidate}")
-        return candidate
+    def test_vendored_demo_specs_are_the_listed_files(self):
+        assert DEMO_SPECS.is_dir(), f"demo specs directory missing: {DEMO_SPECS}"
+        assert sorted(p.name for p in DEMO_SPECS.glob("*.yaml")) == sorted(DEMO_FILES)
 
     @pytest.mark.parametrize("filename", DEMO_FILES)
-    def test_demo_spec_migrates_via_cli(self, tmp_path, demo_dir: Path, filename: str):
+    def test_demo_spec_migrates_via_cli(self, tmp_path, filename: str):
         from nthlayer_common.manifest.parser.v2 import parse_opensrm_v2
 
         from nthlayer_generate.cli.migrate_manifest import migrate_manifest_command
 
-        src = demo_dir / filename
-        if not src.exists():
-            pytest.skip(f"{filename} not present")
+        src = DEMO_SPECS / filename
+        assert src.is_file(), f"{filename} missing from {DEMO_SPECS}"
 
         out = tmp_path / f"{src.stem}.v2.yaml"
         rc = migrate_manifest_command(str(src), output_path=str(out))
@@ -440,7 +443,9 @@ class TestOpensrmV1:
         assert (args.allow_lossy, args.service_type) == (True, "api")
 
 
-OPENSRM_EXAMPLES = Path(__file__).resolve().parents[2] / "opensrm" / "examples"
+# The spec repo is a sibling checkout; its location is declared once, in the
+# golden corpus, and the tests below assert the examples are there.
+OPENSRM_EXAMPLES = OPENSRM / "examples"
 
 # Expected CLI outcome per published opensrm/v1 example, derived from each
 # file's keys against the design spec's §4 field-mapping table
@@ -469,6 +474,10 @@ OPENSRM_EXAMPLE_EXPECTATIONS: dict[str, tuple[str | None, str]] = {
     "database-mysql.yaml": (None, "spec.slos.replication_lag"),
 }
 
+# At import: a parametrize over an empty list would collect nothing.
+OPENSRM_EXAMPLE_NAMES = sorted(OPENSRM_EXAMPLE_EXPECTATIONS)
+assert OPENSRM_EXAMPLE_NAMES, "no opensrm/v1 example expectations declared"
+
 
 def test_opensrm_examples_are_all_covered():
     found = sorted(p.name for p in OPENSRM_EXAMPLES.glob("*.yaml"))
@@ -476,7 +485,7 @@ def test_opensrm_examples_are_all_covered():
     assert set(found) == set(OPENSRM_EXAMPLE_EXPECTATIONS)
 
 
-@pytest.mark.parametrize("name", sorted(OPENSRM_EXAMPLE_EXPECTATIONS))
+@pytest.mark.parametrize("name", OPENSRM_EXAMPLE_NAMES)
 def test_opensrm_example_migrates_per_field_map(tmp_path, monkeypatch, name):
     from nthlayer_generate.cli import migrate_manifest
 

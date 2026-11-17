@@ -132,12 +132,26 @@ class ManifestDashboardBuilder:
                         # opensrm-wo62.4.16): a technology with no dashboard
                         # template is left out with a warning, as alerts skip
                         # it, rather than failing the whole dashboard.
-                        logger.warning(
-                            "No dashboard template for %s '%s' (technology %r), skipping",
-                            dep.type,
-                            dep.name,
-                            technology,
-                        )
+                        if technology is None:
+                            # Nothing to look a template up by. Only a
+                            # database gets here: a cache or queue is
+                            # inferred from its name or defaulted.
+                            logger.warning(
+                                "dashboard_dependency_skipped",
+                                dependency=dep.name,
+                                dependency_type=dep.type,
+                                technology=None,
+                                reason="no_technology_declared",
+                                hint="set database_type on the dependency",
+                            )
+                        else:
+                            logger.warning(
+                                "dashboard_dependency_skipped",
+                                dependency=dep.name,
+                                dependency_type=dep.type,
+                                technology=technology,
+                                reason="no_dashboard_template",
+                            )
                         continue
                     dep_spec[_TECHNOLOGY_SPEC_KEYS[dep.type]].append(
                         {

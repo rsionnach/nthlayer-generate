@@ -120,6 +120,12 @@ Adds technology-specific panels:
 | Redis | 10 panels |
 | Kubernetes | 10 panels |
 
+A database, cache or queue whose technology has no dashboard template is left
+out of the dashboard with a `dashboard_dependency_skipped` warning, and the
+command still exits 0: the dashboard is written without panels for that
+dependency. A database that declares no technology is skipped the same way;
+set its `database_type` to get panels.
+
 ## Output Structure
 
 ```

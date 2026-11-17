@@ -153,6 +153,11 @@ resources:
             good_query: sum(rate(http_requests_total{service="checkout",status!~"5.."}[5m]))
 ```
 
+For an SLO written as a ratio, the `query` field in the JSON output is the
+expression the command composes from the two parts, `(good_query) / (total_query)`,
+not a string from your manifest. An OpenSLO `ratioMetric` with `bad` and `total`
+is reported as `((total) - (bad)) / (total)`. The metrics on both sides are checked.
+
 ### Recording Rule Dependencies
 
 If SLOs use recording rules, validates those exist too:

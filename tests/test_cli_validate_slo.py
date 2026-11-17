@@ -318,7 +318,8 @@ resources:
 # spec.indicators[].success_ratio independently (nthlayer-common
 # manifest/parser/loader.py, the legacy SLO construction), so one SLO can
 # carry both. The singular shape is the one examples/services/payment-api.yaml
-# ships. {indicator_query} is filled per test.
+# ships. {indicator_query} is filled per test with str.format, which is why
+# the PromQL braces below are doubled.
 _LEGACY_QUERY_AND_RATIO = """\
 apiVersion: nthlayer.dev/v1
 kind: Service

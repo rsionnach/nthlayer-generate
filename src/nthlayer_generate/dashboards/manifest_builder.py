@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 import structlog
-from nthlayer_common.manifest import ReliabilityManifest
+from nthlayer_common.manifest import ReliabilityManifest, SourceFormat
 
 from nthlayer_generate.dashboards.builder_sdk import DashboardBuilderSDK
 from nthlayer_generate.dashboards.templates import get_template_or_none
@@ -24,6 +24,19 @@ logger = structlog.get_logger()
 # Dependency types drawn from a technology template, and the key each is
 # listed under in the Dependencies resource.
 _TECHNOLOGY_SPEC_KEYS = {"database": "databases", "cache": "caches", "queue": "queues"}
+
+# How a manifest declares a database's technology, by the format it was
+# loaded from: where nthlayer-common's parsers read Dependency.database_type.
+# The legacy loader takes it from the entry's ``type:`` (parser/loader.py),
+# the srm/v1 parser from ``database_type`` (parser/v1.py). The v2 format has
+# no type key on a dependency (opensrm spec/v2 AUTHORING.md 7.5), so it loads
+# as an api dependency; a leftover ``type: database`` is still read, and has
+# no key for its technology, hence no v2 hint. The legacy hint fits an entry
+# under ``databases:``; one under the flat ``services:`` list has no such key.
+_DECLARE_TECHNOLOGY_HINTS = {
+    SourceFormat.LEGACY: "set type on the database entry",
+    SourceFormat.SRM_V1: "set database_type on the dependency",
+}
 
 
 class ManifestDashboardBuilder:
@@ -132,12 +145,28 @@ class ManifestDashboardBuilder:
                         # opensrm-wo62.4.16): a technology with no dashboard
                         # template is left out with a warning, as alerts skip
                         # it, rather than failing the whole dashboard.
-                        logger.warning(
-                            "No dashboard template for %s '%s' (technology %r), skipping",
-                            dep.type,
-                            dep.name,
-                            technology,
-                        )
+                        if technology is None:
+                            # Nothing to look a template up by. Only a
+                            # database gets here: a cache or queue is
+                            # inferred from its name or defaulted.
+                            fields: Dict[str, Any] = {
+                                "dependency": dep.name,
+                                "dependency_type": dep.type,
+                                "technology": None,
+                                "reason": "no_technology_declared",
+                            }
+                            hint = _DECLARE_TECHNOLOGY_HINTS.get(self.manifest.source_format)
+                            if hint:
+                                fields["hint"] = hint
+                            logger.warning("dashboard_dependency_skipped", **fields)
+                        else:
+                            logger.warning(
+                                "dashboard_dependency_skipped",
+                                dependency=dep.name,
+                                dependency_type=dep.type,
+                                technology=technology,
+                                reason="no_dashboard_template",
+                            )
                         continue
                     dep_spec[_TECHNOLOGY_SPEC_KEYS[dep.type]].append(
                         {

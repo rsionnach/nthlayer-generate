@@ -120,6 +120,23 @@ Adds technology-specific panels:
 | Redis | 10 panels |
 | Kubernetes | 10 panels |
 
+A database, cache or queue whose technology has no dashboard template is left
+out of the dashboard with a `dashboard_dependency_skipped` warning, and the
+command still exits 0: the dashboard is written without panels for that
+dependency.
+
+A database that declares no technology is skipped the same way, and the
+warning carries a hint naming the key to set: `type` on the entry under
+`databases:` in a legacy manifest, `database_type` on the dependency in an
+srm/v1 manifest. A legacy database listed under the flat `services:` list has
+no key for its technology; move it under `databases:` to give it one.
+
+The `opensrm.nthlayer.io/v2` format gives a dependency no `type` key, so a
+manifest written to the spec has no database, cache or queue dependencies to
+draw or to skip. A `type: database` left over from an srm/v1 file is still
+read: that dependency is skipped, with no hint, because v2 has no key for its
+technology.
+
 ## Output Structure
 
 ```

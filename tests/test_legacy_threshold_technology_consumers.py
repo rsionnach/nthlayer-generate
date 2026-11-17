@@ -238,10 +238,13 @@ def test_queue_without_a_dashboard_template_is_skipped():
     manifest = _load(SERVICES / "notification-service.yaml")
     assert "sqs" in {dependency_technology(d) for d in manifest.dependencies}
     builder = ManifestDashboardBuilder(manifest=manifest)
-    resources = builder._manifest_to_resources(builder._manifest_to_context())
+    with structlog.testing.capture_logs() as logs:
+        resources = builder._manifest_to_resources(builder._manifest_to_context())
     spec = next(r.spec for r in resources if r.kind == "Dependencies")
 
     assert "sqs" not in {q["type"] for q in spec["queues"]}
+    sqs_queues = {d.name for d in manifest.dependencies if dependency_technology(d) == "sqs"}
+    assert _skipped_dependencies(logs, "queue") == dict.fromkeys(sqs_queues, (NO_TEMPLATE, "sqs"))
     assert builder.build()["dashboard"]["panels"]
 
 
@@ -270,8 +273,11 @@ def test_cache_declaring_an_untemplated_technology_is_skipped():
 # Every manifest is a committed file, loaded unmodified. The expectations are
 # what each file declares: `kept` are its database dependencies whose declared
 # technology has a dashboard template (dashboards/templates/__init__.py,
-# TECHNOLOGY_TEMPLATES), `skipped` those whose technology has none or which
-# declare none at all.
+# TECHNOLOGY_TEMPLATES); `skipped` maps the others to why they are left out
+# and the technology the file declares for them: one with no template, or none.
+
+NO_TEMPLATE = "no_dashboard_template"
+NO_TECHNOLOGY = "no_technology_declared"
 
 GOLDEN_FIXTURES = Path(__file__).resolve().parent / "golden" / "fixtures"
 
@@ -279,40 +285,53 @@ UNTEMPLATED_DATABASE_MANIFESTS = [
     pytest.param(
         SERVICES / "analytics-pipeline.yaml",
         {},
-        {"analytics-warehouse", "raw-data-lake"},
+        {"analytics-warehouse": (NO_TEMPLATE, "bigquery"), "raw-data-lake": (NO_TEMPLATE, "s3")},
         id="bigquery-and-s3",
     ),
     pytest.param(
         SERVICES / "batch-reports.yaml",
         {"analytics-db": "postgresql"},
-        {"reports-storage"},
+        {"reports-storage": (NO_TEMPLATE, "s3")},
         id="s3-beside-postgresql",
     ),
     pytest.param(
         GOLDEN_FIXTURES / "legacy" / "checkout-db-deps.yaml",
         {"postgres-main": "postgres", "postgres-replica": "postgres"},
-        {"mysql-orders"},
+        {"mysql-orders": (NO_TECHNOLOGY, None)},
         id="untyped-beside-postgres",
     ),
     pytest.param(
         EXAMPLES / "opensrm" / "ai-gate.reliability.yaml",
         {},
-        {"feature-store"},
+        {"feature-store": (NO_TECHNOLOGY, None)},
         id="untyped",
     ),
     pytest.param(
         EXAMPLES / "opensrm" / "batch.reliability.yaml",
         {},
-        {"redshift", "s3-bucket"},
+        {"redshift": (NO_TEMPLATE, "redshift"), "s3-bucket": (NO_TEMPLATE, "s3")},
         id="redshift-and-s3",
     ),
     pytest.param(
         EXAMPLES / "opensrm" / "stream.reliability.yaml",
         {},
-        {"clickhouse"},
+        {"clickhouse": (NO_TEMPLATE, "clickhouse")},
         id="clickhouse",
     ),
 ]
+
+
+def _skipped_dependencies(logs: list, dependency_type: str) -> dict[str, tuple[str, str | None]]:
+    """``{dependency name: (reason, technology)}`` for the
+    ``dashboard_dependency_skipped`` warnings of one dependency type among
+    captured structlog entries."""
+    return {
+        entry["dependency"]: (entry["reason"], entry["technology"])
+        for entry in logs
+        if entry["event"] == "dashboard_dependency_skipped"
+        and entry["log_level"] == "warning"
+        and entry["dependency_type"] == dependency_type
+    }
 
 
 def test_untemplated_database_manifests_are_listed():
@@ -330,7 +349,7 @@ def test_database_without_a_dashboard_template_is_skipped(path, kept, skipped):
     with "No template found for technology"."""
     manifest = _load(path)
     declared = {d.name for d in manifest.dependencies if d.type == "database"}
-    assert declared == set(kept) | skipped, "the file's databases changed"
+    assert declared == set(kept) | set(skipped), "the file's databases changed"
 
     builder = ManifestDashboardBuilder(manifest=manifest)
     with structlog.testing.capture_logs() as logs:
@@ -338,13 +357,10 @@ def test_database_without_a_dashboard_template_is_skipped(path, kept, skipped):
     spec = next(r.spec for r in resources if r.kind == "Dependencies")
 
     assert {d["name"]: d["type"] for d in spec["databases"]} == kept
-    # The warning's arguments are (dependency type, name, technology).
-    warned = {
-        entry["positional_args"][1]
-        for entry in logs
-        if entry["log_level"] == "warning" and entry.get("positional_args", ("",))[0] == "database"
-    }
-    assert warned == skipped
+    assert _skipped_dependencies(logs, "database") == skipped
+    # Only a dependency that declares no technology is told how to get panels.
+    hinted = {e["dependency"] for e in logs if e.get("hint")}
+    assert hinted == {name for name, (reason, _) in skipped.items() if reason == NO_TECHNOLOGY}
 
     assert builder.build()["dashboard"]["panels"]
 
@@ -368,3 +384,73 @@ def test_declared_database_technology_is_normalised_like_a_cache_or_queue():
     spec = next(r.spec for r in resources if r.kind == "Dependencies")
 
     assert {d["name"]: d["type"] for d in spec["databases"]} == {"analytics-db": "postgresql"}
+
+
+# The hint names the key each format's parser reads the technology from
+# (nthlayer-common: the legacy loader takes a database's `type:`,
+# parser/loader.py; the srm/v1 parser takes `database_type`, parser/v1.py).
+# Each case is a committed file with an untyped database, and the edit that
+# follows the hint, applied to the file's parsed YAML.
+
+
+def _legacy_database_entry(data, name):
+    (deps,) = [r for r in data["resources"] if r.get("kind") == "Dependencies"]
+    (entry,) = [d for d in deps["spec"]["databases"] if d["name"] == name]
+    return entry
+
+
+def _srm_v1_dependency(data, name):
+    (entry,) = [d for d in data["spec"]["dependencies"] if d["name"] == name]
+    return entry
+
+
+# (file, untyped database, the key its format declares a technology with,
+#  how to find the database's entry in the parsed YAML, a templated technology)
+DECLARE_TECHNOLOGY_HINTS = [
+    pytest.param(
+        GOLDEN_FIXTURES / "legacy" / "checkout-db-deps.yaml",
+        "mysql-orders",
+        "type",
+        _legacy_database_entry,
+        "mysql",
+        id="legacy",
+    ),
+    pytest.param(
+        EXAMPLES / "opensrm" / "ai-gate.reliability.yaml",
+        "feature-store",
+        "database_type",
+        _srm_v1_dependency,
+        "postgresql",
+        id="srm-v1",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    ("path", "name", "key", "find_entry", "technology"), DECLARE_TECHNOLOGY_HINTS
+)
+def test_skip_hint_names_the_key_the_manifest_format_reads(
+    path, name, key, find_entry, technology, tmp_path
+):
+    """opensrm-ip9r: a database that declares no technology is skipped with a
+    hint, and setting the key the hint names gets it its panels."""
+    builder = ManifestDashboardBuilder(manifest=_load(path))
+    with structlog.testing.capture_logs() as logs:
+        builder._manifest_to_resources(builder._manifest_to_context())
+    (entry,) = [e for e in logs if e.get("dependency") == name]
+    assert entry["reason"] == NO_TECHNOLOGY
+    # The hint reads "set <key> on ...": the key it names is the one set below.
+    verb, hinted_key = entry["hint"].split()[:2]
+    assert (verb, hinted_key) == ("set", key)
+
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    find_entry(data, name)[hinted_key] = technology
+    declared = tmp_path / path.name
+    declared.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    builder = ManifestDashboardBuilder(manifest=_load(declared))
+    with structlog.testing.capture_logs() as logs:
+        resources = builder._manifest_to_resources(builder._manifest_to_context())
+    spec = next(r.spec for r in resources if r.kind == "Dependencies")
+    assert {d["name"]: d["type"] for d in spec["databases"]}[name] == technology
+    assert name not in _skipped_dependencies(logs, "database")

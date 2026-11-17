@@ -132,15 +132,19 @@ dependency in an srm/v1 manifest. Its `example_technology` field names a
 technology that has a template (`postgresql`), and `hint` puts the two in one
 sentence. `postgresql` is only an example: set the database's real technology.
 If that technology has no template, the dependency is still skipped, with
-reason `no_dashboard_template` and none of these three fields. A technology
-the dashboard already draws for another dependency adds no further panels. A legacy database listed under the flat `services:` list has
-no key for its technology; move it under `databases:` to give it one.
+reason `no_dashboard_template` and none of these three fields.
+
+A legacy database listed under the flat `services:` list has no key for its
+technology; move it under `databases:` to give it one.
+
+A technology the dashboard already draws for another dependency adds no
+further panels: two `postgresql` databases share one set.
 
 The `opensrm.nthlayer.io/v2` format gives a dependency no `type` key, so a
 manifest written to the spec has no database, cache or queue dependencies to
 draw or to skip. A `type: database` left over from an srm/v1 file is still
-read: that dependency is skipped, with no hint, because v2 has no key for its
-technology.
+read: that dependency is skipped, with no key, example or hint, because v2 has
+no key for its technology.
 
 ## Output Structure
 

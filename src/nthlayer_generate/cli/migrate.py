@@ -162,6 +162,11 @@ def _lift_dropped_fields(raw: Any) -> list[str]:
     return lost
 
 
+def _whole_number_as_int(value: float) -> int | float:
+    """``200.0`` -> ``200``, as srm/v1 files write a whole bound; ``2.5`` stays."""
+    return int(value) if value == int(value) else value
+
+
 def _legacy_to_srm_v1(
     manifest: ReliabilityManifest, lost: list[str] | None = None
 ) -> dict[str, Any]:
@@ -217,6 +222,40 @@ def _legacy_to_srm_v1(
                     f"(srm/v1 rejects '{slo.name}'); {_V2_NEXT_STEP}"
                 )
                 continue
+            target: float = slo.target
+            unit = slo.unit
+            if slo.slo_type == "latency":
+                # A legacy latency SLO keeps its bound in threshold_ms and its
+                # 0-100 objective in target; srm/v1 carries the bound as the
+                # target, with a unit, and has no form for the objective.
+                # Written with the objective, "99% under 100ms" would read as
+                # a bound of 99 (opensrm-wo62.4.9; Rob, 2026-11-16).
+                if slo.threshold_ms is None:
+                    lost.append(
+                        f"{slo.name}: latency SLO objective={slo.target!r} "
+                        f"window={slo.window!r} (no latency bound was loaded for it, "
+                        "and srm/v1 carries the bound as the target)"
+                    )
+                    continue
+                lost.append(
+                    f"{slo.name}: objective={slo.target!r} (srm/v1 carries a latency "
+                    "SLO's bound as its target, and has no form for the objective)"
+                )
+                if slo.unit and slo.unit != "ms":
+                    lost.append(
+                        f"{slo.name}: unit={slo.unit!r} (the bound is threshold_ms, written in ms)"
+                    )
+                target = _whole_number_as_int(slo.threshold_ms)
+                unit = "ms"
+            elif slo.threshold_ms is not None:
+                # common's legacy loader fills threshold_ms whatever the type
+                # (`errors-p99` is error_rate by its name; an indicator.type
+                # is kept as written). Only a latency SLO has a bound in
+                # srm/v1.
+                lost.append(
+                    f"{slo.name}: threshold_ms={slo.threshold_ms!r} (srm/v1 carries a bound "
+                    f"only on a latency SLO, and this one is typed {slo.slo_type!r})"
+                )
             # ``type`` always: common's srm/v1 parser infers it only from a
             # few names and indicator shapes, and rejects the file otherwise
             # (``_infer_slo_type``) — six shipped legacy examples included.
@@ -225,11 +264,11 @@ def _legacy_to_srm_v1(
             # never reach here: common's legacy loader lifts them too.
             slo_data: dict[str, Any] = {
                 "type": slo.slo_type,
-                "target": slo.target,
+                "target": target,
                 "window": slo.window,
             }
-            if slo.unit:
-                slo_data["unit"] = slo.unit
+            if unit:
+                slo_data["unit"] = unit
             if slo.percentile:
                 slo_data["percentile"] = slo.percentile
             if slo.description:

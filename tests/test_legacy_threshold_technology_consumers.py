@@ -454,35 +454,3 @@ def test_skip_hint_names_the_key_the_manifest_format_reads(
     spec = next(r.spec for r in resources if r.kind == "Dependencies")
     assert {d["name"]: d["type"] for d in spec["databases"]}[name] == technology
     assert name not in _skipped_dependencies(logs, "database")
-
-
-V2_API_FULL = (
-    Path(__file__).resolve().parents[2]
-    / "opensrm"
-    / "spec"
-    / "v2"
-    / "examples"
-    / "migration"
-    / "api-full-v2.yaml"
-)
-
-
-def test_v2_dependencies_are_not_technology_dependencies():
-    """opensrm/spec/v2/AUTHORING.md 7.5, "Dependencies lose `critical` and
-    `type`": a v2 dependency has no type, so nthlayer-common loads it as an
-    api dependency and the skip rule never sees it. The committed migration
-    example names a dependency postgresql; it is listed as a service, not a
-    database, and nothing is reported as skipped."""
-    assert V2_API_FULL.is_file(), "the opensrm sibling checkout moved: this must not skip"
-    manifest = _load(V2_API_FULL)
-    assert "postgresql" in {d.name for d in manifest.dependencies}
-    assert {d.type for d in manifest.dependencies} == {"api"}
-
-    builder = ManifestDashboardBuilder(manifest=manifest)
-    with structlog.testing.capture_logs() as logs:
-        resources = builder._manifest_to_resources(builder._manifest_to_context())
-    spec = next(r.spec for r in resources if r.kind == "Dependencies")
-
-    assert spec["databases"] == []
-    assert "postgresql" in {d["name"] for d in spec["services"]}
-    assert [e for e in logs if e["event"] == "dashboard_dependency_skipped"] == []

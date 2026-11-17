@@ -257,6 +257,11 @@ accepted** alongside `srm/v1`.
   downgrades a v2 manifest.
 - `migrate` prints `Not carried into srm/v1: ...` warnings for anything srm/v1
   cannot express, and still exits 0 (see bead opensrm-us97).
+- `migrate` writes a legacy latency SLO's bound as the srm/v1 target
+  (`target: <threshold_ms>`, `unit: ms`) and lists its objective in a
+  `Not carried` warning; a latency SLO that loaded with no bound is not
+  written. See the "Latency SLOs" section of `docs-site/commands/migrate.md`
+  (opensrm-wo62.4.9).
 - Legacy-format ai-gate manifests need `nthlayer-common>=5.5.0` for their
   judgment SLOs and thresholds; generate 3.0.0 requires it.
 - `validate` does not run contract checks on legacy files.

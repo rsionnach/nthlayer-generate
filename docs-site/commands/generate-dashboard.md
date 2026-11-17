@@ -127,9 +127,11 @@ dependency.
 
 A database that declares no technology is skipped the same way, and the
 warning carries a hint naming the key to set: `type` on the database entry in
-a legacy manifest, `database_type` on the dependency in an srm/v1 manifest. An
-`opensrm.nthlayer.io/v2` manifest has no key for a dependency's technology, so
-its database dependencies get no panels.
+a legacy manifest, `database_type` on the dependency in an srm/v1 manifest.
+
+The dependencies of an `opensrm.nthlayer.io/v2` manifest carry no type, so none
+of them is drawn as a database, cache or queue, and none is reported as
+skipped.
 
 ## Output Structure
 

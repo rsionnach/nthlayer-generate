@@ -244,7 +244,7 @@ def test_queue_without_a_dashboard_template_is_skipped():
 
     assert "sqs" not in {q["type"] for q in spec["queues"]}
     sqs_queues = {d.name for d in manifest.dependencies if dependency_technology(d) == "sqs"}
-    assert _skipped_dependencies(logs, "queue") == dict.fromkeys(sqs_queues, NO_TEMPLATE)
+    assert _skipped_dependencies(logs, "queue") == dict.fromkeys(sqs_queues, (NO_TEMPLATE, "sqs"))
     assert builder.build()["dashboard"]["panels"]
 
 
@@ -273,8 +273,8 @@ def test_cache_declaring_an_untemplated_technology_is_skipped():
 # Every manifest is a committed file, loaded unmodified. The expectations are
 # what each file declares: `kept` are its database dependencies whose declared
 # technology has a dashboard template (dashboards/templates/__init__.py,
-# TECHNOLOGY_TEMPLATES); `skipped` maps the others to why they are left out:
-# the file declares a technology with no template, or declares none.
+# TECHNOLOGY_TEMPLATES); `skipped` maps the others to why they are left out
+# and the technology the file declares for them: one with no template, or none.
 
 NO_TEMPLATE = "no_dashboard_template"
 NO_TECHNOLOGY = "no_technology_declared"
@@ -285,47 +285,48 @@ UNTEMPLATED_DATABASE_MANIFESTS = [
     pytest.param(
         SERVICES / "analytics-pipeline.yaml",
         {},
-        {"analytics-warehouse": NO_TEMPLATE, "raw-data-lake": NO_TEMPLATE},
+        {"analytics-warehouse": (NO_TEMPLATE, "bigquery"), "raw-data-lake": (NO_TEMPLATE, "s3")},
         id="bigquery-and-s3",
     ),
     pytest.param(
         SERVICES / "batch-reports.yaml",
         {"analytics-db": "postgresql"},
-        {"reports-storage": NO_TEMPLATE},
+        {"reports-storage": (NO_TEMPLATE, "s3")},
         id="s3-beside-postgresql",
     ),
     pytest.param(
         GOLDEN_FIXTURES / "legacy" / "checkout-db-deps.yaml",
         {"postgres-main": "postgres", "postgres-replica": "postgres"},
-        {"mysql-orders": NO_TECHNOLOGY},
+        {"mysql-orders": (NO_TECHNOLOGY, None)},
         id="untyped-beside-postgres",
     ),
     pytest.param(
         EXAMPLES / "opensrm" / "ai-gate.reliability.yaml",
         {},
-        {"feature-store": NO_TECHNOLOGY},
+        {"feature-store": (NO_TECHNOLOGY, None)},
         id="untyped",
     ),
     pytest.param(
         EXAMPLES / "opensrm" / "batch.reliability.yaml",
         {},
-        {"redshift": NO_TEMPLATE, "s3-bucket": NO_TEMPLATE},
+        {"redshift": (NO_TEMPLATE, "redshift"), "s3-bucket": (NO_TEMPLATE, "s3")},
         id="redshift-and-s3",
     ),
     pytest.param(
         EXAMPLES / "opensrm" / "stream.reliability.yaml",
         {},
-        {"clickhouse": NO_TEMPLATE},
+        {"clickhouse": (NO_TEMPLATE, "clickhouse")},
         id="clickhouse",
     ),
 ]
 
 
-def _skipped_dependencies(logs: list, dependency_type: str) -> dict[str, str]:
-    """``{dependency name: reason}`` for the ``dashboard_dependency_skipped``
-    warnings of one dependency type among captured structlog entries."""
+def _skipped_dependencies(logs: list, dependency_type: str) -> dict[str, tuple[str, str | None]]:
+    """``{dependency name: (reason, technology)}`` for the
+    ``dashboard_dependency_skipped`` warnings of one dependency type among
+    captured structlog entries."""
     return {
-        entry["dependency"]: entry["reason"]
+        entry["dependency"]: (entry["reason"], entry["technology"])
         for entry in logs
         if entry["event"] == "dashboard_dependency_skipped"
         and entry["log_level"] == "warning"
@@ -359,7 +360,7 @@ def test_database_without_a_dashboard_template_is_skipped(path, kept, skipped):
     assert _skipped_dependencies(logs, "database") == skipped
     # Only a dependency that declares no technology is told how to get panels.
     hinted = {e["dependency"] for e in logs if e.get("hint")}
-    assert hinted == {name for name, reason in skipped.items() if reason == NO_TECHNOLOGY}
+    assert hinted == {name for name, (reason, _) in skipped.items() if reason == NO_TECHNOLOGY}
 
     assert builder.build()["dashboard"]["panels"]
 
@@ -392,31 +393,33 @@ def test_declared_database_technology_is_normalised_like_a_cache_or_queue():
 # follows the hint, applied to the file's parsed YAML.
 
 
-def _declare_legacy_type(data):
+def _legacy_database_entry(data, name):
     (deps,) = [r for r in data["resources"] if r.get("kind") == "Dependencies"]
-    (db,) = [d for d in deps["spec"]["databases"] if d["name"] == "mysql-orders"]
-    db["type"] = "mysql"
+    (entry,) = [d for d in deps["spec"]["databases"] if d["name"] == name]
+    return entry
 
 
-def _declare_srm_v1_database_type(data):
-    (dep,) = [d for d in data["spec"]["dependencies"] if d["name"] == "feature-store"]
-    dep["database_type"] = "postgresql"
+def _srm_v1_dependency(data, name):
+    (entry,) = [d for d in data["spec"]["dependencies"] if d["name"] == name]
+    return entry
 
 
+# (file, untyped database, the key its format declares a technology with,
+#  how to find the database's entry in the parsed YAML, a templated technology)
 DECLARE_TECHNOLOGY_HINTS = [
     pytest.param(
         GOLDEN_FIXTURES / "legacy" / "checkout-db-deps.yaml",
         "mysql-orders",
-        "set type on the database entry",
-        _declare_legacy_type,
+        "type",
+        _legacy_database_entry,
         "mysql",
         id="legacy",
     ),
     pytest.param(
         EXAMPLES / "opensrm" / "ai-gate.reliability.yaml",
         "feature-store",
-        "set database_type on the dependency",
-        _declare_srm_v1_database_type,
+        "database_type",
+        _srm_v1_dependency,
         "postgresql",
         id="srm-v1",
     ),
@@ -424,21 +427,24 @@ DECLARE_TECHNOLOGY_HINTS = [
 
 
 @pytest.mark.parametrize(
-    ("path", "name", "hint", "follow_hint", "technology"), DECLARE_TECHNOLOGY_HINTS
+    ("path", "name", "key", "find_entry", "technology"), DECLARE_TECHNOLOGY_HINTS
 )
 def test_skip_hint_names_the_key_the_manifest_format_reads(
-    path, name, hint, follow_hint, technology, tmp_path
+    path, name, key, find_entry, technology, tmp_path
 ):
     """opensrm-ip9r: a database that declares no technology is skipped with a
-    hint, and doing what the hint says gets it its panels."""
+    hint, and setting the key the hint names gets it its panels."""
     builder = ManifestDashboardBuilder(manifest=_load(path))
     with structlog.testing.capture_logs() as logs:
         builder._manifest_to_resources(builder._manifest_to_context())
     (entry,) = [e for e in logs if e.get("dependency") == name]
-    assert (entry["reason"], entry["hint"]) == (NO_TECHNOLOGY, hint)
+    assert entry["reason"] == NO_TECHNOLOGY
+    # The hint reads "set <key> on ...": the key it names is the one set below.
+    verb, hinted_key = entry["hint"].split()[:2]
+    assert (verb, hinted_key) == ("set", key)
 
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    follow_hint(data)
+    find_entry(data, name)[hinted_key] = technology
     declared = tmp_path / path.name
     declared.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
 
@@ -448,3 +454,35 @@ def test_skip_hint_names_the_key_the_manifest_format_reads(
     spec = next(r.spec for r in resources if r.kind == "Dependencies")
     assert {d["name"]: d["type"] for d in spec["databases"]}[name] == technology
     assert name not in _skipped_dependencies(logs, "database")
+
+
+V2_API_FULL = (
+    Path(__file__).resolve().parents[2]
+    / "opensrm"
+    / "spec"
+    / "v2"
+    / "examples"
+    / "migration"
+    / "api-full-v2.yaml"
+)
+
+
+def test_v2_dependencies_are_not_technology_dependencies():
+    """opensrm/spec/v2/AUTHORING.md 7.5, "Dependencies lose `critical` and
+    `type`": a v2 dependency has no type, so nthlayer-common loads it as an
+    api dependency and the skip rule never sees it. The committed migration
+    example names a dependency postgresql; it is listed as a service, not a
+    database, and nothing is reported as skipped."""
+    assert V2_API_FULL.is_file(), "the opensrm sibling checkout moved: this must not skip"
+    manifest = _load(V2_API_FULL)
+    assert "postgresql" in {d.name for d in manifest.dependencies}
+    assert {d.type for d in manifest.dependencies} == {"api"}
+
+    builder = ManifestDashboardBuilder(manifest=manifest)
+    with structlog.testing.capture_logs() as logs:
+        resources = builder._manifest_to_resources(builder._manifest_to_context())
+    spec = next(r.spec for r in resources if r.kind == "Dependencies")
+
+    assert spec["databases"] == []
+    assert "postgresql" in {d["name"] for d in spec["services"]}
+    assert [e for e in logs if e["event"] == "dashboard_dependency_skipped"] == []

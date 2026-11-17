@@ -165,6 +165,9 @@ class TestDemoSpecsViaCLI:
         v2_data = yaml.safe_load(out.read_text())
         manifest = parse_opensrm_v2(v2_data)
         assert manifest.name == src.stem
+        # The parser takes the name from spec.service.name when it is set, so
+        # the written metadata.name is checked on the document itself.
+        assert v2_data["metadata"]["name"] == src.stem
 
 
 AI_GATE_EXAMPLE = (

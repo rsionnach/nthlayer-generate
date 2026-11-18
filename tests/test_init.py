@@ -886,7 +886,7 @@ class TestTeamGuardScope:
 
 # The quoting corpus of TestQuotingMechanismRoundTrips, at module scope so it
 # can be asserted non-empty at import: a parametrize over an empty list would
-# collect nothing. The class explains how each entry earns its place.
+# collect nothing. The comment on each list says how its entries earn their place.
 
 # Values some naive mechanism provably gets wrong: `json.dumps`-based
 # quoting fails to round-trip them, or pyyaml raises on them, or pyyaml

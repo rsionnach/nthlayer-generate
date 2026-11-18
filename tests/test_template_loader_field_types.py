@@ -47,7 +47,7 @@ FIELDS = sorted(WELL_FORMED)
 assert FIELDS, "no required template fields listed"
 
 # YAML text that is not a non-blank string once loaded.
-NOT_A_STRING = [
+NOT_A_NON_BLANK_STRING = [
     pytest.param("on", id="on"),
     pytest.param("yes", id="yes"),
     pytest.param("no", id="no"),
@@ -90,7 +90,7 @@ def test_well_formed_template_loads(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("field", FIELDS)
-@pytest.mark.parametrize("raw", NOT_A_STRING)
+@pytest.mark.parametrize("raw", NOT_A_NON_BLANK_STRING)
 def test_field_that_is_not_a_string_is_rejected(tmp_path: Path, field: str, raw: str) -> None:
     path = _write(tmp_path / "malformed.yaml", **{field: raw})
     loaded = yaml.safe_load(path.read_text(encoding="utf-8"))[field]

@@ -29,8 +29,8 @@ class TemplateFieldError(ValueError):
     ``null``, a bare number or a date as something other than a string, so a
     file declaring ``name: on`` has a bool for a name (opensrm-dpf8).
 
-    ``problem`` is ``"blank"`` for a string with nothing in it and
-    ``"not_a_string"`` for any other type; ``value`` is the value as loaded.
+    ``problem`` is ``"blank"`` for a string that is empty or only whitespace
+    and ``"not_a_string"`` for any other type; ``value`` is the value as loaded.
     """
 
     def __init__(self, path: Path, field: str, value: Any) -> None:

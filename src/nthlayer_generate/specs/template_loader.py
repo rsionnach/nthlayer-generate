@@ -70,7 +70,10 @@ class TemplateLoader:
 
         Raises:
             FileNotFoundError: If template file doesn't exist
-            ValueError: If template YAML is invalid
+            ValueError: If the file is empty, is not a mapping, or is missing
+                a required field
+            TemplateFieldError: If name, description, tier or type is not a
+                non-blank string (a ValueError)
         """
         if not path.exists():
             raise FileNotFoundError(f"Template file not found: {path}")

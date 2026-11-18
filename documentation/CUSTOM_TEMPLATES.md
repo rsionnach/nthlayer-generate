@@ -393,6 +393,11 @@ ls .nthlayer/templates/mobile-api.yaml
 **Cause:** Template YAML is invalid or missing required fields
 
 **Solution:**
+`name`, `description`, `tier` and `type` must each be a string. YAML reads an
+unquoted `on`, `yes`, `no`, `true`, `false`, `null`, a bare number or a date as
+something else, so quote such a value (`name: "on"`). The warning names the
+file and the field.
+
 Check template structure matches the schema:
 ```yaml
 name: template-name        # Required

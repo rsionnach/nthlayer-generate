@@ -30,9 +30,9 @@ jobs:
           repository: rsionnach/opensrm
           path: opensrm-spec
 
-      # The test resolves <ecosystem>/opensrm from its own location
-      # (parents[2]), so the checkout has to land beside this repo rather
-      # than inside it.
+      # The tests resolve <ecosystem>/opensrm from the repository's own
+      # location (tests/golden/_corpus.py, OPENSRM), so the checkout has to
+      # land beside this repo rather than inside it.
       - name: Place opensrm beside this repo
         run: mv opensrm-spec ../opensrm
 

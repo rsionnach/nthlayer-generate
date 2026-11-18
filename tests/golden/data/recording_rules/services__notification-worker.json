@@ -72,11 +72,11 @@
           "record": "slo:latency_requests_total:30d"
         },
         {
-          "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"notification-worker\",le=\"0.5\"}[30d]))",
+          "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"notification-worker\",le=\"5.0\"}[30d]))",
           "labels": {
             "service": "notification-worker",
             "slo": "processing-latency-p95",
-            "threshold": "500ms"
+            "threshold": "5000ms"
           },
           "record": "slo:latency_requests_fast:30d"
         },
@@ -88,6 +88,15 @@
             "slo": "processing-latency-p95"
           },
           "record": "slo:latency:ratio"
+        },
+        {
+          "expr": "1 - ((1 - slo:latency:ratio{service=\"notification-worker\",slo=\"processing-latency-p95\"}) / (1 - 0.98))",
+          "labels": {
+            "objective": "98.0",
+            "service": "notification-worker",
+            "slo": "processing-latency-p95"
+          },
+          "record": "slo:error_budget_remaining:ratio"
         },
         {
           "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"notification-worker\"}[5m]))",

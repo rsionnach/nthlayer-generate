@@ -81,10 +81,8 @@ def test_sloth_bound_is_the_declared_threshold(tmp_path, example, slo, bound_sec
     assert queries[slo].endswith(f"> {bound_seconds}")
 
 
-def test_sloth_legacy_without_a_bound_keeps_the_legacy_default(tmp_path):
-    """payment-api's latency-p95 with its threshold_ms removed: no committed
-    legacy example has a query and no bound, so this one is derived. The legacy
-    builder defaulted to 1000 ms; the objective (99.0) must not stand in."""
+def _payment_api_without_a_latency_bound(tmp_path):
+    """payment-api.yaml loaded with latency-p95's threshold_ms removed."""
     doc = yaml.safe_load((SERVICES / "payment-api.yaml").read_text())
     for resource in doc["resources"]:
         if resource.get("kind") == "SLO" and resource.get("name") == "latency-p95":
@@ -93,6 +91,14 @@ def test_sloth_legacy_without_a_bound_keeps_the_legacy_default(tmp_path):
     path.write_text(yaml.safe_dump(doc, sort_keys=False))
     manifest = _load(path)
     assert {s.name: s.threshold_ms for s in manifest.slos}["latency-p95"] is None
+    return manifest
+
+
+def test_sloth_legacy_without_a_bound_keeps_the_legacy_default(tmp_path):
+    """payment-api's latency-p95 with its threshold_ms removed: no committed
+    legacy example has a query and no bound, so this one is derived. The legacy
+    builder defaulted to 1000 ms; the objective (99.0) must not stand in."""
+    manifest = _payment_api_without_a_latency_bound(tmp_path)
 
     queries = _sloth_error_queries(manifest, tmp_path / "out")
 
@@ -110,12 +116,15 @@ def test_sloth_legacy_without_a_bound_keeps_the_legacy_default(tmp_path):
             "100ms",
             id="legacy-declared",
         ),
-        # legacy: checkout-service declares threshold_ms: 800, but only inside a
-        # plural indicators: list, which nothing reads yet (opensrm-wo62.4.8).
-        # This pins today's 500 ms fallback as a tripwire: it re-pins when that
-        # lands. The no-bound path proper is the derived payment-api sloth case.
+        # legacy: checkout-service declares threshold_ms: 800 inside a plural
+        # indicators: list, which nthlayer-common reads since 5.12.1
+        # (opensrm-wo62.4.24).
         pytest.param(
-            SERVICES / "checkout-service.yaml", "latency-p95", "0.5", "500ms", id="legacy-default"
+            SERVICES / "checkout-service.yaml",
+            "latency-p95",
+            "0.8",
+            "800ms",
+            id="legacy-plural-indicators",
         ),
         # srm/v1: target 100, unit ms — the bound is the target, unchanged
         pytest.param(
@@ -132,6 +141,15 @@ def test_recording_rule_bound(path, slo, le, label):
 
     assert f'le="{le}"' in rule["expr"]
     assert rule["threshold"] == label
+
+
+def test_recording_rule_without_a_bound_keeps_the_500_ms_default(tmp_path):
+    """Derived, as the sloth case above: no committed legacy example has a
+    latency SLO with no bound."""
+    rule = _latency_fast_rule(_payment_api_without_a_latency_bound(tmp_path), "latency-p95")
+
+    assert 'le="0.5"' in rule["expr"]
+    assert rule["threshold"] == "500ms"
 
 
 # =============================================================================

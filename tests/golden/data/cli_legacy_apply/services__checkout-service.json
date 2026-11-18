@@ -1115,11 +1115,11 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"checkout-service\",le=\"0.5\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"checkout-service\",le=\"0.8\"}[30d]))",
               "labels": {
                 "service": "checkout-service",
                 "slo": "latency-p95",
-                "threshold": "500ms"
+                "threshold": "800ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },
@@ -1131,6 +1131,15 @@
                 "slo": "latency-p95"
               },
               "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"checkout-service\",slo=\"latency-p95\"}) / (1 - 0.99))",
+              "labels": {
+                "objective": "99.0",
+                "service": "checkout-service",
+                "slo": "latency-p95"
+              },
+              "record": "slo:error_budget_remaining:ratio"
             },
             {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"checkout-service\"}[5m]))",
@@ -1165,11 +1174,11 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"checkout-service\",le=\"0.5\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"checkout-service\",le=\"1.5\"}[30d]))",
               "labels": {
                 "service": "checkout-service",
                 "slo": "latency-p99",
-                "threshold": "500ms"
+                "threshold": "1500ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },
@@ -1181,6 +1190,15 @@
                 "slo": "latency-p99"
               },
               "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"checkout-service\",slo=\"latency-p99\"}) / (1 - 0.95))",
+              "labels": {
+                "objective": "95.0",
+                "service": "checkout-service",
+                "slo": "latency-p99"
+              },
+              "record": "slo:error_budget_remaining:ratio"
             },
             {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"checkout-service\"}[5m]))",
@@ -1376,12 +1394,12 @@
       "backstage": 1,
       "dashboard": 1,
       "pagerduty": 1,
-      "recording-rules": 23,
+      "recording-rules": 25,
       "slos": 3
     },
     "service_name": "checkout-service",
     "success": true,
-    "total_resources": 55
+    "total_resources": 57
   },
   "preamble": [],
   "stray": []

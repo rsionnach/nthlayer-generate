@@ -14,15 +14,17 @@ from nthlayer_common.manifest import ManifestLoadError, ReliabilityManifest, loa
 
 from nthlayer_generate.cli.ux import console, error, header, success, warning
 
-# What loading a manifest raises: common's ManifestLoadError (which names a
-# malformed legacy resource since nthlayer-common 5.12.1) and the model's
-# ValueError.
+# What loading a manifest raises: common's ManifestLoadError, the model's
+# ValueError, and AttributeError/TypeError from common's legacy loader on a
+# malformed resource spec (opensrm-wo62.4.10).
 _LOAD_ERRORS = (
     OSError,
     ManifestLoadError,
     yaml.YAMLError,
     KeyError,
     ValueError,
+    TypeError,
+    AttributeError,
 )
 
 

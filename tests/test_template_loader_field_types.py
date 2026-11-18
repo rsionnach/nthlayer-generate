@@ -110,12 +110,35 @@ def test_quoted_name_that_looks_like_a_boolean_is_a_string(tmp_path: Path) -> No
     assert template.name == "on"
 
 
-def test_template_file_that_is_not_a_mapping_is_rejected(tmp_path: Path) -> None:
-    path = tmp_path / "list.yaml"
-    path.write_text("- name: team-api\n", encoding="utf-8")
+@pytest.mark.parametrize(
+    "text",
+    [
+        # A scalar document. Without the mapping check the loader went on to
+        # index it and raised TypeError; the list case alone would not show
+        # that, since a list fails the missing-field check either way.
+        pytest.param("42\n", id="number"),
+        # A string holding every required field name passes the missing-field
+        # check (`"name" in "name description ..."`), then fails on indexing.
+        pytest.param('"name description tier type"\n', id="string-naming-the-fields"),
+        pytest.param("- name: team-api\n", id="list"),
+    ],
+)
+def test_template_file_that_is_not_a_mapping_is_rejected(tmp_path: Path, text: str) -> None:
+    path = tmp_path / "not-a-mapping.yaml"
+    path.write_text(text, encoding="utf-8")
+    assert not isinstance(yaml.safe_load(text), dict), "YAML reads this as a mapping"
 
     with pytest.raises(ValueError):
         TemplateLoader.load_from_file(path)
+
+
+def test_field_error_is_a_value_error(tmp_path: Path) -> None:
+    """`load_from_file` documents `Raises: ValueError` for an invalid template;
+    a caller catching that must still catch a malformed field."""
+    assert issubclass(TemplateFieldError, ValueError)
+
+    with pytest.raises(ValueError):
+        TemplateLoader.load_from_file(_write(tmp_path / "on.yaml", name="on"))
 
 
 def test_builtin_templates_still_load() -> None:

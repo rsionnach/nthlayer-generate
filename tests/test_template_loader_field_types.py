@@ -15,6 +15,8 @@ those of the built-in templates (specs/builtin_templates/*.yaml).
 
 from __future__ import annotations
 
+import copy
+import pickle
 from pathlib import Path
 
 import pytest
@@ -151,3 +153,62 @@ def test_init_reports_an_unknown_template_beside_a_malformed_one(
 
     assert code == 1
     assert not (project_with_a_boolean_named_template / "my-api.yaml").exists()
+
+
+# --- the error itself (opensrm-dpf8, edge cases) ------------------------------
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        pytest.param('""', id="empty"),
+        pytest.param('"   "', id="spaces"),
+        pytest.param('"\\t\\n"', id="tab-newline"),
+        pytest.param('"\\u00a0"', id="nbsp"),
+    ],
+)
+def test_blank_string_is_reported_as_blank_not_as_another_type(tmp_path: Path, raw: str) -> None:
+    """A blank value is already a string, so "quote it" is the wrong advice."""
+    path = _write(tmp_path / "blank.yaml", name=raw)
+    loaded = yaml.safe_load(path.read_text(encoding="utf-8"))["name"]
+    assert isinstance(loaded, str) and not loaded.strip(), "YAML does not read this as blank"
+
+    with pytest.raises(TemplateFieldError) as excinfo:
+        TemplateLoader.load_from_file(path)
+
+    assert excinfo.value.problem == "blank"
+
+
+def test_value_of_another_type_is_reported_as_not_a_string(tmp_path: Path) -> None:
+    with pytest.raises(TemplateFieldError) as excinfo:
+        TemplateLoader.load_from_file(_write(tmp_path / "on.yaml", name="on"))
+
+    assert excinfo.value.problem == "not_a_string"
+
+
+def test_message_stays_short_for_a_large_value(tmp_path: Path) -> None:
+    """The callers print the message as a warning; a 2000-item list for a
+    description must not become a line thousands of characters long."""
+    path = _write(tmp_path / "big.yaml", description="[" + ", ".join(["1"] * 2000) + "]")
+    assert len(yaml.safe_load(path.read_text(encoding="utf-8"))["description"]) == 2000
+
+    with pytest.raises(TemplateFieldError) as excinfo:
+        TemplateLoader.load_from_file(path)
+
+    assert len(excinfo.value.value) == 2000  # the attribute keeps the whole value
+    assert len(str(excinfo.value)) < 400 + len(str(path))
+
+
+def test_error_survives_copy_and_pickle(tmp_path: Path) -> None:
+    with pytest.raises(TemplateFieldError) as excinfo:
+        TemplateLoader.load_from_file(_write(tmp_path / "on.yaml", name="on"))
+    original = excinfo.value
+
+    for clone in (copy.copy(original), pickle.loads(pickle.dumps(original))):
+        assert (clone.path, clone.field, clone.value, clone.problem) == (
+            original.path,
+            "name",
+            True,
+            "not_a_string",
+        )
+        assert str(clone) == str(original)

@@ -17,21 +17,40 @@ logger = structlog.get_logger()
 _REQUIRED_STRING_FIELDS = ("name", "description", "tier", "type")
 
 
+# The longest repr of an offending value quoted in an error message. The
+# callers print the message as a warning, and YAML can put anything there.
+_MAX_VALUE_REPR = 80
+
+
 class TemplateFieldError(ValueError):
     """A required template field is not a non-blank string.
 
     YAML reads an unquoted ``on``, ``yes``, ``no``, ``true``, ``false``,
     ``null``, a bare number or a date as something other than a string, so a
     file declaring ``name: on`` has a bool for a name (opensrm-dpf8).
+
+    ``problem`` is ``"blank"`` for a string with nothing in it and
+    ``"not_a_string"`` for any other type; ``value`` is the value as loaded.
     """
 
     def __init__(self, path: Path, field: str, value: Any) -> None:
+        # The three arguments are the exception's args, so copy and pickle
+        # can rebuild it; the message is composed in __str__.
+        super().__init__(path, field, value)
         self.path = path
         self.field = field
         self.value = value
-        super().__init__(
-            f"Template field '{field}' must be a non-empty string, got "
-            f"{type(value).__name__} ({value!r}) in template: {path}. "
+        self.problem = "blank" if isinstance(value, str) else "not_a_string"
+
+    def __str__(self) -> str:
+        if self.problem == "blank":
+            return f"Template field '{self.field}' is blank in template: {self.path}."
+        shown = repr(self.value)
+        if len(shown) > _MAX_VALUE_REPR:
+            shown = shown[:_MAX_VALUE_REPR] + "..."
+        return (
+            f"Template field '{self.field}' must be a string, got "
+            f"{type(self.value).__name__} ({shown}) in template: {self.path}. "
             "Quote the value if YAML reads it as another type."
         )
 

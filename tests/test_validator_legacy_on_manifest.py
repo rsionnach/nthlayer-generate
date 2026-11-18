@@ -104,8 +104,9 @@ def test_duplicate_names_are_sorted(tmp_path: Path):
 
 
 def test_malformed_resource_spec_is_a_validation_error(tmp_path: Path):
-    # common's legacy loader raises a bare AttributeError on a non-mapping
-    # spec (opensrm-wo62.4.10); validate reports it rather than crashing.
+    # common's legacy loader names the resource in a ManifestLoadError
+    # (nthlayer-common 5.12.1, opensrm-wo62.4.10); validate reports that
+    # message as it is (opensrm-wo62.4.25).
     path = tmp_path / "svc.yaml"
     path.write_text(
         "service:\n  name: svc\n  team: t\n  tier: critical\n  type: api\n"
@@ -113,8 +114,9 @@ def test_malformed_resource_spec_is_a_validation_error(tmp_path: Path):
     )
     result = _validate(path)
     assert not result.valid
-    assert len(result.errors) == 1
-    assert result.errors[0].startswith("Unexpected error parsing file: ")
+    assert result.errors == [
+        "Legacy SLO resource 'availability': spec must be a mapping, not a list"
+    ]
 
 
 def test_missing_required_service_field_is_a_load_error(tmp_path: Path):

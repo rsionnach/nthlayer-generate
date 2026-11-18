@@ -127,8 +127,6 @@ def generate_dashboard_command(
     except FileNotFoundError:
         error(f"Service file not found: {service_file}")
         return 1
-    # AttributeError: common's legacy loader on a malformed resource spec
-    # (opensrm-wo62.4.10).
     except (
         ManifestLoadError,
         yaml.YAMLError,
@@ -136,7 +134,6 @@ def generate_dashboard_command(
         KeyError,
         TypeError,
         OSError,
-        AttributeError,
     ) as e:
         error(f"Error generating dashboard: {e}")
         logger.error("dashboard_generation_failed", err=str(e), exc_info=True)

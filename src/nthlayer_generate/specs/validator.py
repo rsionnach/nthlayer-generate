@@ -245,10 +245,6 @@ def validate_service_file(
         # OSError: a missing or unreadable file, or an env overlay that is a
         # directory or unreadable.
         return ValidationResult(valid=False, errors=[str(e)])
-    except (AttributeError, TypeError) as e:
-        # common's legacy loader on a non-mapping resource spec
-        # (opensrm-wo62.4.10).
-        return ValidationResult(valid=False, errors=[f"Unexpected error parsing file: {e}"])
 
     service_context = _MockContext(manifest)
     resources: list[dict[str, Any]] = []

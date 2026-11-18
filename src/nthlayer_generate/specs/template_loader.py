@@ -1,7 +1,7 @@
 """Template loader for NthLayer service templates."""
 
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict
 
 import structlog
 import yaml
@@ -12,6 +12,28 @@ from .models import Resource
 from .templates import ServiceTemplate, TemplateRegistry
 
 logger = structlog.get_logger()
+
+# The fields every template file must declare, each as a non-blank string.
+_REQUIRED_STRING_FIELDS = ("name", "description", "tier", "type")
+
+
+class TemplateFieldError(ValueError):
+    """A required template field is not a non-blank string.
+
+    YAML reads an unquoted ``on``, ``yes``, ``no``, ``true``, ``false``,
+    ``null``, a bare number or a date as something other than a string, so a
+    file declaring ``name: on`` has a bool for a name (opensrm-dpf8).
+    """
+
+    def __init__(self, path: Path, field: str, value: Any) -> None:
+        self.path = path
+        self.field = field
+        self.value = value
+        super().__init__(
+            f"Template field '{field}' must be a non-empty string, got "
+            f"{type(value).__name__} ({value!r}) in template: {path}. "
+            "Quote the value if YAML reads it as another type."
+        )
 
 
 class TemplateLoader:
@@ -39,12 +61,18 @@ class TemplateLoader:
 
         if not data:
             raise ValueError(f"Empty template file: {path}")
+        if not isinstance(data, dict):
+            raise ValueError(f"Template file is not a mapping: {path}")
 
-        # Validate required fields
-        required = ["name", "description", "tier", "type"]
-        for field in required:
+        # Validate required fields: present, and strings. The registry is
+        # keyed by name and the CLI joins and prints these values, so a bool
+        # or None from YAML must stop here, at the boundary.
+        for field in _REQUIRED_STRING_FIELDS:
             if field not in data:
                 raise ValueError(f"Missing required field '{field}' in template: {path}")
+            value = data[field]
+            if not isinstance(value, str) or not value.strip():
+                raise TemplateFieldError(path, field, value)
 
         # Parse resources (no context yet - added during application)
         resources = []

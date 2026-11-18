@@ -25,7 +25,7 @@ from nthlayer_generate.cli.init import (
     init_command,
 )
 from nthlayer_generate.specs.names import is_valid_service_name
-from nthlayer_generate.specs.template_loader import TemplateLoader
+from nthlayer_generate.specs.template_loader import TemplateFieldError, TemplateLoader
 from nthlayer_generate.specs.validator import validate_service_file
 
 
@@ -625,6 +625,10 @@ class TestGenerateConfigYaml:
         assert "inherited_attribution" in result
 
 
+# At import: a parametrize over an empty list would collect nothing.
+assert SERVICE_NAME_CASES, "no service-name cases to parametrize over"
+
+
 class TestServiceNameRuleIsShared:
     """opensrm-t4rd: init's guard and the validator must not disagree.
 
@@ -880,6 +884,57 @@ class TestTeamGuardScope:
         assert not (tmp_path / "svc.yaml").exists()
 
 
+# The quoting corpus of TestQuotingMechanismRoundTrips, at module scope so it
+# can be asserted non-empty at import: a parametrize over an empty list would
+# collect nothing. The class explains how each entry earns its place.
+
+# Values some naive mechanism provably gets wrong: `json.dumps`-based
+# quoting fails to round-trip them, or pyyaml raises on them, or pyyaml
+# retypes them. `test_hazards_are_provable_hazards` re-derives this from the
+# libraries, so a library change fails the test rather than quietly
+# emptying the corpus.
+QUOTING_HAZARDS = [
+    "\U0001f389 platform",  # non-BMP: json emits a surrogate PAIR
+    "\U0001d11e",
+    "\U0010ffff",
+    "Platform: Core",
+    "ops ",
+    "\u2028",
+    "\u2029",
+    "\u0085",
+    "\u007f",
+    "\ufeff",
+    "0b_",  # pyyaml's int constructor raises ValueError
+    "0x_",
+    "null",
+    "...",
+]
+
+# Chosen deliberately, and NOT mechanically hazardous -- the naive
+# mechanism happens to handle these correctly. They are here as regression
+# guards on YAML's structural characters and on the readability path, so a
+# future change to the quoting cannot break them unnoticed.
+QUOTING_STRUCTURAL = [
+    'he said "hi"',  # the quote character
+    "a\\b",  # the escape character
+    "ops...",  # a document-end-marker lookalike that is ordinary text
+    # Long enough to cross pyyaml's 80-column default wrap. Without these
+    # nothing in the corpus reached the threshold, so deleting
+    # `width=_NO_WRAP` left every test here green (opensrm-t4rd edge cases).
+    # It is the SPACES that make this wrap -- pyyaml breaks at a space -- so
+    # this is the value that pins `width=_NO_WRAP`. `"x" * 10_000` below is
+    # emitted unwrapped and pins length handling only.
+    "platform team " * 20,
+    "x" * 10_000,
+    "caf\u00e9",  # BMP non-ASCII
+    "\u1e93algo",
+    "\u00a0",  # NBSP
+]
+
+QUOTING_CORPUS = QUOTING_HAZARDS + QUOTING_STRUCTURAL
+assert QUOTING_CORPUS, "no quoting corpus to parametrize over"
+
+
 class TestQuotingMechanismRoundTrips:
     """opensrm-t4rd, found by the R5 correctness pass iteration 2.
 
@@ -893,50 +948,9 @@ class TestQuotingMechanismRoundTrips:
     of them are proven hazards would be false.
     """
 
-    # Values some naive mechanism provably gets wrong: `json.dumps`-based
-    # quoting fails to round-trip them, or pyyaml raises on them, or pyyaml
-    # retypes them. `test_hazards_are_provable_hazards` re-derives this from the
-    # libraries, so a library change fails the test rather than quietly
-    # emptying the corpus.
-    HAZARDS = [
-        "\U0001f389 platform",  # non-BMP: json emits a surrogate PAIR
-        "\U0001d11e",
-        "\U0010ffff",
-        "Platform: Core",
-        "ops ",
-        "\u2028",
-        "\u2029",
-        "\u0085",
-        "\u007f",
-        "\ufeff",
-        "0b_",  # pyyaml's int constructor raises ValueError
-        "0x_",
-        "null",
-        "...",
-    ]
-
-    # Chosen deliberately, and NOT mechanically hazardous -- the naive
-    # mechanism happens to handle these correctly. They are here as regression
-    # guards on YAML's structural characters and on the readability path, so a
-    # future change to the quoting cannot break them unnoticed.
-    STRUCTURAL = [
-        'he said "hi"',  # the quote character
-        "a\\b",  # the escape character
-        "ops...",  # a document-end-marker lookalike that is ordinary text
-        # Long enough to cross pyyaml's 80-column default wrap. Without these
-        # nothing in the corpus reached the threshold, so deleting
-        # `width=_NO_WRAP` left every test here green (opensrm-t4rd edge cases).
-        # It is the SPACES that make this wrap -- pyyaml breaks at a space -- so
-        # this is the value that pins `width=_NO_WRAP`. `"x" * 10_000` below is
-        # emitted unwrapped and pins length handling only.
-        "platform team " * 20,
-        "x" * 10_000,
-        "caf\u00e9",  # BMP non-ASCII
-        "\u1e93algo",
-        "\u00a0",  # NBSP
-    ]
-
-    CORPUS = HAZARDS + STRUCTURAL
+    HAZARDS = QUOTING_HAZARDS
+    STRUCTURAL = QUOTING_STRUCTURAL
+    CORPUS = QUOTING_CORPUS
 
     def test_the_corpora_are_not_empty(self):
         """Emptying either list would make every test here pass vacuously.
@@ -969,13 +983,15 @@ class TestQuotingMechanismRoundTrips:
         for value in self.HAZARDS:
             try:
                 json_round_trips = yaml.safe_load(f"t: {json.dumps(value)}\n")["t"] == value
-            except Exception as exc:  # noqa: BLE001 - reported below, not swallowed
+            except (yaml.YAMLError, ValueError) as exc:  # reported below, not swallowed
                 json_round_trips = False
                 unexpected.append(f"{value!r} via json path: {type(exc).__name__}")
             try:
                 loaded = yaml.safe_load(value)
                 load_agrees = isinstance(loaded, str) and loaded == value
-            except Exception:  # noqa: BLE001 - a raise IS the hazard for 0b_, 0x_
+            # A raise IS the hazard: pyyaml raises ValueError for 0b_ and 0x_
+            # (int conversion) and a YAMLError for text it cannot scan or read.
+            except (yaml.YAMLError, ValueError):
                 load_agrees = False
             assert not (json_round_trips and load_agrees), (
                 f"{value!r} defeats neither naive mechanism; it proves nothing "
@@ -1337,30 +1353,26 @@ class TestTemplateNameIsQuoted:
     """opensrm-t4rd iteration 3: `template:` was the last raw interpolation.
 
     Narrower than the others -- it needs a custom template file on disk -- but
-    the same shape. And `template.name` is `data["name"]` straight from the
-    loader with no coercion, and `ServiceTemplate.__post_init__` validates only
-    `tier`, so a template declaring `name: on` makes it a bool. Routing it
-    through `_yaml_scalar` without the non-str branch would have turned a
-    silent corruption into a TypeError crash.
+    the same shape. A template declaring `name: on` used to load with a bool
+    for a name, because the loader took `data["name"]` as YAML gave it. The
+    loader now rejects such a file (opensrm-dpf8), so no bool reaches the
+    manifest writer from a template. `_yaml_scalar` still quotes a non-str
+    rather than raising, as defence in depth; the second test pins that.
     """
 
-    def test_a_template_named_on_does_not_corrupt_the_manifest(self, tmp_path, monkeypatch):
+    def test_a_template_named_on_is_rejected_before_it_can_reach_the_manifest(self, tmp_path):
         templates = tmp_path / ".nthlayer" / "templates"
         templates.mkdir(parents=True)
         (templates / "t.yaml").write_text(
             "name: on\ndescription: d\ntier: standard\ntype: api\nresources: []\n"
         )
+        # the fixture is only meaningful if YAML really reads the name as a bool
+        assert yaml.safe_load((templates / "t.yaml").read_text())["name"] is True
 
-        loaded = TemplateLoader.load_from_file(templates / "t.yaml")
-        # the fixture is only meaningful if the loader really hands back a bool
-        assert loaded.name is True, (
-            "template.name is no longer retyped by the loader; this case proves nothing"
-        )
+        with pytest.raises(TemplateFieldError) as excinfo:
+            TemplateLoader.load_from_file(templates / "t.yaml")
 
-        doc = f"service:\n  name: svc\n  template: {_yaml_scalar(loaded.name)}\n"
-        parsed = yaml.safe_load(doc)
-        assert isinstance(parsed["service"]["template"], str)
-        assert parsed["service"]["name"] == "svc"
+        assert excinfo.value.field == "name"
 
     @pytest.mark.parametrize("value", [True, False, None, 123, 1.5])
     def test_a_non_string_is_quoted_not_raised(self, value):

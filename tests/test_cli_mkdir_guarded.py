@@ -1,0 +1,275 @@
+"""A directory the CLI cannot create is reported, not raised (opensrm-mnzi).
+
+`Path.mkdir(exist_ok=True)` only forgives an existing DIRECTORY. A regular
+file or a dangling symlink at the path raises FileExistsError, and a read-only
+parent raises PermissionError. opensrm-h9fq fixed one such call in
+`cli/setup.py` and left its twin, 250 lines up, bare. The structural test here
+covers every `.mkdir(` under `cli/`, so the next one cannot be missed the same
+way; the behavioural tests drive the two calls that were unguarded through the
+real filesystem states.
+"""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
+import yaml
+
+import nthlayer_generate.cli as cli_package
+from nthlayer_generate.cli.migrate_manifest import migrate_manifest_command
+from nthlayer_generate.cli.setup import _quick_setup
+
+CLI_DIR = Path(cli_package.__file__).parent
+CLI_MODULES = sorted(CLI_DIR.rglob("*.py"))
+# An empty list would make the structural test pass having read nothing.
+assert CLI_MODULES, f"no modules found under {CLI_DIR}"
+
+# Handler types that catch every OSError. A narrower one (FileExistsError,
+# PermissionError) does not count: each leaves another state raising.
+_CATCHES_OSERROR = {"OSError", "Exception", "BaseException"}
+
+
+def _handler_catches_oserror(handler: ast.ExceptHandler) -> bool:
+    if handler.type is None:
+        return True
+    types = handler.type.elts if isinstance(handler.type, ast.Tuple) else [handler.type]
+    return any(isinstance(t, ast.Name) and t.id in _CATCHES_OSERROR for t in types)
+
+
+def unguarded_mkdir_lines(source: str) -> tuple[list[int], int]:
+    """Return (lines of `.mkdir(` calls outside an OSError handler, calls seen).
+
+    A call is guarded when it sits in the BODY of a `try` that has a handler
+    catching OSError, within the same function: a `try` around a nested `def`
+    does not guard the calls inside it, and neither does the `try`'s own
+    `except`, `else` or `finally` block.
+    """
+    unguarded: list[int] = []
+    seen = 0
+
+    def visit(node: ast.AST, guarded: bool) -> None:
+        nonlocal seen
+        if isinstance(node, ast.Call) and getattr(node.func, "attr", None) == "mkdir":
+            seen += 1
+            if not guarded:
+                unguarded.append(node.lineno)
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+            guarded = False
+        if isinstance(node, ast.Try):
+            catches = any(_handler_catches_oserror(h) for h in node.handlers)
+            for child in node.body:
+                visit(child, guarded or catches)
+            for child in [*node.handlers, *node.orelse, *node.finalbody]:
+                visit(child, guarded)
+            return
+        for child in ast.iter_child_nodes(node):
+            visit(child, guarded)
+
+    visit(ast.parse(source), False)
+    return unguarded, seen
+
+
+class TestEveryCliMkdirIsGuarded:
+    def test_no_mkdir_in_cli_is_outside_an_oserror_handler(self):
+        offenders = []
+        total = 0
+        for module in CLI_MODULES:
+            lines, seen = unguarded_mkdir_lines(module.read_text(encoding="utf-8"))
+            total += seen
+            offenders += [f"{module.relative_to(CLI_DIR)}:{line}" for line in lines]
+
+        # cli/ had nine mkdir calls when this was written. Fewer than the two
+        # this bead fixed means the walker stopped finding them.
+        assert total >= 2, f"the guard found only {total} mkdir calls under {CLI_DIR}"
+        assert not offenders, (
+            "mkdir outside a `try` that catches OSError: "
+            + ", ".join(offenders)
+            + ". exist_ok=True does not cover a file, a dangling symlink or a "
+            "read-only parent; report the failure instead (opensrm-mnzi)."
+        )
+
+    def test_a_bare_mkdir_is_reported(self):
+        lines, seen = unguarded_mkdir_lines("from pathlib import Path\nPath('x').mkdir()\n")
+        assert (lines, seen) == ([2], 1)
+
+    def test_a_mkdir_in_a_try_that_catches_oserror_is_accepted(self):
+        source = "try:\n    p.mkdir()\nexcept (ValueError, OSError):\n    pass\n"
+        assert unguarded_mkdir_lines(source) == ([], 1)
+
+    def test_a_handler_for_one_oserror_subclass_is_not_enough(self):
+        source = "try:\n    p.mkdir()\nexcept FileExistsError:\n    pass\n"
+        assert unguarded_mkdir_lines(source) == ([2], 1)
+
+    def test_a_mkdir_in_the_except_block_is_not_guarded_by_its_own_try(self):
+        source = "try:\n    pass\nexcept OSError:\n    p.mkdir()\n"
+        assert unguarded_mkdir_lines(source) == ([4], 1)
+
+    def test_a_try_around_a_nested_function_does_not_guard_its_body(self):
+        source = "try:\n    def f():\n        p.mkdir()\nexcept OSError:\n    pass\n"
+        assert unguarded_mkdir_lines(source) == ([3], 1)
+
+
+def _nthlayer_is_a_file(home: Path) -> None:
+    (home / ".nthlayer").write_text("x", encoding="utf-8")
+
+
+def _nthlayer_is_a_dangling_symlink(home: Path) -> None:
+    (home / ".nthlayer").symlink_to(home / "nowhere")
+
+
+def _home_is_read_only(home: Path) -> None:
+    home.chmod(0o555)
+
+
+def _config_is_a_directory(home: Path) -> None:
+    (home / ".nthlayer" / "config.yaml").mkdir(parents=True)
+
+
+def _mkdir_config_dir(home: Path) -> None:
+    (home / ".nthlayer").mkdir(exist_ok=True)
+
+
+def _open_config_file(home: Path) -> None:
+    with open(home / ".nthlayer" / "config.yaml", "w", encoding="utf-8"):
+        pass
+
+
+# (how to put the home directory in the state, the plain call that state breaks)
+UNUSABLE_HOME_STATES = [
+    pytest.param(_nthlayer_is_a_file, _mkdir_config_dir, id="nthlayer-is-a-file"),
+    pytest.param(_nthlayer_is_a_dangling_symlink, _mkdir_config_dir, id="dangling-symlink"),
+    pytest.param(_home_is_read_only, _mkdir_config_dir, id="read-only-home"),
+    pytest.param(_config_is_a_directory, _open_config_file, id="config-is-a-directory"),
+]
+assert UNUSABLE_HOME_STATES
+
+
+@pytest.fixture
+def home(tmp_path):
+    home = tmp_path / "home"
+    home.mkdir()
+    yield home
+    home.chmod(0o755)  # so pytest can remove a home a test made read-only
+
+
+class TestQuickSetupReportsAnUnusableConfigDirectory:
+    @staticmethod
+    def _run(home: Path):
+        """Run the wizard with every optional step declined, saving for real."""
+        with (
+            patch.object(Path, "home", return_value=home),
+            patch("nthlayer_generate.cli.setup._prompt", return_value="http://localhost:9090"),
+            patch("nthlayer_generate.cli.setup._confirm", return_value=False),
+            patch("nthlayer_generate.cli.setup.get_secret_resolver", return_value=MagicMock()),
+            patch("nthlayer_generate.cli.setup.error") as reported,
+            patch("nthlayer_generate.cli.setup.success") as succeeded,
+        ):
+            rc = _quick_setup()
+        return rc, reported, succeeded
+
+    @pytest.mark.parametrize(("make", "plain_call"), UNUSABLE_HOME_STATES)
+    def test_the_failure_is_reported_and_setup_stops(self, make, plain_call, home):
+        make(home)
+        # The state must really break the call. Where it does not (chmod is a
+        # no-op for root), this fails here instead of passing for nothing.
+        with pytest.raises(OSError):
+            plain_call(home)
+
+        rc, reported, succeeded = self._run(home)
+
+        assert rc == 1
+        reported.assert_called_once()
+        succeeded.assert_not_called()
+        assert not (home / ".nthlayer" / "config.yaml").is_file()
+
+    def test_a_usable_home_still_saves_the_configuration(self, home):
+        rc, reported, succeeded = self._run(home)
+
+        assert rc == 0
+        reported.assert_not_called()
+        succeeded.assert_called_once()
+        # Read as text: the saved file carries Python enum tags that
+        # `yaml.safe_load` refuses (opensrm-p520).
+        saved = (home / ".nthlayer" / "config.yaml").read_text(encoding="utf-8")
+        assert "url: http://localhost:9090" in saved
+
+
+def _parent_is_a_file(tmp_path: Path) -> tuple[Path, bool]:
+    (tmp_path / "blocker").write_text("x", encoding="utf-8")
+    return tmp_path / "blocker" / "svc.v2.yaml", False
+
+
+def _parent_is_read_only(tmp_path: Path) -> tuple[Path, bool]:
+    locked = tmp_path / "locked"
+    locked.mkdir()
+    locked.chmod(0o555)
+    return locked / "out" / "svc.v2.yaml", False
+
+
+def _output_is_a_directory(tmp_path: Path) -> tuple[Path, bool]:
+    (tmp_path / "svc.v2.yaml").mkdir()
+    return tmp_path / "svc.v2.yaml", True  # it exists, so only --force reaches the write
+
+
+# Each returns (the output path to ask for, whether --force is needed).
+UNWRITABLE_OUTPUTS = [
+    pytest.param(_parent_is_a_file, id="parent-is-a-file"),
+    pytest.param(_parent_is_read_only, id="read-only-parent"),
+    pytest.param(_output_is_a_directory, id="output-is-a-directory"),
+]
+assert UNWRITABLE_OUTPUTS
+
+SRM_V1_MANIFEST = {
+    "apiVersion": "srm/v1",
+    "kind": "ServiceReliabilityManifest",
+    "metadata": {"name": "svc", "team": "team-a", "tier": "critical"},
+    "spec": {
+        "type": "api",
+        "slos": {
+            "availability": {
+                "target": 99.9,
+                "window": "30d",
+                "indicator": {"query": "rate(http[5m])"},
+            },
+        },
+    },
+}
+
+
+class TestMigrateManifestReportsAnUnwritableOutput:
+    @pytest.fixture
+    def manifest(self, tmp_path):
+        path = tmp_path / "svc.yaml"
+        path.write_text(yaml.safe_dump(SRM_V1_MANIFEST), encoding="utf-8")
+        yield path
+        locked = tmp_path / "locked"
+        if locked.exists():
+            locked.chmod(0o755)
+
+    @pytest.mark.parametrize("make", UNWRITABLE_OUTPUTS)
+    def test_the_failure_is_reported_with_exit_1(self, make, manifest, tmp_path):
+        out_path, force = make(tmp_path)
+        # As above: the state must really refuse the write.
+        with pytest.raises(OSError):
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text("probe", encoding="utf-8")
+
+        with patch("nthlayer_generate.cli.migrate_manifest.error") as reported:
+            rc = migrate_manifest_command(str(manifest), output_path=str(out_path), force=force)
+
+        assert rc == 1
+        reported.assert_called_once()
+        assert not out_path.is_file()
+
+    def test_a_writable_output_directory_is_still_created(self, manifest, tmp_path):
+        out_path = tmp_path / "new" / "deeper" / "svc.v2.yaml"
+
+        with patch("nthlayer_generate.cli.migrate_manifest.error") as reported:
+            rc = migrate_manifest_command(str(manifest), output_path=str(out_path))
+
+        assert rc == 0
+        reported.assert_not_called()
+        assert yaml.safe_load(out_path.read_text(encoding="utf-8"))["metadata"]["name"] == "svc"

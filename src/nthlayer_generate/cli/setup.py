@@ -207,11 +207,26 @@ def _quick_setup() -> int:
     console.print()
 
     # Save configuration
+    #
+    # `exist_ok=True` does not cover a non-directory last component, so a
+    # `~/.nthlayer` FILE or dangling symlink raised FileExistsError and a
+    # read-only home raised PermissionError: the traceback opensrm-h9fq removed
+    # from `services/` below, still live here (opensrm-mnzi). `save_config` is
+    # inside the same `try` because it creates the directory again and opens
+    # the file, so the same states would otherwise raise one line later.
+    # Fatal: the configuration is the only thing this function writes.
     config_dir = Path.home() / ".nthlayer"
-    config_dir.mkdir(exist_ok=True)
     config_path = config_dir / "config.yaml"
-
-    save_config(config, config_path)
+    try:
+        config_dir.mkdir(exist_ok=True)
+        save_config(config, config_path)
+    except OSError as e:
+        error(f"Could not save configuration to {config_path}: {e}")
+        console.print(
+            f"   [muted]{config_dir} may already exist as a file, or may not be "
+            "writable. Fix it and re-run `nthlayer setup`.[/muted]"
+        )
+        return 1
     success(f"Configuration saved to: {config_path}")
 
     return 0

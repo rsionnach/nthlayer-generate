@@ -2,8 +2,8 @@
   "json": {
     "checks": {
       "recording_rules": {
-        "message": "17 recording rules will be generated",
-        "rule_count": 17,
+        "message": "18 recording rules will be generated",
+        "rule_count": 18,
         "status": "pass"
       },
       "slo_definition": {
@@ -27,7 +27,7 @@
         ],
         "recording-rules": [
           {
-            "count": 13,
+            "count": 14,
             "interval": "30s",
             "type": "checkout-env-vars_slo_metrics"
           },
@@ -80,7 +80,7 @@
       ],
       "recording-rules": [
         {
-          "count": 13,
+          "count": 14,
           "interval": "30s",
           "type": "checkout-env-vars_slo_metrics"
         },

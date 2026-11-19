@@ -187,16 +187,35 @@ def test_latency_bound_is_written_as_the_srm_v1_target() -> None:
     ]
 
 
-def test_latency_slo_that_loaded_with_no_bound_is_left_out_and_reported() -> None:
+def test_latency_bound_declared_in_the_plural_indicators_list_is_written() -> None:
     """examples/services/checkout-service.yaml declares latency-p95 and
     latency-p99 with their bound under the plural ``indicators[]``, which
-    nthlayer-common's legacy loader does not read (opensrm-h9jj), so both load
-    with no bound. Written with the objective as the target they would read
-    as bounds of 99.0 and 95.0."""
+    nthlayer-common reads since 5.12.1 (opensrm-wo62.4.24)."""
     legacy = load_manifest(CHECKOUT_SERVICE, suppress_deprecation_warning=True)
+
+    slos = _legacy_to_srm_v1(legacy)["spec"]["slos"]
+
+    assert (slos["latency-p95"]["target"], slos["latency-p95"]["unit"]) == (800, "ms")
+    assert (slos["latency-p99"]["target"], slos["latency-p99"]["unit"]) == (1500, "ms")
+
+
+def test_latency_slo_that_loaded_with_no_bound_is_left_out_and_reported(tmp_path: Path) -> None:
+    """Derived: checkout-service.yaml with ``threshold_ms`` removed from
+    latency-p95 and latency-p99. A legacy file need not declare the bound, and
+    no committed example leaves it out, so both then load with none. Written
+    with the objective as the target they would read as bounds of 99.0 and
+    95.0."""
+    doc = yaml.safe_load(CHECKOUT_SERVICE.read_text(encoding="utf-8"))
+    for resource in doc["resources"]:
+        if resource.get("name") in ("latency-p95", "latency-p99"):
+            for indicator in resource["spec"]["indicators"]:
+                del indicator["threshold_ms"]
+    path = tmp_path / "checkout-service.yaml"
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+    legacy = load_manifest(path, suppress_deprecation_warning=True)
     loaded = {s.name: s for s in legacy.slos}
-    assert loaded["latency-p95"].threshold_ms is None, "common now carries the bound: re-pin"
-    assert loaded["latency-p99"].threshold_ms is None, "common now carries the bound: re-pin"
+    assert loaded["latency-p95"].threshold_ms is None
+    assert loaded["latency-p99"].threshold_ms is None
     lost: list[str] = []
 
     doc = _legacy_to_srm_v1(legacy, lost)

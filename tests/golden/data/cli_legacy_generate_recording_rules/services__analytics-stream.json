@@ -75,11 +75,11 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"analytics-stream\",le=\"0.5\"}[30d]))",
+              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"analytics-stream\",le=\"10.0\"}[30d]))",
               "labels": {
                 "service": "analytics-stream",
                 "slo": "event-latency-p99",
-                "threshold": "500ms"
+                "threshold": "10000ms"
               },
               "record": "slo:latency_requests_fast:30d"
             },
@@ -91,6 +91,15 @@
                 "slo": "event-latency-p99"
               },
               "record": "slo:latency:ratio"
+            },
+            {
+              "expr": "1 - ((1 - slo:latency:ratio{service=\"analytics-stream\",slo=\"event-latency-p99\"}) / (1 - 0.95))",
+              "labels": {
+                "objective": "95.0",
+                "service": "analytics-stream",
+                "slo": "event-latency-p99"
+              },
+              "record": "slo:error_budget_remaining:ratio"
             },
             {
               "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{service=\"analytics-stream\"}[5m]))",
@@ -173,8 +182,8 @@
     "",
     "Building recording rules...",
     "  Groups: 2",
-    "  Rules: 17",
-    "  • analytics-stream_slo_metrics: 13 rules (interval: 30s)",
+    "  Rules: 18",
+    "  • analytics-stream_slo_metrics: 14 rules (interval: 30s)",
     "  • analytics-stream_health_metrics: 4 rules (interval: 30s)",
     "",
     "Writing recording rules to <tmp>/out/recording-rules.yaml...",

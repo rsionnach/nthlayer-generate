@@ -920,8 +920,8 @@ def _budget_skip_reason(slo: SLODefinition) -> str | None:
     is not a usable success percentage; it catches srm/v1 error_rate
     targets, which are maxima. (b) A canned latency SLO with no declared
     threshold_ms counts requests under a guessed bound: srm/v1 keeps the
-    bound in its target, v2 reads "99ms" from "under 200ms", and the
-    legacy plural indicators[].threshold_ms is not read. An SLO with its
+    bound in its target, v2 reads "99ms" from "under 200ms", and a
+    legacy SLO need not declare one. An SLO with its
     own queries is exempt from (b): its bound is in the good query.
     Writing no budget is better than writing a wrong one: a reader treats
     a missing series as no data.
@@ -939,8 +939,8 @@ def _budget_skip_reason(slo: SLODefinition) -> str | None:
     # A canned latency ratio counts requests under a bound; without one the
     # manifest declared (threshold_ms), the builder falls back to the target
     # (srm/v1 writes the bound there, opensrm-t13c; v2 gets "99ms" for
-    # "under 200ms", opensrm-8jpp) or to 500ms (a legacy plural indicators[]
-    # threshold_ms is not read). A budget on a guessed bound is confidently
+    # "under 200ms", opensrm-8jpp) or to 500ms (a legacy SLO that declares
+    # no threshold_ms). A budget on a guessed bound is confidently
     # wrong. An SLO with its own queries carries its bound in the good query.
     if _slo_kind(slo) == "latency" and slo.threshold_ms is None and not _has_own_queries(slo):
         return "latency_bound_not_declared"

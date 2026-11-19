@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -198,6 +198,9 @@ UNUSABLE_HOME_STATES = [
     pytest.param(_config_is_a_directory, _open_config_file, id="config-is-a-directory"),
 ]
 assert UNUSABLE_HOME_STATES
+# The first three: `~/.nthlayer` itself cannot be created.
+UNCREATABLE_CONFIG_DIR_STATES = UNUSABLE_HOME_STATES[:3]
+assert len(UNCREATABLE_CONFIG_DIR_STATES) == 3
 
 
 def _credentials_is_a_directory(home: Path) -> None:
@@ -233,20 +236,49 @@ def home(tmp_path):
         (home / ".nthlayer").chmod(0o755)
 
 
+# The answers to setup's three yes/no questions (Prometheus authentication,
+# configure Grafana, configure PagerDuty) that lead to each secret prompt, and
+# what the file backend then holds for a secret typed as "s3cret".
+SECRET_PROMPTS = [
+    pytest.param(
+        [True, False, False], {"prometheus": {"password": "s3cret"}}, id="prometheus-password"
+    ),
+    pytest.param([False, True, False], {"grafana": {"api_key": "s3cret"}}, id="grafana-key"),
+    pytest.param([False, False, True], {"pagerduty": {"api_key": "s3cret"}}, id="pagerduty-key"),
+]
+assert SECRET_PROMPTS
+NO_SECRETS = [False, False, False]
+
+
 class TestQuickSetupReportsAnUnusableConfigDirectory:
     @staticmethod
-    def _run(home: Path):
-        """Run the wizard with every optional step declined, saving for real."""
+    def _run(home: Path, answers: list[bool]):
+        """Run the wizard for real under `home`, answering its yes/no questions.
+
+        The resolver is a real one over the real file backend, built while
+        `Path.home` is patched, so secrets and configuration are written to
+        `home`. Returns the exit code, the `error` and `success` mocks, and how
+        many times the user was asked anything.
+        """
+        confirmations = iter(answers)
         with (
             patch.object(Path, "home", return_value=home),
-            patch("nthlayer_generate.cli.setup._prompt", return_value="http://localhost:9090"),
-            patch("nthlayer_generate.cli.setup._confirm", return_value=False),
-            patch("nthlayer_generate.cli.setup.get_secret_resolver", return_value=MagicMock()),
+            patch(
+                "nthlayer_generate.cli.setup._prompt", return_value="http://localhost:9090"
+            ) as prompt,
+            patch("nthlayer_generate.cli.setup._prompt_secret", return_value="s3cret") as secret,
+            patch(
+                "nthlayer_generate.cli.setup._confirm",
+                side_effect=lambda *a, **k: next(confirmations),
+            ) as confirm,
             patch("nthlayer_generate.cli.setup.error") as reported,
             patch("nthlayer_generate.cli.setup.success") as succeeded,
         ):
-            rc = _quick_setup()
-        return rc, reported, succeeded
+            resolver = SecretResolver(SecretConfig())
+            with patch("nthlayer_generate.cli.setup.get_secret_resolver", return_value=resolver):
+                rc = _quick_setup()
+            asked = prompt.call_count + secret.call_count + confirm.call_count
+        return rc, reported, succeeded, asked
 
     @pytest.mark.parametrize(("make", "plain_call"), UNUSABLE_HOME_STATES)
     def test_the_failure_is_reported_and_setup_stops(self, make, plain_call, home):
@@ -256,77 +288,59 @@ class TestQuickSetupReportsAnUnusableConfigDirectory:
         with pytest.raises(OSError):
             plain_call(home)
 
-        rc, reported, succeeded = self._run(home)
+        rc, reported, succeeded, _ = self._run(home, NO_SECRETS)
 
         assert rc == 1
         reported.assert_called_once()
         succeeded.assert_not_called()
         assert not (home / ".nthlayer" / "config.yaml").is_file()
 
-    @staticmethod
-    def _run_entering_a_grafana_key(home: Path):
-        """Run the wizard with Grafana configured and a key entered.
+    @pytest.mark.parametrize(("make", "plain_call"), UNCREATABLE_CONFIG_DIR_STATES)
+    def test_a_directory_that_cannot_be_created_stops_setup_before_any_question(
+        self, make, plain_call, home
+    ):
+        # Otherwise the user types their secrets and only then learns that
+        # nothing can be saved.
+        make(home)
+        with pytest.raises(OSError):
+            plain_call(home)
 
-        The resolver is a real one over the real file backend, built while
-        `Path.home` is patched, so the key is written to `home`.
-        """
-        confirmations = iter([False, True, False])  # no Prometheus auth, Grafana, no PagerDuty
-        with (
-            patch.object(Path, "home", return_value=home),
-            patch("nthlayer_generate.cli.setup._prompt", return_value="http://localhost:9090"),
-            patch("nthlayer_generate.cli.setup._prompt_secret", return_value="grafana-key"),
-            patch(
-                "nthlayer_generate.cli.setup._confirm",
-                side_effect=lambda *a, **k: next(confirmations),
-            ),
-            patch("nthlayer_generate.cli.setup.error") as reported,
-            patch("nthlayer_generate.cli.setup.success") as succeeded,
-        ):
-            resolver = SecretResolver(SecretConfig())
-            with patch("nthlayer_generate.cli.setup.get_secret_resolver", return_value=resolver):
-                rc = _quick_setup()
-        return rc, reported, succeeded
+        rc, reported, _, asked = self._run(home, [True, True, True])
 
-    @pytest.mark.parametrize(("make", "plain_call"), UNUSABLE_HOME_STATES)
-    def test_the_failure_is_reported_when_a_secret_is_entered(self, make, plain_call, home):
-        # Entering a key writes credentials.yaml into the same directory,
+        assert rc == 1
+        reported.assert_called_once()
+        assert asked == 0
+
+    @pytest.mark.parametrize(("answers", "stored"), SECRET_PROMPTS)
+    @pytest.mark.parametrize(("make", "plain_call"), UNWRITABLE_CREDENTIALS_STATES)
+    def test_a_secret_that_cannot_be_stored_is_reported_and_setup_stops(
+        self, make, plain_call, answers, stored, home
+    ):
+        # Entering a secret writes credentials.yaml into the config directory,
         # before the configuration is saved.
         make(home)
         with pytest.raises(OSError):
             plain_call(home)
 
-        rc, reported, succeeded = self._run_entering_a_grafana_key(home)
-
-        assert rc == 1
-        reported.assert_called_once()
-        succeeded.assert_not_called()
-        assert not (home / ".nthlayer" / "config.yaml").is_file()
-
-    @pytest.mark.parametrize(("make", "plain_call"), UNWRITABLE_CREDENTIALS_STATES)
-    def test_a_secret_that_cannot_be_stored_is_reported(self, make, plain_call, home):
-        make(home)
-        with pytest.raises(OSError):
-            plain_call(home)
-
-        rc, reported, succeeded = self._run_entering_a_grafana_key(home)
+        rc, reported, succeeded, _ = self._run(home, answers)
 
         assert rc == 1
         reported.assert_called_once()
         succeeded.assert_not_called()
         assert not (home / ".nthlayer" / "config.yaml").exists()
 
-    def test_a_secret_is_stored_beside_the_configuration(self, home):
-        rc, reported, succeeded = self._run_entering_a_grafana_key(home)
+    @pytest.mark.parametrize(("answers", "stored"), SECRET_PROMPTS)
+    def test_a_secret_is_stored_beside_the_configuration(self, answers, stored, home):
+        rc, reported, succeeded, _ = self._run(home, answers)
 
         assert rc == 0
         reported.assert_not_called()
-        stored = yaml.safe_load(
-            (home / ".nthlayer" / "credentials.yaml").read_text(encoding="utf-8")
-        )
-        assert stored == {"grafana": {"api_key": "grafana-key"}}
+        succeeded.assert_called_once()
+        credentials = home / ".nthlayer" / "credentials.yaml"
+        assert yaml.safe_load(credentials.read_text(encoding="utf-8")) == stored
 
     def test_a_usable_home_still_saves_the_configuration(self, home):
-        rc, reported, succeeded = self._run(home)
+        rc, reported, succeeded, _ = self._run(home, NO_SECRETS)
 
         assert rc == 0
         reported.assert_not_called()

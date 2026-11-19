@@ -1,5 +1,38 @@
 # Changelog
 
+## [4.1.1](https://github.com/rsionnach/nthlayer-generate/compare/v4.1.0...v4.1.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* migrate writes a latency SLO's bound (opensrm-wo62.4.9) ([a87e77a](https://github.com/rsionnach/nthlayer-generate/commit/a87e77a8da1c570b9a289fda2bf4220ad1bfab11))
+* require nthlayer-common 5.12.1 and re-pin goldens (opensrm-wo62.4.25) ([99d55a4](https://github.com/rsionnach/nthlayer-generate/commit/99d55a44c4063943ac7c2146faffe1b656c4a0c2))
+* require nthlayer-common 5.12.1 and re-pin goldens (opensrm-wo62.4.25) ([9b894ba](https://github.com/rsionnach/nthlayer-generate/commit/9b894ba0b94675eb42f72c4abb34bdc52557e5b9))
+* require nthlayer-common 5.12.1 and re-pin goldens (opensrm-wo62.4.25) ([b91369b](https://github.com/rsionnach/nthlayer-generate/commit/b91369b8c067641ff28e817c1be5748f33208357))
+* require nthlayer-common 5.12.1 and re-pin goldens (opensrm-wo62.4.25) ([8617a71](https://github.com/rsionnach/nthlayer-generate/commit/8617a71402b71860b174dd4a7dec55cec48f5649))
+* require nthlayer-common 5.12.1 and re-pin goldens (opensrm-wo62.4.25) ([c676840](https://github.com/rsionnach/nthlayer-generate/commit/c676840166fe9ee5ef8a99e50945062eafd53fe9))
+* require nthlayer-common 5.12.1 and re-pin goldens (opensrm-wo62.4.25) ([9dff70e](https://github.com/rsionnach/nthlayer-generate/commit/9dff70eb0404bcafeeda98fd18531078a4db2681))
+* require nthlayer-common 5.12.1 and re-pin goldens (opensrm-wo62.4.25) ([df3a891](https://github.com/rsionnach/nthlayer-generate/commit/df3a89144c40f1b35a590341b96d0e7eabf46955))
+* say why a dashboard dependency is skipped (opensrm-ip9r) ([4928115](https://github.com/rsionnach/nthlayer-generate/commit/49281156b12a38185c2c531605e1e5c2759bdd96))
+* skip event names the key to set and an example (opensrm-sjgi) ([a2966d6](https://github.com/rsionnach/nthlayer-generate/commit/a2966d63e8d854a96b4c54ab7770f5600fc99514))
+* skip untemplated database in dashboard (opensrm-wo62.4.16) ([4a8207d](https://github.com/rsionnach/nthlayer-generate/commit/4a8207de44ab40934f5d728bd61009b5019ebc0c))
+* template loader rejects non-string fields (opensrm-dpf8) ([e4af216](https://github.com/rsionnach/nthlayer-generate/commit/e4af2166a31630274d247e2b221c5fb248cc4b1b))
+* validate-slo checks ratio-shaped SLO queries (opensrm-tuwx) ([6153f00](https://github.com/rsionnach/nthlayer-generate/commit/6153f00f6dd5f104b1fa507e73b67afc3885b134))
+
+
+### Documentation
+
+* claim beads with bd update --claim ([8ae54ee](https://github.com/rsionnach/nthlayer-generate/commit/8ae54eed161fc26724201f92db6c5c5711cb99d6))
+* migrate writes a bound from the indicators list (opensrm-wo62.4.25) ([99d55a4](https://github.com/rsionnach/nthlayer-generate/commit/99d55a44c4063943ac7c2146faffe1b656c4a0c2))
+* migrate writes a bound from the indicators list (opensrm-wo62.4.25) ([9b894ba](https://github.com/rsionnach/nthlayer-generate/commit/9b894ba0b94675eb42f72c4abb34bdc52557e5b9))
+* migrate writes a bound from the indicators list (opensrm-wo62.4.25) ([b91369b](https://github.com/rsionnach/nthlayer-generate/commit/b91369b8c067641ff28e817c1be5748f33208357))
+* migrate writes a bound from the indicators list (opensrm-wo62.4.25) ([8617a71](https://github.com/rsionnach/nthlayer-generate/commit/8617a71402b71860b174dd4a7dec55cec48f5649))
+* migrate writes a bound from the indicators list (opensrm-wo62.4.25) ([c676840](https://github.com/rsionnach/nthlayer-generate/commit/c676840166fe9ee5ef8a99e50945062eafd53fe9))
+* migrate writes a bound from the indicators list (opensrm-wo62.4.25) ([9dff70e](https://github.com/rsionnach/nthlayer-generate/commit/9dff70eb0404bcafeeda98fd18531078a4db2681))
+* migrate writes a bound from the indicators list (opensrm-wo62.4.25) ([df3a891](https://github.com/rsionnach/nthlayer-generate/commit/df3a89144c40f1b35a590341b96d0e7eabf46955))
+* README notes how migrate writes latency SLOs (opensrm-wo62.4.9) ([b30357d](https://github.com/rsionnach/nthlayer-generate/commit/b30357d2836c881b6f5bd46b788ad8477feefc55))
+* validate-slo advisory notes from the tuwx gate (opensrm-tuwx) ([1b79998](https://github.com/rsionnach/nthlayer-generate/commit/1b79998e1ecb0dfc1857d25c5696eee7cda990e7))
+
 ## [4.1.0](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.11...v4.1.0) (2026-11-07)
 
 

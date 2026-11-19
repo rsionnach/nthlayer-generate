@@ -47,7 +47,7 @@ from nthlayer_generate.config.loader import (
     load_config,
     save_config,
 )
-from nthlayer_generate.config.secrets import get_secret_resolver
+from nthlayer_generate.config.secrets import SecretResolver, get_secret_resolver
 from nthlayer_generate.specs.names import is_valid_service_name
 
 
@@ -139,6 +139,23 @@ def _quick_setup() -> int:
     config = IntegrationConfig.default()
     resolver = get_secret_resolver()
 
+    # Create the config directory BEFORE asking anything (opensrm-mnzi).
+    #
+    # `exist_ok=True` does not cover a non-directory last component, so a
+    # `~/.nthlayer` FILE or dangling symlink raised FileExistsError and a
+    # read-only home raised PermissionError: the traceback opensrm-h9fq removed
+    # from `services/` below, still live here. It is checked first because the
+    # secrets entered below are written into the same directory, so a failure
+    # found only at the final save would come after the user had typed them.
+    config_dir = Path.home() / ".nthlayer"
+    config_path = config_dir / "config.yaml"
+    try:
+        config_dir.mkdir(exist_ok=True)
+    except OSError as e:
+        error(f"Could not create {config_dir}: {e}")
+        _print_config_dir_hint(config_dir, config_path)
+        return 1
+
     console.print("[bold]Quick Setup[/bold]")
     console.print("[muted]─[/muted]" * 40)
     console.print("We'll configure the essentials to get you started.")
@@ -160,7 +177,8 @@ def _quick_setup() -> int:
     if _confirm("   Does Prometheus require authentication?", default=False):
         prom_profile.username = _prompt("   Username")
         prom_password = _prompt_secret("   Password")
-        resolver.set_secret("prometheus/password", prom_password)
+        if not _store_secret(resolver, "prometheus/password", prom_password):
+            return 1
         prom_profile.password_secret = "prometheus/password"
 
     config.prometheus.profiles["default"] = prom_profile
@@ -182,7 +200,8 @@ def _quick_setup() -> int:
 
         grafana_key = _prompt_secret("   API Key (press Enter to skip)")
         if grafana_key:
-            resolver.set_secret("grafana/api_key", grafana_key)
+            if not _store_secret(resolver, "grafana/api_key", grafana_key):
+                return 1
             grafana_profile.api_key_secret = "grafana/api_key"
 
         config.grafana.profiles["default"] = grafana_profile
@@ -198,7 +217,8 @@ def _quick_setup() -> int:
 
         pd_key = _prompt_secret("   API Key (with full access)")
         if pd_key:
-            resolver.set_secret("pagerduty/api_key", pd_key)
+            if not _store_secret(resolver, "pagerduty/api_key", pd_key):
+                return 1
             config.alerting.pagerduty.api_key_secret = "pagerduty/api_key"
 
         policy = _prompt("   Default escalation policy (optional)", default="")
@@ -206,31 +226,46 @@ def _quick_setup() -> int:
             config.alerting.pagerduty.default_escalation_policy = policy
     console.print()
 
-    # Save configuration
-    #
-    # `exist_ok=True` does not cover a non-directory last component, so a
-    # `~/.nthlayer` FILE or dangling symlink raised FileExistsError and a
-    # read-only home raised PermissionError: the traceback opensrm-h9fq removed
-    # from `services/` below, still live here (opensrm-mnzi). `save_config` is
-    # inside the same `try` because it creates the directory again and opens
-    # the file, so the same states would otherwise raise one line later.
-    # Fatal: the configuration is the only thing this function writes.
-    config_dir = Path.home() / ".nthlayer"
-    config_path = config_dir / "config.yaml"
+    # Save configuration. The directory exists by now, but the write can still
+    # fail (config.yaml is a directory, the directory is not writable), and
+    # that is fatal: the configuration is what this function is for.
     try:
-        config_dir.mkdir(exist_ok=True)
         save_config(config, config_path)
     except OSError as e:
         error(f"Could not save configuration to {config_path}: {e}")
-        console.print(
-            f"   [muted]{config_dir} must be a directory you can write to, and "
-            f"{config_path.name} inside it a regular file. Fix that and re-run "
-            "`nthlayer setup`.[/muted]"
-        )
+        _print_config_dir_hint(config_dir, config_path)
         return 1
     success(f"Configuration saved to: {config_path}")
 
     return 0
+
+
+def _print_config_dir_hint(config_dir: Path, config_path: Path) -> None:
+    """Say what the config directory has to look like for setup to work."""
+    console.print(
+        f"   [muted]{config_dir} must be a directory you can write to, and "
+        f"{config_path.name} inside it a regular file. Fix that and re-run "
+        "`nthlayer setup`.[/muted]"
+    )
+
+
+def _store_secret(resolver: SecretResolver, name: str, value: str) -> bool:
+    """Store one secret; report a filesystem failure instead of raising it.
+
+    The file backend writes ``credentials.yaml`` beside the configuration, so
+    an unwritable config directory fails here first (opensrm-mnzi).
+    """
+    try:
+        resolver.set_secret(name, value)
+    except OSError as e:
+        error(f"Could not store the secret {name}: {e}")
+        console.print(
+            "   [muted]The configuration was not saved; a secret entered before "
+            "this one may have been stored. Fix the path named above and re-run "
+            "`nthlayer setup`.[/muted]"
+        )
+        return False
+    return True
 
 
 def _test_connections() -> int:

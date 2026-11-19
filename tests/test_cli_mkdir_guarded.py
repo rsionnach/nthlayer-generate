@@ -21,6 +21,7 @@ import yaml
 import nthlayer_generate.cli as cli_package
 from nthlayer_generate.cli.migrate_manifest import migrate_manifest_command
 from nthlayer_generate.cli.setup import _quick_setup
+from nthlayer_generate.config.secrets import SecretConfig, SecretResolver
 
 CLI_DIR = Path(cli_package.__file__).parent
 CLI_MODULES = sorted(CLI_DIR.rglob("*.py"))
@@ -46,8 +47,11 @@ def _is_mkdir_call(node: ast.AST) -> bool:
 
 
 def _handler_catches_oserror(handler: ast.ExceptHandler) -> bool:
-    # A handler that only re-raises reports nothing.
-    if len(handler.body) == 1 and isinstance(handler.body[0], ast.Raise):
+    # A handler that re-raises still ends in a traceback, and one that only
+    # passes reports nothing: neither is a guard.
+    if any(isinstance(stmt, ast.Raise) and stmt.exc is None for stmt in handler.body):
+        return False
+    if all(isinstance(stmt, ast.Pass) for stmt in handler.body):
         return False
     if handler.type is None:
         return True
@@ -65,6 +69,10 @@ def unguarded_mkdir_lines(source: str) -> tuple[list[int], int]:
 
     Not seen: a call inside a generator expression that is consumed after the
     `try` has ended, which runs outside the handler it is written in.
+
+    Refused although guarded, on purpose (the check fails closed):
+    `contextlib.suppress(OSError)`, `except IOError` or `os.error`, and a
+    decorator or default argument evaluated inside the `try`.
     """
     unguarded: list[int] = []
     seen = 0
@@ -90,6 +98,13 @@ def unguarded_mkdir_lines(source: str) -> tuple[list[int], int]:
     visit(ast.parse(source), False)
     return unguarded, seen
 
+
+HANDLERS_THAT_DO_NOT_REPORT = [
+    pytest.param("    raise\n", id="re-raise"),
+    pytest.param("    log()\n    raise\n", id="log-then-re-raise"),
+    pytest.param("    pass\n", id="pass"),
+]
+assert HANDLERS_THAT_DO_NOT_REPORT
 
 OTHER_MKDIR_SPELLINGS = ["os.mkdir('x')", "os.makedirs('x')", "mkdir('x')", "makedirs('x')"]
 assert OTHER_MKDIR_SPELLINGS
@@ -119,7 +134,7 @@ class TestEveryCliMkdirIsGuarded:
         assert (lines, seen) == ([2], 1)
 
     def test_a_mkdir_in_a_try_that_catches_oserror_is_accepted(self):
-        source = "try:\n    p.mkdir()\nexcept (ValueError, OSError):\n    pass\n"
+        source = "try:\n    p.mkdir()\nexcept (ValueError, OSError) as e:\n    error(e)\n"
         assert unguarded_mkdir_lines(source) == ([], 1)
 
     def test_a_handler_for_one_oserror_subclass_is_not_enough(self):
@@ -134,9 +149,16 @@ class TestEveryCliMkdirIsGuarded:
     def test_every_spelling_of_mkdir_is_seen(self, call):
         assert unguarded_mkdir_lines(f"{call}\n") == ([1], 1)
 
-    def test_a_handler_that_only_re_raises_is_not_a_guard(self):
-        source = "try:\n    p.mkdir()\nexcept OSError:\n    raise\n"
+    @pytest.mark.parametrize("handler_body", HANDLERS_THAT_DO_NOT_REPORT)
+    def test_a_handler_that_re_raises_or_does_nothing_is_not_a_guard(self, handler_body):
+        source = f"try:\n    p.mkdir()\nexcept OSError:\n{handler_body}"
         assert unguarded_mkdir_lines(source) == ([2], 1)
+
+    def test_a_handler_that_raises_a_new_error_is_still_a_guard(self):
+        # `raise SomeError(...) from e` is a report by another route, unlike a
+        # bare `raise`, which lets the OSError through as it is.
+        source = "try:\n    p.mkdir()\nexcept OSError as e:\n    raise UsageError(str(e)) from e\n"
+        assert unguarded_mkdir_lines(source) == ([], 1)
 
     def test_a_try_around_a_nested_function_does_not_guard_its_body(self):
         source = "try:\n    def f():\n        p.mkdir()\nexcept OSError:\n    pass\n"
@@ -178,12 +200,37 @@ UNUSABLE_HOME_STATES = [
 assert UNUSABLE_HOME_STATES
 
 
+def _credentials_is_a_directory(home: Path) -> None:
+    (home / ".nthlayer" / "credentials.yaml").mkdir(parents=True)
+
+
+def _nthlayer_is_read_only(home: Path) -> None:
+    (home / ".nthlayer").mkdir()
+    (home / ".nthlayer").chmod(0o555)
+
+
+def _open_credentials_file(home: Path) -> None:
+    with open(home / ".nthlayer" / "credentials.yaml", "w", encoding="utf-8"):
+        pass
+
+
+# The config directory exists, so setup gets as far as storing the secret.
+UNWRITABLE_CREDENTIALS_STATES = [
+    pytest.param(_credentials_is_a_directory, _open_credentials_file, id="credentials-is-a-dir"),
+    pytest.param(_nthlayer_is_read_only, _open_credentials_file, id="read-only-nthlayer"),
+]
+assert UNWRITABLE_CREDENTIALS_STATES
+
+
 @pytest.fixture
 def home(tmp_path):
     home = tmp_path / "home"
     home.mkdir()
     yield home
-    home.chmod(0o755)  # so pytest can remove a home a test made read-only
+    # so pytest can remove what a test made read-only
+    home.chmod(0o755)
+    if (home / ".nthlayer").is_dir():
+        (home / ".nthlayer").chmod(0o755)
 
 
 class TestQuickSetupReportsAnUnusableConfigDirectory:
@@ -215,6 +262,68 @@ class TestQuickSetupReportsAnUnusableConfigDirectory:
         reported.assert_called_once()
         succeeded.assert_not_called()
         assert not (home / ".nthlayer" / "config.yaml").is_file()
+
+    @staticmethod
+    def _run_entering_a_grafana_key(home: Path):
+        """Run the wizard with Grafana configured and a key entered.
+
+        The resolver is a real one over the real file backend, built while
+        `Path.home` is patched, so the key is written to `home`.
+        """
+        confirmations = iter([False, True, False])  # no Prometheus auth, Grafana, no PagerDuty
+        with (
+            patch.object(Path, "home", return_value=home),
+            patch("nthlayer_generate.cli.setup._prompt", return_value="http://localhost:9090"),
+            patch("nthlayer_generate.cli.setup._prompt_secret", return_value="grafana-key"),
+            patch(
+                "nthlayer_generate.cli.setup._confirm",
+                side_effect=lambda *a, **k: next(confirmations),
+            ),
+            patch("nthlayer_generate.cli.setup.error") as reported,
+            patch("nthlayer_generate.cli.setup.success") as succeeded,
+        ):
+            resolver = SecretResolver(SecretConfig())
+            with patch("nthlayer_generate.cli.setup.get_secret_resolver", return_value=resolver):
+                rc = _quick_setup()
+        return rc, reported, succeeded
+
+    @pytest.mark.parametrize(("make", "plain_call"), UNUSABLE_HOME_STATES)
+    def test_the_failure_is_reported_when_a_secret_is_entered(self, make, plain_call, home):
+        # Entering a key writes credentials.yaml into the same directory,
+        # before the configuration is saved.
+        make(home)
+        with pytest.raises(OSError):
+            plain_call(home)
+
+        rc, reported, succeeded = self._run_entering_a_grafana_key(home)
+
+        assert rc == 1
+        reported.assert_called_once()
+        succeeded.assert_not_called()
+        assert not (home / ".nthlayer" / "config.yaml").is_file()
+
+    @pytest.mark.parametrize(("make", "plain_call"), UNWRITABLE_CREDENTIALS_STATES)
+    def test_a_secret_that_cannot_be_stored_is_reported(self, make, plain_call, home):
+        make(home)
+        with pytest.raises(OSError):
+            plain_call(home)
+
+        rc, reported, succeeded = self._run_entering_a_grafana_key(home)
+
+        assert rc == 1
+        reported.assert_called_once()
+        succeeded.assert_not_called()
+        assert not (home / ".nthlayer" / "config.yaml").exists()
+
+    def test_a_secret_is_stored_beside_the_configuration(self, home):
+        rc, reported, succeeded = self._run_entering_a_grafana_key(home)
+
+        assert rc == 0
+        reported.assert_not_called()
+        stored = yaml.safe_load(
+            (home / ".nthlayer" / "credentials.yaml").read_text(encoding="utf-8")
+        )
+        assert stored == {"grafana": {"api_key": "grafana-key"}}
 
     def test_a_usable_home_still_saves_the_configuration(self, home):
         rc, reported, succeeded = self._run(home)

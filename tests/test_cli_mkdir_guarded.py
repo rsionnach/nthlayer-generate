@@ -3,10 +3,14 @@
 `Path.mkdir(exist_ok=True)` only forgives an existing DIRECTORY. A regular
 file or a dangling symlink at the path raises FileExistsError, and a read-only
 parent raises PermissionError. opensrm-h9fq fixed one such call in
-`cli/setup.py` and left its twin, 250 lines up, bare. The structural test here
-covers every `.mkdir(` under `cli/`, so the next one cannot be missed the same
-way; the behavioural tests drive the two calls that were unguarded through the
-real filesystem states.
+`cli/setup.py` and left its twin, earlier in the same file, bare.
+
+The structural test covers every directory-creating call under `cli/`
+(`Path.mkdir`, `os.mkdir`, `os.makedirs`), so the next one cannot be missed
+the same way. The behavioural tests drive the two commands that had an
+unguarded call, `nthlayer setup` and `migrate-manifest`, through real
+filesystem states. For setup that includes the writes that follow the
+directory: storing a secret and saving the configuration.
 """
 
 from __future__ import annotations

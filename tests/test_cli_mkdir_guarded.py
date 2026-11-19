@@ -32,7 +32,23 @@ assert CLI_MODULES, f"no modules found under {CLI_DIR}"
 _CATCHES_OSERROR = {"OSError", "Exception", "BaseException"}
 
 
+# Every spelling that creates a directory: Path.mkdir, os.mkdir, os.makedirs,
+# and either function imported by name.
+_MKDIR_NAMES = {"mkdir", "makedirs"}
+
+
+def _is_mkdir_call(node: ast.AST) -> bool:
+    if not isinstance(node, ast.Call):
+        return False
+    func = node.func
+    name = func.attr if isinstance(func, ast.Attribute) else getattr(func, "id", None)
+    return name in _MKDIR_NAMES
+
+
 def _handler_catches_oserror(handler: ast.ExceptHandler) -> bool:
+    # A handler that only re-raises reports nothing.
+    if len(handler.body) == 1 and isinstance(handler.body[0], ast.Raise):
+        return False
     if handler.type is None:
         return True
     types = handler.type.elts if isinstance(handler.type, ast.Tuple) else [handler.type]
@@ -40,19 +56,22 @@ def _handler_catches_oserror(handler: ast.ExceptHandler) -> bool:
 
 
 def unguarded_mkdir_lines(source: str) -> tuple[list[int], int]:
-    """Return (lines of `.mkdir(` calls outside an OSError handler, calls seen).
+    """Return (lines of mkdir calls outside an OSError handler, calls seen).
 
     A call is guarded when it sits in the BODY of a `try` that has a handler
-    catching OSError, within the same function: a `try` around a nested `def`
-    does not guard the calls inside it, and neither does the `try`'s own
-    `except`, `else` or `finally` block.
+    catching OSError and doing more than re-raising, within the same function:
+    a `try` around a nested `def` does not guard the calls inside it, and
+    neither does the `try`'s own `except`, `else` or `finally` block.
+
+    Not seen: a call inside a generator expression that is consumed after the
+    `try` has ended, which runs outside the handler it is written in.
     """
     unguarded: list[int] = []
     seen = 0
 
     def visit(node: ast.AST, guarded: bool) -> None:
         nonlocal seen
-        if isinstance(node, ast.Call) and getattr(node.func, "attr", None) == "mkdir":
+        if _is_mkdir_call(node):
             seen += 1
             if not guarded:
                 unguarded.append(node.lineno)
@@ -70,6 +89,10 @@ def unguarded_mkdir_lines(source: str) -> tuple[list[int], int]:
 
     visit(ast.parse(source), False)
     return unguarded, seen
+
+
+OTHER_MKDIR_SPELLINGS = ["os.mkdir('x')", "os.makedirs('x')", "mkdir('x')", "makedirs('x')"]
+assert OTHER_MKDIR_SPELLINGS
 
 
 class TestEveryCliMkdirIsGuarded:
@@ -106,6 +129,14 @@ class TestEveryCliMkdirIsGuarded:
     def test_a_mkdir_in_the_except_block_is_not_guarded_by_its_own_try(self):
         source = "try:\n    pass\nexcept OSError:\n    p.mkdir()\n"
         assert unguarded_mkdir_lines(source) == ([4], 1)
+
+    @pytest.mark.parametrize("call", OTHER_MKDIR_SPELLINGS)
+    def test_every_spelling_of_mkdir_is_seen(self, call):
+        assert unguarded_mkdir_lines(f"{call}\n") == ([1], 1)
+
+    def test_a_handler_that_only_re_raises_is_not_a_guard(self):
+        source = "try:\n    p.mkdir()\nexcept OSError:\n    raise\n"
+        assert unguarded_mkdir_lines(source) == ([2], 1)
 
     def test_a_try_around_a_nested_function_does_not_guard_its_body(self):
         source = "try:\n    def f():\n        p.mkdir()\nexcept OSError:\n    pass\n"

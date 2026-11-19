@@ -223,8 +223,9 @@ def _quick_setup() -> int:
     except OSError as e:
         error(f"Could not save configuration to {config_path}: {e}")
         console.print(
-            f"   [muted]{config_dir} may already exist as a file, or may not be "
-            "writable. Fix it and re-run `nthlayer setup`.[/muted]"
+            f"   [muted]{config_dir} must be a directory you can write to, and "
+            f"{config_path.name} inside it a regular file. Fix that and re-run "
+            "`nthlayer setup`.[/muted]"
         )
         return 1
     success(f"Configuration saved to: {config_path}")

@@ -181,8 +181,8 @@ ratio rules are still written. A budget is skipped when:
   srm/v1 error_rate targets, which are maximum error rates (opensrm-t13c);
 - a latency SLO has no `threshold_ms` and no queries of its own, so its bound
   would be guessed: srm/v1 keeps the bound in `target` (opensrm-t13c), v2
-  reads it from the objective (opensrm-8jpp), and a legacy `indicators[]`
-  `threshold_ms` is not read.
+  reads it from the objective (opensrm-8jpp), and a legacy SLO need not
+  declare one.
 
 Skips are logged at debug level as `error budget skipped`, with a `reason`.
 

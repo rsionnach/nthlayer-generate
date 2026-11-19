@@ -146,10 +146,22 @@ def test_recording_rule_bound(path, slo, le, label):
 def test_recording_rule_without_a_bound_keeps_the_500_ms_default(tmp_path):
     """Derived, as the sloth case above: no committed legacy example has a
     latency SLO with no bound."""
-    rule = _latency_fast_rule(_payment_api_without_a_latency_bound(tmp_path), "latency-p95")
+    manifest = _payment_api_without_a_latency_bound(tmp_path)
+
+    rule = _latency_fast_rule(manifest, "latency-p95")
 
     assert 'le="0.5"' in rule["expr"]
     assert rule["threshold"] == "500ms"
+    # 500 ms is a guess, so no error budget is written on it. The committed
+    # legacy examples all declare a bound now, so the goldens no longer pin this.
+    budgets = [
+        rule.labels.get("slo")
+        for group in build_recording_rules_from_manifest(manifest)
+        for rule in group.rules
+        if rule.record == "slo:error_budget_remaining:ratio"
+    ]
+    assert budgets, "payment-api's other SLOs should still get a budget"
+    assert "latency-p95" not in budgets
 
 
 # =============================================================================

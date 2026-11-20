@@ -180,8 +180,14 @@ def migrate_manifest_command(
 
     _warn_relative_refs(v2_data, in_path, out_path)
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(yaml_text)
+    # An output directory that exists as a file, or cannot be written, is an
+    # ordinary filesystem state, not a crash (opensrm-mnzi).
+    try:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(yaml_text)
+    except OSError as exc:
+        error(f"Could not write {out_path}: {exc}")
+        return 1
 
     success(f"Migrated {in_path.name} → {out_path}")
     return 0

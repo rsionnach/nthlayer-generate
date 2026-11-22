@@ -71,6 +71,12 @@ tracebacks with no indication of what the code was trying to do.
 
 **Enforcement:** [LINT] — see `scripts/lint/check-exception-handling.sh`
 
+One case has its own test: every directory-creating call under `cli/`
+(`mkdir`, `makedirs`) must sit in a `try` that catches `OSError` and reports
+it. `exist_ok=True` does not cover a file, a dangling symlink or a read-only
+parent at the path. [TEST] — see `tests/test_cli_mkdir_guarded.py`
+(opensrm-mnzi).
+
 ### 5. Template functions for all generated output
 
 Prometheus rules, Grafana dashboards, and any other generated configuration

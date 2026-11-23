@@ -202,6 +202,11 @@ REFUSED_TAGGED_VALUES = [
         id="legacy-tag-on-a-scalar",
     ),
     pytest.param(
+        "!!python/object/apply:nthlayer_generate.config.integrations.PrometheusType\n"
+        "      - victoria",
+        id="legacy-tag-with-a-value-that-is-not-a-member",
+    ),
+    pytest.param(
         "!!python/object/new:nthlayer_generate.config.integrations.PrometheusType\n      - mimir",
         id="object-new-instead-of-apply",
     ),

@@ -296,9 +296,11 @@ class ConfigLoader:
         target_path = path or self.config_path or (Path.home() / ".nthlayer" / "config.yaml")
         target_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # safe_dump, and before the file is opened: load() reads with the safe
-        # loader, so a value only the full dumper can write must fail here,
-        # loudly and without truncating the existing file (opensrm-p520).
+        # safe_dump, and before the file is opened: it keeps a new file free of
+        # python tags, which load() refuses (apart from the two legacy ones
+        # _ConfigLoader reads). A value only the full dumper can write must
+        # fail here, loudly and without truncating the existing file
+        # (opensrm-p520).
         text = yaml.safe_dump(config.to_dict(), default_flow_style=False, sort_keys=False)
         with open(target_path, "w", encoding="utf-8") as f:
             f.write(text)

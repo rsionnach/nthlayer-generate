@@ -114,6 +114,8 @@ alerting:
     enabled: false
 ```
 
+Earlier versions wrote each profile's `type` in a form that could not be read back, so a saved configuration was replaced by the defaults on the next load. Those files are read correctly again after upgrading, and the next `config set` rewrites them in the form above. If `config set` was run on such a file before upgrading, the profiles in it were already replaced by the defaults: check `nthlayer config show` and re-run `nthlayer setup` if they are.
+
 ## Environment Variables
 
 Override configuration with environment variables:

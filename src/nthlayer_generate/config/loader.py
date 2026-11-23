@@ -282,7 +282,7 @@ class ConfigLoader:
         data = read_config_mapping(path)
         try:
             config = IntegrationConfig.from_dict(data)
-        except (AttributeError, TypeError, ValueError) as e:
+        except (AttributeError, ValueError) as e:
             # a section of the wrong shape (`prometheus: null`, a profile that
             # is a string) or a `type` that is not a known backend
             raise ConfigLoadError(f"{path} is not a valid configuration: {e}") from e

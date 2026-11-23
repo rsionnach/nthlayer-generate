@@ -17,7 +17,7 @@ from unittest.mock import patch
 import pytest
 import yaml
 
-from nthlayer_generate.config.cli import _settable_keys, config_set_command
+from nthlayer_generate.config.cli import _resolve_set_key, _settable_keys, config_set_command
 from nthlayer_generate.config.integrations import IntegrationConfig
 from nthlayer_generate.config.loader import (
     ConfigLoadError,
@@ -158,35 +158,128 @@ class TestAKeyOrValueThatCannotBeAppliedIsAnError:
         asked.assert_not_called()
 
 
-# A value each kind of key accepts and that differs from what the fixture or
-# the defaults hold, keyed by the key's last component.
-A_VALUE_FOR = {
-    "default": "staging",
-    "url": "https://changed.example.test",
-    "type": "grafana-cloud",  # a member of both PrometheusType and GrafanaType
-    "username": "reader",
-    "password": "prometheus/password",
-    "api_key": "some/api_key",
-    "org_id": "7",
-    "enabled": "false",
-    "escalation_policy": "P123",
-    "webhook_url": "slack/webhook_url",
-    "channel": "#on-call",
-}
-SETTABLE_KEYS = [key.replace("<name>", "staging") for key in _settable_keys()]
-assert SETTABLE_KEYS
+# Every key docs-site/commands/config.md lists as settable, written out by
+# hand from that table with `staging` as the profile name: the value to set,
+# the one place in the saved file that must then hold it, and what it holds.
+# Each value differs from what the fixture and the defaults have there.
+DOCUMENTED_KEYS = [
+    ("prometheus.default", "staging", "prometheus.default", "staging"),
+    (
+        "prometheus.profiles.staging.url",
+        "https://m.example.test",
+        "prometheus.profiles.staging.url",
+        "https://m.example.test",
+    ),
+    ("prometheus.profiles.staging.type", "thanos", "prometheus.profiles.staging.type", "thanos"),
+    (
+        "prometheus.profiles.staging.username",
+        "reader",
+        "prometheus.profiles.staging.username",
+        "reader",
+    ),
+    (
+        "prometheus.profiles.staging.password",
+        "prometheus/password",
+        "prometheus.profiles.staging.password_secret",
+        "prometheus/password",
+    ),
+    ("grafana.default", "staging", "grafana.default", "staging"),
+    (
+        "grafana.profiles.staging.url",
+        "https://g.example.test",
+        "grafana.profiles.staging.url",
+        "https://g.example.test",
+    ),
+    (
+        "grafana.profiles.staging.type",
+        "grafana-enterprise",
+        "grafana.profiles.staging.type",
+        "grafana-enterprise",
+    ),
+    (
+        "grafana.profiles.staging.api_key",
+        "grafana/api_key",
+        "grafana.profiles.staging.api_key_secret",
+        "grafana/api_key",
+    ),
+    ("grafana.profiles.staging.org_id", "7", "grafana.profiles.staging.org_id", 7),
+    ("alerting.pagerduty.enabled", "false", "alerting.pagerduty.enabled", False),
+    (
+        "alerting.pagerduty.api_key",
+        "pagerduty/api_key",
+        "alerting.pagerduty.api_key_secret",
+        "pagerduty/api_key",
+    ),
+    (
+        "alerting.pagerduty.escalation_policy",
+        "P123",
+        "alerting.pagerduty.default_escalation_policy",
+        "P123",
+    ),
+    ("alerting.slack.enabled", "false", "alerting.slack.enabled", False),
+    (
+        "alerting.slack.webhook_url",
+        "slack/webhook_url",
+        "alerting.slack.webhook_url_secret",
+        "slack/webhook_url",
+    ),
+    ("alerting.slack.channel", "#on-call", "alerting.slack.default_channel", "#on-call"),
+]
+assert DOCUMENTED_KEYS
+
+
+def _leaves(value, prefix=""):
+    """Flatten nested dicts to {dotted.path: leaf}."""
+    if not isinstance(value, dict):
+        return {prefix: value}
+    flat = {}
+    for key, inner in value.items():
+        flat.update(_leaves(inner, f"{prefix}.{key}" if prefix else key))
+    return flat
 
 
 class TestEverySettableKeyChangesTheSavedConfig:
-    @pytest.mark.parametrize("key", SETTABLE_KEYS)
-    def test_the_key_is_accepted_and_the_change_is_read_back(self, key, config_file):
-        before = load_config(config_file)
-        # slack and pagerduty start enabled, so "false" is a change
-        value = A_VALUE_FOR[key.rsplit(".", 1)[1]]
+    @pytest.mark.parametrize(
+        ("key", "value", "saved_at", "saved_as"),
+        DOCUMENTED_KEYS,
+        ids=[entry[0] for entry in DOCUMENTED_KEYS],
+    )
+    def test_the_value_lands_in_its_own_field_and_nowhere_else(
+        self, key, value, saved_at, saved_as, config_file
+    ):
+        before = _leaves(load_config(config_file, strict=True).to_dict())
+        # the entry is only meaningful if it is a change
+        assert before.get(saved_at) != saved_as
 
         assert config_set_command(key, value) == 0
 
-        assert load_config(config_file, strict=True) != before
+        after = _leaves(load_config(config_file, strict=True).to_dict())
+        assert after[saved_at] == saved_as
+        # A profile key creates the `staging` profile, whose other fields are
+        # new too. Everything outside that profile and the field itself must
+        # be what it was.
+        section = key.split(".", 1)[0]
+        elsewhere = [
+            path
+            for path in before | after
+            if path != saved_at and not path.startswith(f"{section}.profiles.staging.")
+        ]
+        assert {path: after.get(path) for path in elsewhere} == {
+            path: before.get(path) for path in elsewhere
+        }
+
+    def test_the_documented_keys_are_exactly_the_settable_ones(self):
+        documented = {key.replace(".staging.", ".<name>.") for key, *_ in DOCUMENTED_KEYS}
+
+        assert documented == set(_settable_keys())
+
+    def test_a_refused_value_does_not_add_the_profile_it_named(self):
+        config = IntegrationConfig.default()
+
+        with pytest.raises(ValueError):
+            _resolve_set_key("prometheus.profiles.fresh.type")(config, "victoria")
+
+        assert "fresh" not in config.prometheus.profiles
 
     def test_without_a_file_the_value_is_saved_to_the_home_config(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)

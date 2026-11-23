@@ -5,6 +5,9 @@ import importlib
 import json
 import pathlib
 import re
+import resource
+import subprocess
+import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -423,16 +426,21 @@ class TestInitCommandErrorHandling:
         assert result == 1
 
     def test_handles_file_write_error(self, tmp_path, monkeypatch):
-        """Test handling of file write errors."""
-        monkeypatch.chdir(tmp_path)
-        # Make directory read-only
-        (tmp_path / "my-api.yaml").write_text("")  # Create file first
-
-        with patch("pathlib.Path.write_text", side_effect=OSError("Permission denied")):
+        """A directory that refuses new files is reported, exit 1."""
+        workdir = tmp_path / "read-only"
+        workdir.mkdir()
+        monkeypatch.chdir(workdir)
+        workdir.chmod(0o555)
+        try:
+            # the state is only meaningful if the directory really refuses
+            with pytest.raises(OSError):
+                (workdir / "probe").touch()
             result = init_command("new-api", "my-team", interactive=False)
+        finally:
+            workdir.chmod(0o755)
 
-        # Should handle the error
         assert result == 1
+        assert list(workdir.iterdir()) == []
 
     def test_handles_directory_creation_error(self, tmp_path, monkeypatch):
         """Test handling of .nthlayer directory creation errors."""
@@ -1452,8 +1460,8 @@ class TestWritesAreExplicitlyUtf8:
             # A method call (`path.write_text`, `io.open`) OR the bare `open()`
             # builtin. The first version read only `.attr`, which is None for a
             # plain Name call, so a bare `open("x")` without encoding= passed
-            # untouched -- and bare `open()` is this repo's dominant idiom,
-            # roughly 40 sites, so it is the likeliest future form.
+            # untouched. The whole package is held to the same rule by
+            # tests/test_text_io_encoding.py (opensrm-may6).
             if isinstance(node.func, ast.Attribute):
                 name = node.func.attr
                 # `os.open` returns a file DESCRIPTOR and takes no encoding, so
@@ -1510,52 +1518,198 @@ class TestAFailedWriteLeavesNothingBehind:
     """opensrm-t4rd defect 3's rollback half, which was missing.
 
     A partial failure must not leave an artifact that blocks the next run.
+    Since opensrm-may6 the manifest is created with mode "x", so the failure
+    of interest is a write that fails after the create has succeeded.
     """
 
-    @staticmethod
-    def _raise_after_creating(exc):
-        """Mimic `write_text`: create the file, then fail encoding it."""
-        real = pathlib.Path.write_text
+    # Runs init in a child whose file-size limit is zero: the "x" create
+    # succeeds and the write is then refused by the kernel (EFBIG). A real
+    # failure after a real create, with nothing patched.
+    _CHILD = (
+        "import sys\n"
+        "from nthlayer_generate.cli.init import init_command\n"
+        "sys.exit(init_command('svc', 'ops', None, interactive=False))\n"
+    )
 
-        def fake(self, *args, **kwargs):
-            if self.name == "svc.yaml":
-                self.touch()
+    @staticmethod
+    def _no_file_may_grow():
+        _soft, hard = resource.getrlimit(resource.RLIMIT_FSIZE)
+        resource.setrlimit(resource.RLIMIT_FSIZE, (0, hard))
+
+    def _run_init_unable_to_write(self, cwd):
+        return subprocess.run(
+            [sys.executable, "-c", self._CHILD],
+            cwd=cwd,
+            preexec_fn=self._no_file_may_grow,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+
+    def test_a_write_the_kernel_refuses_leaves_no_manifest(self, tmp_path):
+        done = self._run_init_unable_to_write(tmp_path)
+
+        assert done.returncode == 1, done.stderr
+        manifest = tmp_path / "svc.yaml"
+        assert not manifest.exists() and not manifest.is_symlink(), (
+            "a failed run left a partial manifest, which the exists() guard "
+            "turns into a permanent refusal"
+        )
+        assert not (tmp_path / ".nthlayer").exists()
+
+    def test_a_rerun_after_a_failed_write_succeeds(self, tmp_path, monkeypatch):
+        """The property that made the zero-byte file unrecoverable."""
+        assert self._run_init_unable_to_write(tmp_path).returncode == 1
+
+        monkeypatch.chdir(tmp_path)
+        assert init_command("svc", "ops", None, interactive=False) == 0
+        assert (tmp_path / "svc.yaml").stat().st_size > 0
+
+    @staticmethod
+    def _create_then_fail_the_write(exc):
+        """Stand in for `open`: really create the file, then fail writing it."""
+
+        class _FailsOnWrite:
+            def __init__(self, handle):
+                self._handle = handle
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc_info):
+                self._handle.close()
+                return False
+
+            def write(self, _text):
                 raise exc
-            return real(self, *args, **kwargs)
+
+        def fake(path, mode="r", **kwargs):
+            handle = open(path, mode, **kwargs)
+            if pathlib.Path(path).name == "svc.yaml":
+                return _FailsOnWrite(handle)
+            return handle
 
         return fake
 
+    # UnicodeError cannot be provoked for real here: the encoding is fixed at
+    # UTF-8 and the YAML emitter escapes what UTF-8 cannot carry. The handler
+    # still names it, so the pair is driven through a stand-in `open`.
     @pytest.mark.parametrize(
         "exc",
         [
-            UnicodeEncodeError("ascii", "x", 0, 1, "simulated"),
+            UnicodeEncodeError("utf-8", "x", 0, 1, "simulated"),
             OSError(28, "No space left on device"),
         ],
+        ids=["unicode-error", "os-error"],
     )
     def test_exit_1_and_no_partial_manifest(self, exc, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
 
-        with patch.object(pathlib.Path, "write_text", self._raise_after_creating(exc)):
-            assert init_command("svc", "ops", None, interactive=False) == 1
-
-        assert not (tmp_path / "svc.yaml").exists(), (
-            "a failed run left a partial manifest, which the exists() guard "
-            "turns into a permanent refusal"
-        )
-
-    def test_a_rerun_after_a_failed_write_succeeds(self, tmp_path, monkeypatch):
-        """The property that made the zero-byte file unrecoverable."""
-        monkeypatch.chdir(tmp_path)
-
-        with patch.object(
-            pathlib.Path,
-            "write_text",
-            self._raise_after_creating(UnicodeEncodeError("ascii", "x", 0, 1, "s")),
+        with patch(
+            "nthlayer_generate.cli.init.open",
+            self._create_then_fail_the_write(exc),
+            create=True,
         ):
             assert init_command("svc", "ops", None, interactive=False) == 1
 
+        assert not (tmp_path / "svc.yaml").exists()
+
+
+# What may already sit at the manifest path. `make` builds the state and
+# returns the files that must be untouched afterwards, as {path: content}.
+def _a_dangling_symlink(root):
+    (root / "svc.yaml").symlink_to(root / "elsewhere" / "target.yaml")
+    return {}
+
+
+def _a_symlink_to_a_file(root):
+    (root / "real.yaml").write_text("mine: true\n", encoding="utf-8")
+    (root / "svc.yaml").symlink_to(root / "real.yaml")
+    return {root / "real.yaml": "mine: true\n"}
+
+
+def _a_symlink_to_a_missing_file_in_this_directory(root):
+    (root / "svc.yaml").symlink_to(root / "target.yaml")
+    return {}
+
+
+SYMLINKS_AT_THE_MANIFEST_PATH = [
+    pytest.param(_a_dangling_symlink, id="dangling-into-a-missing-directory"),
+    pytest.param(_a_symlink_to_a_missing_file_in_this_directory, id="dangling-into-this-directory"),
+    pytest.param(_a_symlink_to_a_file, id="to-an-existing-file"),
+]
+assert SYMLINKS_AT_THE_MANIFEST_PATH
+
+
+class TestManifestCreateIsAtomic:
+    """opensrm-may6: the guard-then-write became one create-or-fail step.
+
+    `exists()` is False for a dangling symlink, so the old `write_text` wrote
+    THROUGH it, creating its target; and a file that appeared between the
+    guard and the write was truncated. Mode "x" refuses both.
+    """
+
+    @pytest.mark.parametrize("make", SYMLINKS_AT_THE_MANIFEST_PATH)
+    def test_a_symlink_is_refused_and_left_exactly_as_it_was(self, make, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        untouched = make(tmp_path)
+        link = tmp_path / "svc.yaml"
+        points_at = link.readlink()
+        before = sorted(p.name for p in tmp_path.iterdir())
+
+        assert init_command("svc", "ops", None, interactive=False) == 1
+
+        assert link.is_symlink() and link.readlink() == points_at
+        assert sorted(p.name for p in tmp_path.iterdir()) == before, (
+            "init wrote through the symlink or left something behind"
+        )
+        for path, content in untouched.items():
+            assert path.read_text(encoding="utf-8") == content
+
+    def test_a_dangling_symlink_is_named_as_one(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        _a_dangling_symlink(tmp_path)
+
+        with patch("nthlayer_generate.cli.init.error") as reported:
+            assert init_command("svc", "ops", None, interactive=False) == 1
+
+        (message,) = [call.args[0] for call in reported.call_args_list]
+        assert message == "svc.yaml already exists (a symbolic link whose target is missing)"
+
+    def test_a_file_that_appears_after_the_guard_is_not_truncated(self, tmp_path, monkeypatch):
+        """Another process wins the race between `exists()` and the create."""
+        monkeypatch.chdir(tmp_path)
+        theirs = tmp_path / "svc.yaml"
+        real_generate = _generate_service_yaml_v2
+
+        def generate_while_someone_else_creates_the_file(*args, **kwargs):
+            # content generation is the step between the guard and the create
+            assert not theirs.exists()
+            theirs.write_text("theirs: true\n", encoding="utf-8")
+            return real_generate(*args, **kwargs)
+
+        with (
+            patch(
+                "nthlayer_generate.cli.init._generate_service_yaml_v2",
+                generate_while_someone_else_creates_the_file,
+            ),
+            patch("nthlayer_generate.cli.init.error") as reported,
+        ):
+            assert init_command("svc", "ops", None, interactive=False) == 1
+
+        assert theirs.read_text(encoding="utf-8") == "theirs: true\n"
+        assert [call.args[0] for call in reported.call_args_list] == ["svc.yaml already exists"]
+        assert not (tmp_path / ".nthlayer").exists()
+
+    def test_a_fresh_path_is_created_with_the_manifest(self, tmp_path, monkeypatch):
+        """The control: the same call on an empty directory writes the file."""
+        monkeypatch.chdir(tmp_path)
+
         assert init_command("svc", "ops", None, interactive=False) == 0
-        assert (tmp_path / "svc.yaml").stat().st_size > 0
+
+        written = tmp_path / "svc.yaml"
+        assert written.is_file() and not written.is_symlink()
+        assert yaml.safe_load(written.read_text(encoding="utf-8"))["service"]["name"] == "svc"
 
 
 class TestConfigFileShapes:

@@ -193,7 +193,7 @@ nthlayer init payment-api --team payments --template critical-api
 
 Custom templates are discovered alongside these; `nthlayer list-templates` shows the full set for your project.
 
-A custom template file must declare `name`, `description`, `tier` and `type`, each as a string. YAML reads an unquoted `on`, `yes`, `no`, `true`, `false`, `null`, a bare number or a date as something else, so quote such a value (`name: "on"`). A file with a missing, non-string or blank field is skipped with a warning naming the file and the field, and the other templates still load.
+A custom template file is read as UTF-8. It must declare `name`, `description`, `tier` and `type`, each as a string. YAML reads an unquoted `on`, `yes`, `no`, `true`, `false`, `null`, a bare number or a date as something else, so quote such a value (`name: "on"`). A file with a missing, non-string or blank field is skipped with a warning naming the file and the field, and the other templates still load.
 
 ## Non-Interactive Mode
 

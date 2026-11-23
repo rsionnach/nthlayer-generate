@@ -78,7 +78,7 @@ def generate_sloth_from_manifest(
         output_dir.mkdir(parents=True, exist_ok=True)
 
         output_file = output_dir / f"{manifest.name}.yaml"
-        with open(output_file, "w") as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             yaml.dump(sloth_spec, f, sort_keys=False, default_flow_style=False)
 
         return SlothGenerationResult(

@@ -440,7 +440,7 @@ def migrate_command(
     # Write output file
     try:
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w") as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(yaml_output)
     except Exception as e:
         error(f"Failed to write {output_path}: {e}")

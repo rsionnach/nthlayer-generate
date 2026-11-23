@@ -273,7 +273,7 @@ def _push_to_mimir_ruler(output_dir: Path, service_name: str, verbose: bool = Fa
         console.print(f"  [dim]Tenant: {tenant_id}[/dim]")
 
     # Read alerts YAML
-    rules_yaml = alerts_file.read_text()
+    rules_yaml = alerts_file.read_text(encoding="utf-8")
 
     # Create provider and push
     provider = MimirRulerProvider(

@@ -116,7 +116,7 @@ def generate_dashboard_command(
         # Write to file
         log(f"Writing dashboard to {output_path}...")
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(json_str)
+        output_path.write_text(json_str, encoding="utf-8")
 
         log("")
         log("Dashboard generated successfully!")

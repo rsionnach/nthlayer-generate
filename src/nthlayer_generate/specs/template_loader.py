@@ -78,7 +78,7 @@ class TemplateLoader:
         if not path.exists():
             raise FileNotFoundError(f"Template file not found: {path}")
 
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
 
         if not data:

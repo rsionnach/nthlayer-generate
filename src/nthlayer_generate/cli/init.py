@@ -197,11 +197,7 @@ def init_command(
     # Create service file
     service_file = Path(f"{service_name}.yaml")
     if service_file.exists():
-        console.print()
-        error(f"{service_file} already exists")
-        console.print(
-            "   [muted]Remove the existing file or choose a different service name[/muted]"
-        )
+        _report_existing_service_file(service_file)
         return 1
 
     # Generate service YAML content
@@ -209,19 +205,32 @@ def init_command(
         service_name, team, tier, service_type, dependencies, template_obj
     )
 
-    # encoding="utf-8" explicitly, and UnicodeError caught alongside OSError
-    # (opensrm-t4rd edge-case pass). Without the encoding, `write_text` uses the
-    # locale's, so on a non-UTF-8 system an ordinary accented team name raised
-    # UnicodeEncodeError -- which is a ValueError, NOT an OSError, so the handler
-    # below missed it and init died by traceback. Worse, `write_text` had already
-    # created the file, so a ZERO-BYTE manifest was left behind and every later
-    # run then hit the `exists()` guard above and refused, permanently, until
-    # someone deleted it by hand.
+    # Mode "x" makes create-or-fail one atomic step (opensrm-may6). The
+    # `exists()` guard above is only the early, friendly path: a file that
+    # appears after it, or a dangling symlink (for which `exists()` is False),
+    # is refused here instead of being truncated or written through.
     #
-    # The unlink is the rollback half of this bead's defect 3: a run that fails
-    # must not leave a partial artifact that blocks the next one.
+    # encoding="utf-8" explicitly, and UnicodeError caught alongside OSError
+    # (opensrm-t4rd): with the locale's encoding an accented team name raised
+    # UnicodeEncodeError, which is a ValueError, and left a zero-byte manifest
+    # that blocked every later run.
+    #
+    # Rollback: a run that fails must not leave a partial manifest, and must
+    # remove only what it made. The create and the write are separate steps so
+    # the unlink is reachable only after "x" has succeeded: it can never take
+    # a file or symlink that was already there.
     try:
-        service_file.write_text(service_content, encoding="utf-8")
+        handle = open(service_file, "x", encoding="utf-8")
+    except FileExistsError:
+        _report_existing_service_file(service_file)
+        return 1
+    except OSError as e:
+        error(f"Error creating service file: {e}")
+        return 1
+
+    try:
+        with handle:
+            handle.write(service_content)
     except (OSError, UnicodeError) as e:
         error(f"Error creating service file: {e}")
         try:
@@ -311,6 +320,21 @@ def init_command(
 # leading whitespace, and anything non-ASCII. Matching it is necessary but NOT
 # sufficient — see `_emits_as_same_string`.
 _PLAIN_SCALAR_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9 ._-]*")
+
+
+def _report_existing_service_file(service_file: Path) -> None:
+    """Say why init will not write ``service_file``: something is already there.
+
+    A symlink that does not resolve (its target is missing, or it loops) is
+    named as one, because ``exists()`` is False for it and "already exists"
+    alone would not explain the refusal.
+    """
+    console.print()
+    if service_file.is_symlink() and not service_file.exists():
+        error(f"{service_file} already exists (a symbolic link that does not resolve)")
+    else:
+        error(f"{service_file} already exists")
+    console.print("   [muted]Remove the existing file or choose a different service name[/muted]")
 
 
 def _yaml_scalar(value: object) -> str:

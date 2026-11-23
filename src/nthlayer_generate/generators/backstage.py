@@ -122,7 +122,7 @@ def generate_backstage_entity(
         output_dir.mkdir(parents=True, exist_ok=True)
 
         output_file = output_dir / "backstage.json"
-        with open(output_file, "w") as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             json.dump(entity, f, indent=2)
 
         return BackstageGenerationResult(
@@ -162,7 +162,7 @@ def generate_backstage_from_manifest(
         output_dir.mkdir(parents=True, exist_ok=True)
 
         output_file = output_dir / "backstage.json"
-        with open(output_file, "w") as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             json.dump(entity, f, indent=2)
 
         return BackstageGenerationResult(

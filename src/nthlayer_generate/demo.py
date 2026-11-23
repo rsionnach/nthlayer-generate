@@ -76,7 +76,7 @@ def _default_org_id() -> int | None:
 
 def load_demo_data() -> dict[str, Any]:
     try:
-        with open("tests/fixtures/demo_data.yaml") as f:
+        with open("tests/fixtures/demo_data.yaml", encoding="utf-8") as f:
             return yaml.safe_load(f)
     except FileNotFoundError:
         logger.error("Demo data not found. Run from project root.")

@@ -195,7 +195,7 @@ class ConfigLoader:
         """Load secrets configuration."""
         if self.config_path and self.config_path.exists():
             try:
-                with open(self.config_path) as f:
+                with open(self.config_path, encoding="utf-8") as f:
                     data = yaml.safe_load(f) or {}
                 return self._parse_secrets_config(data.get("secrets", {}))
             except Exception as e:
@@ -206,7 +206,7 @@ class ConfigLoader:
     def _load_from_file(self, path: Path) -> IntegrationConfig:
         """Load config from YAML file."""
         try:
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
 
             logger.debug("loaded_config", path=str(path))
@@ -263,7 +263,7 @@ class ConfigLoader:
         target_path = path or self.config_path or (Path.home() / ".nthlayer" / "config.yaml")
         target_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(target_path, "w") as f:
+        with open(target_path, "w", encoding="utf-8") as f:
             yaml.dump(config.to_dict(), f, default_flow_style=False, sort_keys=False)
 
         logger.info("saved_config", path=str(target_path))

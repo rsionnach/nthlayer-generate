@@ -55,7 +55,7 @@ def validate_spec_command(
         service_files = []
         for f in files:
             try:
-                content = f.read_text()
+                content = f.read_text(encoding="utf-8")
                 if "service:" in content and "resources:" in content:
                     service_files.append(f)
             except Exception:

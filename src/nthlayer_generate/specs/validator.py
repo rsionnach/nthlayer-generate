@@ -202,7 +202,7 @@ def validate_service_file(
     import yaml
 
     try:
-        with open(file_path) as f:
+        with open(file_path, encoding="utf-8") as f:
             raw_data = yaml.safe_load(f)
     except Exception as e:
         return ValidationResult(

@@ -57,7 +57,9 @@ def _mode_of(call: ast.Call) -> str | None:
     if len(call.args) > position:
         value = call.args[position]
         if isinstance(value, ast.Constant) and isinstance(value.value, str):
-            return value.value
+            # `io.open(path)` and `codecs.open(path)` take the path first, so
+            # a literal here is a mode only if it is spelled like one.
+            return value.value if set(value.value) <= set("rwxabt+") else None
     return None
 
 
@@ -109,6 +111,8 @@ FLAGGED = [
     pytest.param("tempfile.NamedTemporaryFile('w')\n", id="text-temporary-file"),
     pytest.param("tempfile.NamedTemporaryFile(mode='w+')\n", id="text-temporary-file-keyword"),
     pytest.param("open(p, mode)\n", id="mode-not-a-literal"),
+    pytest.param("io.open('db.yaml')\n", id="io-open-with-a-literal-path"),
+    pytest.param("codecs.open('table.yaml', 'w')\n", id="codecs-open-with-a-literal-path"),
 ]
 assert FLAGGED
 

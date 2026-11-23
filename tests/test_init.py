@@ -1689,6 +1689,16 @@ class TestManifestCreateIsAtomic:
         (message,) = [call.args[0] for call in reported.call_args_list]
         assert message == "svc.yaml already exists (a symbolic link that does not resolve)"
 
+    def test_a_symlink_to_an_existing_file_gets_the_plain_message(self, tmp_path, monkeypatch):
+        """Only a link that does not resolve is described as one."""
+        monkeypatch.chdir(tmp_path)
+        _a_symlink_to_a_file(tmp_path)
+
+        with patch("nthlayer_generate.cli.init.error") as reported:
+            assert init_command("svc", "ops", None, interactive=False) == 1
+
+        assert [call.args[0] for call in reported.call_args_list] == ["svc.yaml already exists"]
+
     def test_a_file_that_appears_after_the_guard_is_not_truncated(self, tmp_path, monkeypatch):
         """Another process wins the race between `exists()` and the create."""
         monkeypatch.chdir(tmp_path)

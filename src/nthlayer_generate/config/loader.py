@@ -176,6 +176,39 @@ def get_credentials_path() -> Path:
     return Path.home() / ".nthlayer" / "credentials.yaml"
 
 
+class _ConfigLoader(yaml.SafeLoader):
+    """The safe loader, plus the two tags the old ``save`` wrote.
+
+    Until opensrm-p520, ``save`` wrote each profile's ``type`` as
+    ``!!python/object/apply:...PrometheusType [prometheus]``, which the safe
+    loader refuses, so every saved config fell back to the defaults on load.
+    Those files are still on disk. The two tags below are read as the plain
+    string they carry; no object is constructed and every other python tag is
+    refused as before.
+    """
+
+
+_LEGACY_ENUM_TAGS = (
+    "tag:yaml.org,2002:python/object/apply:nthlayer_generate.config.integrations.PrometheusType",
+    "tag:yaml.org,2002:python/object/apply:nthlayer_generate.config.integrations.GrafanaType",
+)
+
+
+def _construct_legacy_enum_value(loader: yaml.SafeLoader, node: yaml.Node) -> str:
+    """Return the one string argument of a legacy enum tag."""
+    # construct_sequence raises ConstructorError for a scalar or a mapping
+    values = loader.construct_sequence(node)  # type: ignore[arg-type]
+    if len(values) != 1 or not isinstance(values[0], str):
+        raise yaml.constructor.ConstructorError(
+            None, None, "expected a one-item sequence under a legacy enum tag", node.start_mark
+        )
+    return values[0]
+
+
+for _tag in _LEGACY_ENUM_TAGS:
+    _ConfigLoader.add_constructor(_tag, _construct_legacy_enum_value)
+
+
 class ConfigLoader:
     """
     Loads and merges configuration from multiple sources.
@@ -196,7 +229,7 @@ class ConfigLoader:
         if self.config_path and self.config_path.exists():
             try:
                 with open(self.config_path, encoding="utf-8") as f:
-                    data = yaml.safe_load(f) or {}
+                    data = yaml.load(f, Loader=_ConfigLoader) or {}
                 return self._parse_secrets_config(data.get("secrets", {}))
             except Exception as e:
                 logger.warning("failed_to_load_secrets_config", error=str(e))
@@ -207,7 +240,7 @@ class ConfigLoader:
         """Load config from YAML file."""
         try:
             with open(path, encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
+                data = yaml.load(f, Loader=_ConfigLoader) or {}
 
             logger.debug("loaded_config", path=str(path))
             return IntegrationConfig.from_dict(data)
@@ -263,8 +296,14 @@ class ConfigLoader:
         target_path = path or self.config_path or (Path.home() / ".nthlayer" / "config.yaml")
         target_path.parent.mkdir(parents=True, exist_ok=True)
 
+        # safe_dump, and before the file is opened: it keeps a new file free of
+        # python tags, which load() refuses (apart from the two legacy ones
+        # _ConfigLoader reads). A value only the full dumper can write must
+        # fail here, loudly and without truncating the existing file
+        # (opensrm-p520).
+        text = yaml.safe_dump(config.to_dict(), default_flow_style=False, sort_keys=False)
         with open(target_path, "w", encoding="utf-8") as f:
-            yaml.dump(config.to_dict(), f, default_flow_style=False, sort_keys=False)
+            f.write(text)
 
         logger.info("saved_config", path=str(target_path))
 

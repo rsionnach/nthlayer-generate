@@ -11,6 +11,8 @@ from pathlib import Path
 
 import yaml
 
+from nthlayer_generate.config.loader import read_config_mapping
+
 
 @dataclass
 class ErrorBudgetConfig:
@@ -68,8 +70,9 @@ class NthLayerConfig:
     @classmethod
     def _load_from_file(cls, path: Path) -> NthLayerConfig:
         """Load config from YAML file."""
-        with open(path, encoding="utf-8") as f:
-            data = yaml.safe_load(f) or {}
+        # the same reader as the integration config, which shares this file:
+        # it also reads a file an earlier version saved (opensrm-p520)
+        data = read_config_mapping(path)
         
         error_budget_data = data.get("error_budget", {})
         

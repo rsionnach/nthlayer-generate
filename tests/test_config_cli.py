@@ -7,9 +7,7 @@ from unittest.mock import MagicMock, patch
 
 from nthlayer_generate.config.cli import (
     REQUIRED_SECRETS,
-    _set_alerting_config,
-    _set_grafana_config,
-    _set_prometheus_config,
+    _resolve_set_key,
     config_init_command,
     config_set_command,
     config_show_command,
@@ -252,110 +250,110 @@ class TestConfigSetCommand:
 
 
 class TestSetPrometheusConfig:
-    """Tests for _set_prometheus_config helper."""
+    """Prometheus keys, applied through _resolve_set_key."""
 
     def test_set_default(self):
         """Sets default prometheus profile."""
         config = IntegrationConfig.default()
-        _set_prometheus_config(config, "default", "staging")
+        _resolve_set_key("prometheus.default")(config, "staging")
         assert config.prometheus.default == "staging"
 
     def test_set_profile_url(self):
         """Sets profile URL."""
         config = IntegrationConfig.default()
-        _set_prometheus_config(config, "profiles.prod.url", "https://prometheus.prod.com")
+        _resolve_set_key("prometheus.profiles.prod.url")(config, "https://prometheus.prod.com")
         assert config.prometheus.profiles["prod"].url == "https://prometheus.prod.com"
 
     def test_set_profile_type(self):
         """Sets profile type."""
         config = IntegrationConfig.default()
-        _set_prometheus_config(config, "profiles.prod.type", "mimir")
+        _resolve_set_key("prometheus.profiles.prod.type")(config, "mimir")
         assert config.prometheus.profiles["prod"].type == PrometheusType.MIMIR
 
     def test_set_profile_username(self):
         """Sets profile username."""
         config = IntegrationConfig.default()
-        _set_prometheus_config(config, "profiles.prod.username", "admin")
+        _resolve_set_key("prometheus.profiles.prod.username")(config, "admin")
         assert config.prometheus.profiles["prod"].username == "admin"
 
     def test_set_profile_password(self):
         """Sets profile password secret."""
         config = IntegrationConfig.default()
-        _set_prometheus_config(config, "profiles.prod.password", "prometheus/secret")
+        _resolve_set_key("prometheus.profiles.prod.password")(config, "prometheus/secret")
         assert config.prometheus.profiles["prod"].password_secret == "prometheus/secret"
 
 
 class TestSetGrafanaConfig:
-    """Tests for _set_grafana_config helper."""
+    """Grafana keys, applied through _resolve_set_key."""
 
     def test_set_default(self):
         """Sets default grafana profile."""
         config = IntegrationConfig.default()
-        _set_grafana_config(config, "default", "staging")
+        _resolve_set_key("grafana.default")(config, "staging")
         assert config.grafana.default == "staging"
 
     def test_set_profile_url(self):
         """Sets profile URL."""
         config = IntegrationConfig.default()
-        _set_grafana_config(config, "profiles.prod.url", "https://grafana.prod.com")
+        _resolve_set_key("grafana.profiles.prod.url")(config, "https://grafana.prod.com")
         assert config.grafana.profiles["prod"].url == "https://grafana.prod.com"
 
     def test_set_profile_type(self):
         """Sets profile type."""
         config = IntegrationConfig.default()
-        _set_grafana_config(config, "profiles.prod.type", "grafana-cloud")
+        _resolve_set_key("grafana.profiles.prod.type")(config, "grafana-cloud")
         assert config.grafana.profiles["prod"].type == GrafanaType.GRAFANA_CLOUD
 
     def test_set_profile_api_key(self):
         """Sets profile API key secret."""
         config = IntegrationConfig.default()
-        _set_grafana_config(config, "profiles.prod.api_key", "grafana/api_key")
+        _resolve_set_key("grafana.profiles.prod.api_key")(config, "grafana/api_key")
         assert config.grafana.profiles["prod"].api_key_secret == "grafana/api_key"
 
     def test_set_profile_org_id(self):
         """Sets profile org ID."""
         config = IntegrationConfig.default()
-        _set_grafana_config(config, "profiles.prod.org_id", "42")
+        _resolve_set_key("grafana.profiles.prod.org_id")(config, "42")
         assert config.grafana.profiles["prod"].org_id == 42
 
 
 class TestSetAlertingConfig:
-    """Tests for _set_alerting_config helper."""
+    """Alerting keys, applied through _resolve_set_key."""
 
     def test_set_pagerduty_enabled(self):
         """Sets pagerduty enabled."""
         config = IntegrationConfig.default()
-        _set_alerting_config(config, "pagerduty.enabled", "true")
+        _resolve_set_key("alerting.pagerduty.enabled")(config, "true")
         assert config.alerting.pagerduty.enabled is True
 
     def test_set_pagerduty_api_key(self):
         """Sets pagerduty API key secret."""
         config = IntegrationConfig.default()
-        _set_alerting_config(config, "pagerduty.api_key", "pagerduty/key")
+        _resolve_set_key("alerting.pagerduty.api_key")(config, "pagerduty/key")
         assert config.alerting.pagerduty.api_key_secret == "pagerduty/key"
 
     def test_set_pagerduty_escalation_policy(self):
         """Sets pagerduty escalation policy."""
         config = IntegrationConfig.default()
-        _set_alerting_config(config, "pagerduty.escalation_policy", "platform-oncall")
+        _resolve_set_key("alerting.pagerduty.escalation_policy")(config, "platform-oncall")
         assert config.alerting.pagerduty.default_escalation_policy == "platform-oncall"
 
     def test_set_slack_enabled(self):
         """Sets slack enabled."""
         config = IntegrationConfig.default()
-        _set_alerting_config(config, "slack.enabled", "yes")
+        _resolve_set_key("alerting.slack.enabled")(config, "yes")
         assert config.alerting.slack.enabled is True
 
     def test_set_slack_webhook(self):
         """Sets slack webhook secret."""
         config = IntegrationConfig.default()
-        _set_alerting_config(config, "slack.webhook_url", "slack/webhook")
+        _resolve_set_key("alerting.slack.webhook_url")(config, "slack/webhook")
         assert config.alerting.slack.webhook_url_secret == "slack/webhook"
 
     def test_set_slack_channel(self):
         """Sets slack default channel."""
         config = IntegrationConfig.default()
-        _set_alerting_config(config, "slack.channel", "#engineering")
+        _resolve_set_key("alerting.slack.channel")(config, "#engineering")
         assert config.alerting.slack.default_channel == "#engineering"
 
 

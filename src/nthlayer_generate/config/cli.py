@@ -218,6 +218,10 @@ def _resolve_set_key(key: str):
     Raises _ConfigSetError for a key that names nothing settable, so a typo is
     reported instead of being saved as a change that did not happen
     (opensrm-bkgi). Resolving the key touches no configuration.
+
+    The section (the part before the first dot) must be ``alerting`` or a key
+    of ``_PROFILE_SECTIONS``; ``config_set_command`` checks that first and has
+    its own message for it. Any other section raises KeyError here.
     """
     section, _, subkey = key.partition(".")
 
@@ -292,9 +296,11 @@ def config_set_command(key: str, value: str | None = None, secret: bool = False)
         print(str(e))
         return 1
 
-    # OSError: the file or its directory is not writable. RecursionError: a
-    # section this command keeps but does not manage is nested too deeply for
-    # the YAML writer. Both are raised before the file is opened for writing.
+    # RecursionError: a section this command keeps but does not manage is
+    # nested too deeply for the YAML writer; it is raised before the file is
+    # opened. OSError: usually the file or its directory is not writable, and
+    # the file is untouched; a write that fails part-way (a full disk) can
+    # still leave it truncated.
     try:
         save_config(config)
     except (OSError, RecursionError) as e:

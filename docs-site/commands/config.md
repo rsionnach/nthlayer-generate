@@ -99,6 +99,8 @@ Any other key, or a value the key does not take, is reported and the command exi
 
 `config set` rewrites the file. Sections it does not manage, such as `secrets:`, are kept; comments are not.
 
+Two things earlier versions accepted are now errors. An `enabled` value other than `true`, `1`, `yes`, `false`, `0` or `no` used to be read as false. A profile key with no field, such as `prometheus.profiles.staging`, used to create an empty profile; name a field to create one, for example `prometheus.profiles.staging.url`.
+
 ## Configuration File
 
 Located at `~/.nthlayer/config.yaml`:

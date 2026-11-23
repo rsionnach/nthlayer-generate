@@ -292,7 +292,14 @@ def config_set_command(key: str, value: str | None = None, secret: bool = False)
         print(str(e))
         return 1
 
-    save_config(config)
+    # OSError: the file or its directory is not writable. RecursionError: a
+    # section this command keeps but does not manage is nested too deeply for
+    # the YAML writer. Both are raised before the file is opened for writing.
+    try:
+        save_config(config)
+    except (OSError, RecursionError) as e:
+        print(f"Could not save the configuration: {e or type(e).__name__}")
+        return 1
     print(f"Updated {key}")
     return 0
 

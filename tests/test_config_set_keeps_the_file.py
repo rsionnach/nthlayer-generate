@@ -309,3 +309,70 @@ class TestTheErrorBudgetReaderSharesTheFile:
 
         assert loaded.error_budget.inherited_attribution is True
         assert loaded.error_budget.time_window_minutes == 15
+
+
+def _a_kept_section_the_writer_cannot_dump() -> str:
+    """A config whose `extra:` section loads but is nested too deeply to dump.
+
+    PyYAML's reader uses fewer stack frames per level than its writer, so
+    there is a band of depths that load and then raise RecursionError on
+    dump. The band depends on the interpreter's recursion limit, so it is
+    searched for here, against PyYAML itself, not assumed.
+    """
+    for depth in range(100, 3000, 50):
+        text = A_HAND_WRITTEN_CONFIG + "extra: " + "[" * depth + "]" * depth + "\n"
+        try:
+            data = yaml.safe_load(text)
+        except RecursionError:
+            break
+        try:
+            yaml.safe_dump(data)
+        except RecursionError:
+            return text
+    raise AssertionError("no nesting depth loads and then fails to dump; the fixture is void")
+
+
+class TestASaveThatFailsIsReported:
+    def test_a_kept_section_too_deep_to_write_exits_1_and_leaves_the_file_alone(self, config_file):
+        text = _a_kept_section_the_writer_cannot_dump()
+        config_file.write_text(text, encoding="utf-8")
+
+        assert config_set_command("alerting.slack.channel", "#on-call") == 1
+
+        assert config_file.read_text(encoding="utf-8") == text
+
+    def test_a_read_only_file_exits_1_and_leaves_the_file_alone(self, config_file):
+        config_file.chmod(0o444)
+        try:
+            # the state is only meaningful if the file really refuses writes
+            with pytest.raises(OSError):
+                config_file.open("a", encoding="utf-8")
+
+            assert config_set_command("alerting.slack.channel", "#on-call") == 1
+        finally:
+            config_file.chmod(0o644)
+
+        assert config_file.read_text(encoding="utf-8") == A_HAND_WRITTEN_CONFIG
+
+
+# Values in a kept section that YAML reads as something other than a string,
+# a number or a list: each must come back equal after `config set`.
+KEPT_SECTIONS_WITH_UNUSUAL_VALUES = [
+    pytest.param("extra:\n  since: 2024-05-01\n", id="a-date"),
+    pytest.param("extra:\n  1: one\n  true: yes\n", id="non-string-keys"),
+    pytest.param("extra:\n  blob: !!binary aGVsbG8=\n", id="binary"),
+    pytest.param("extra:\n  tags: !!set {a, b}\n", id="a-set"),
+    pytest.param("extra:\n  base: &b {x: 1}\n  copy: *b\n", id="an-alias"),
+]
+assert KEPT_SECTIONS_WITH_UNUSUAL_VALUES
+
+
+class TestAKeptSectionComesBackEqual:
+    @pytest.mark.parametrize("section", KEPT_SECTIONS_WITH_UNUSUAL_VALUES)
+    def test_its_values_survive_config_set(self, section, config_file):
+        config_file.write_text(A_HAND_WRITTEN_CONFIG + section, encoding="utf-8")
+        before = yaml.safe_load(section)["extra"]
+
+        assert config_set_command("alerting.slack.channel", "#on-call") == 0
+
+        assert yaml.safe_load(config_file.read_text(encoding="utf-8"))["extra"] == before

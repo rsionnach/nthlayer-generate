@@ -1633,12 +1633,24 @@ def _a_symlink_to_a_missing_file_in_this_directory(root):
     return {}
 
 
+def _a_symlink_to_itself(root):
+    (root / "svc.yaml").symlink_to(root / "svc.yaml")
+    return {}
+
+
 SYMLINKS_AT_THE_MANIFEST_PATH = [
+    pytest.param(_a_symlink_to_itself, id="a-loop"),
     pytest.param(_a_dangling_symlink, id="dangling-into-a-missing-directory"),
     pytest.param(_a_symlink_to_a_missing_file_in_this_directory, id="dangling-into-this-directory"),
     pytest.param(_a_symlink_to_a_file, id="to-an-existing-file"),
 ]
 assert SYMLINKS_AT_THE_MANIFEST_PATH
+
+UNRESOLVABLE_SYMLINKS = [
+    pytest.param(_a_dangling_symlink, id="dangling"),
+    pytest.param(_a_symlink_to_itself, id="a-loop"),
+]
+assert UNRESOLVABLE_SYMLINKS
 
 
 class TestManifestCreateIsAtomic:
@@ -1666,15 +1678,16 @@ class TestManifestCreateIsAtomic:
         for path, content in untouched.items():
             assert path.read_text(encoding="utf-8") == content
 
-    def test_a_dangling_symlink_is_named_as_one(self, tmp_path, monkeypatch):
+    @pytest.mark.parametrize("make", UNRESOLVABLE_SYMLINKS)
+    def test_a_symlink_that_does_not_resolve_is_named_as_one(self, make, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
-        _a_dangling_symlink(tmp_path)
+        make(tmp_path)
 
         with patch("nthlayer_generate.cli.init.error") as reported:
             assert init_command("svc", "ops", None, interactive=False) == 1
 
         (message,) = [call.args[0] for call in reported.call_args_list]
-        assert message == "svc.yaml already exists (a symbolic link whose target is missing)"
+        assert message == "svc.yaml already exists (a symbolic link that does not resolve)"
 
     def test_a_file_that_appears_after_the_guard_is_not_truncated(self, tmp_path, monkeypatch):
         """Another process wins the race between `exists()` and the create."""

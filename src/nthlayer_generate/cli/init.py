@@ -325,12 +325,13 @@ _PLAIN_SCALAR_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9 ._-]*")
 def _report_existing_service_file(service_file: Path) -> None:
     """Say why init will not write ``service_file``: something is already there.
 
-    A dangling symlink is named as one, because ``ls`` and ``exists()`` both
-    suggest the path is free and "already exists" alone would not explain it.
+    A symlink that does not resolve (its target is missing, or it loops) is
+    named as one, because ``exists()`` is False for it and "already exists"
+    alone would not explain the refusal.
     """
     console.print()
     if service_file.is_symlink() and not service_file.exists():
-        error(f"{service_file} already exists (a symbolic link whose target is missing)")
+        error(f"{service_file} already exists (a symbolic link that does not resolve)")
     else:
         error(f"{service_file} already exists")
     console.print("   [muted]Remove the existing file or choose a different service name[/muted]")

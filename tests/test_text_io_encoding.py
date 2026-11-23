@@ -63,6 +63,14 @@ def _mode_of(call: ast.Call) -> str | None:
     return None
 
 
+def _names_an_encoding(keyword: ast.keyword) -> bool:
+    """True for ``encoding=<anything but a literal None>``; None is the locale's."""
+    if keyword.arg != "encoding":
+        return False
+    value = keyword.value
+    return not (isinstance(value, ast.Constant) and value.value is None)
+
+
 def text_io_without_encoding(source: str) -> tuple[list[int], int]:
     """Lines of text-IO calls with no ``encoding=``, and how many calls were seen.
 
@@ -95,7 +103,7 @@ def text_io_without_encoding(source: str) -> tuple[list[int], int]:
         if name.endswith("TemporaryFile") and mode is None:
             continue  # binary by default
         seen += 1
-        if not any(keyword.arg == "encoding" for keyword in node.keywords):
+        if not any(_names_an_encoding(keyword) for keyword in node.keywords):
             offenders.append(node.lineno)
     return offenders, seen
 
@@ -111,6 +119,7 @@ FLAGGED = [
     pytest.param("tempfile.NamedTemporaryFile('w')\n", id="text-temporary-file"),
     pytest.param("tempfile.NamedTemporaryFile(mode='w+')\n", id="text-temporary-file-keyword"),
     pytest.param("open(p, mode)\n", id="mode-not-a-literal"),
+    pytest.param("open(p, encoding=None)\n", id="encoding-none-is-the-locale"),
     pytest.param("io.open('db.yaml')\n", id="io-open-with-a-literal-path"),
     pytest.param("codecs.open('table.yaml', 'w')\n", id="codecs-open-with-a-literal-path"),
 ]

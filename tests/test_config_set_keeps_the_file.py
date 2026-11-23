@@ -228,6 +228,8 @@ UNREADABLE_CONFIGS = [
         lambda path: path.write_bytes(b"prometheus:\n  default: caf\xe9\n"), id="not-utf-8"
     ),
     pytest.param(_text("url: !!python/object/apply:os.getcwd []\n"), id="a-python-tag"),
+    # deep enough that PyYAML exhausts the stack (RecursionError, not YAMLError)
+    pytest.param(_text("a: " + "[" * 5000 + "]" * 5000 + "\n"), id="nested-too-deeply"),
     pytest.param(_a_directory, id="a-directory"),
 ]
 assert UNREADABLE_CONFIGS

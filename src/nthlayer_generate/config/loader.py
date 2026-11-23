@@ -222,7 +222,9 @@ def read_config_mapping(path: Path) -> dict[str, Any]:
     try:
         with open(path, encoding="utf-8") as f:
             data = yaml.load(f, Loader=_LegacyEnumSafeLoader)
-    except (OSError, UnicodeError, yaml.YAMLError) as e:
+    except (OSError, UnicodeError, yaml.YAMLError, RecursionError) as e:
+        # RecursionError: PyYAML recurses per nesting level, so a file nested
+        # a few thousand deep exhausts the stack instead of raising YAMLError
         raise ConfigLoadError(f"{path} could not be read: {e}") from e
     if data is None:
         return {}

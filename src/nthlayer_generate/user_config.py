@@ -68,7 +68,7 @@ class NthLayerConfig:
     @classmethod
     def _load_from_file(cls, path: Path) -> NthLayerConfig:
         """Load config from YAML file."""
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
         
         error_budget_data = data.get("error_budget", {})
@@ -94,7 +94,7 @@ class NthLayerConfig:
             },
         }
         
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
 

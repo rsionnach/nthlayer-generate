@@ -573,7 +573,7 @@ class MetadataValidator:
             return result
 
         try:
-            with open(file_path) as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = yaml.safe_load(f)
         except yaml.YAMLError as e:
             result.issues.append(

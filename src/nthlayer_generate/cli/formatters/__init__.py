@@ -65,7 +65,7 @@ def format_report(
     output = formatter(report)
 
     if output_file:
-        Path(output_file).write_text(output)
+        Path(output_file).write_text(output, encoding="utf-8")
 
     return output
 

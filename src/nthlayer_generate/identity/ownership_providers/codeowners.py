@@ -66,7 +66,7 @@ class CODEOWNERSProvider(BaseOwnershipProvider):
             full_path = root / path
             if full_path.exists():
                 self._codeowners_path = str(path)
-                return full_path.read_text()
+                return full_path.read_text(encoding="utf-8")
 
         return None
 

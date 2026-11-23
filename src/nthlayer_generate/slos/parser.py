@@ -33,7 +33,7 @@ def parse_slo_file(file_path: str | Path) -> SLO:
         OpenSLOParserError: If parsing fails
     """
     try:
-        with open(file_path) as f:
+        with open(file_path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
     except FileNotFoundError as exc:
         raise OpenSLOParserError(f"SLO file not found: {file_path}") from exc

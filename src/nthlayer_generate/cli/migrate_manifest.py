@@ -98,7 +98,7 @@ def migrate_manifest_command(
         return 1
 
     try:
-        with open(in_path) as f:
+        with open(in_path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
     except yaml.YAMLError as exc:
         error(f"Invalid YAML in {manifest_path}: {exc}")
@@ -184,7 +184,7 @@ def migrate_manifest_command(
     # ordinary filesystem state, not a crash (opensrm-mnzi).
     try:
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(yaml_text)
+        out_path.write_text(yaml_text, encoding="utf-8")
     except OSError as exc:
         error(f"Could not write {out_path}: {exc}")
         return 1

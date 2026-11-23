@@ -56,7 +56,7 @@ class VaultSecretBackend(BaseSecretBackend):
         elif auth_method == "kubernetes":
             jwt_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
             if os.path.exists(jwt_path):
-                with open(jwt_path) as f:
+                with open(jwt_path, encoding="utf-8") as f:
                     jwt = f.read()
                 self._client.auth.kubernetes.login(role=self.config.vault_role, jwt=jwt)
         elif auth_method == "approle":

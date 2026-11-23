@@ -26,6 +26,14 @@ See `docs/golden-principles.md` for mechanical enforcement of key rules.
 | 1 | Warning/error |
 | 2 | Critical/blocked |
 
+## File Encoding
+
+Every text read and write names its encoding: `open(path, encoding="utf-8")`,
+`path.read_text(encoding="utf-8")`, `path.write_text(text, encoding="utf-8")`.
+Without it Python uses the locale's encoding, which is not UTF-8 on every
+system. Binary modes are exempt. Enforced by `tests/test_text_io_encoding.py`
+for every module under `src/nthlayer_generate`.
+
 ## Commit Messages
 
 Format: `<type>: <description> (<bead-id>)`

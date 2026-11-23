@@ -89,7 +89,7 @@ def generate_slo_command(
         import yaml
 
         if result.output_file:
-            with open(result.output_file) as f:
+            with open(result.output_file, encoding="utf-8") as f:
                 sloth_spec = yaml.safe_load(f)
                 for slo in sloth_spec.get("slos", []):
                     name = slo.get("name", "unknown")

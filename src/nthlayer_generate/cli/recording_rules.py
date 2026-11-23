@@ -99,7 +99,7 @@ def generate_recording_rules_command(
             console.print(f"[cyan]Writing recording rules to {output}...[/cyan]")
 
             Path(output).parent.mkdir(parents=True, exist_ok=True)
-            Path(output).write_text(yaml_output)
+            Path(output).write_text(yaml_output, encoding="utf-8")
 
             console.print()
             success("Recording rules generated successfully!")

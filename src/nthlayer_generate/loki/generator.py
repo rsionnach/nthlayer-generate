@@ -299,7 +299,7 @@ class LokiAlertGenerator:
 
         yaml_content = self.to_ruler_yaml(alerts, group_name)
 
-        with open(output_path, "w") as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(yaml_content)
 
         logger.info(f"Wrote {len(alerts)} Loki alerts to {output_path}")

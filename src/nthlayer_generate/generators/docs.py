@@ -68,7 +68,7 @@ def generate_service_docs(
         # Always generate README
         readme_content = _generate_readme(manifest)
         readme_file = output_path / "README.md"
-        readme_file.write_text(readme_content)
+        readme_file.write_text(readme_content, encoding="utf-8")
         files_generated.append("README.md")
 
         # Optional ADR scaffold
@@ -80,7 +80,7 @@ def generate_service_docs(
         if include_api:
             api_content = _generate_api_docs(manifest)
             api_file = output_path / "api.md"
-            api_file.write_text(api_content)
+            api_file.write_text(api_content, encoding="utf-8")
             files_generated.append("api.md")
 
         logger.info(
@@ -131,7 +131,7 @@ def generate_docs_from_manifest(
 
         readme_content = _generate_readme(manifest)
         readme_file = output_path / "README.md"
-        readme_file.write_text(readme_content)
+        readme_file.write_text(readme_content, encoding="utf-8")
         files_generated.append("README.md")
 
         if include_adr:
@@ -141,7 +141,7 @@ def generate_docs_from_manifest(
         if include_api:
             api_content = _generate_api_docs(manifest)
             api_file = output_path / "api.md"
-            api_file.write_text(api_content)
+            api_file.write_text(api_content, encoding="utf-8")
             files_generated.append("api.md")
 
         return DocsGenerationResult(
@@ -339,17 +339,17 @@ def _generate_adr_scaffold(manifest: ReliabilityManifest, output_dir: Path) -> l
 
     # ADR index
     index_content = _adr_index(manifest)
-    (adr_dir / "README.md").write_text(index_content)
+    (adr_dir / "README.md").write_text(index_content, encoding="utf-8")
     files.append("adr/README.md")
 
     # ADR template
     template_content = _adr_template()
-    (adr_dir / "template.md").write_text(template_content)
+    (adr_dir / "template.md").write_text(template_content, encoding="utf-8")
     files.append("adr/template.md")
 
     # Initial architecture ADR
     adr001_content = _adr_initial_architecture(manifest)
-    (adr_dir / "001-initial-architecture.md").write_text(adr001_content)
+    (adr_dir / "001-initial-architecture.md").write_text(adr001_content, encoding="utf-8")
     files.append("adr/001-initial-architecture.md")
 
     return files

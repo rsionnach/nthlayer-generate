@@ -183,7 +183,7 @@ class FileSecretBackend(BaseSecretBackend):
             return self._cache
 
         try:
-            with open(self.credentials_file) as f:
+            with open(self.credentials_file, encoding="utf-8") as f:
                 self._cache = yaml.safe_load(f) or {}
         except Exception as e:
             logger.warning(
@@ -220,7 +220,7 @@ class FileSecretBackend(BaseSecretBackend):
         current[parts[-1]] = value
 
         self.credentials_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.credentials_file, "w") as f:
+        with open(self.credentials_file, "w", encoding="utf-8") as f:
             yaml.dump(data, f, default_flow_style=False)
 
         os.chmod(self.credentials_file, 0o600)

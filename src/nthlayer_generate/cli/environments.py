@@ -85,7 +85,7 @@ def list_environments_command(service_file: str | None = None, directory: str | 
 
     for env_file in sorted(env_files):
         try:
-            with open(env_file) as f:
+            with open(env_file, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
 
             if not isinstance(data, dict):
@@ -341,7 +341,7 @@ def validate_env_command(
     warnings = []
 
     try:
-        with open(env_file) as f:
+        with open(env_file, encoding="utf-8") as f:
             data = yaml.safe_load(f)
     except yaml.YAMLError as e:
         error(f"Invalid YAML: {e}")

@@ -146,7 +146,7 @@ class AlertTemplateLoader:
                       description: Alert description
         """
         try:
-            with open(template_file) as f:
+            with open(template_file, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
         except (FileNotFoundError, yaml.YAMLError, OSError) as e:
             logger.error(f"Failed to load {template_file}: {e}")

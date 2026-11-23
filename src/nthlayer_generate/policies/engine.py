@@ -26,7 +26,7 @@ class PolicyEngine:
     @classmethod
     def from_yaml(cls, path: Path) -> PolicyEngine:
         """Load policy rules from a YAML file."""
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
         rules = _parse_rules(data.get("rules", []))
         return cls(rules=rules)

@@ -152,7 +152,7 @@ def _output_topology(
     output = serializer(topology)
 
     if output_file:
-        with open(output_file, "w") as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             f.write(output)
             f.write("\n")
         console.print(f"[green]Wrote {output_format} output to {output_file}[/green]")

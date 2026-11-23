@@ -53,7 +53,9 @@ class PrometheusProfile:
     def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
-            "type": self.type,
+            # the plain string: a StrEnum member is written by yaml.dump as a
+            # python-object tag that the safe loader refuses (opensrm-p520)
+            "type": self.type.value,
             "url": self.url,
             "username": self.username,
             "password_secret": self.password_secret,
@@ -90,7 +92,9 @@ class GrafanaProfile:
     def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
-            "type": self.type,
+            # the plain string: a StrEnum member is written by yaml.dump as a
+            # python-object tag that the safe loader refuses (opensrm-p520)
+            "type": self.type.value,
             "url": self.url,
             "org_id": self.org_id,
             "api_key_secret": self.api_key_secret,

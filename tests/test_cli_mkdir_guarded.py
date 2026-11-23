@@ -349,10 +349,8 @@ class TestQuickSetupReportsAnUnusableConfigDirectory:
         assert rc == 0
         reported.assert_not_called()
         succeeded.assert_called_once()
-        # Read as text: the saved file carries Python enum tags that
-        # `yaml.safe_load` refuses (opensrm-p520).
-        saved = (home / ".nthlayer" / "config.yaml").read_text(encoding="utf-8")
-        assert "url: http://localhost:9090" in saved
+        saved = yaml.safe_load((home / ".nthlayer" / "config.yaml").read_text(encoding="utf-8"))
+        assert saved["prometheus"]["profiles"]["default"]["url"] == "http://localhost:9090"
 
 
 def _parent_is_a_file(tmp_path: Path) -> tuple[Path, bool]:

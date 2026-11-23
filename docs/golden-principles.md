@@ -77,6 +77,10 @@ it. `exist_ok=True` does not cover a file, a dangling symlink or a read-only
 parent at the path. [TEST] — see `tests/test_cli_mkdir_guarded.py`
 (opensrm-mnzi).
 
+A second rule has its own test: every text read and write under
+`src/nthlayer_generate` names its encoding, so nothing depends on the
+locale's. [TEST] — see `tests/test_text_io_encoding.py` (opensrm-may6).
+
 ### 5. Template functions for all generated output
 
 Prometheus rules, Grafana dashboards, and any other generated configuration

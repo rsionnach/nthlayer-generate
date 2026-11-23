@@ -50,7 +50,9 @@ def _mode_of(call: ast.Call) -> str | None:
             value = keyword.value
             return value.value if isinstance(value, ast.Constant) else None
     name = call.func.attr if isinstance(call.func, ast.Attribute) else call.func.id
-    # builtin open(path, mode); Path.open(mode) and os.fdopen(fd, mode) differ
+    # The mode is the second argument of builtin open(path, mode),
+    # os.fdopen(fd, mode) and SpooledTemporaryFile(max_size, mode), and the
+    # first of Path.open(mode), NamedTemporaryFile(mode) and TemporaryFile(mode).
     position = 0 if isinstance(call.func, ast.Attribute) and name == "open" else 1
     if name in ("NamedTemporaryFile", "TemporaryFile"):
         position = 0

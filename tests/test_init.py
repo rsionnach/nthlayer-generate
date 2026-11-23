@@ -1449,6 +1449,10 @@ class TestWritesAreExplicitlyUtf8:
         # dropping `encoding="utf-8"` changes nothing observable, so this guard
         # is the only thing that can catch it. Do not mistake a green run here
         # for proof that the write was exercised under a hostile locale.
+        #
+        # tests/test_text_io_encoding.py is the authority for the package,
+        # init.py included. This older walker stays as init's own record of
+        # opensrm-t4rd.
         module = importlib.import_module("nthlayer_generate.cli.init")
         tree = ast.parse(pathlib.Path(module.__file__).read_text(encoding="utf-8"))
 

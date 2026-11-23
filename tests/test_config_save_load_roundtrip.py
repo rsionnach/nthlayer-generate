@@ -35,8 +35,9 @@ assert GRAFANA_TYPES
 
 def _a_config_unlike_the_defaults(prometheus_type, grafana_type) -> IntegrationConfig:
     """Every field differs from `IntegrationConfig.default()`, so a load that
-    fell back to the defaults cannot compare equal to it."""
-    config = IntegrationConfig()
+    fell back to the defaults, or dropped one field, cannot compare equal to
+    it. `test_the_helper_differs_from_the_defaults_in_every_field` holds this."""
+    config = IntegrationConfig(version=2)
     config.prometheus.default = "prod"
     config.prometheus.profiles["prod"] = PrometheusProfile(
         name="prod",
@@ -56,9 +57,39 @@ def _a_config_unlike_the_defaults(prometheus_type, grafana_type) -> IntegrationC
     )
     config.alerting.pagerduty.api_key_secret = "pagerduty/api_key"
     config.alerting.pagerduty.default_escalation_policy = "P123"
+    config.alerting.pagerduty.enabled = False
+    config.alerting.slack.webhook_url_secret = "slack/webhook_url"
     config.alerting.slack.default_channel = "#payments"
+    config.alerting.slack.enabled = False
+    config.alerting.datadog.api_key_secret = "datadog/api_key"
+    config.alerting.datadog.app_key_secret = "datadog/app_key"
+    config.alerting.datadog.site = "datadoghq.eu"
     config.alerting.datadog.enabled = True
     return config
+
+
+def _leaves(value, prefix=""):
+    """Flatten nested dicts to {dotted.path: leaf}."""
+    if not isinstance(value, dict):
+        return {prefix: value}
+    flat = {}
+    for key, inner in value.items():
+        flat.update(_leaves(inner, f"{prefix}.{key}" if prefix else key))
+    return flat
+
+
+def test_the_helper_differs_from_the_defaults_in_every_field():
+    """So equality with the helper's config proves every field was carried."""
+    ours = _a_config_unlike_the_defaults(PrometheusType.MIMIR, GrafanaType.GRAFANA_CLOUD)
+    # the defaults, under the profile name the helper uses
+    default = IntegrationConfig.default().to_dict()
+    for section in ("prometheus", "grafana"):
+        default[section]["profiles"] = {"prod": default[section]["profiles"]["local"]}
+    theirs = _leaves(default)
+
+    same = sorted(path for path, leaf in _leaves(ours.to_dict()).items() if theirs[path] == leaf)
+
+    assert same == []
 
 
 class TestASavedConfigLoadsBack:
@@ -141,7 +172,7 @@ class TestWhatSetupSavesLoadsBack:
 # for a config with a Mimir profile and a Grafana Cloud profile; copied from
 # the file it produced. This is the form every config saved so far has.
 A_FILE_THE_OLD_SAVE_WROTE = """\
-version: 1
+version: 2
 prometheus:
   default: prod
   profiles:
@@ -167,20 +198,23 @@ alerting:
   pagerduty:
     api_key_secret: pagerduty/api_key
     default_escalation_policy: P123
-    enabled: true
+    enabled: false
   slack:
-    webhook_url_secret: null
+    webhook_url_secret: slack/webhook_url
     default_channel: '#payments'
-    enabled: true
+    enabled: false
   datadog:
-    api_key_secret: null
-    app_key_secret: null
-    site: datadoghq.com
+    api_key_secret: datadog/api_key
+    app_key_secret: datadog/app_key
+    site: datadoghq.eu
     enabled: true
 """
 
 # Tagged values that must NOT be read: each makes the whole file unreadable,
-# as any python tag did before.
+# as any python tag did before. They are written under `url`, a plain string
+# field, so only the loader can refuse them. Under `type` the enum would
+# reject them too and a loader that accepted them would go unnoticed.
+_LEGACY_TAG = "!!python/object/apply:nthlayer_generate.config.integrations.PrometheusType"
 REFUSED_TAGGED_VALUES = [
     pytest.param("!!python/object/apply:os.getcwd []", id="another-callable"),
     pytest.param(
@@ -188,28 +222,19 @@ REFUSED_TAGGED_VALUES = [
         id="another-class-in-the-same-module",
     ),
     pytest.param(
-        "!!python/object/apply:nthlayer_generate.config.integrations.PrometheusType\n"
-        "      - mimir\n      - extra",
-        id="legacy-tag-with-two-arguments",
-    ),
-    pytest.param(
-        "!!python/object/apply:nthlayer_generate.config.integrations.PrometheusType\n"
-        "      - [mimir]",
-        id="legacy-tag-with-a-non-string-argument",
-    ),
-    pytest.param(
-        "!!python/object/apply:nthlayer_generate.config.integrations.PrometheusType mimir",
-        id="legacy-tag-on-a-scalar",
-    ),
-    pytest.param(
-        "!!python/object/apply:nthlayer_generate.config.integrations.PrometheusType\n"
-        "      - victoria",
-        id="legacy-tag-with-a-value-that-is-not-a-member",
-    ),
-    pytest.param(
         "!!python/object/new:nthlayer_generate.config.integrations.PrometheusType\n      - mimir",
         id="object-new-instead-of-apply",
     ),
+    # the next two are tags yaml.FullLoader accepts and yaml.SafeLoader does not
+    pytest.param("!!python/name:os.system", id="a-python-name"),
+    pytest.param("!!python/tuple [a]", id="a-python-tuple"),
+    pytest.param(
+        f"{_LEGACY_TAG}\n      - mimir\n      - extra", id="legacy-tag-with-two-arguments"
+    ),
+    pytest.param(f"{_LEGACY_TAG} []", id="legacy-tag-with-no-argument"),
+    pytest.param(f"{_LEGACY_TAG}\n      - [mimir]", id="legacy-tag-with-a-list-argument"),
+    pytest.param(f"{_LEGACY_TAG}\n      - 9090", id="legacy-tag-with-a-number-argument"),
+    pytest.param(f"{_LEGACY_TAG} mimir", id="legacy-tag-on-a-scalar"),
 ]
 assert REFUSED_TAGGED_VALUES
 
@@ -262,7 +287,7 @@ class TestAFileTheOldSaveWroteIsStillRead:
         path = tmp_path / "config.yaml"
         path.write_text(
             "prometheus:\n  default: prod\n  profiles:\n    prod:\n"
-            f"      type: {tagged}\n      url: https://metrics.example.test\n",
+            f"      type: mimir\n      url: {tagged}\n",
             encoding="utf-8",
         )
 
@@ -270,3 +295,27 @@ class TestAFileTheOldSaveWroteIsStillRead:
 
         # the documented fallback for an unreadable file
         assert loaded == IntegrationConfig.default()
+
+    def test_the_same_file_with_a_plain_url_is_read(self, tmp_path):
+        """The control for the refusals above: only the tagged value differs."""
+        path = tmp_path / "config.yaml"
+        path.write_text(
+            "prometheus:\n  default: prod\n  profiles:\n    prod:\n"
+            "      type: mimir\n      url: https://metrics.example.test\n",
+            encoding="utf-8",
+        )
+
+        profile = load_config(path).prometheus.profiles["prod"]
+
+        assert profile.type is PrometheusType.MIMIR
+        assert profile.url == "https://metrics.example.test"
+
+    def test_a_legacy_tag_whose_value_is_not_a_member_falls_back_to_the_defaults(self, tmp_path):
+        path = tmp_path / "config.yaml"
+        path.write_text(
+            "prometheus:\n  default: prod\n  profiles:\n    prod:\n"
+            f"      type: {_LEGACY_TAG}\n      - victoria\n",
+            encoding="utf-8",
+        )
+
+        assert load_config(path) == IntegrationConfig.default()

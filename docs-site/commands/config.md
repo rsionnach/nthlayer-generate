@@ -76,6 +76,31 @@ nthlayer config set prometheus.profiles.default.url http://prometheus:9090
 nthlayer config set grafana.profiles.default.api_key --secret
 ```
 
+Settable keys (`<name>` is a profile name; a profile that does not exist yet is created):
+
+| Key | Value |
+|-----|-------|
+| `prometheus.default`, `grafana.default` | Name of the default profile |
+| `prometheus.profiles.<name>.url` | Prometheus URL |
+| `prometheus.profiles.<name>.type` | `prometheus`, `mimir`, `cortex`, `thanos` or `grafana-cloud` |
+| `prometheus.profiles.<name>.username` | Username |
+| `prometheus.profiles.<name>.password` | Secret path of the password |
+| `grafana.profiles.<name>.url` | Grafana URL |
+| `grafana.profiles.<name>.type` | `grafana`, `grafana-cloud` or `grafana-enterprise` |
+| `grafana.profiles.<name>.api_key` | Secret path of the API key |
+| `grafana.profiles.<name>.org_id` | Organisation id, a whole number |
+| `alerting.pagerduty.enabled`, `alerting.slack.enabled` | `true` or `false` |
+| `alerting.pagerduty.api_key` | Secret path of the API key |
+| `alerting.pagerduty.escalation_policy` | Default escalation policy |
+| `alerting.slack.webhook_url` | Secret path of the webhook URL |
+| `alerting.slack.channel` | Default channel |
+
+Any other key, or a value the key does not take, is reported and the command exits 1 without changing the file. The same happens if the existing configuration file cannot be read: fix or remove it first.
+
+`config set` rewrites the file. Sections it does not manage, such as `secrets:`, are kept; comments are not.
+
+Two things earlier versions accepted are now errors. An `enabled` value other than `true`, `1`, `yes`, `false`, `0` or `no` used to be read as false. A profile key with no field, such as `prometheus.profiles.staging`, used to create an empty profile; name a field to create one, for example `prometheus.profiles.staging.url`.
+
 ## Configuration File
 
 Located at `~/.nthlayer/config.yaml`:

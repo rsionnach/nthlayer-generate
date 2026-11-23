@@ -114,6 +114,8 @@ alerting:
     enabled: false
 ```
 
+If the file already exists, setup asks before overwriting it. Sections setup does not manage, such as `secrets:`, are kept; comments are not.
+
 ## Environment Variables
 
 Alternatively, configure via environment variables:

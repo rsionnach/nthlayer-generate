@@ -23,6 +23,7 @@ from nthlayer_generate.config.integrations import (
     PrometheusType,
 )
 from nthlayer_generate.config.loader import (
+    ConfigLoadError,
     get_config_path,
     load_config,
     save_config,
@@ -107,101 +108,206 @@ def config_show_command(reveal_secrets: bool = False) -> int:
     return 0
 
 
+class _ConfigSetError(ValueError):
+    """A `config set` key or value that cannot be applied; the message is for the user."""
+
+
+def _set_default(section_name: str):
+    def apply(config: IntegrationConfig, value: str | None) -> None:
+        getattr(config, section_name).default = value or "local"
+
+    return apply
+
+
+def _enum_value(enum_cls, value: str | None, default, key: str):
+    if not value:
+        return default
+    try:
+        return enum_cls(value)
+    except ValueError:
+        valid = ", ".join(member.value for member in enum_cls)
+        raise _ConfigSetError(f"Invalid value for {key}: {value!r}. Use one of: {valid}") from None
+
+
+def _org_id(value: str | None, key: str) -> int:
+    if not value:
+        return 1
+    try:
+        return int(value)
+    except ValueError:
+        raise _ConfigSetError(f"Invalid value for {key}: {value!r}. Use a whole number") from None
+
+
+_TRUE_WORDS = ("true", "1", "yes")
+_FALSE_WORDS = ("false", "0", "no")
+
+
+def _enabled(value: str | None, key: str) -> bool:
+    if not value:
+        return False
+    word = value.lower()
+    if word in _TRUE_WORDS:
+        return True
+    if word in _FALSE_WORDS:
+        return False
+    raise _ConfigSetError(f"Invalid value for {key}: {value!r}. Use true or false")
+
+
+# What each profile field does to the profile. `key` is the full key the user
+# typed, for error messages.
+_PROMETHEUS_PROFILE_FIELDS = {
+    "url": lambda profile, value, key: setattr(profile, "url", value or ""),
+    "type": lambda profile, value, key: setattr(
+        profile, "type", _enum_value(PrometheusType, value, PrometheusType.PROMETHEUS, key)
+    ),
+    "username": lambda profile, value, key: setattr(profile, "username", value),
+    "password": lambda profile, value, key: setattr(profile, "password_secret", value),
+}
+
+_GRAFANA_PROFILE_FIELDS = {
+    "url": lambda profile, value, key: setattr(profile, "url", value or ""),
+    "type": lambda profile, value, key: setattr(
+        profile, "type", _enum_value(GrafanaType, value, GrafanaType.GRAFANA, key)
+    ),
+    "api_key": lambda profile, value, key: setattr(profile, "api_key_secret", value),
+    "org_id": lambda profile, value, key: setattr(profile, "org_id", _org_id(value, key)),
+}
+
+# section -> (profile class, its settable fields)
+_PROFILE_SECTIONS = {
+    "prometheus": (PrometheusProfile, _PROMETHEUS_PROFILE_FIELDS),
+    "grafana": (GrafanaProfile, _GRAFANA_PROFILE_FIELDS),
+}
+
+# "<destination>.<field>" under alerting -> what it does to the alerting config
+_ALERTING_FIELDS = {
+    "pagerduty.enabled": lambda alerting, value, key: setattr(
+        alerting.pagerduty, "enabled", _enabled(value, key)
+    ),
+    "pagerduty.api_key": lambda alerting, value, key: setattr(
+        alerting.pagerduty, "api_key_secret", value
+    ),
+    "pagerduty.escalation_policy": lambda alerting, value, key: setattr(
+        alerting.pagerduty, "default_escalation_policy", value
+    ),
+    "slack.enabled": lambda alerting, value, key: setattr(
+        alerting.slack, "enabled", _enabled(value, key)
+    ),
+    "slack.webhook_url": lambda alerting, value, key: setattr(
+        alerting.slack, "webhook_url_secret", value
+    ),
+    "slack.channel": lambda alerting, value, key: setattr(
+        alerting.slack, "default_channel", value or "#alerts"
+    ),
+}
+
+
+def _settable_keys() -> list[str]:
+    """Every key `config set` accepts, with <name> for a profile name."""
+    keys = []
+    for section, (_profile_cls, fields) in _PROFILE_SECTIONS.items():
+        keys.append(f"{section}.default")
+        keys += [f"{section}.profiles.<name>.{field}" for field in fields]
+    keys += [f"alerting.{field}" for field in _ALERTING_FIELDS]
+    return keys
+
+
+def _resolve_set_key(key: str):
+    """Return the function that applies a value for ``key``.
+
+    Raises _ConfigSetError for a key that names nothing settable, so a typo is
+    reported instead of being saved as a change that did not happen
+    (opensrm-bkgi). Resolving the key touches no configuration.
+
+    The section (the part before the first dot) must be ``alerting`` or a key
+    of ``_PROFILE_SECTIONS``; ``config_set_command`` checks that first and has
+    its own message for it. Any other section raises KeyError here.
+    """
+    section, _, subkey = key.partition(".")
+
+    if section == "alerting":
+        setter = _ALERTING_FIELDS.get(subkey)
+        if setter is None:
+            raise _ConfigSetError(f"Unknown key: {key}")
+        return lambda config, value: setter(config.alerting, value, key)
+
+    profile_cls, fields = _PROFILE_SECTIONS[section]
+    if subkey == "default":
+        return _set_default(section)
+
+    head, _, rest = subkey.partition(".")
+    profile_name, _, field = rest.partition(".")
+    if head != "profiles" or not profile_name or field not in fields:
+        raise _ConfigSetError(f"Unknown key: {key}")
+
+    def apply(config: IntegrationConfig, value: str | None) -> None:
+        profiles = getattr(config, section).profiles
+        # a new profile is added only once its value has been accepted
+        profile = profiles.get(profile_name) or profile_cls(name=profile_name)
+        fields[field](profile, value, key)
+        profiles[profile_name] = profile
+
+    return apply
+
+
 def config_set_command(key: str, value: str | None = None, secret: bool = False) -> int:
-    """Set a configuration value."""
-    config = load_config()
-    
+    """Set a configuration value.
+
+    Returns 1, with the configuration file untouched, for a key that is not
+    settable, a value the key does not accept, or an existing configuration
+    file that cannot be read.
+    """
     parts = key.split(".")
-    
-    if secret and value is None:
-        value = getpass.getpass(f"Enter value for {key}: ")
-    
+
     if len(parts) < 2:
         print(f"Invalid key format: {key}")
         print("Use: section.key (e.g., grafana.url, prometheus.default)")
         return 1
-    
+
     section = parts[0]
-    subkey = ".".join(parts[1:])
-    
-    if section == "prometheus":
-        _set_prometheus_config(config, subkey, value)
-    elif section == "grafana":
-        _set_grafana_config(config, subkey, value)
-    elif section == "alerting":
-        _set_alerting_config(config, subkey, value)
-    else:
+    if section != "alerting" and section not in _PROFILE_SECTIONS:
         print(f"Unknown section: {section}")
         return 1
-    
-    save_config(config)
+
+    try:
+        apply = _resolve_set_key(key)
+    except _ConfigSetError as e:
+        print(str(e))
+        print("Settable keys:")
+        for settable in _settable_keys():
+            print(f"  {settable}")
+        return 1
+
+    if secret and value is None:
+        value = getpass.getpass(f"Enter value for {key}: ")
+
+    # strict: falling back to the defaults for a file that could not be read
+    # would save the defaults over it
+    try:
+        config = load_config(strict=True)
+    except ConfigLoadError as e:
+        print(f"Cannot update the configuration: {e}")
+        print("Fix or remove the file, then run the command again.")
+        return 1
+
+    try:
+        apply(config, value)
+    except _ConfigSetError as e:
+        print(str(e))
+        return 1
+
+    # RecursionError: a section this command keeps but does not manage is
+    # nested too deeply for the YAML writer; it is raised before the file is
+    # opened. OSError: usually the file or its directory is not writable, and
+    # the file is untouched; a write that fails part-way (a full disk) can
+    # still leave it truncated.
+    try:
+        save_config(config)
+    except (OSError, RecursionError) as e:
+        print(f"Could not save the configuration: {e or type(e).__name__}")
+        return 1
     print(f"Updated {key}")
     return 0
-
-
-def _set_prometheus_config(config: IntegrationConfig, key: str, value: str | None):
-    if key == "default":
-        config.prometheus.default = value or "local"
-    elif key.startswith("profiles."):
-        parts = key.split(".", 2)
-        profile_name = parts[1]
-        if profile_name not in config.prometheus.profiles:
-            config.prometheus.profiles[profile_name] = PrometheusProfile(name=profile_name)
-        profile = config.prometheus.profiles[profile_name]
-        
-        if len(parts) > 2:
-            field = parts[2]
-            if field == "url":
-                profile.url = value or ""
-            elif field == "type":
-                profile.type = PrometheusType(value) if value else PrometheusType.PROMETHEUS
-            elif field == "username":
-                profile.username = value
-            elif field == "password":
-                profile.password_secret = value
-
-
-def _set_grafana_config(config: IntegrationConfig, key: str, value: str | None):
-    if key == "default":
-        config.grafana.default = value or "local"
-    elif key.startswith("profiles."):
-        parts = key.split(".", 2)
-        profile_name = parts[1]
-        if profile_name not in config.grafana.profiles:
-            config.grafana.profiles[profile_name] = GrafanaProfile(name=profile_name)
-        profile = config.grafana.profiles[profile_name]
-        
-        if len(parts) > 2:
-            field = parts[2]
-            if field == "url":
-                profile.url = value or ""
-            elif field == "type":
-                profile.type = GrafanaType(value) if value else GrafanaType.GRAFANA
-            elif field == "api_key":
-                profile.api_key_secret = value
-            elif field == "org_id":
-                profile.org_id = int(value) if value else 1
-
-
-def _set_alerting_config(config: IntegrationConfig, key: str, value: str | None):
-    if key.startswith("pagerduty."):
-        field = key.split(".", 1)[1]
-        if field == "enabled":
-            enabled = value.lower() in ("true", "1", "yes") if value else False
-            config.alerting.pagerduty.enabled = enabled
-        elif field == "api_key":
-            config.alerting.pagerduty.api_key_secret = value
-        elif field == "escalation_policy":
-            config.alerting.pagerduty.default_escalation_policy = value
-    elif key.startswith("slack."):
-        field = key.split(".", 1)[1]
-        if field == "enabled":
-            enabled = value.lower() in ("true", "1", "yes") if value else False
-            config.alerting.slack.enabled = enabled
-        elif field == "webhook_url":
-            config.alerting.slack.webhook_url_secret = value
-        elif field == "channel":
-            config.alerting.slack.default_channel = value or "#alerts"
 
 
 def config_init_command() -> int:

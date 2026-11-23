@@ -33,6 +33,10 @@ class ConfigValidationError(ValueError):
     pass
 
 
+class ConfigLoadError(Exception):
+    """An existing configuration file could not be read as a configuration."""
+
+
 class PathTraversalError(ValueError):
     """Raised when a path contains traversal sequences."""
 
@@ -176,7 +180,7 @@ def get_credentials_path() -> Path:
     return Path.home() / ".nthlayer" / "credentials.yaml"
 
 
-class _ConfigLoader(yaml.SafeLoader):
+class _LegacyEnumSafeLoader(yaml.SafeLoader):
     """The safe loader, plus the two tags the old ``save`` wrote.
 
     Until opensrm-p520, ``save`` wrote each profile's ``type`` as
@@ -206,7 +210,27 @@ def _construct_legacy_enum_value(loader: yaml.SafeLoader, node: yaml.Node) -> st
 
 
 for _tag in _LEGACY_ENUM_TAGS:
-    _ConfigLoader.add_constructor(_tag, _construct_legacy_enum_value)
+    _LegacyEnumSafeLoader.add_constructor(_tag, _construct_legacy_enum_value)
+
+
+def read_config_mapping(path: Path) -> dict[str, Any]:
+    """Read ``path`` as a YAML mapping. An empty file is an empty mapping.
+
+    Raises ConfigLoadError if the file cannot be read, is not YAML, or holds
+    anything but a mapping at the top level.
+    """
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = yaml.load(f, Loader=_LegacyEnumSafeLoader)
+    except (OSError, UnicodeError, yaml.YAMLError, RecursionError) as e:
+        # RecursionError: PyYAML recurses per nesting level, so a file nested
+        # a few thousand deep exhausts the stack instead of raising YAMLError
+        raise ConfigLoadError(f"{path} could not be read: {e}") from e
+    if data is None:
+        return {}
+    if not isinstance(data, dict):
+        raise ConfigLoadError(f"{path} must hold a mapping, not a {type(data).__name__}")
+    return data
 
 
 class ConfigLoader:
@@ -219,7 +243,25 @@ class ConfigLoader:
         self.credentials_path = get_credentials_path()
 
     def load(self) -> IntegrationConfig:
-        """Load configuration from file or return defaults."""
+        """Load configuration from file or return defaults.
+
+        An unreadable file is logged and the defaults are returned, so a
+        command that only reads the configuration still runs. A caller that
+        will save what it loaded must use ``load_strict``.
+        """
+        try:
+            return self.load_strict()
+        except ConfigLoadError as e:
+            logger.warning("failed_to_load_config", path=str(self.config_path), error=str(e))
+            return IntegrationConfig.default()
+
+    def load_strict(self) -> IntegrationConfig:
+        """Load configuration, raising ConfigLoadError for an unreadable file.
+
+        No file at all is not an error: the defaults are returned. Falling
+        back to them for a file that exists would let ``config set`` save the
+        defaults over whatever the file held (opensrm-bkgi).
+        """
         if self.config_path and self.config_path.exists():
             return self._load_from_file(self.config_path)
         return IntegrationConfig.default()
@@ -228,8 +270,7 @@ class ConfigLoader:
         """Load secrets configuration."""
         if self.config_path and self.config_path.exists():
             try:
-                with open(self.config_path, encoding="utf-8") as f:
-                    data = yaml.load(f, Loader=_ConfigLoader) or {}
+                data = read_config_mapping(self.config_path)
                 return self._parse_secrets_config(data.get("secrets", {}))
             except Exception as e:
                 logger.warning("failed_to_load_secrets_config", error=str(e))
@@ -237,16 +278,16 @@ class ConfigLoader:
         return SecretConfig()
 
     def _load_from_file(self, path: Path) -> IntegrationConfig:
-        """Load config from YAML file."""
+        """Load config from YAML file. Raises ConfigLoadError."""
+        data = read_config_mapping(path)
         try:
-            with open(path, encoding="utf-8") as f:
-                data = yaml.load(f, Loader=_ConfigLoader) or {}
-
-            logger.debug("loaded_config", path=str(path))
-            return IntegrationConfig.from_dict(data)
-        except Exception as e:
-            logger.warning("failed_to_load_config", path=str(path), error=str(e))
-            return IntegrationConfig.default()
+            config = IntegrationConfig.from_dict(data)
+        except (AttributeError, ValueError) as e:
+            # a section of the wrong shape (`prometheus: null`, a profile that
+            # is a string) or a `type` that is not a known backend
+            raise ConfigLoadError(f"{path} is not a valid configuration: {e}") from e
+        logger.debug("loaded_config", path=str(path))
+        return config
 
     def _parse_secrets_config(self, data: dict[str, Any]) -> SecretConfig:
         """Parse secrets section of config."""
@@ -298,29 +339,52 @@ class ConfigLoader:
 
         # safe_dump, and before the file is opened: it keeps a new file free of
         # python tags, which load() refuses (apart from the two legacy ones
-        # _ConfigLoader reads). A value only the full dumper can write must
+        # _LegacyEnumSafeLoader reads). A value only the full dumper can write must
         # fail here, loudly and without truncating the existing file
         # (opensrm-p520).
-        text = yaml.safe_dump(config.to_dict(), default_flow_style=False, sort_keys=False)
+        data = config.to_dict()
+        data.update(self._sections_to_keep(target_path, owned=set(data)))
+        text = yaml.safe_dump(data, default_flow_style=False, sort_keys=False)
         with open(target_path, "w", encoding="utf-8") as f:
             f.write(text)
 
         logger.info("saved_config", path=str(target_path))
 
+    @staticmethod
+    def _sections_to_keep(target_path: Path, owned: set[str]) -> dict[str, Any]:
+        """Top-level sections of the existing file that this save does not write.
 
-def load_config(path: str | Path | None = None) -> IntegrationConfig:
+        The integration config is not the only thing in the file:
+        ``load_secrets_config`` reads its ``secrets:`` section, and a user may
+        keep others. Rewriting the file from ``to_dict()`` alone dropped them
+        (opensrm-bkgi). A file that is missing or unreadable has nothing to
+        keep; ``config set`` refuses an unreadable file before it gets here.
+        """
+        if not target_path.exists():
+            return {}
+        try:
+            existing = read_config_mapping(target_path)
+        except ConfigLoadError as e:
+            logger.warning("config_sections_not_kept", path=str(target_path), error=str(e))
+            return {}
+        return {key: value for key, value in existing.items() if key not in owned}
+
+
+def load_config(path: str | Path | None = None, *, strict: bool = False) -> IntegrationConfig:
     """
     Convenience function to load configuration.
 
     Args:
         path: Optional explicit config file path
+        strict: Raise ConfigLoadError for a file that exists but cannot be
+            read, instead of logging it and returning the defaults
 
     Returns:
         IntegrationConfig instance
     """
     config_path = Path(path) if path else get_config_path()
     loader = ConfigLoader(config_path)
-    return loader.load()
+    return loader.load_strict() if strict else loader.load()
 
 
 def load_secrets_config(path: str | Path | None = None) -> SecretConfig:

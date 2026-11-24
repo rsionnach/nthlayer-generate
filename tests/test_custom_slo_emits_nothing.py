@@ -118,6 +118,7 @@ def test_alert_pipeline_with_only_a_custom_slo_evaluates_nothing(
     assert not result.errors
     assert result.budgets == []
     assert result.budgets_evaluated == 0
+    assert result.rules_evaluated == 0
     assert result.events == []
 
 
@@ -178,9 +179,46 @@ def test_alert_pipeline_gives_it_no_budget_and_no_alert(name: str, custom: str, 
     budget_ids = {b.slo_id for b in result.budgets}
     assert budget_ids == {f"{manifest.name}-{o}" for o in others}
     assert result.budgets_evaluated == len(others)
+    # Only the budgeted SLOs' rules are counted as evaluated.
+    assert result.rules_evaluated > 0
+    assert result.rules_evaluated % len(others) == 0
+    only_others = dataclasses.replace(manifest, slos=[s for s in manifest.slos if s.name in others])
+    assert (
+        result.rules_evaluated
+        == AlertPipeline(dry_run=True).evaluate_service(only_others).rules_evaluated
+    )
     assert {e.slo_id for e in result.events} <= budget_ids
     # The others still alert, so the assertion above is not vacuous.
     assert result.events
+
+
+@pytest.mark.parametrize(("name", "custom", "others"), CUSTOM, ids=IDS)
+def test_an_explicit_rule_naming_it_is_not_evaluated(name: str, custom: str, others: set[str]):
+    """The rule shape is the shipped legacy ``kind: Alerts`` resource's
+    (examples/uat/payment-api.yaml, ``spec.rules``: budget-warning), with
+    ``slo`` pointed first at the custom SLO, then at a request-ratio one."""
+    manifest = _load(name)
+    budgeted = sorted(others)[0]
+
+    def evaluate(slo: str):
+        rule = {
+            "name": "budget-warning",
+            "type": "budget_threshold",
+            "slo": slo,
+            "threshold": 0.75,
+            "severity": "warning",
+        }
+        with_rule = dataclasses.replace(manifest, alerting={"rules": [rule], "auto_rules": False})
+        return AlertPipeline(dry_run=True).evaluate_service(with_rule, simulate_burn_pct=90.0)
+
+    on_custom = evaluate(custom)
+    assert not on_custom.errors
+    assert on_custom.rules_evaluated == 0
+    assert on_custom.events == []
+    # The same rule on a budgeted SLO is counted and fires at 90% burned.
+    on_budgeted = evaluate(budgeted)
+    assert on_budgeted.rules_evaluated == 1
+    assert [e.slo_id for e in on_budgeted.events] == [f"{manifest.name}-{budgeted}"]
 
 
 @pytest.mark.parametrize(("name", "custom", "others"), CUSTOM, ids=IDS)

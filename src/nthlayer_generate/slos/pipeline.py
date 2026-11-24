@@ -117,8 +117,16 @@ class AlertPipeline:
 
         # 1. Resolve effective rules
         alerting = manifest_alerting(manifest) or AlertingConfig()
-        slo_names = [s.name for s in manifest.slos]
-        effective_rules = resolve_effective_rules(alerting, manifest.tier, slo_names)
+        # An SLO with no rule family (custom, freshness, lag) has no error
+        # budget to evaluate rules against, so it gets no default rules and
+        # an explicit rule that names it is not evaluated (opensrm-onc6).
+        budgeted = [s for s in manifest.slos if slo_kind(s) is not None]
+        unbudgeted = {s.name for s in manifest.slos} - {s.name for s in budgeted}
+        effective_rules = [
+            r
+            for r in resolve_effective_rules(alerting, manifest.tier, [s.name for s in budgeted])
+            if r.slo not in unbudgeted
+        ]
         result.rules_evaluated = len(effective_rules)
 
         if not manifest.slos:
@@ -129,11 +137,7 @@ class AlertPipeline:
         channels = alerting.channels.resolve_env_vars()
 
         # 2. For each SLO: build budget, evaluate rules
-        for slo_def in manifest.slos:
-            if slo_kind(slo_def) is None:
-                # No rule family (custom, freshness, lag): no error budget
-                # exists to evaluate rules against (opensrm-onc6).
-                continue
+        for slo_def in budgeted:
             slo = _build_slo_from_manifest(manifest, slo_def)
             budget = _calculate_budget(
                 slo,

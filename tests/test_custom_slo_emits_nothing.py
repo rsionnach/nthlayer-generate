@@ -28,6 +28,8 @@ from nthlayer_generate.cli.slo import _collect_slo_metrics, _is_objective
 from nthlayer_generate.core.slo_kind import slo_kind
 from nthlayer_generate.dashboards.manifest_builder import build_dashboard_from_manifest
 from nthlayer_generate.generators.sloth import generate_sloth_from_manifest
+from nthlayer_generate.orchestration.handlers import SloHandler
+from nthlayer_generate.orchestration.registry import OrchestratorContext
 from nthlayer_generate.slos.pipeline import AlertPipeline
 
 SERVICES = Path(__file__).resolve().parents[1] / "examples" / "services"
@@ -66,6 +68,26 @@ def test_sloth_spec_has_no_entry_for_it(name: str, custom: str, others: set[str]
     spec = yaml.safe_load(result.output_file.read_text(encoding="utf-8"))
     assert {s["name"] for s in spec["slos"]} == others
     assert result.slo_count == len(others)
+
+
+@pytest.mark.parametrize(("name", "custom", "others"), CUSTOM, ids=IDS)
+def test_plan_lists_the_slos_the_sloth_spec_will_hold(
+    name: str, custom: str, others: set[str], tmp_path: Path
+):
+    manifest = _load(name)
+    ctx = OrchestratorContext(
+        service_yaml=SERVICES / name,
+        manifest=manifest,
+        service_name=manifest.name,
+        output_dir=tmp_path,
+        env=None,
+    )
+    handler = SloHandler()
+    planned = {entry["name"] for entry in handler.plan(ctx)}
+    assert planned == others
+    assert handler.generate(ctx) == len(planned)
+    spec = yaml.safe_load((tmp_path / "sloth" / f"{manifest.name}.yaml").read_text("utf-8"))
+    assert {s["name"] for s in spec["slos"]} == planned
 
 
 def _only_the_custom_slo(name: str, custom: str) -> ReliabilityManifest:

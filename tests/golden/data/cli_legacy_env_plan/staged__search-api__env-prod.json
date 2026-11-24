@@ -17,8 +17,8 @@
         "status": "pass"
       },
       "slo_definition": {
-        "message": "6 SLOs defined",
-        "slo_count": 6,
+        "message": "5 SLOs defined",
+        "slo_count": 5,
         "status": "pass"
       }
     },
@@ -104,11 +104,6 @@
             "window": "30d"
           },
           {
-            "name": "search-quality",
-            "objective": 95.0,
-            "window": "7d"
-          },
-          {
             "name": "availability",
             "objective": 99.9,
             "window": "30d"
@@ -133,7 +128,7 @@
       "passed": 4,
       "status": "pass",
       "total": 4,
-      "total_resources": 17,
+      "total_resources": 16,
       "warnings": 0
     },
     "timestamp": "<masked>",
@@ -222,11 +217,6 @@
           "window": "30d"
         },
         {
-          "name": "search-quality",
-          "objective": 95.0,
-          "window": "7d"
-        },
-        {
           "name": "availability",
           "objective": 99.9,
           "window": "30d"
@@ -248,5 +238,5 @@
     "warnings": []
   },
   "success": true,
-  "total_resources": 17
+  "total_resources": 16
 }

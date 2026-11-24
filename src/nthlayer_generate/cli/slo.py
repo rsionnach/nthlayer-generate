@@ -298,8 +298,8 @@ def slo_collect_command(
     print(f"Summary: {healthy}/{len(budgeted)} SLOs healthy")
     unbudgeted = [r for r in results if r["status"] == "NOT_APPLICABLE"]
     if unbudgeted:
-        # Name the reason only when it is the same for all of them; each
-        # SLO's own line above already gives its own.
+        # Name the reason only when every one of them is a bound target;
+        # otherwise each SLO's own line above already gives its own.
         only_bounds = all(r["error"].lower().startswith(_NOT_AN_OBJECTIVE) for r in unbudgeted)
         why = " (not 0-100 objectives)" if only_bounds else ""
         print(f"         {len(unbudgeted)} without an error budget{why}")

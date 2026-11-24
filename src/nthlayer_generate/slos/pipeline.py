@@ -17,6 +17,7 @@ from typing import Any
 import structlog
 from nthlayer_common.manifest import ReliabilityManifest
 
+from nthlayer_generate.core.slo_kind import slo_kind
 from nthlayer_generate.slos.alerts import (
     AlertEvaluator,
     AlertEvent,
@@ -129,6 +130,10 @@ class AlertPipeline:
 
         # 2. For each SLO: build budget, evaluate rules
         for slo_def in manifest.slos:
+            if slo_kind(slo_def) is None:
+                # No rule family (custom, freshness, lag): no error budget
+                # exists to evaluate rules against (opensrm-onc6).
+                continue
             slo = _build_slo_from_manifest(manifest, slo_def)
             budget = _calculate_budget(
                 slo,

@@ -688,32 +688,6 @@
             "type": "timeseries"
           },
           {
-            "description": "Target: 95.0%",
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 0,
-              "y": 10
-            },
-            "options": null,
-            "repeatDirection": "h",
-            "targets": [
-              {
-                "expr": "sum(rate(search_results_total{service=\"search-api\",status=\"found\"}[5m]))\n/\nsum(rate(search_results_total{service=\"search-api\"}[5m]))\n* 100\n",
-                "legendFormat": "search-quality",
-                "refId": "A"
-              }
-            ],
-            "title": "search-quality",
-            "transformations": [],
-            "transparent": false,
-            "type": "timeseries"
-          },
-          {
             "description": "Target: 99.9%",
             "fieldConfig": {
               "defaults": {},
@@ -722,7 +696,7 @@
             "gridPos": {
               "h": 9,
               "w": 12,
-              "x": 12,
+              "x": 0,
               "y": 10
             },
             "options": null,
@@ -747,8 +721,8 @@
             "gridPos": {
               "h": 9,
               "w": 12,
-              "x": 0,
-              "y": 19
+              "x": 12,
+              "y": 10
             },
             "options": null,
             "repeatDirection": "h",
@@ -772,7 +746,7 @@
             "gridPos": {
               "h": 9,
               "w": 12,
-              "x": 12,
+              "x": 0,
               "y": 19
             },
             "options": null,
@@ -1757,43 +1731,6 @@
         {
           "alerting": {
             "annotations": {
-              "summary": "SLO search-quality for search-api"
-            },
-            "labels": {
-              "service": "search-api",
-              "tier": "critical"
-            },
-            "name": "SearchApiSearchQuality",
-            "page_alert": {
-              "annotations": {
-                "summary": "High error budget burn on search-api"
-              },
-              "labels": {
-                "severity": "critical"
-              }
-            },
-            "ticket_alert": {
-              "annotations": {
-                "summary": "Error budget burn on search-api"
-              },
-              "labels": {
-                "severity": "warning"
-              }
-            }
-          },
-          "description": "95.0% search quality",
-          "name": "search-quality",
-          "objective": 95.0,
-          "sli": {
-            "events": {
-              "error_query": "",
-              "total_query": "sum(rate(search_results_total{service=\"search-api\",status=\"found\"}[5m]))\n/\nsum(rate(search_results_total{service=\"search-api\"}[5m]))\n* 100\n"
-            }
-          }
-        },
-        {
-          "alerting": {
-            "annotations": {
               "summary": "SLO availability for search-api"
             },
             "labels": {
@@ -1916,11 +1853,11 @@
       "dashboard": 1,
       "pagerduty": 1,
       "recording-rules": 33,
-      "slos": 6
+      "slos": 5
     },
     "service_name": "search-api",
     "success": true,
-    "total_resources": 73
+    "total_resources": 72
   },
   "preamble": [],
   "stray": []

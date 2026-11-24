@@ -389,38 +389,12 @@
             "type": "timeseries"
           },
           {
-            "description": "Target: 95.0%",
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 0,
-              "y": 10
-            },
-            "options": null,
-            "repeatDirection": "h",
-            "targets": [
-              {
-                "expr": "sum(rate(search_results_total{service=\"search-api\",status=\"found\"}[5m]))\n/\nsum(rate(search_results_total{service=\"search-api\"}[5m]))\n* 100\n",
-                "legendFormat": "search-quality",
-                "refId": "A"
-              }
-            ],
-            "title": "search-quality",
-            "transformations": [],
-            "transparent": false,
-            "type": "timeseries"
-          },
-          {
             "collapsed": false,
             "gridPos": {
               "h": 1,
               "w": 24,
               "x": 0,
-              "y": 19
+              "y": 10
             },
             "id": "<masked>",
             "panels": [],
@@ -437,7 +411,7 @@
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 20
+              "y": 11
             },
             "options": null,
             "repeatDirection": "h",
@@ -463,7 +437,7 @@
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 20
+              "y": 11
             },
             "options": null,
             "repeatDirection": "h",
@@ -489,7 +463,7 @@
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 29
+              "y": 20
             },
             "options": null,
             "repeatDirection": "h",
@@ -511,7 +485,7 @@
               "h": 1,
               "w": 24,
               "x": 0,
-              "y": 38
+              "y": 29
             },
             "id": "<masked>",
             "panels": [],
@@ -528,7 +502,7 @@
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 39
+              "y": 30
             },
             "options": null,
             "repeatDirection": "h",
@@ -554,7 +528,7 @@
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 39
+              "y": 30
             },
             "options": null,
             "repeatDirection": "h",
@@ -585,7 +559,7 @@
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 48
+              "y": 39
             },
             "options": null,
             "repeatDirection": "h",
@@ -611,7 +585,7 @@
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 48
+              "y": 39
             },
             "options": null,
             "repeatDirection": "h",
@@ -637,7 +611,7 @@
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 57
+              "y": 48
             },
             "options": null,
             "repeatDirection": "h",
@@ -663,7 +637,7 @@
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 57
+              "y": 48
             },
             "options": null,
             "repeatDirection": "h",
@@ -689,7 +663,7 @@
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 66
+              "y": 57
             },
             "options": null,
             "repeatDirection": "h",
@@ -715,7 +689,7 @@
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 66
+              "y": 57
             },
             "options": null,
             "repeatDirection": "h",
@@ -741,7 +715,7 @@
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 75
+              "y": 66
             },
             "options": null,
             "repeatDirection": "h",
@@ -767,7 +741,7 @@
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 75
+              "y": 66
             },
             "options": null,
             "repeatDirection": "h",
@@ -793,7 +767,7 @@
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 84
+              "y": 75
             },
             "options": null,
             "repeatDirection": "h",
@@ -819,7 +793,7 @@
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 84
+              "y": 75
             },
             "options": null,
             "repeatDirection": "h",
@@ -845,7 +819,7 @@
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 93
+              "y": 84
             },
             "options": null,
             "repeatDirection": "h",
@@ -876,7 +850,7 @@
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 93
+              "y": 84
             },
             "options": null,
             "repeatDirection": "h",
@@ -902,7 +876,7 @@
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 102
+              "y": 93
             },
             "options": null,
             "repeatDirection": "h",
@@ -928,7 +902,7 @@
               "h": 9,
               "w": 12,
               "x": 12,
-              "y": 102
+              "y": 93
             },
             "options": null,
             "repeatDirection": "h",
@@ -954,7 +928,7 @@
               "h": 9,
               "w": 12,
               "x": 0,
-              "y": 111
+              "y": 102
             },
             "options": null,
             "repeatDirection": "h",
@@ -1211,35 +1185,6 @@
               "total_query": "sum(rate(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m])\n)\n)"
             }
           }
-        },
-        {
-          "alerting": {
-            "annotations": {
-              "summary": "SLO search-quality for search-api"
-            },
-            "labels": {
-              "service": "search-api",
-              "tier": "low"
-            },
-            "name": "SearchApiSearchQuality",
-            "ticket_alert": {
-              "annotations": {
-                "summary": "Error budget burn on search-api"
-              },
-              "labels": {
-                "severity": "warning"
-              }
-            }
-          },
-          "description": "95.0% search quality",
-          "name": "search-quality",
-          "objective": 95.0,
-          "sli": {
-            "events": {
-              "error_query": "",
-              "total_query": "sum(rate(search_results_total{service=\"search-api\",status=\"found\"}[5m]))\n/\nsum(rate(search_results_total{service=\"search-api\"}[5m]))\n* 100\n"
-            }
-          }
         }
       ],
       "version": "prometheus/v1"
@@ -1255,11 +1200,11 @@
       "dashboard": 1,
       "pagerduty": 1,
       "recording-rules": 15,
-      "slos": 3
+      "slos": 2
     },
     "service_name": "search-api",
     "success": true,
-    "total_resources": 35
+    "total_resources": 34
   },
   "preamble": [],
   "stray": []

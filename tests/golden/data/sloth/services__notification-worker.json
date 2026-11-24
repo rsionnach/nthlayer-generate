@@ -63,35 +63,6 @@
           "total_query": ""
         }
       }
-    },
-    {
-      "alerting": {
-        "annotations": {
-          "summary": "SLO queue-lag for notification-worker"
-        },
-        "labels": {
-          "service": "notification-worker",
-          "tier": "high"
-        },
-        "name": "NotificationWorkerQueueLag",
-        "ticket_alert": {
-          "annotations": {
-            "summary": "Error budget burn on notification-worker"
-          },
-          "labels": {
-            "severity": "warning"
-          }
-        }
-      },
-      "description": "99.0% queue lag",
-      "name": "queue-lag",
-      "objective": 99.0,
-      "sli": {
-        "events": {
-          "error_query": "",
-          "total_query": ""
-        }
-      }
     }
   ],
   "version": "prometheus/v1"

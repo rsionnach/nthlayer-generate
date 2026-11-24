@@ -15,6 +15,7 @@ import yaml
 from nthlayer_common.manifest import ReliabilityManifest, SLODefinition, SourceFormat
 
 from nthlayer_generate.core.placeholders import substitute_manifest_placeholders
+from nthlayer_generate.core.slo_kind import slo_kind
 
 logger = structlog.get_logger()
 
@@ -70,8 +71,23 @@ def generate_sloth_from_manifest(
 
         # Convert each SLO definition to Sloth format
         for slo in manifest.slos:
+            if slo_kind(slo) is None:
+                # No rule family (custom, freshness, lag): its target is not
+                # known to be a success percentage, so a Sloth objective and
+                # burn-rate alerts on it would be wrong (opensrm-onc6).
+                logger.info(
+                    "Sloth: skipping SLO '%s' in manifest '%s': no rule family",
+                    slo.name,
+                    manifest.name,
+                )
+                continue
             sloth_slo = _convert_slo_definition_to_sloth(slo, manifest)
             slos.append(sloth_slo)
+
+        if not slos:
+            # Every SLO was skipped: a Sloth spec with no SLOs is not one,
+            # so write no file. Not an error: the manifest is valid.
+            return SlothGenerationResult(success=True, service=manifest.name, slo_count=0)
 
         # Write output
         output_dir = Path(output_dir)
@@ -85,7 +101,7 @@ def generate_sloth_from_manifest(
             success=True,
             service=manifest.name,
             output_file=output_file,
-            slo_count=len(manifest.slos),
+            slo_count=len(slos),
         )
 
     except Exception as e:

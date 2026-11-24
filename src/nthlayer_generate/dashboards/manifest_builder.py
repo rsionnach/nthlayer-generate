@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 import structlog
 from nthlayer_common.manifest import ReliabilityManifest, SourceFormat
 
+from nthlayer_generate.core.slo_kind import slo_kind
 from nthlayer_generate.dashboards.builder_sdk import DashboardBuilderSDK
 from nthlayer_generate.dashboards.templates import get_template_or_none
 from nthlayer_generate.specs.context import service_context_from_manifest
@@ -109,6 +110,12 @@ class ManifestDashboardBuilder:
 
         # Convert SLOs
         for slo in self.manifest.slos:
+            if slo_kind(slo) is None:
+                # No rule family (custom, freshness, lag): the SLO panel
+                # charts a percentage against "Target: N%", and with no
+                # query falls back to a request-rate default. Neither holds
+                # for this SLO, so it gets no panel (opensrm-onc6).
+                continue
             indicator: Dict[str, Any] = {}
             if slo.slo_type:
                 indicator["type"] = slo.slo_type

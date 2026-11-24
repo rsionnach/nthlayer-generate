@@ -13,16 +13,17 @@
     "  Window: 30d rolling",
     "  Error: No query defined in SLO indicator",
     "",
-    "[-] SLO: stream-lag (99.0%)",
+    "[-] SLO: stream-lag (99.0)",
     "  Window: 30d rolling",
-    "  Error: No query defined in SLO indicator",
+    "  Error: No rule family for this SLO type: no error budget",
     "",
     "[-] SLO: event-latency-p99 (95.0%)",
     "  Window: 30d rolling",
     "  Error: No query defined in SLO indicator",
     "",
     "------------------------------------------------------------",
-    "Summary: 0/3 SLOs healthy",
+    "Summary: 0/2 SLOs healthy",
+    "  1 without an error budget",
     ""
   ]
 }

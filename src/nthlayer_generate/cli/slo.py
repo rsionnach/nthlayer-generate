@@ -18,6 +18,7 @@ from typing import Any
 from nthlayer_common.manifest import ReliabilityManifest, SLODefinition, SourceFormat, load_manifest
 
 from nthlayer_generate.cli.ux import console, header
+from nthlayer_generate.core.slo_kind import slo_kind
 
 
 def _is_objective(manifest: ReliabilityManifest, slo: SLODefinition) -> bool:
@@ -31,13 +32,32 @@ def _is_objective(manifest: ReliabilityManifest, slo: SLODefinition) -> bool:
     Rob, 2026-10-29: budget objectives only. Common does not range-check
     targets, so one outside (0, 100) is not an objective in any format: 200
     gave a negative budget that collect reported HEALTHY, and 100 a zero one
-    it divided by.
+    it divided by. An SLO with no rule family (custom, freshness, lag) has
+    no budget either, whatever its target: nothing says the target is a
+    success percentage or the SLI a ratio (opensrm-onc6).
     """
+    if slo_kind(slo) is None:
+        return False
     if not 0 < slo.target < 100:
         return False
     if manifest.source_format != SourceFormat.SRM_V1:
         return True
     return slo.slo_type == "availability" and not slo.is_judgment_slo()
+
+
+_NOT_AN_OBJECTIVE = "target is not a 0-100 objective"
+_NO_RULE_FAMILY = "no rule family for this SLO type"
+
+
+def _no_budget_reason(slo: SLODefinition) -> str:
+    """Why an SLO that is not an objective has no error budget, for display."""
+    return _NO_RULE_FAMILY if slo_kind(slo) is None else _NOT_AN_OBJECTIVE
+
+
+def _no_budget_error(slo: SLODefinition) -> str:
+    """The same reason as a collect result's ``error`` sentence."""
+    reason = _no_budget_reason(slo)
+    return f"{reason[0].upper()}{reason[1:]}: no error budget"
 
 
 def _target_label(manifest: ReliabilityManifest, slo: SLODefinition) -> str:
@@ -118,7 +138,7 @@ def slo_show_command(
             console.print(f"  [green]Target:[/green] {_target_label(manifest, slo)}")
             console.print(f"  [green]Window:[/green] {window}")
             console.print(
-                "  [green]Error Budget:[/green] n/a [dim](target is not a 0-100 objective)[/dim]"
+                f"  [green]Error Budget:[/green] n/a [dim]({_no_budget_reason(slo)})[/dim]"
             )
         console.print()
 
@@ -276,10 +296,13 @@ def slo_collect_command(
     budgeted = [r for r in results if r["status"] != "NOT_APPLICABLE"]
     healthy = sum(1 for r in budgeted if r["status"] == "HEALTHY")
     print(f"Summary: {healthy}/{len(budgeted)} SLOs healthy")
-    if len(budgeted) < len(results):
-        print(
-            f"         {len(results) - len(budgeted)} without an error budget (not 0-100 objectives)"
-        )
+    unbudgeted = [r for r in results if r["status"] == "NOT_APPLICABLE"]
+    if unbudgeted:
+        # Name the reason only when it is the same for all of them; each
+        # SLO's own line above already gives its own.
+        only_bounds = all(r["error"].lower().startswith(_NOT_AN_OBJECTIVE) for r in unbudgeted)
+        why = " (not 0-100 objectives)" if only_bounds else ""
+        print(f"         {len(unbudgeted)} without an error budget{why}")
     print()
 
     return 0
@@ -317,7 +340,7 @@ async def _collect_slo_metrics(
                     "burned_minutes": None,
                     "percent_consumed": None,
                     "status": "NOT_APPLICABLE",
-                    "error": "Target is not a 0-100 objective: no error budget",
+                    "error": _no_budget_error(slo),
                 }
             )
             continue

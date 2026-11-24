@@ -79,6 +79,13 @@ def generate_slo_command(
             console.print()
             return 1
 
+        if result.output_file is None:
+            # Every SLO was skipped (opensrm-onc6): nothing to write, and
+            # the manifest is not at fault.
+            info(f"No Sloth spec written for {result.service}: none of its SLOs has a rule family")
+            console.print()
+            return 0
+
         success(f"Generated SLOs for {result.service}")
         console.print(f"   [muted]SLO count:[/muted] {result.slo_count}")
         console.print(f"   [muted]Output:[/muted] {result.output_file}")

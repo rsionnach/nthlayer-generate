@@ -72,38 +72,12 @@
         "type": "timeseries"
       },
       {
-        "description": "Target: 95.0%",
-        "fieldConfig": {
-          "defaults": {},
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 9,
-          "w": 12,
-          "x": 0,
-          "y": 10
-        },
-        "options": null,
-        "repeatDirection": "h",
-        "targets": [
-          {
-            "expr": "sum(rate(search_results_total{service=\"search-api\",status=\"found\"}[5m]))\n/\nsum(rate(search_results_total{service=\"search-api\"}[5m]))\n* 100\n",
-            "legendFormat": "search-quality",
-            "refId": "A"
-          }
-        ],
-        "title": "search-quality",
-        "transformations": [],
-        "transparent": false,
-        "type": "timeseries"
-      },
-      {
         "collapsed": false,
         "gridPos": {
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 19
+          "y": 10
         },
         "id": "<masked>",
         "panels": [],
@@ -120,7 +94,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 20
+          "y": 11
         },
         "options": null,
         "repeatDirection": "h",
@@ -146,7 +120,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 20
+          "y": 11
         },
         "options": null,
         "repeatDirection": "h",
@@ -172,7 +146,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 29
+          "y": 20
         },
         "options": null,
         "repeatDirection": "h",
@@ -194,7 +168,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 38
+          "y": 29
         },
         "id": "<masked>",
         "panels": [],
@@ -211,7 +185,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 39
+          "y": 30
         },
         "options": null,
         "repeatDirection": "h",
@@ -237,7 +211,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 39
+          "y": 30
         },
         "options": null,
         "repeatDirection": "h",
@@ -268,7 +242,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 48
+          "y": 39
         },
         "options": null,
         "repeatDirection": "h",
@@ -294,7 +268,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 48
+          "y": 39
         },
         "options": null,
         "repeatDirection": "h",
@@ -320,7 +294,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 57
+          "y": 48
         },
         "options": null,
         "repeatDirection": "h",
@@ -346,7 +320,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 57
+          "y": 48
         },
         "options": null,
         "repeatDirection": "h",
@@ -372,7 +346,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 66
+          "y": 57
         },
         "options": null,
         "repeatDirection": "h",
@@ -398,7 +372,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 66
+          "y": 57
         },
         "options": null,
         "repeatDirection": "h",
@@ -424,7 +398,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 75
+          "y": 66
         },
         "options": null,
         "repeatDirection": "h",
@@ -450,7 +424,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 75
+          "y": 66
         },
         "options": null,
         "repeatDirection": "h",
@@ -476,7 +450,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 84
+          "y": 75
         },
         "options": null,
         "repeatDirection": "h",
@@ -502,7 +476,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 84
+          "y": 75
         },
         "options": null,
         "repeatDirection": "h",
@@ -528,7 +502,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 93
+          "y": 84
         },
         "options": null,
         "repeatDirection": "h",
@@ -559,7 +533,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 93
+          "y": 84
         },
         "options": null,
         "repeatDirection": "h",
@@ -585,7 +559,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 102
+          "y": 93
         },
         "options": null,
         "repeatDirection": "h",
@@ -611,7 +585,7 @@
           "h": 9,
           "w": 12,
           "x": 12,
-          "y": 102
+          "y": 93
         },
         "options": null,
         "repeatDirection": "h",
@@ -637,7 +611,7 @@
           "h": 9,
           "w": 12,
           "x": 0,
-          "y": 111
+          "y": 102
         },
         "options": null,
         "repeatDirection": "h",

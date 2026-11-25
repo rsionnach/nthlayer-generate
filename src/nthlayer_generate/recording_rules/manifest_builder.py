@@ -28,6 +28,7 @@ from nthlayer_common.manifest import (
 from nthlayer_common.manifest.thresholds import DURATION, THRESHOLD_BOUNDS
 
 from nthlayer_generate.core.placeholders import substitute_manifest_placeholders
+from nthlayer_generate.core.slo_kind import slo_kind
 from nthlayer_generate.recording_rules.models import RecordingRule, RecordingRuleGroup
 
 logger = structlog.get_logger()
@@ -132,7 +133,7 @@ class ManifestRecordingRuleBuilder:
         service = self.manifest.name
         slo_name = slo.name
 
-        kind = _slo_kind(slo)
+        kind = slo_kind(slo)
 
         # Ruling Z3 (opensrm-zo0o): an SLO with its own good/total queries
         # gets its budget from them, whatever its request-ratio kind; the
@@ -899,20 +900,6 @@ def _slo_selector(record: str, service: str, slo_name: str) -> str:
     return f'{record}{{service="{service}",slo="{slo_name}"}}'
 
 
-def _slo_kind(slo: SLODefinition) -> str | None:
-    """The rule family an SLO dispatches to, by its type (or, unset, its name)."""
-    slo_type = (slo.slo_type or slo.name).lower()
-    for needle, kind in (
-        ("availability", "availability"),
-        ("latency", "latency"),
-        ("error", "error_rate"),
-        ("throughput", "throughput"),
-    ):
-        if needle in slo_type:
-            return kind
-    return None
-
-
 def _budget_skip_reason(slo: SLODefinition) -> str | None:
     """Why ``slo`` must get no error budget, or None when it may have one.
 
@@ -942,7 +929,7 @@ def _budget_skip_reason(slo: SLODefinition) -> str | None:
     # "under 200ms", opensrm-8jpp) or to 500ms (a legacy SLO that declares
     # no threshold_ms). A budget on a guessed bound is confidently
     # wrong. An SLO with its own queries carries its bound in the good query.
-    if _slo_kind(slo) == "latency" and slo.threshold_ms is None and not _has_own_queries(slo):
+    if slo_kind(slo) == "latency" and slo.threshold_ms is None and not _has_own_queries(slo):
         return "latency_bound_not_declared"
     return None
 

@@ -41,35 +41,6 @@
         {
           "alerting": {
             "annotations": {
-              "summary": "SLO stream-lag for analytics-stream"
-            },
-            "labels": {
-              "service": "analytics-stream",
-              "tier": "high"
-            },
-            "name": "AnalyticsStreamStreamLag",
-            "ticket_alert": {
-              "annotations": {
-                "summary": "Error budget burn on analytics-stream"
-              },
-              "labels": {
-                "severity": "warning"
-              }
-            }
-          },
-          "description": "99.0% stream lag",
-          "name": "stream-lag",
-          "objective": 99.0,
-          "sli": {
-            "events": {
-              "error_query": "",
-              "total_query": ""
-            }
-          }
-        },
-        {
-          "alerting": {
-            "annotations": {
               "summary": "SLO event-latency-p99 for analytics-stream"
             },
             "labels": {
@@ -107,12 +78,11 @@
     "╰──╯",
     "",
     "✓ Generated SLOs for analytics-stream",
-    "  SLO count: 3",
+    "  SLO count: 2",
     "  Output: <tmp>/out/sloth/analytics-stream.yaml",
     "",
     "Generated SLOs:",
     "  • analytics-stream-processing-availability (99.5%)",
-    "  • analytics-stream-stream-lag (99.0%)",
     "  • analytics-stream-event-latency-p99 (95.0%)",
     "",
     "Next steps:",

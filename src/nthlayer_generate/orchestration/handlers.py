@@ -10,6 +10,7 @@ from nthlayer_common.manifest import PagerDutyConfig
 
 from nthlayer_generate.alertmanager import generate_alertmanager_config
 from nthlayer_generate.core.errors import ProviderError
+from nthlayer_generate.core.slo_kind import slo_kind
 from nthlayer_generate.orchestration.registry import OrchestratorContext, ResourceRegistry
 from nthlayer_generate.pagerduty import EventOrchestrationManager, PagerDutyResourceManager
 
@@ -32,9 +33,12 @@ class SloHandler:
         return "SLOs"
 
     def plan(self, ctx: OrchestratorContext) -> List[Dict[str, Any]]:
+        # The SLOs generate() will write: the Sloth spec skips one with no
+        # rule family, so the plan must not promise it (opensrm-onc6).
         return [
             {"name": slo.name, "objective": slo.target, "window": slo.window}
             for slo in ctx.manifest.slos
+            if slo_kind(slo) is not None
         ]
 
     def generate(self, ctx: OrchestratorContext) -> int:

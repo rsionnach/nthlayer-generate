@@ -2,8 +2,7 @@
   "exit": 0,
   "queries": [
     "sum(rate(http_requests_total{service=\"search-api\",status!~\"5..\"}[5m]))\n/\nsum(rate(http_requests_total{service=\"search-api\"}[5m]))\n",
-    "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m])\n)\n",
-    "sum(rate(search_results_total{service=\"search-api\",status=\"found\"}[5m]))\n/\nsum(rate(search_results_total{service=\"search-api\"}[5m]))\n* 100\n"
+    "histogram_quantile(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m])\n)\n"
   ],
   "text": [
     "",
@@ -31,17 +30,13 @@
     "  Burned: 21.6 min (5%)",
     "  Status: HEALTHY",
     "",
-    "[OK] SLO: search-quality (95.0%)",
+    "[-] SLO: search-quality (95.0)",
     "  Window: 7d rolling",
-    "  Current SLI: 99.95%",
-    "",
-    "  Error Budget:",
-    "  Total: 504.0 min",
-    "  Burned: 5.0 min (1%)",
-    "  Status: HEALTHY",
+    "  Error: No rule family for this SLO type: no error budget",
     "",
     "------------------------------------------------------------",
-    "Summary: 3/3 SLOs healthy",
+    "Summary: 2/2 SLOs healthy",
+    "  1 without an error budget",
     ""
   ]
 }

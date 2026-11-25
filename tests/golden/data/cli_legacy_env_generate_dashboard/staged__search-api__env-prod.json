@@ -75,32 +75,6 @@
             "type": "timeseries"
           },
           {
-            "description": "Target: 95.0%",
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 9,
-              "w": 12,
-              "x": 0,
-              "y": 10
-            },
-            "options": null,
-            "repeatDirection": "h",
-            "targets": [
-              {
-                "expr": "sum(rate(search_results_total{service=\"search-api\",status=\"found\"}[5m]))\n/\nsum(rate(search_results_total{service=\"search-api\"}[5m]))\n* 100\n",
-                "legendFormat": "search-quality",
-                "refId": "A"
-              }
-            ],
-            "title": "search-quality",
-            "transformations": [],
-            "transparent": false,
-            "type": "timeseries"
-          },
-          {
             "description": "Target: 99.9%",
             "fieldConfig": {
               "defaults": {},
@@ -109,7 +83,7 @@
             "gridPos": {
               "h": 9,
               "w": 12,
-              "x": 12,
+              "x": 0,
               "y": 10
             },
             "options": null,
@@ -134,8 +108,8 @@
             "gridPos": {
               "h": 9,
               "w": 12,
-              "x": 0,
-              "y": 19
+              "x": 12,
+              "y": 10
             },
             "options": null,
             "repeatDirection": "h",
@@ -159,7 +133,7 @@
             "gridPos": {
               "h": 9,
               "w": 12,
-              "x": 12,
+              "x": 0,
               "y": 19
             },
             "options": null,

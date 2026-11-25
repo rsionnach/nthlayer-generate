@@ -55,6 +55,11 @@
     (opensrm-zo0o)
 - `core/placeholders.py` — `${service}`-style placeholder substitution shared
   by the Sloth generator and the recording-rule builder
+- `core/slo_kind.py` — `slo_kind`: the rule family an SLO dispatches to, shared
+  by the recording rules, the Sloth generator, the dashboard builder, the
+  alert pipeline, `slo show/list/collect` and the plan. None (custom,
+  freshness, lag) means no budget, no alerts, no Sloth entry and no SLO
+  panel (opensrm-onc6)
 - `alerts/` — Alert rule generation from dependencies and SLOs
 - `validation/` — Metadata and resource validation
 - `generators/` — Resource generation from manifests

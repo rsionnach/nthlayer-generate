@@ -66,35 +66,6 @@
               "total_query": "sum(rate(0.95,\n  rate(http_request_duration_seconds_bucket{service=\"search-api\"}[5m])\n)\n)"
             }
           }
-        },
-        {
-          "alerting": {
-            "annotations": {
-              "summary": "SLO search-quality for search-api"
-            },
-            "labels": {
-              "service": "search-api",
-              "tier": "low"
-            },
-            "name": "SearchApiSearchQuality",
-            "ticket_alert": {
-              "annotations": {
-                "summary": "Error budget burn on search-api"
-              },
-              "labels": {
-                "severity": "warning"
-              }
-            }
-          },
-          "description": "95.0% search quality",
-          "name": "search-quality",
-          "objective": 95.0,
-          "sli": {
-            "events": {
-              "error_query": "",
-              "total_query": "sum(rate(search_results_total{service=\"search-api\",status=\"found\"}[5m]))\n/\nsum(rate(search_results_total{service=\"search-api\"}[5m]))\n* 100\n"
-            }
-          }
         }
       ],
       "version": "prometheus/v1"
@@ -109,13 +80,12 @@
     "Environment: dev",
     "",
     "✓ Generated SLOs for search-api",
-    "  SLO count: 3",
+    "  SLO count: 2",
     "  Output: <tmp>/out/sloth/search-api.yaml",
     "",
     "Generated SLOs:",
     "  • search-api-search-availability (99.5%)",
     "  • search-api-search-latency-p95 (99.0%)",
-    "  • search-api-search-quality (95.0%)",
     "",
     "Next steps:",
     "  1. Review generated spec: <tmp>/out/sloth/search-api.yaml",

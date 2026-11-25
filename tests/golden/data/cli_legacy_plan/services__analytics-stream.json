@@ -17,8 +17,8 @@
         "status": "pass"
       },
       "slo_definition": {
-        "message": "3 SLOs defined",
-        "slo_count": 3,
+        "message": "2 SLOs defined",
+        "slo_count": 2,
         "status": "pass"
       }
     },
@@ -95,11 +95,6 @@
             "window": "30d"
           },
           {
-            "name": "stream-lag",
-            "objective": 99.0,
-            "window": "30d"
-          },
-          {
             "name": "event-latency-p99",
             "objective": 95.0,
             "window": "30d"
@@ -114,7 +109,7 @@
       "passed": 4,
       "status": "pass",
       "total": 4,
-      "total_resources": 13,
+      "total_resources": 12,
       "warnings": 0
     },
     "timestamp": "<masked>",
@@ -194,11 +189,6 @@
           "window": "30d"
         },
         {
-          "name": "stream-lag",
-          "objective": 99.0,
-          "window": "30d"
-        },
-        {
           "name": "event-latency-p99",
           "objective": 95.0,
           "window": "30d"
@@ -210,5 +200,5 @@
     "warnings": []
   },
   "success": true,
-  "total_resources": 13
+  "total_resources": 12
 }

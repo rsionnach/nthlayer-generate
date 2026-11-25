@@ -17,12 +17,13 @@
     "  Window: 30d rolling",
     "  Error: No query defined in SLO indicator",
     "",
-    "[-] SLO: queue-lag (99.0%)",
+    "[-] SLO: queue-lag (99.0)",
     "  Window: 30d rolling",
-    "  Error: No query defined in SLO indicator",
+    "  Error: No rule family for this SLO type: no error budget",
     "",
     "------------------------------------------------------------",
-    "Summary: 0/3 SLOs healthy",
+    "Summary: 0/2 SLOs healthy",
+    "  1 without an error budget",
     ""
   ]
 }

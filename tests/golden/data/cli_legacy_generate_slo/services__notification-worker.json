@@ -66,35 +66,6 @@
               "total_query": ""
             }
           }
-        },
-        {
-          "alerting": {
-            "annotations": {
-              "summary": "SLO queue-lag for notification-worker"
-            },
-            "labels": {
-              "service": "notification-worker",
-              "tier": "high"
-            },
-            "name": "NotificationWorkerQueueLag",
-            "ticket_alert": {
-              "annotations": {
-                "summary": "Error budget burn on notification-worker"
-              },
-              "labels": {
-                "severity": "warning"
-              }
-            }
-          },
-          "description": "99.0% queue lag",
-          "name": "queue-lag",
-          "objective": 99.0,
-          "sli": {
-            "events": {
-              "error_query": "",
-              "total_query": ""
-            }
-          }
         }
       ],
       "version": "prometheus/v1"
@@ -107,13 +78,12 @@
     "╰──╯",
     "",
     "✓ Generated SLOs for notification-worker",
-    "  SLO count: 3",
+    "  SLO count: 2",
     "  Output: <tmp>/out/sloth/notification-worker.yaml",
     "",
     "Generated SLOs:",
     "  • notification-worker-delivery-success (99.5%)",
     "  • notification-worker-processing-latency-p95 (98.0%)",
-    "  • notification-worker-queue-lag (99.0%)",
     "",
     "Next steps:",
     "  1. Review generated spec: <tmp>/out/sloth/notification-worker.yaml",

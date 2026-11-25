@@ -1,4 +1,4 @@
-.PHONY: help dev-up dev-down dev-logs test test-cov lint typecheck format clean demo-reconcile mock-server docs docs-serve demo-gifs lock lock-upgrade smoke smoke-full
+.PHONY: help dev-up dev-down dev-logs promtool test test-cov lint typecheck format clean demo-reconcile mock-server docs docs-serve demo-gifs lock lock-upgrade smoke smoke-full
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -41,6 +41,9 @@ migrate-create: ## Create new migration (use: make migrate-create MSG="descripti
 # Testing
 test: ## Run tests
 	uv run pytest tests/ -v
+
+promtool: ## Install the pinned promtool the rule tests need (~/.local/bin)
+	uv run python scripts/install_promtool.py
 
 test-cov: ## Run tests with coverage report
 	uv run pytest tests/ -v --cov=src/nthlayer --cov-report=html --cov-report=term

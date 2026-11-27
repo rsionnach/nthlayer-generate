@@ -471,13 +471,17 @@ class ManifestRecordingRuleBuilder:
             )
         )
 
-        # Throughput SLO compliance (1 if above minimum, 0 otherwise)
+        # Throughput SLO compliance: 1 at or above the minimum, 0 below it,
+        # and no sample when there is no rate to compare. `bool` makes the
+        # comparison return 1 or 0 instead of filtering; there is no
+        # `or vector(0)`, which made a missing rate read as a breach
+        # (opensrm-r0bx ruling 4).
         rules.append(
             RecordingRule(
                 record="slo:throughput:compliance",
                 expr=(
-                    f'(slo:throughput:rate5m{{service="{service}",slo="{slo_name}"}} >= {minimum_rps}) '
-                    f"or vector(0)"
+                    f"{_slo_selector('slo:throughput:rate5m', service, slo_name)} "
+                    f">= bool {minimum_rps}"
                 ),
                 labels={
                     "service": service,

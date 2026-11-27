@@ -409,3 +409,48 @@ def test_no_ratio_divides_recorded_series_with_different_labels_unmatched() -> N
     # The shipped corpus has availability, latency and error-rate ratios;
     # a selection that found none would pass for the wrong reason.
     assert checked >= 10, checked
+
+
+# --- throughput compliance: 1, 0, or nothing (ruling 4) ---------------------
+
+# worker.reliability.yaml (srm/v1, service email-sender): throughput, target
+# 100 requests a second.
+WORKER = EXAMPLES / "opensrm" / "worker.reliability.yaml"
+
+COMPLIANCE = "sum(slo:throughput:compliance)"
+
+
+@pytest.mark.parametrize(
+    ("per_minute", "compliant"),
+    [
+        (7200, 1),  # 120 a second, above the minimum of 100
+        (6000, 1),  # exactly the minimum
+        (3000, 0),  # 50 a second
+    ],
+)
+def test_throughput_compliance_is_one_or_zero(per_minute: int, compliant: int) -> None:
+    # It used to be the rate itself when compliant (no `bool`), so a
+    # dashboard reading "1 = compliant" saw 120.
+    _evaluate(
+        _load(WORKER),
+        [_counter('http_requests_total{service="email-sender"}', per_minute)],
+        [_expect(COMPLIANCE, [_value(compliant)])],
+    )
+
+
+def test_a_scraped_service_doing_nothing_is_below_its_minimum() -> None:
+    # Unlike a ratio, a rate of zero is a measurement: zero is below 100.
+    _evaluate(
+        _load(WORKER),
+        [_flat(_counter('http_requests_total{service="email-sender"}', 0))],
+        [_expect(COMPLIANCE, [_value(0)])],
+    )
+
+
+def test_throughput_compliance_is_absent_without_a_rate() -> None:
+    # It used to be 0 (`or vector(0)`): no data read as a breach.
+    _evaluate(
+        _load(WORKER),
+        [_counter('http_requests_total{service="someone-else"}', 7200)],
+        [_expect("slo:throughput:compliance", []), _expect("slo:throughput:rate5m", [])],
+    )

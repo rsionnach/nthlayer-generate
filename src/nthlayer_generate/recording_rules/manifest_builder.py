@@ -325,12 +325,16 @@ class ManifestRecordingRuleBuilder:
             )
         )
 
-        # Latency SLO compliance
+        # Latency SLO compliance. on(service, slo): the fast count carries a
+        # `threshold` label the total does not, and a bare `/` pairs only
+        # equal label sets, so without it the ratio is absent for ever
+        # (opensrm-r0bx ruling 7).
         rules.append(
             RecordingRule(
                 record="slo:latency:ratio",
                 expr=(
-                    f'slo:latency_requests_fast:{window}{{service="{service}",slo="{slo_name}"}} / '
+                    f'slo:latency_requests_fast:{window}{{service="{service}",slo="{slo_name}"}} '
+                    f"/ on(service, slo) "
                     f'slo:latency_requests_total:{window}{{service="{service}",slo="{slo_name}"}}'
                 ),
                 labels={

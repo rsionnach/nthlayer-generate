@@ -138,6 +138,25 @@ $ nthlayer validate service.yaml --policies policies.yaml
 
 ---
 
+## ⚠️ Upgrading: canned latency SLOs get a ratio and a budget for the first time
+
+`slo:latency:ratio` divided `slo:latency_requests_fast:<window>` by
+`slo:latency_requests_total:<window>`. The fast count carries a `threshold`
+label and the total does not, so the two never paired and the ratio was
+absent whatever the traffic. No latency SLO without its own queries has
+produced a ratio or an error budget until now.
+
+The ratio now divides `on(service, slo)`. When you load the new rules,
+`slo:latency:ratio` and the latency `slo:error_budget_remaining:ratio`
+appear for the first time, and anything that reads them (burn-rate alerts,
+`nthlayer-workers`' measure and observe) starts evaluating those SLOs. Check
+each latency objective and `threshold_ms` before you deploy: an SLO that was
+silently unevaluated may turn out to be in breach.
+
+`slo:latency_requests_fast:<window>` keeps its `threshold` label, and
+`slo:latency:ratio` keeps the labels it was declared with (`service`, `slo`,
+`objective`).
+
 ## ⚠️ Upgrading: an error budget for every request-ratio SLO
 
 `generate-recording-rules` (and `apply`) used to write

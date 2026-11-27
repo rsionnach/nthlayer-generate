@@ -90,12 +90,4 @@ WORKER_TEMPLATE = ServiceTypeTemplate(
             requirement_level=RequirementLevel.RECOMMENDED,
         ),
     ],
-    slo_formulas={
-        "success_rate": (
-            "sum(rate(jobs_total{job_status='success'}[5m])) / " "sum(rate(jobs_total[5m]))"
-        ),
-        "latency_p99": (
-            "histogram_quantile(0.99, " "sum(rate(jobs_duration_seconds_bucket[5m])) by (le)" ")"
-        ),
-    },
 )

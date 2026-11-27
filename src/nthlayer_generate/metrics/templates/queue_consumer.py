@@ -101,16 +101,4 @@ QUEUE_CONSUMER_TEMPLATE = ServiceTypeTemplate(
             requirement_level=RequirementLevel.RECOMMENDED,
         ),
     ],
-    slo_formulas={
-        "processing_success_rate": (
-            "sum(rate(messaging_receive_messages_total"
-            "{messaging_operation_status='success'}[5m])) / "
-            "sum(rate(messaging_receive_messages_total[5m]))"
-        ),
-        "latency_p99": (
-            "histogram_quantile(0.99, "
-            "sum(rate(messaging_receive_duration_seconds_bucket[5m])) by (le)"
-            ")"
-        ),
-    },
 )

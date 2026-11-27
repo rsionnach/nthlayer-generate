@@ -154,8 +154,9 @@ def test_declared_feedback_bound_emits_a_30_day_within_bound_fraction(path: Path
     window = f"[{FEEDBACK_LATENCY_WINDOW}]"
     assert rule["expr"] == (
         f'sum(increase(ai_gate_feedback_latency_seconds_bucket{{{selector},le="{seconds}"}}'
-        f"{window})) / sum(increase(ai_gate_feedback_latency_seconds_count{{{selector}}}"
-        f"{window}))"
+        # No arrivals in the window: absent, not 0/0 (opensrm-r0bx).
+        f"{window})) / (sum(increase(ai_gate_feedback_latency_seconds_count{{{selector}}}"
+        f"{window})) > 0)"
     )
     assert "histogram_quantile" not in rule["expr"]
     # E2: a Duration bound is carried in seconds.

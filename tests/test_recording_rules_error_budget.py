@@ -250,7 +250,8 @@ def test_legacy_success_ratio_is_recorded_as_is():
     ratio = by_record["slo:sli:ratio"]
     assert ratio.expr == (
         f"sum_over_time({_sel('slo:sli_good:rate', 'analytics-stream', 'processing-availability')}[30d])"
-        f" / sum_over_time({_sel('slo:sli_total:rate', 'analytics-stream', 'processing-availability')}[30d])"
+        # Absent, not NaN, when the window saw no events (opensrm-r0bx).
+        f" / (sum_over_time({_sel('slo:sli_total:rate', 'analytics-stream', 'processing-availability')}[30d]) > 0)"
     )
     assert ratio.labels == {
         "service": "analytics-stream",

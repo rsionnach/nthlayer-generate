@@ -7,6 +7,13 @@ This module provides recording rule generation for:
 - AI Gate judgment thresholds (calibration, feedback_latency), from nthlayer-common's
   JudgmentThreshold (opensrm-wo62.1, spec §5.3)
 
+Zero traffic (opensrm-r0bx, Rob 2026-11-25): every ratio written here is
+ABSENT when its denominator is zero or missing, because the expression says
+so: the denominator is filtered with ``> 0`` (``_ratio``). A ratio is never
+NaN, and never a made-up 0 or 1. With a positive denominator, a numerator
+that has no series counts as zero (``_or_zero``). The alerts generator
+writes one NotEvaluable alert per ratio SLO, so the silence is visible.
+
 The generated metrics are compatible with Backstage plugins:
 - SloCard expects: slo:error_budget_remaining:ratio{service="..."}
 - JudgmentCard expects: ai_gate:reversal_rate:ratio{service="..."}
@@ -200,11 +207,13 @@ class ManifestRecordingRuleBuilder:
             RecordingRule(record="slo:sli_total:rate", expr=total, labels=dict(series_labels)),
             RecordingRule(
                 record="slo:sli:ratio",
-                expr=(
+                # The guard is on the WINDOWED total: one quiet interval inside
+                # a busy window must not blank the ratio.
+                expr=_ratio(
                     f"sum_over_time({_slo_selector('slo:sli_good:rate', service, slo_name)}"
-                    f"[{window}]) / "
+                    f"[{window}])",
                     f"sum_over_time({_slo_selector('slo:sli_total:rate', service, slo_name)}"
-                    f"[{window}])"
+                    f"[{window}])",
                 ),
                 labels={**series_labels, "objective": str(objective)},
             ),
@@ -245,7 +254,10 @@ class ManifestRecordingRuleBuilder:
         rules.append(
             RecordingRule(
                 record=f"slo:requests_success:{window}",
-                expr=f'sum(increase(http_requests_total{{service="{service}",status!~"5.."}}[{window}]))',
+                expr=_or_zero(
+                    f'sum(increase(http_requests_total{{service="{service}",status!~"5.."}}[{window}]))',
+                    f'sum(increase(http_requests_total{{service="{service}"}}[{window}]))',
+                ),
                 labels={
                     "service": service,
                     "slo": slo_name,
@@ -257,9 +269,9 @@ class ManifestRecordingRuleBuilder:
         rules.append(
             RecordingRule(
                 record="slo:availability:ratio",
-                expr=(
-                    f'slo:requests_success:{window}{{service="{service}",slo="{slo_name}"}} / '
-                    f'slo:requests_total:{window}{{service="{service}",slo="{slo_name}"}}'
+                expr=_ratio(
+                    _slo_selector(f"slo:requests_success:{window}", service, slo_name),
+                    _slo_selector(f"slo:requests_total:{window}", service, slo_name),
                 ),
                 labels={
                     "service": service,
@@ -312,9 +324,10 @@ class ManifestRecordingRuleBuilder:
         rules.append(
             RecordingRule(
                 record=f"slo:latency_requests_fast:{window}",
-                expr=(
+                expr=_or_zero(
                     f'sum(increase(http_request_duration_seconds_bucket{{service="{service}",'
-                    f'le="{prometheus_le(threshold_sec)}"}}[{window}]))'
+                    f'le="{prometheus_le(threshold_sec)}"}}[{window}]))',
+                    f'sum(increase(http_request_duration_seconds_count{{service="{service}"}}[{window}]))',
                 ),
                 labels={
                     "service": service,
@@ -332,10 +345,10 @@ class ManifestRecordingRuleBuilder:
         rules.append(
             RecordingRule(
                 record="slo:latency:ratio",
-                expr=(
-                    f'slo:latency_requests_fast:{window}{{service="{service}",slo="{slo_name}"}} '
-                    f"/ on(service, slo) "
-                    f'slo:latency_requests_total:{window}{{service="{service}",slo="{slo_name}"}}'
+                expr=_ratio(
+                    _slo_selector(f"slo:latency_requests_fast:{window}", service, slo_name),
+                    _slo_selector(f"slo:latency_requests_total:{window}", service, slo_name),
+                    on="service, slo",
                 ),
                 labels={
                     "service": service,
@@ -398,7 +411,10 @@ class ManifestRecordingRuleBuilder:
         rules.append(
             RecordingRule(
                 record=f"slo:error_requests_failed:{window}",
-                expr=f'sum(increase(http_requests_total{{service="{service}",status=~"5.."}}[{window}]))',
+                expr=_or_zero(
+                    f'sum(increase(http_requests_total{{service="{service}",status=~"5.."}}[{window}]))',
+                    f'sum(increase(http_requests_total{{service="{service}"}}[{window}]))',
+                ),
                 labels={
                     "service": service,
                     "slo": slo_name,
@@ -410,9 +426,9 @@ class ManifestRecordingRuleBuilder:
         rules.append(
             RecordingRule(
                 record="slo:error_rate:ratio",
-                expr=(
-                    f'slo:error_requests_failed:{window}{{service="{service}",slo="{slo_name}"}} / '
-                    f'slo:error_requests_total:{window}{{service="{service}",slo="{slo_name}"}}'
+                expr=_ratio(
+                    _slo_selector(f"slo:error_requests_failed:{window}", service, slo_name),
+                    _slo_selector(f"slo:error_requests_total:{window}", service, slo_name),
                 ),
                 labels={
                     "service": service,
@@ -569,7 +585,10 @@ class ManifestRecordingRuleBuilder:
         rules.append(
             RecordingRule(
                 record=f"ai_gate:decisions_reversed:{window}",
-                expr=f'sum(increase(ai_gate_decisions_total{{service="{service}",reversed="true"}}[{window}]))',
+                expr=_or_zero(
+                    f'sum(increase(ai_gate_decisions_total{{service="{service}",reversed="true"}}[{window}]))',
+                    f'sum(increase(ai_gate_decisions_total{{service="{service}"}}[{window}]))',
+                ),
                 labels={"service": service},
             )
         )
@@ -578,9 +597,9 @@ class ManifestRecordingRuleBuilder:
         rules.append(
             RecordingRule(
                 record="ai_gate:reversal_rate:ratio",
-                expr=(
-                    f'ai_gate:decisions_reversed:{window}{{service="{service}"}} / '
-                    f'ai_gate:decisions_total:{window}{{service="{service}"}}'
+                expr=_ratio(
+                    f'ai_gate:decisions_reversed:{window}{{service="{service}"}}',
+                    f'ai_gate:decisions_total:{window}{{service="{service}"}}',
                 ),
                 labels={
                     "service": service,
@@ -618,9 +637,11 @@ class ManifestRecordingRuleBuilder:
         rules.append(
             RecordingRule(
                 record=f"ai_gate:high_confidence_failures:{window}",
-                expr=(
+                expr=_or_zero(
                     f'sum(increase(ai_gate_decisions_total{{service="{service}",'
-                    f'confidence_bucket="high",outcome="incorrect"}}[{window}]))'
+                    f'confidence_bucket="high",outcome="incorrect"}}[{window}]))',
+                    f'sum(increase(ai_gate_decisions_total{{service="{service}",'
+                    f'confidence_bucket="high"}}[{window}]))',
                 ),
                 labels={"service": service},
             )
@@ -630,9 +651,9 @@ class ManifestRecordingRuleBuilder:
         rules.append(
             RecordingRule(
                 record="ai_gate:high_confidence_failure:ratio",
-                expr=(
-                    f'ai_gate:high_confidence_failures:{window}{{service="{service}"}} / '
-                    f'ai_gate:high_confidence_decisions:{window}{{service="{service}"}}'
+                expr=_ratio(
+                    f'ai_gate:high_confidence_failures:{window}{{service="{service}"}}',
+                    f'ai_gate:high_confidence_decisions:{window}{{service="{service}"}}',
                 ),
                 labels={
                     "service": service,
@@ -731,10 +752,10 @@ class ManifestRecordingRuleBuilder:
         rules.append(
             RecordingRule(
                 record="ai_gate:feedback_latency:bucket",
-                expr=(
+                expr=_ratio(
                     f'sum(rate(ai_gate_feedback_latency_seconds_bucket{{service="{service}",'
-                    f'le="{prometheus_le(target_seconds)}"}}[5m])) / '
-                    f'sum(rate(ai_gate_feedback_latency_seconds_count{{service="{service}"}}[5m]))'
+                    f'le="{prometheus_le(target_seconds)}"}}[5m]))',
+                    f'sum(rate(ai_gate_feedback_latency_seconds_count{{service="{service}"}}[5m]))',
                 ),
                 labels={
                     "service": service,
@@ -783,9 +804,12 @@ class ManifestRecordingRuleBuilder:
         group.add_rule(
             RecordingRule(
                 record="service:http_errors:rate5m",
-                expr=(
-                    f'sum(rate(http_requests_total{{service="{service}",status=~"5.."}}[5m])) / '
-                    f'sum(rate(http_requests_total{{service="{service}"}}[5m]))'
+                expr=_ratio(
+                    _or_zero(
+                        f'sum(rate(http_requests_total{{service="{service}",status=~"5.."}}[5m]))',
+                        f'sum(rate(http_requests_total{{service="{service}"}}[5m]))',
+                    ),
+                    f'sum(rate(http_requests_total{{service="{service}"}}[5m]))',
                 ),
                 labels={"service": service},
             )
@@ -828,17 +852,18 @@ class ManifestRecordingRuleBuilder:
         reason common's contract and workers' sampler avoid it too).
 
         Needs a bucket at exactly ``le`` = the bound, as the ``:bucket`` rule
-        does. Without one the series is absent; with no arrivals it is NaN.
+        does. Without one the series is absent, and with no arrivals in the
+        window it is absent too (the denominator is guarded, opensrm-r0bx).
         Either way the NotEvaluable alert fires (E3).
         """
         selector = f'service="{service}"'
         window = f"[{FEEDBACK_LATENCY_WINDOW}]"
         return RecordingRule(
             record=THRESHOLD_BOUND_RECORDS["feedback_latency"][bound],
-            expr=(
+            expr=_ratio(
                 f'sum(increase(ai_gate_feedback_latency_seconds_bucket{{{selector},le="{prometheus_le(target_seconds)}"}}'
-                f"{window})) / sum(increase(ai_gate_feedback_latency_seconds_count{{{selector}}}"
-                f"{window}))"
+                f"{window}))",
+                f"sum(increase(ai_gate_feedback_latency_seconds_count{{{selector}}}{window}))",
             ),
             labels={
                 "service": service,
@@ -897,6 +922,29 @@ def _has_own_queries(slo: SLODefinition) -> bool:
     indicators[].success_ratio, and refuses good and bad together.
     """
     return bool(slo.total_query) and bool(slo.good_query or slo.bad_query)
+
+
+def _ratio(numerator: str, denominator: str, *, on: str | None = None) -> str:
+    """``numerator / (denominator > 0)``: absent when there is nothing to divide by.
+
+    ``> 0`` drops a zero denominator, so no traffic gives no sample instead
+    of 0/0 = NaN; a missing denominator gives no sample either. One
+    behaviour for both, stated in the expression (opensrm-r0bx). ``on``
+    names the labels to pair on when the two sides carry different ones.
+    """
+    matching = f" on({on})" if on else ""
+    return f"{numerator} /{matching} ({denominator} > 0)"
+
+
+def _or_zero(numerator: str, denominator: str) -> str:
+    """``numerator``, or zero where only ``denominator`` has a series.
+
+    A count of failures (or of successes) has no series until the first one
+    happens; without this the ratio would be absent under healthy traffic.
+    The two sides must leave the same labels (here both are bare ``sum()``).
+    Whether there is traffic at all is ``_ratio``'s question, not this one's.
+    """
+    return f"({numerator} or (0 * {denominator}))"
 
 
 def _slo_selector(record: str, service: str, slo_name: str) -> str:

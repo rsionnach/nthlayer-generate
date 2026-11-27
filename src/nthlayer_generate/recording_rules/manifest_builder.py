@@ -54,6 +54,21 @@ THRESHOLD_BOUND_RECORDS: dict[str, dict[str, str]] = {
     },
 }
 
+# The series that carries each SLO's value, per kind. The builder records
+# under these names and ``slo_value_series`` hands them to the NotEvaluable
+# alerts, so the alerts cannot watch a series no rule writes (opensrm-r0bx).
+CANNED_RATIO_RECORDS: dict[str, str] = {
+    "availability": "slo:availability:ratio",
+    "latency": "slo:latency:ratio",
+    "error_rate": "slo:error_rate:ratio",
+}
+OWN_QUERY_RATIO_RECORD = "slo:sli:ratio"
+THROUGHPUT_COMPLIANCE_RECORD = "slo:throughput:compliance"
+JUDGMENT_RATIO_RECORDS: dict[str, str] = {
+    "reversal_rate": "ai_gate:reversal_rate:ratio",
+    "high_confidence_failure": "ai_gate:high_confidence_failure:ratio",
+}
+
 # OPENSRM-CORE-v2 §5.5.5: the quantile each feedback_latency bound caps.
 FEEDBACK_LATENCY_QUANTILES: dict[str, float] = {"maximum_p50": 0.5, "maximum_p90": 0.9}
 
@@ -206,7 +221,7 @@ class ManifestRecordingRuleBuilder:
             RecordingRule(record="slo:sli_good:rate", expr=good, labels=dict(series_labels)),
             RecordingRule(record="slo:sli_total:rate", expr=total, labels=dict(series_labels)),
             RecordingRule(
-                record="slo:sli:ratio",
+                record=OWN_QUERY_RATIO_RECORD,
                 # The guard is on the WINDOWED total: one quiet interval inside
                 # a busy window must not blank the ratio.
                 expr=_ratio(
@@ -217,7 +232,9 @@ class ManifestRecordingRuleBuilder:
                 ),
                 labels={**series_labels, "objective": str(objective)},
             ),
-            *_error_budget_rules(service, slo, _slo_selector("slo:sli:ratio", service, slo_name)),
+            *_error_budget_rules(
+                service, slo, _slo_selector(OWN_QUERY_RATIO_RECORD, service, slo_name)
+            ),
         ]
 
     def _substitute(self, query: str) -> str:
@@ -268,7 +285,7 @@ class ManifestRecordingRuleBuilder:
         # Availability percentage
         rules.append(
             RecordingRule(
-                record="slo:availability:ratio",
+                record=CANNED_RATIO_RECORDS["availability"],
                 expr=_ratio(
                     _slo_selector(f"slo:requests_success:{window}", service, slo_name),
                     _slo_selector(f"slo:requests_total:{window}", service, slo_name),
@@ -286,7 +303,7 @@ class ManifestRecordingRuleBuilder:
                 _error_budget_rules(
                     service,
                     slo,
-                    _slo_selector("slo:availability:ratio", service, slo_name),
+                    _slo_selector(CANNED_RATIO_RECORDS["availability"], service, slo_name),
                 )
             )
 
@@ -344,7 +361,7 @@ class ManifestRecordingRuleBuilder:
         # (opensrm-r0bx ruling 7).
         rules.append(
             RecordingRule(
-                record="slo:latency:ratio",
+                record=CANNED_RATIO_RECORDS["latency"],
                 expr=_ratio(
                     _slo_selector(f"slo:latency_requests_fast:{window}", service, slo_name),
                     _slo_selector(f"slo:latency_requests_total:{window}", service, slo_name),
@@ -364,7 +381,7 @@ class ManifestRecordingRuleBuilder:
                 _error_budget_rules(
                     service,
                     slo,
-                    _slo_selector("slo:latency:ratio", service, slo_name),
+                    _slo_selector(CANNED_RATIO_RECORDS["latency"], service, slo_name),
                 )
             )
 
@@ -425,7 +442,7 @@ class ManifestRecordingRuleBuilder:
         # Error rate
         rules.append(
             RecordingRule(
-                record="slo:error_rate:ratio",
+                record=CANNED_RATIO_RECORDS["error_rate"],
                 expr=_ratio(
                     _slo_selector(f"slo:error_requests_failed:{window}", service, slo_name),
                     _slo_selector(f"slo:error_requests_total:{window}", service, slo_name),
@@ -444,7 +461,7 @@ class ManifestRecordingRuleBuilder:
                 _error_budget_rules(
                     service,
                     slo,
-                    f"(1 - {_slo_selector('slo:error_rate:ratio', service, slo_name)})",
+                    f"(1 - {_slo_selector(CANNED_RATIO_RECORDS['error_rate'], service, slo_name)})",
                 )
             )
 
@@ -478,7 +495,7 @@ class ManifestRecordingRuleBuilder:
         # (opensrm-r0bx ruling 4).
         rules.append(
             RecordingRule(
-                record="slo:throughput:compliance",
+                record=THROUGHPUT_COMPLIANCE_RECORD,
                 expr=(
                     f"{_slo_selector('slo:throughput:rate5m', service, slo_name)} "
                     f">= bool {minimum_rps}"
@@ -600,7 +617,7 @@ class ManifestRecordingRuleBuilder:
         # Reversal rate ratio
         rules.append(
             RecordingRule(
-                record="ai_gate:reversal_rate:ratio",
+                record=JUDGMENT_RATIO_RECORDS["reversal_rate"],
                 expr=_ratio(
                     f'ai_gate:decisions_reversed:{window}{{service="{service}"}}',
                     f'ai_gate:decisions_total:{window}{{service="{service}"}}',
@@ -654,7 +671,7 @@ class ManifestRecordingRuleBuilder:
         # High confidence failure ratio
         rules.append(
             RecordingRule(
-                record="ai_gate:high_confidence_failure:ratio",
+                record=JUDGMENT_RATIO_RECORDS["high_confidence_failure"],
                 expr=_ratio(
                     f'ai_gate:high_confidence_failures:{window}{{service="{service}"}}',
                     f'ai_gate:high_confidence_decisions:{window}{{service="{service}"}}',
@@ -897,6 +914,38 @@ def build_recording_rules_from_manifest(
     """
     builder = ManifestRecordingRuleBuilder(manifest)
     return builder.build()
+
+
+def slo_value_series(manifest: ReliabilityManifest) -> list[tuple[str, str]]:
+    """``(slo name, series selector)`` for every SLO whose value a rule here records.
+
+    The series is the one a reader evaluates the SLO on: the SLO's own
+    ``slo:sli:ratio`` when it declares its queries (ruling Z3), else its
+    kind's canned ratio; throughput's compliance; a judgment SLO's ratio.
+    Freshness, lag and custom SLOs, and judgment types with no rule, have
+    no series and are left out. In manifest order, standard SLOs first; a
+    repeated judgment type is listed once, as its rules are one series.
+    """
+    service = manifest.name
+    series: list[tuple[str, str]] = []
+    for slo in manifest.get_standard_slos():
+        kind = slo_kind(slo)
+        if kind in CANNED_RATIO_RECORDS:
+            record = OWN_QUERY_RATIO_RECORD if _has_own_queries(slo) else CANNED_RATIO_RECORDS[kind]
+        elif kind == "throughput":
+            record = THROUGHPUT_COMPLIANCE_RECORD
+        else:
+            continue
+        series.append((slo.name, _slo_selector(record, service, slo.name)))
+    if manifest.is_ai_gate():
+        seen: set[str] = set()
+        for slo in manifest.get_judgment_slos():
+            judgment_record = JUDGMENT_RATIO_RECORDS.get(slo.judgment_type or "")
+            if judgment_record is None or judgment_record in seen:
+                continue
+            seen.add(judgment_record)
+            series.append((slo.name, f'{judgment_record}{{service="{service}"}}'))
+    return series
 
 
 def prometheus_le(value: float) -> str:

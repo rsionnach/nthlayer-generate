@@ -40,6 +40,9 @@ from nthlayer_generate.dashboards.manifest_builder import build_dashboard_from_m
 from nthlayer_generate.generators.alerts import generate_alerts_from_manifest
 from nthlayer_generate.generators.backstage import generate_backstage_entity
 from nthlayer_generate.generators.docs import generate_service_docs
+from nthlayer_generate.generators.slo_not_evaluable_alerts import (
+    ALERT_NAME as SLO_NOT_EVALUABLE,
+)
 from nthlayer_generate.generators.sloth import generate_sloth_from_manifest
 from nthlayer_generate.slos.pipeline import AlertPipeline
 from nthlayer_generate.specs.alerting import (
@@ -370,7 +373,14 @@ def test_generated_alert_for_durations_follow_the_block(case: str, tmp_path: Pat
     user documentation. This detects the block's effect changing across the
     switch, not a change to the templates or to that rule."""
     config = ALERTING_CASES[case][3]
-    alerts = generate_alerts_from_manifest(load(ALERTING_CASES[case][0](tmp_path)), quiet=True)
+    generated = generate_alerts_from_manifest(load(ALERTING_CASES[case][0](tmp_path)), quiet=True)
+    # SLONotEvaluable is not a template alert: for_duration never applies to
+    # it (design D4, as for the judgment-threshold alerts; opensrm-r0bx
+    # ruling 2 fixes it at info, for 1h), with or without a block.
+    not_evaluable = [a for a in generated if a.name == SLO_NOT_EVALUABLE]
+    assert not_evaluable, "the manifest's SLOs should each have one"
+    assert {(a.severity, a.duration) for a in not_evaluable} == {("info", "1h")}
+    alerts = [a for a in generated if a.name != SLO_NOT_EVALUABLE]
     assert alerts, "no alerts generated; the check below would be vacuous"
 
     if config is not None:

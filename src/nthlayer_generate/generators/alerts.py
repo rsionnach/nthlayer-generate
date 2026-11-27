@@ -15,6 +15,9 @@ from nthlayer_generate.alerts import AlertRule, AlertTemplateLoader
 from nthlayer_generate.generators.judgment_threshold_alerts import (
     build_judgment_threshold_alerts,
 )
+from nthlayer_generate.generators.slo_not_evaluable_alerts import (
+    build_slo_not_evaluable_alerts,
+)
 from nthlayer_generate.specs.alerting import manifest_alerting
 from nthlayer_generate.specs.helpers import (
     extract_dependency_technologies,
@@ -68,21 +71,29 @@ def generate_alerts_from_manifest(
     deps = extract_dependency_technologies(manifest)
     alert_routing = routing or manifest.support_model
 
-    threshold_alerts = [
-        alert.customize_for_service(
-            service_name=manifest.name,
-            team=manifest.team,
-            tier=manifest.tier,
-            notification_channel=notification_channel,
-            runbook_url=runbook_url,
-            routing=alert_routing,
-            grafana_url=grafana_url,
-        )
-        for alert in build_judgment_threshold_alerts(manifest)
-    ]
+    def customized(alerts: List[AlertRule]) -> List[AlertRule]:
+        return [
+            alert.customize_for_service(
+                service_name=manifest.name,
+                team=manifest.team,
+                tier=manifest.tier,
+                notification_channel=notification_channel,
+                runbook_url=runbook_url,
+                routing=alert_routing,
+                grafana_url=grafana_url,
+            )
+            for alert in alerts
+        ]
+
+    # Alerts generate writes from the manifest itself, not from a dependency
+    # template: a declared judgment-threshold bound, and one NotEvaluable
+    # alert per SLO with a recorded value (opensrm-r0bx).
+    judgment_alerts = customized(build_judgment_threshold_alerts(manifest))
+    not_evaluable_alerts = customized(build_slo_not_evaluable_alerts(manifest))
+    threshold_alerts = judgment_alerts + not_evaluable_alerts
     if threshold_alerts and not deps:
         # Skip the template path: its "no dependencies found" warning would
-        # contradict the threshold alerts written below.
+        # contradict the alerts written below.
         dependency_alerts: List[AlertRule] = []
     else:
         dependency_alerts = _load_and_customize_alerts(
@@ -90,7 +101,7 @@ def generate_alerts_from_manifest(
             team=manifest.team,
             tier=manifest.tier,
             dependencies=deps,
-            # Written below, once the threshold alerts are appended.
+            # Written below, once the manifest's own alerts are appended.
             output_file=output_file if not threshold_alerts else None,
             runbook_url=runbook_url,
             notification_channel=notification_channel,
@@ -104,10 +115,13 @@ def generate_alerts_from_manifest(
 
     # Appended after tier filtering, which only dependency templates pass
     # through: a declared bound is an explicit request, whatever the tier
-    # (wo62.2 design §3 Q2).
+    # (wo62.2 design §3 Q2), and NotEvaluable is always on (opensrm-r0bx).
     all_alerts = dependency_alerts + threshold_alerts
     if not quiet:
-        print(f"✅ Added {len(threshold_alerts)} judgment-threshold alerts")
+        if judgment_alerts:
+            print(f"✅ Added {len(judgment_alerts)} judgment-threshold alerts")
+        if not_evaluable_alerts:
+            print(f"✅ Added {len(not_evaluable_alerts)} SLO not-evaluable alerts")
     if output_file:
         write_prometheus_yaml(all_alerts, output_file, manifest.name)
         if not quiet:

@@ -114,6 +114,27 @@ nthlayer generate-recording-rules services/api.yaml --env prod
 | `slo:sli:ratio` | Own good/total summed over the SLO window | SLOs that declare their own queries |
 | `slo:error_budget_remaining:ratio` | Budget remaining, labelled `service`, `slo`, `objective` | One per availability, latency and error_rate SLO; see the README's upgrade note for when a budget is skipped |
 
+## Zero traffic
+
+A ratio with nothing to divide by has no sample. Each ratio's denominator is
+filtered with `> 0`, so a service that serves nothing, or whose metrics are
+missing, records no `slo:*:ratio` and no error budget, never `NaN` and never
+a made-up `0` or `1`:
+
+```yaml
+- record: slo:availability:ratio
+  expr: >-
+    slo:requests_success:30d{service="payment-api",slo="availability"}
+    / (slo:requests_total:30d{service="payment-api",slo="availability"} > 0)
+```
+
+When there is traffic, a count with no series is zero (a service that has
+never failed has no 5xx series, and its error ratio is `0`).
+`slo:throughput:compliance` is `1` or `0`, and has no sample when there is
+no rate. `generate-alerts` writes an `SLONotEvaluable` alert per SLO so that
+a ratio staying absent is visible; see
+[generate-alerts](generate-alerts.md#slo-not-evaluable).
+
 ## Performance Impact
 
 Recording rules provide **10x dashboard performance improvement** by:

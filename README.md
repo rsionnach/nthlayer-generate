@@ -138,6 +138,46 @@ $ nthlayer validate service.yaml --policies policies.yaml
 
 ---
 
+## ⚠️ Upgrading: a ratio with no traffic is absent, and an alert says so
+
+Every ratio `generate-recording-rules` writes used to divide two counts with
+no guard. A service that was scraped and served nothing recorded `NaN`; a
+service whose scrape target was gone recorded nothing. Both are silent to
+alerts. Now there is one behaviour, written in the expression: the
+denominator is filtered with `> 0`, so **a ratio with nothing to divide by
+has no sample**.
+
+| Series | No traffic, before | No traffic, now |
+|---|---|---|
+| `slo:availability:ratio`, `slo:latency:ratio`, `slo:error_rate:ratio`, `slo:sli:ratio` | `NaN` or absent | absent |
+| `slo:error_budget_remaining:ratio` | `NaN` or absent | absent |
+| `ai_gate:reversal_rate:ratio`, `ai_gate:high_confidence_failure:ratio` | `NaN` or absent | absent |
+| `ai_gate:feedback_latency:bucket`, `ai_gate:feedback_latency:p50/p90_within_bound_30d` | `NaN` or absent | absent |
+| `service:http_errors:rate5m` | `NaN` or absent | absent |
+
+Check anything of your own that reads these: a panel that drew `NaN` now
+draws a gap, and an expression such as `ratio != ratio` no longer matches.
+
+**Values that change under traffic.**
+
+- A count with no series is zero when there is traffic. The success, fast,
+  failed, reversed and high-confidence-failure counts are recorded as
+  `(count or (0 * total))`. `service:http_errors:rate5m` was absent while a
+  service had never returned a 5xx; it is now `0`. A service that returns
+  only 5xx now records availability `0` instead of nothing.
+- `slo:throughput:compliance` is `1` at or above the minimum and `0` below
+  it. It used to record the rate itself when compliant (`120`, not `1`), and
+  `0` when the rate was missing. With no rate it now has no sample.
+
+**New alert.** `generate-alerts` writes one `SLONotEvaluable` alert per SLO
+with a recorded value (`info`, `for: 1h`, every tier), which fires when the
+SLO's series is absent. A manifest with SLOs and no dependencies used to
+produce no alerts file; it now produces one. See
+`docs-site/commands/generate-alerts.md`.
+
+**Removed.** `ServiceTypeTemplate.slo_formulas` (in
+`nthlayer_generate.metrics`) is gone. Nothing read it.
+
 ## ⚠️ Upgrading: canned latency SLOs get a ratio and a budget for the first time
 
 `slo:latency:ratio` divided `slo:latency_requests_fast:<window>` by

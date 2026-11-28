@@ -364,6 +364,62 @@
               }
             }
           ]
+        },
+        {
+          "name": "order-events-processor-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "order-events-processor: SLO availability not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"order-events-processor\",slo=\"availability\"}) or (slo:availability:ratio{service=\"order-events-processor\",slo=\"availability\"} != slo:availability:ratio{service=\"order-events-processor\",slo=\"availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "order-events-processor",
+                "severity": "info",
+                "slo": "availability",
+                "team": "orders",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:error_rate:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "order-events-processor: SLO error_rate not evaluable"
+              },
+              "expr": "absent(slo:error_rate:ratio{service=\"order-events-processor\",slo=\"error_rate\"}) or (slo:error_rate:ratio{service=\"order-events-processor\",slo=\"error_rate\"} != slo:error_rate:ratio{service=\"order-events-processor\",slo=\"error_rate\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "order-events-processor",
+                "severity": "info",
+                "slo": "error_rate",
+                "team": "orders",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:throughput:compliance has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "order-events-processor: SLO throughput not evaluable"
+              },
+              "expr": "absent(slo:throughput:compliance{service=\"order-events-processor\",slo=\"throughput\"}) or (slo:throughput:compliance{service=\"order-events-processor\",slo=\"throughput\"} != slo:throughput:compliance{service=\"order-events-processor\",slo=\"throughput\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "order-events-processor",
+                "severity": "info",
+                "slo": "throughput",
+                "team": "orders",
+                "tier": "high"
+              }
+            }
+          ]
         }
       ]
     },
@@ -756,7 +812,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"order-events-processor\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"order-events-processor\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"order-events-processor\"}[30d]))))",
               "labels": {
                 "service": "order-events-processor",
                 "slo": "availability"
@@ -764,7 +820,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"order-events-processor\",slo=\"availability\"} / slo:requests_total:30d{service=\"order-events-processor\",slo=\"availability\"}",
+              "expr": "slo:requests_success:30d{service=\"order-events-processor\",slo=\"availability\"} / (slo:requests_total:30d{service=\"order-events-processor\",slo=\"availability\"} > 0)",
               "labels": {
                 "objective": "99.95",
                 "service": "order-events-processor",
@@ -791,7 +847,7 @@
               "record": "slo:throughput:rate5m"
             },
             {
-              "expr": "(slo:throughput:rate5m{service=\"order-events-processor\",slo=\"throughput\"} >= 5000.0) or vector(0)",
+              "expr": "slo:throughput:rate5m{service=\"order-events-processor\",slo=\"throughput\"} >= bool 5000.0",
               "labels": {
                 "minimum": "5000.0",
                 "service": "order-events-processor",
@@ -808,7 +864,7 @@
               "record": "slo:error_requests_total:7d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"order-events-processor\",status=~\"5..\"}[7d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"order-events-processor\",status=~\"5..\"}[7d])) or (0 * sum(increase(http_requests_total{service=\"order-events-processor\"}[7d]))))",
               "labels": {
                 "service": "order-events-processor",
                 "slo": "error_rate"
@@ -816,7 +872,7 @@
               "record": "slo:error_requests_failed:7d"
             },
             {
-              "expr": "slo:error_requests_failed:7d{service=\"order-events-processor\",slo=\"error_rate\"} / slo:error_requests_total:7d{service=\"order-events-processor\",slo=\"error_rate\"}",
+              "expr": "slo:error_requests_failed:7d{service=\"order-events-processor\",slo=\"error_rate\"} / (slo:error_requests_total:7d{service=\"order-events-processor\",slo=\"error_rate\"} > 0)",
               "labels": {
                 "objective": "0.01",
                 "service": "order-events-processor",
@@ -838,7 +894,7 @@
               "record": "service:http_requests:rate5m"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"order-events-processor\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"order-events-processor\"}[5m]))",
+              "expr": "(sum(rate(http_requests_total{service=\"order-events-processor\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"order-events-processor\"}[5m])))) / (sum(rate(http_requests_total{service=\"order-events-processor\"}[5m])) > 0)",
               "labels": {
                 "service": "order-events-processor"
               },
@@ -966,7 +1022,7 @@
     "errors": [],
     "output_dir": "<tmp>/out",
     "resources_created": {
-      "alerts": 22,
+      "alerts": 25,
       "backstage": 1,
       "dashboard": 1,
       "recording-rules": 13,
@@ -974,7 +1030,7 @@
     },
     "service_name": "order-events-processor",
     "success": true,
-    "total_resources": 40
+    "total_resources": 43
   },
   "preamble": [],
   "stray": []

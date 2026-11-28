@@ -1,6 +1,66 @@
 {
   "exit": 0,
   "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "analytics-pipeline-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "analytics-pipeline: SLO data-quality not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"analytics-pipeline\",slo=\"data-quality\"}) or (slo:availability:ratio{service=\"analytics-pipeline\",slo=\"data-quality\"} != slo:availability:ratio{service=\"analytics-pipeline\",slo=\"data-quality\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-pipeline",
+                "severity": "info",
+                "slo": "data-quality",
+                "team": "data",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "analytics-pipeline: SLO success-rate not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"analytics-pipeline\",slo=\"success-rate\"}) or (slo:availability:ratio{service=\"analytics-pipeline\",slo=\"success-rate\"} != slo:availability:ratio{service=\"analytics-pipeline\",slo=\"success-rate\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-pipeline",
+                "severity": "info",
+                "slo": "success-rate",
+                "team": "data",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "analytics-pipeline: SLO freshness-p95 not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"analytics-pipeline\",slo=\"freshness-p95\"}) or (slo:latency:ratio{service=\"analytics-pipeline\",slo=\"freshness-p95\"} != slo:latency:ratio{service=\"analytics-pipeline\",slo=\"freshness-p95\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-pipeline",
+                "severity": "info",
+                "slo": "freshness-p95",
+                "team": "data",
+                "tier": "standard"
+              }
+            }
+          ]
+        }
+      ]
+    },
     "backstage.json": {
       "deploymentGate": {
         "blockingThreshold": null,
@@ -301,7 +361,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"analytics-pipeline\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"analytics-pipeline\"}[30d]))))",
               "labels": {
                 "service": "analytics-pipeline",
                 "slo": "success-rate"
@@ -309,7 +369,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"analytics-pipeline\",slo=\"success-rate\"} / slo:requests_total:30d{service=\"analytics-pipeline\",slo=\"success-rate\"}",
+              "expr": "slo:requests_success:30d{service=\"analytics-pipeline\",slo=\"success-rate\"} / (slo:requests_total:30d{service=\"analytics-pipeline\",slo=\"success-rate\"} > 0)",
               "labels": {
                 "objective": "95.0",
                 "service": "analytics-pipeline",
@@ -335,7 +395,7 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"analytics-pipeline\",le=\"43200.0\"}[30d]))",
+              "expr": "(sum(increase(http_request_duration_seconds_bucket{service=\"analytics-pipeline\",le=\"43200.0\"}[30d])) or (0 * sum(increase(http_request_duration_seconds_count{service=\"analytics-pipeline\"}[30d]))))",
               "labels": {
                 "service": "analytics-pipeline",
                 "slo": "freshness-p95",
@@ -344,7 +404,7 @@
               "record": "slo:latency_requests_fast:30d"
             },
             {
-              "expr": "slo:latency_requests_fast:30d{service=\"analytics-pipeline\",slo=\"freshness-p95\"} / slo:latency_requests_total:30d{service=\"analytics-pipeline\",slo=\"freshness-p95\"}",
+              "expr": "slo:latency_requests_fast:30d{service=\"analytics-pipeline\",slo=\"freshness-p95\"} / on(service, slo) (slo:latency_requests_total:30d{service=\"analytics-pipeline\",slo=\"freshness-p95\"} > 0)",
               "labels": {
                 "objective": "90.0",
                 "service": "analytics-pipeline",
@@ -394,7 +454,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"analytics-pipeline\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"analytics-pipeline\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"analytics-pipeline\"}[30d]))))",
               "labels": {
                 "service": "analytics-pipeline",
                 "slo": "data-quality"
@@ -402,7 +462,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"analytics-pipeline\",slo=\"data-quality\"} / slo:requests_total:30d{service=\"analytics-pipeline\",slo=\"data-quality\"}",
+              "expr": "slo:requests_success:30d{service=\"analytics-pipeline\",slo=\"data-quality\"} / (slo:requests_total:30d{service=\"analytics-pipeline\",slo=\"data-quality\"} > 0)",
               "labels": {
                 "objective": "99.0",
                 "service": "analytics-pipeline",
@@ -433,7 +493,7 @@
               "record": "service:http_requests:rate5m"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"analytics-pipeline\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"analytics-pipeline\"}[5m]))",
+              "expr": "(sum(rate(http_requests_total{service=\"analytics-pipeline\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"analytics-pipeline\"}[5m])))) / (sum(rate(http_requests_total{service=\"analytics-pipeline\"}[5m])) > 0)",
               "labels": {
                 "service": "analytics-pipeline"
               },
@@ -561,7 +621,7 @@
     "errors": [],
     "output_dir": "<tmp>/out",
     "resources_created": {
-      "alerts": 0,
+      "alerts": 3,
       "backstage": 1,
       "dashboard": 1,
       "recording-rules": 19,
@@ -569,7 +629,7 @@
     },
     "service_name": "analytics-pipeline",
     "success": true,
-    "total_resources": 24
+    "total_resources": 27
   },
   "preamble": [],
   "stray": []

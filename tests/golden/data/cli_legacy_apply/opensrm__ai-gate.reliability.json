@@ -79,6 +79,79 @@
               }
             }
           ]
+        },
+        {
+          "name": "fraud-detector-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "ai_gate:high_confidence_failure:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "fraud-detector: SLO high_confidence_failure not evaluable"
+              },
+              "expr": "absent(ai_gate:high_confidence_failure:ratio{service=\"fraud-detector\"}) or (ai_gate:high_confidence_failure:ratio{service=\"fraud-detector\"} != ai_gate:high_confidence_failure:ratio{service=\"fraud-detector\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "fraud-detector",
+                "severity": "info",
+                "slo": "high_confidence_failure",
+                "team": "risk",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "ai_gate:reversal_rate:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "fraud-detector: SLO reversal_rate not evaluable"
+              },
+              "expr": "absent(ai_gate:reversal_rate:ratio{service=\"fraud-detector\"}) or (ai_gate:reversal_rate:ratio{service=\"fraud-detector\"} != ai_gate:reversal_rate:ratio{service=\"fraud-detector\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "fraud-detector",
+                "severity": "info",
+                "slo": "reversal_rate",
+                "team": "risk",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "fraud-detector: SLO availability not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"fraud-detector\",slo=\"availability\"}) or (slo:availability:ratio{service=\"fraud-detector\",slo=\"availability\"} != slo:availability:ratio{service=\"fraud-detector\",slo=\"availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "fraud-detector",
+                "severity": "info",
+                "slo": "availability",
+                "team": "risk",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "fraud-detector: SLO latency not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"fraud-detector\",slo=\"latency\"}) or (slo:latency:ratio{service=\"fraud-detector\",slo=\"latency\"} != slo:latency:ratio{service=\"fraud-detector\",slo=\"latency\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "fraud-detector",
+                "severity": "info",
+                "slo": "latency",
+                "team": "risk",
+                "tier": "critical"
+              }
+            }
+          ]
         }
       ]
     },
@@ -432,7 +505,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"fraud-detector\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"fraud-detector\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"fraud-detector\"}[30d]))))",
               "labels": {
                 "service": "fraud-detector",
                 "slo": "availability"
@@ -440,7 +513,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"fraud-detector\",slo=\"availability\"} / slo:requests_total:30d{service=\"fraud-detector\",slo=\"availability\"}",
+              "expr": "slo:requests_success:30d{service=\"fraud-detector\",slo=\"availability\"} / (slo:requests_total:30d{service=\"fraud-detector\",slo=\"availability\"} > 0)",
               "labels": {
                 "objective": "99.9",
                 "service": "fraud-detector",
@@ -466,7 +539,7 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"fraud-detector\",le=\"0.1\"}[30d]))",
+              "expr": "(sum(increase(http_request_duration_seconds_bucket{service=\"fraud-detector\",le=\"0.1\"}[30d])) or (0 * sum(increase(http_request_duration_seconds_count{service=\"fraud-detector\"}[30d]))))",
               "labels": {
                 "service": "fraud-detector",
                 "slo": "latency",
@@ -475,7 +548,7 @@
               "record": "slo:latency_requests_fast:30d"
             },
             {
-              "expr": "slo:latency_requests_fast:30d{service=\"fraud-detector\",slo=\"latency\"} / slo:latency_requests_total:30d{service=\"fraud-detector\",slo=\"latency\"}",
+              "expr": "slo:latency_requests_fast:30d{service=\"fraud-detector\",slo=\"latency\"} / on(service, slo) (slo:latency_requests_total:30d{service=\"fraud-detector\",slo=\"latency\"} > 0)",
               "labels": {
                 "objective": "100.0",
                 "service": "fraud-detector",
@@ -521,14 +594,14 @@
               "record": "ai_gate:decisions_total:7d"
             },
             {
-              "expr": "sum(increase(ai_gate_decisions_total{service=\"fraud-detector\",reversed=\"true\"}[7d]))",
+              "expr": "(sum(increase(ai_gate_decisions_total{service=\"fraud-detector\",reversed=\"true\"}[7d])) or (0 * sum(increase(ai_gate_decisions_total{service=\"fraud-detector\"}[7d]))))",
               "labels": {
                 "service": "fraud-detector"
               },
               "record": "ai_gate:decisions_reversed:7d"
             },
             {
-              "expr": "ai_gate:decisions_reversed:7d{service=\"fraud-detector\"} / ai_gate:decisions_total:7d{service=\"fraud-detector\"}",
+              "expr": "ai_gate:decisions_reversed:7d{service=\"fraud-detector\"} / (ai_gate:decisions_total:7d{service=\"fraud-detector\"} > 0)",
               "labels": {
                 "service": "fraud-detector",
                 "slo": "reversal_rate",
@@ -544,14 +617,14 @@
               "record": "ai_gate:high_confidence_decisions:7d"
             },
             {
-              "expr": "sum(increase(ai_gate_decisions_total{service=\"fraud-detector\",confidence_bucket=\"high\",outcome=\"incorrect\"}[7d]))",
+              "expr": "(sum(increase(ai_gate_decisions_total{service=\"fraud-detector\",confidence_bucket=\"high\",outcome=\"incorrect\"}[7d])) or (0 * sum(increase(ai_gate_decisions_total{service=\"fraud-detector\",confidence_bucket=\"high\"}[7d]))))",
               "labels": {
                 "service": "fraud-detector"
               },
               "record": "ai_gate:high_confidence_failures:7d"
             },
             {
-              "expr": "ai_gate:high_confidence_failures:7d{service=\"fraud-detector\"} / ai_gate:high_confidence_decisions:7d{service=\"fraud-detector\"}",
+              "expr": "ai_gate:high_confidence_failures:7d{service=\"fraud-detector\"} / (ai_gate:high_confidence_decisions:7d{service=\"fraud-detector\"} > 0)",
               "labels": {
                 "service": "fraud-detector",
                 "slo": "high_confidence_failure",
@@ -617,7 +690,7 @@
               "record": "ai_gate:feedback_latency:p99"
             },
             {
-              "expr": "sum(rate(ai_gate_feedback_latency_seconds_bucket{service=\"fraud-detector\",le=\"3600.0\"}[5m])) / sum(rate(ai_gate_feedback_latency_seconds_count{service=\"fraud-detector\"}[5m]))",
+              "expr": "sum(rate(ai_gate_feedback_latency_seconds_bucket{service=\"fraud-detector\",le=\"3600.0\"}[5m])) / (sum(rate(ai_gate_feedback_latency_seconds_count{service=\"fraud-detector\"}[5m])) > 0)",
               "labels": {
                 "service": "fraud-detector",
                 "slo": "feedback_latency",
@@ -632,7 +705,7 @@
           "name": "fraud-detector_judgment_thresholds_30d",
           "rules": [
             {
-              "expr": "sum(increase(ai_gate_feedback_latency_seconds_bucket{service=\"fraud-detector\",le=\"3600.0\"}[30d])) / sum(increase(ai_gate_feedback_latency_seconds_count{service=\"fraud-detector\"}[30d]))",
+              "expr": "sum(increase(ai_gate_feedback_latency_seconds_bucket{service=\"fraud-detector\",le=\"3600.0\"}[30d])) / (sum(increase(ai_gate_feedback_latency_seconds_count{service=\"fraud-detector\"}[30d])) > 0)",
               "labels": {
                 "quantile": "0.5",
                 "service": "fraud-detector",
@@ -669,7 +742,7 @@
               "record": "service:http_requests:rate5m"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"fraud-detector\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"fraud-detector\"}[5m]))",
+              "expr": "(sum(rate(http_requests_total{service=\"fraud-detector\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"fraud-detector\"}[5m])))) / (sum(rate(http_requests_total{service=\"fraud-detector\"}[5m])) > 0)",
               "labels": {
                 "service": "fraud-detector"
               },
@@ -858,7 +931,7 @@
     "errors": [],
     "output_dir": "<tmp>/out",
     "resources_created": {
-      "alerts": 4,
+      "alerts": 8,
       "backstage": 1,
       "dashboard": 1,
       "pagerduty": 1,
@@ -867,7 +940,7 @@
     },
     "service_name": "fraud-detector",
     "success": true,
-    "total_resources": 42
+    "total_resources": 46
   },
   "preamble": [],
   "stray": []

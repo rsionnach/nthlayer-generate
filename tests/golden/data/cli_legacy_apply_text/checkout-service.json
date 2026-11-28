@@ -5,11 +5,11 @@
     "  ✓ SLOs  3 created",
     "  ✓ Recording  25 rules",
     "  ✓ Backstage  1 created",
-    "  ✓ Alerts  26 generated",
+    "  ✓ Alerts  29 generated",
     "  ✓ Dashboard  1 generated",
     "  ✓ PagerDuty  configured",
     "",
-    "Applied 57 resources in <duration> → <tmp>/out/",
+    "Applied 60 resources in <duration> → <tmp>/out/",
     ""
   ]
 }

@@ -1,1 +1,77 @@
-null
+{
+  "groups": [
+    {
+      "name": "payment-api-slo",
+      "rules": [
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "payment-api: SLO payment-api-availability not evaluable"
+          },
+          "expr": "absent(slo:availability:ratio{service=\"payment-api\",slo=\"payment-api-availability\"}) or (slo:availability:ratio{service=\"payment-api\",slo=\"payment-api-availability\"} != slo:availability:ratio{service=\"payment-api\",slo=\"payment-api-availability\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "payment-api",
+            "severity": "info",
+            "slo": "payment-api-availability",
+            "team": "payments",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "payment-api: SLO payment-api-latency not evaluable"
+          },
+          "expr": "absent(slo:latency:ratio{service=\"payment-api\",slo=\"payment-api-latency\"}) or (slo:latency:ratio{service=\"payment-api\",slo=\"payment-api-latency\"} != slo:latency:ratio{service=\"payment-api\",slo=\"payment-api-latency\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "payment-api",
+            "severity": "info",
+            "slo": "payment-api-latency",
+            "team": "payments",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:error_rate:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "payment-api: SLO payment-api-error-rate not evaluable"
+          },
+          "expr": "absent(slo:error_rate:ratio{service=\"payment-api\",slo=\"payment-api-error-rate\"}) or (slo:error_rate:ratio{service=\"payment-api\",slo=\"payment-api-error-rate\"} != slo:error_rate:ratio{service=\"payment-api\",slo=\"payment-api-error-rate\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "payment-api",
+            "severity": "info",
+            "slo": "payment-api-error-rate",
+            "team": "payments",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:throughput:compliance has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "payment-api: SLO payment-api-throughput not evaluable"
+          },
+          "expr": "absent(slo:throughput:compliance{service=\"payment-api\",slo=\"payment-api-throughput\"}) or (slo:throughput:compliance{service=\"payment-api\",slo=\"payment-api-throughput\"} != slo:throughput:compliance{service=\"payment-api\",slo=\"payment-api-throughput\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "payment-api",
+            "severity": "info",
+            "slo": "payment-api-throughput",
+            "team": "payments",
+            "tier": "critical"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -2,8 +2,8 @@
   "json": {
     "checks": {
       "alert_generation": {
-        "alert_count": 26,
-        "message": "26 alerts will be generated",
+        "alert_count": 29,
+        "message": "29 alerts will be generated",
         "status": "pass"
       },
       "dashboard_generation": {
@@ -31,7 +31,7 @@
             "severity": "critical"
           },
           {
-            "count": 2,
+            "count": 5,
             "severity": "info"
           },
           {
@@ -134,7 +134,7 @@
           "severity": "critical"
         },
         {
-          "count": 2,
+          "count": 5,
           "severity": "info"
         },
         {

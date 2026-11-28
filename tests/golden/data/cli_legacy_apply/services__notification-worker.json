@@ -199,6 +199,45 @@
               }
             }
           ]
+        },
+        {
+          "name": "notification-worker-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "notification-worker: SLO processing-latency-p95 not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"notification-worker\",slo=\"processing-latency-p95\"}) or (slo:latency:ratio{service=\"notification-worker\",slo=\"processing-latency-p95\"} != slo:latency:ratio{service=\"notification-worker\",slo=\"processing-latency-p95\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "notification-worker",
+                "severity": "info",
+                "slo": "processing-latency-p95",
+                "team": "platform",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:sli:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "notification-worker: SLO delivery-success not evaluable"
+              },
+              "expr": "absent(slo:sli:ratio{service=\"notification-worker\",slo=\"delivery-success\"}) or (slo:sli:ratio{service=\"notification-worker\",slo=\"delivery-success\"} != slo:sli:ratio{service=\"notification-worker\",slo=\"delivery-success\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "notification-worker",
+                "severity": "info",
+                "slo": "delivery-success",
+                "team": "platform",
+                "tier": "high"
+              }
+            }
+          ]
         }
       ]
     },
@@ -719,7 +758,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"notification-worker\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"notification-worker\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"notification-worker\"}[30d]))))",
               "labels": {
                 "service": "notification-worker",
                 "slo": "delivery-success"
@@ -727,7 +766,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"notification-worker\",slo=\"delivery-success\"} / slo:requests_total:30d{service=\"notification-worker\",slo=\"delivery-success\"}",
+              "expr": "slo:requests_success:30d{service=\"notification-worker\",slo=\"delivery-success\"} / (slo:requests_total:30d{service=\"notification-worker\",slo=\"delivery-success\"} > 0)",
               "labels": {
                 "objective": "99.5",
                 "service": "notification-worker",
@@ -752,7 +791,7 @@
               "record": "slo:sli_total:rate"
             },
             {
-              "expr": "sum_over_time(slo:sli_good:rate{service=\"notification-worker\",slo=\"delivery-success\"}[30d]) / sum_over_time(slo:sli_total:rate{service=\"notification-worker\",slo=\"delivery-success\"}[30d])",
+              "expr": "sum_over_time(slo:sli_good:rate{service=\"notification-worker\",slo=\"delivery-success\"}[30d]) / (sum_over_time(slo:sli_total:rate{service=\"notification-worker\",slo=\"delivery-success\"}[30d]) > 0)",
               "labels": {
                 "objective": "99.5",
                 "service": "notification-worker",
@@ -778,7 +817,7 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"notification-worker\",le=\"5.0\"}[30d]))",
+              "expr": "(sum(increase(http_request_duration_seconds_bucket{service=\"notification-worker\",le=\"5.0\"}[30d])) or (0 * sum(increase(http_request_duration_seconds_count{service=\"notification-worker\"}[30d]))))",
               "labels": {
                 "service": "notification-worker",
                 "slo": "processing-latency-p95",
@@ -787,7 +826,7 @@
               "record": "slo:latency_requests_fast:30d"
             },
             {
-              "expr": "slo:latency_requests_fast:30d{service=\"notification-worker\",slo=\"processing-latency-p95\"} / slo:latency_requests_total:30d{service=\"notification-worker\",slo=\"processing-latency-p95\"}",
+              "expr": "slo:latency_requests_fast:30d{service=\"notification-worker\",slo=\"processing-latency-p95\"} / on(service, slo) (slo:latency_requests_total:30d{service=\"notification-worker\",slo=\"processing-latency-p95\"} > 0)",
               "labels": {
                 "objective": "98.0",
                 "service": "notification-worker",
@@ -842,7 +881,7 @@
               "record": "service:http_requests:rate5m"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"notification-worker\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"notification-worker\"}[5m]))",
+              "expr": "(sum(rate(http_requests_total{service=\"notification-worker\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"notification-worker\"}[5m])))) / (sum(rate(http_requests_total{service=\"notification-worker\"}[5m])) > 0)",
               "labels": {
                 "service": "notification-worker"
               },
@@ -941,7 +980,7 @@
     "errors": [],
     "output_dir": "<tmp>/out",
     "resources_created": {
-      "alerts": 12,
+      "alerts": 14,
       "backstage": 1,
       "dashboard": 1,
       "pagerduty": 1,
@@ -950,7 +989,7 @@
     },
     "service_name": "notification-worker",
     "success": true,
-    "total_resources": 35
+    "total_resources": 37
   },
   "preamble": [],
   "stray": []

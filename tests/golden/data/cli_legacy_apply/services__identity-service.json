@@ -444,6 +444,62 @@
               }
             }
           ]
+        },
+        {
+          "name": "identity-service-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "identity-service: SLO latency-p95 not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"identity-service\",slo=\"latency-p95\"}) or (slo:latency:ratio{service=\"identity-service\",slo=\"latency-p95\"} != slo:latency:ratio{service=\"identity-service\",slo=\"latency-p95\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "identity-service",
+                "severity": "info",
+                "slo": "latency-p95",
+                "team": "identity",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "identity-service: SLO latency-p99 not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"identity-service\",slo=\"latency-p99\"}) or (slo:latency:ratio{service=\"identity-service\",slo=\"latency-p99\"} != slo:latency:ratio{service=\"identity-service\",slo=\"latency-p99\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "identity-service",
+                "severity": "info",
+                "slo": "latency-p99",
+                "team": "identity",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:sli:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "identity-service: SLO availability not evaluable"
+              },
+              "expr": "absent(slo:sli:ratio{service=\"identity-service\",slo=\"availability\"}) or (slo:sli:ratio{service=\"identity-service\",slo=\"availability\"} != slo:sli:ratio{service=\"identity-service\",slo=\"availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "identity-service",
+                "severity": "info",
+                "slo": "availability",
+                "team": "identity",
+                "tier": "critical"
+              }
+            }
+          ]
         }
       ]
     },
@@ -1259,7 +1315,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"identity-service\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"identity-service\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"identity-service\"}[30d]))))",
               "labels": {
                 "service": "identity-service",
                 "slo": "availability"
@@ -1267,7 +1323,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"identity-service\",slo=\"availability\"} / slo:requests_total:30d{service=\"identity-service\",slo=\"availability\"}",
+              "expr": "slo:requests_success:30d{service=\"identity-service\",slo=\"availability\"} / (slo:requests_total:30d{service=\"identity-service\",slo=\"availability\"} > 0)",
               "labels": {
                 "objective": "99.99",
                 "service": "identity-service",
@@ -1292,7 +1348,7 @@
               "record": "slo:sli_total:rate"
             },
             {
-              "expr": "sum_over_time(slo:sli_good:rate{service=\"identity-service\",slo=\"availability\"}[30d]) / sum_over_time(slo:sli_total:rate{service=\"identity-service\",slo=\"availability\"}[30d])",
+              "expr": "sum_over_time(slo:sli_good:rate{service=\"identity-service\",slo=\"availability\"}[30d]) / (sum_over_time(slo:sli_total:rate{service=\"identity-service\",slo=\"availability\"}[30d]) > 0)",
               "labels": {
                 "objective": "99.99",
                 "service": "identity-service",
@@ -1318,7 +1374,7 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"identity-service\",le=\"0.2\"}[30d]))",
+              "expr": "(sum(increase(http_request_duration_seconds_bucket{service=\"identity-service\",le=\"0.2\"}[30d])) or (0 * sum(increase(http_request_duration_seconds_count{service=\"identity-service\"}[30d]))))",
               "labels": {
                 "service": "identity-service",
                 "slo": "latency-p95",
@@ -1327,7 +1383,7 @@
               "record": "slo:latency_requests_fast:30d"
             },
             {
-              "expr": "slo:latency_requests_fast:30d{service=\"identity-service\",slo=\"latency-p95\"} / slo:latency_requests_total:30d{service=\"identity-service\",slo=\"latency-p95\"}",
+              "expr": "slo:latency_requests_fast:30d{service=\"identity-service\",slo=\"latency-p95\"} / on(service, slo) (slo:latency_requests_total:30d{service=\"identity-service\",slo=\"latency-p95\"} > 0)",
               "labels": {
                 "objective": "99.5",
                 "service": "identity-service",
@@ -1377,7 +1433,7 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"identity-service\",le=\"0.5\"}[30d]))",
+              "expr": "(sum(increase(http_request_duration_seconds_bucket{service=\"identity-service\",le=\"0.5\"}[30d])) or (0 * sum(increase(http_request_duration_seconds_count{service=\"identity-service\"}[30d]))))",
               "labels": {
                 "service": "identity-service",
                 "slo": "latency-p99",
@@ -1386,7 +1442,7 @@
               "record": "slo:latency_requests_fast:30d"
             },
             {
-              "expr": "slo:latency_requests_fast:30d{service=\"identity-service\",slo=\"latency-p99\"} / slo:latency_requests_total:30d{service=\"identity-service\",slo=\"latency-p99\"}",
+              "expr": "slo:latency_requests_fast:30d{service=\"identity-service\",slo=\"latency-p99\"} / on(service, slo) (slo:latency_requests_total:30d{service=\"identity-service\",slo=\"latency-p99\"} > 0)",
               "labels": {
                 "objective": "98.0",
                 "service": "identity-service",
@@ -1441,7 +1497,7 @@
               "record": "service:http_requests:rate5m"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"identity-service\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"identity-service\"}[5m]))",
+              "expr": "(sum(rate(http_requests_total{service=\"identity-service\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"identity-service\"}[5m])))) / (sum(rate(http_requests_total{service=\"identity-service\"}[5m])) > 0)",
               "labels": {
                 "service": "identity-service"
               },
@@ -1593,7 +1649,7 @@
     "errors": [],
     "output_dir": "<tmp>/out",
     "resources_created": {
-      "alerts": 27,
+      "alerts": 30,
       "backstage": 1,
       "dashboard": 1,
       "pagerduty": 1,
@@ -1602,7 +1658,7 @@
     },
     "service_name": "identity-service",
     "success": true,
-    "total_resources": 58
+    "total_resources": 61
   },
   "preamble": [],
   "stray": []

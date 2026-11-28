@@ -247,6 +247,28 @@
               }
             }
           ]
+        },
+        {
+          "name": "checkout-db-deps-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:sli:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "checkout-db-deps: SLO availability not evaluable"
+              },
+              "expr": "absent(slo:sli:ratio{service=\"checkout-db-deps\",slo=\"availability\"}) or (slo:sli:ratio{service=\"checkout-db-deps\",slo=\"availability\"} != slo:sli:ratio{service=\"checkout-db-deps\",slo=\"availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "checkout-db-deps",
+                "severity": "info",
+                "slo": "availability",
+                "team": "commerce",
+                "tier": "critical"
+              }
+            }
+          ]
         }
       ]
     }
@@ -269,6 +291,7 @@
     "",
     "✅ Generated 15 total alerts",
     "  Breakdown: postgres=15",
+    "✅ Added 1 SLO not-evaluable alerts",
     "  Written to: <tmp>/out/alerts.yaml",
     "",
     "Next steps:",

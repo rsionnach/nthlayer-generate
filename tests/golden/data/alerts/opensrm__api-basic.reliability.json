@@ -1,1 +1,43 @@
-null
+{
+  "groups": [
+    {
+      "name": "user-api-slo",
+      "rules": [
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "user-api: SLO availability not evaluable"
+          },
+          "expr": "absent(slo:availability:ratio{service=\"user-api\",slo=\"availability\"}) or (slo:availability:ratio{service=\"user-api\",slo=\"availability\"} != slo:availability:ratio{service=\"user-api\",slo=\"availability\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "user-api",
+            "severity": "info",
+            "slo": "availability",
+            "team": "platform",
+            "tier": "standard"
+          }
+        },
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "user-api: SLO latency not evaluable"
+          },
+          "expr": "absent(slo:latency:ratio{service=\"user-api\",slo=\"latency\"}) or (slo:latency:ratio{service=\"user-api\",slo=\"latency\"} != slo:latency:ratio{service=\"user-api\",slo=\"latency\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "user-api",
+            "severity": "info",
+            "slo": "latency",
+            "team": "platform",
+            "tier": "standard"
+          }
+        }
+      ]
+    }
+  ]
+}

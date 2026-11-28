@@ -364,6 +364,62 @@
               }
             }
           ]
+        },
+        {
+          "name": "order-events-processor-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "order-events-processor: SLO availability not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"order-events-processor\",slo=\"availability\"}) or (slo:availability:ratio{service=\"order-events-processor\",slo=\"availability\"} != slo:availability:ratio{service=\"order-events-processor\",slo=\"availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "order-events-processor",
+                "severity": "info",
+                "slo": "availability",
+                "team": "orders",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:error_rate:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "order-events-processor: SLO error_rate not evaluable"
+              },
+              "expr": "absent(slo:error_rate:ratio{service=\"order-events-processor\",slo=\"error_rate\"}) or (slo:error_rate:ratio{service=\"order-events-processor\",slo=\"error_rate\"} != slo:error_rate:ratio{service=\"order-events-processor\",slo=\"error_rate\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "order-events-processor",
+                "severity": "info",
+                "slo": "error_rate",
+                "team": "orders",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:throughput:compliance has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "order-events-processor: SLO throughput not evaluable"
+              },
+              "expr": "absent(slo:throughput:compliance{service=\"order-events-processor\",slo=\"throughput\"}) or (slo:throughput:compliance{service=\"order-events-processor\",slo=\"throughput\"} != slo:throughput:compliance{service=\"order-events-processor\",slo=\"throughput\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "order-events-processor",
+                "severity": "info",
+                "slo": "throughput",
+                "team": "orders",
+                "tier": "high"
+              }
+            }
+          ]
         }
       ]
     }
@@ -387,6 +443,7 @@
     "",
     "✅ Generated 22 total alerts",
     "  Breakdown: clickhouse=20, kafka=2",
+    "✅ Added 3 SLO not-evaluable alerts",
     "  Written to: <tmp>/out/alerts.yaml",
     "",
     "Next steps:",

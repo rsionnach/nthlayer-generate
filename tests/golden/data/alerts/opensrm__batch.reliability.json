@@ -1,1 +1,43 @@
-null
+{
+  "groups": [
+    {
+      "name": "daily-report-generator-slo",
+      "rules": [
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "daily-report-generator: SLO availability not evaluable"
+          },
+          "expr": "absent(slo:availability:ratio{service=\"daily-report-generator\",slo=\"availability\"}) or (slo:availability:ratio{service=\"daily-report-generator\",slo=\"availability\"} != slo:availability:ratio{service=\"daily-report-generator\",slo=\"availability\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "daily-report-generator",
+            "severity": "info",
+            "slo": "availability",
+            "team": "analytics",
+            "tier": "standard"
+          }
+        },
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:error_rate:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "daily-report-generator: SLO error_rate not evaluable"
+          },
+          "expr": "absent(slo:error_rate:ratio{service=\"daily-report-generator\",slo=\"error_rate\"}) or (slo:error_rate:ratio{service=\"daily-report-generator\",slo=\"error_rate\"} != slo:error_rate:ratio{service=\"daily-report-generator\",slo=\"error_rate\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "daily-report-generator",
+            "severity": "info",
+            "slo": "error_rate",
+            "team": "analytics",
+            "tier": "standard"
+          }
+        }
+      ]
+    }
+  ]
+}

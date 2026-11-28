@@ -1,6 +1,33 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "notification-observability-only-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:sli:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "notification-observability-only: SLO delivery-success not evaluable"
+              },
+              "expr": "absent(slo:sli:ratio{service=\"notification-observability-only\",slo=\"delivery-success\"}) or (slo:sli:ratio{service=\"notification-observability-only\",slo=\"delivery-success\"} != slo:sli:ratio{service=\"notification-observability-only\",slo=\"delivery-success\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "notification-observability-only",
+                "severity": "info",
+                "slo": "delivery-success",
+                "team": "platform",
+                "tier": "high"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
   "text": [
     "",
     "╭──╮",
@@ -14,16 +41,12 @@
     "Service: tests/golden/fixtures/legacy/notification-observability-only.yaml",
     "Output: <tmp>/out/alerts.yaml",
     "",
-    "⚠️  No dependencies found in service definition",
-    "  Add a Dependencies resource to enable alert generation",
+    "✅ Added 1 SLO not-evaluable alerts",
+    "  Written to: <tmp>/out/alerts.yaml",
     "",
-    "Tip: Add a Dependencies resource to your service YAML:",
-    "  resources:",
-    "  - kind: Dependencies",
-    "  name: upstream",
-    "  spec:",
-    "  databases:",
-    "  - type: postgres",
-    "  - type: redis"
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
   ]
 }

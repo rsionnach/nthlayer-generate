@@ -1,6 +1,83 @@
 {
   "exit": 0,
   "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "payment-api-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "payment-api: SLO payment-api-availability not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"payment-api\",slo=\"payment-api-availability\"}) or (slo:availability:ratio{service=\"payment-api\",slo=\"payment-api-availability\"} != slo:availability:ratio{service=\"payment-api\",slo=\"payment-api-availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "info",
+                "slo": "payment-api-availability",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:error_rate:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "payment-api: SLO payment-api-error-rate not evaluable"
+              },
+              "expr": "absent(slo:error_rate:ratio{service=\"payment-api\",slo=\"payment-api-error-rate\"}) or (slo:error_rate:ratio{service=\"payment-api\",slo=\"payment-api-error-rate\"} != slo:error_rate:ratio{service=\"payment-api\",slo=\"payment-api-error-rate\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "info",
+                "slo": "payment-api-error-rate",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "payment-api: SLO payment-api-latency not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"payment-api\",slo=\"payment-api-latency\"}) or (slo:latency:ratio{service=\"payment-api\",slo=\"payment-api-latency\"} != slo:latency:ratio{service=\"payment-api\",slo=\"payment-api-latency\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "info",
+                "slo": "payment-api-latency",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:throughput:compliance has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "payment-api: SLO payment-api-throughput not evaluable"
+              },
+              "expr": "absent(slo:throughput:compliance{service=\"payment-api\",slo=\"payment-api-throughput\"}) or (slo:throughput:compliance{service=\"payment-api\",slo=\"payment-api-throughput\"} != slo:throughput:compliance{service=\"payment-api\",slo=\"payment-api-throughput\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "info",
+                "slo": "payment-api-throughput",
+                "team": "payments",
+                "tier": "critical"
+              }
+            }
+          ]
+        }
+      ]
+    },
     "backstage.json": {
       "deploymentGate": {
         "blockingThreshold": 10.0,
@@ -333,7 +410,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"payment-api\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"payment-api\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"payment-api\"}[30d]))))",
               "labels": {
                 "service": "payment-api",
                 "slo": "payment-api-availability"
@@ -341,7 +418,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"payment-api\",slo=\"payment-api-availability\"} / slo:requests_total:30d{service=\"payment-api\",slo=\"payment-api-availability\"}",
+              "expr": "slo:requests_success:30d{service=\"payment-api\",slo=\"payment-api-availability\"} / (slo:requests_total:30d{service=\"payment-api\",slo=\"payment-api-availability\"} > 0)",
               "labels": {
                 "objective": "99.95",
                 "service": "payment-api",
@@ -367,7 +444,7 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"0.099\"}[30d]))",
+              "expr": "(sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"0.099\"}[30d])) or (0 * sum(increase(http_request_duration_seconds_count{service=\"payment-api\"}[30d]))))",
               "labels": {
                 "service": "payment-api",
                 "slo": "payment-api-latency",
@@ -376,7 +453,7 @@
               "record": "slo:latency_requests_fast:30d"
             },
             {
-              "expr": "slo:latency_requests_fast:30d{service=\"payment-api\",slo=\"payment-api-latency\"} / slo:latency_requests_total:30d{service=\"payment-api\",slo=\"payment-api-latency\"}",
+              "expr": "slo:latency_requests_fast:30d{service=\"payment-api\",slo=\"payment-api-latency\"} / on(service, slo) (slo:latency_requests_total:30d{service=\"payment-api\",slo=\"payment-api-latency\"} > 0)",
               "labels": {
                 "objective": "99.0",
                 "service": "payment-api",
@@ -417,7 +494,7 @@
               "record": "slo:error_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"payment-api\",status=~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"payment-api\",status=~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"payment-api\"}[30d]))))",
               "labels": {
                 "service": "payment-api",
                 "slo": "payment-api-error-rate"
@@ -425,7 +502,7 @@
               "record": "slo:error_requests_failed:30d"
             },
             {
-              "expr": "slo:error_requests_failed:30d{service=\"payment-api\",slo=\"payment-api-error-rate\"} / slo:error_requests_total:30d{service=\"payment-api\",slo=\"payment-api-error-rate\"}",
+              "expr": "slo:error_requests_failed:30d{service=\"payment-api\",slo=\"payment-api-error-rate\"} / (slo:error_requests_total:30d{service=\"payment-api\",slo=\"payment-api-error-rate\"} > 0)",
               "labels": {
                 "objective": "99.9",
                 "service": "payment-api",
@@ -452,7 +529,7 @@
               "record": "slo:throughput:rate5m"
             },
             {
-              "expr": "(slo:throughput:rate5m{service=\"payment-api\",slo=\"payment-api-throughput\"} >= 99.0) or vector(0)",
+              "expr": "slo:throughput:rate5m{service=\"payment-api\",slo=\"payment-api-throughput\"} >= bool 99.0",
               "labels": {
                 "minimum": "99.0",
                 "service": "payment-api",
@@ -474,7 +551,7 @@
               "record": "service:http_requests:rate5m"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"payment-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+              "expr": "(sum(rate(http_requests_total{service=\"payment-api\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"payment-api\"}[5m])))) / (sum(rate(http_requests_total{service=\"payment-api\"}[5m])) > 0)",
               "labels": {
                 "service": "payment-api"
               },
@@ -663,7 +740,7 @@
     "errors": [],
     "output_dir": "<tmp>/out",
     "resources_created": {
-      "alerts": 0,
+      "alerts": 4,
       "backstage": 1,
       "dashboard": 1,
       "recording-rules": 20,
@@ -671,7 +748,7 @@
     },
     "service_name": "payment-api",
     "success": true,
-    "total_resources": 26
+    "total_resources": 30
   },
   "preamble": [],
   "stray": []

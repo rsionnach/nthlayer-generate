@@ -257,10 +257,13 @@ def validate_service_file(
         resource_count = len(manifest.slos) + len(manifest.dependencies)
 
         # Contract validation (OpenSRM only). TypeError here only: common's
-        # v2 parser keeps a quoted ``availability`` ("0.9995") as a string
-        # and these checks then compare it with a float. A TypeError
-        # anywhere else, or here with every availability a number, is a
-        # bug and propagates.
+        # srm/v1 parser keeps a quoted ``contract.availability`` ("0.999")
+        # as a string and these checks then compare it with a float. (Its
+        # v2 parser refuses one at load since 5.12.3, opensrm-f0co, so a v2
+        # manifest never gets here with one.) A TypeError anywhere else, or
+        # here with every availability a number, is a bug and propagates.
+        # TODO(opensrm-ev8r): drop the catch and
+        # _non_numeric_availability_error once srm/v1 checks the value too.
         try:
             warnings.extend(manifest.validate_contracts())
             if contract_registry is not None:

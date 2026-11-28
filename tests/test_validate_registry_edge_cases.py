@@ -14,15 +14,16 @@ REPO = Path(__file__).resolve().parents[1]
 V2_EXAMPLE = (
     REPO.parent / "opensrm" / "spec" / "v2" / "examples" / "migration" / "api-full-v2.yaml"
 )
+SRM_V1_EXAMPLE = REPO / "examples" / "opensrm" / "api-critical.reliability.yaml"
 
 
 def test_quoted_v2_availability_is_a_validation_error_not_a_traceback(tmp_path: Path) -> None:
     """Fixture: opensrm/spec/v2/examples/migration/api-full-v2.yaml with
     ``contracts[0].promise.availability`` (0.9995 there, a Ratio) quoted, the
-    YAML-author mistake the schema rejects as a string. The example declares
-    no dependency ``criticality``; the transitive-feasibility check only
-    compares the promise once a dependency is critical (parser/v2.py
-    ``criticality`` -> ``critical``), so one dependency is marked critical."""
+    YAML-author mistake the schema rejects as a string. common's v2 parser
+    refuses it at load since 5.12.3 (opensrm-f0co); before that the string
+    reached the transitive-feasibility check, which only compares the promise
+    once a dependency is critical, so one dependency is marked critical."""
     data = yaml.safe_load(V2_EXAMPLE.read_text(encoding="utf-8"))
     data["spec"]["contracts"][0]["promise"]["availability"] = "0.9995"
     data["spec"]["dependencies"][0]["criticality"] = "critical"
@@ -52,7 +53,8 @@ def test_registry_loads_do_not_emit_target_convention_warnings() -> None:
 
 def test_quoted_availability_error_names_the_field(tmp_path: Path) -> None:
     """Same fixture as above, through validate_service_file: the error says
-    which value is not a number rather than echoing a comparison TypeError."""
+    which value is not a ratio (common's load error, since opensrm-f0co)
+    rather than echoing a comparison TypeError."""
     from nthlayer_generate.specs.contracts import ContractRegistry
     from nthlayer_generate.specs.validator import validate_service_file
 
@@ -110,16 +112,16 @@ def test_contract_check_type_error_with_numeric_availabilities_propagates(
         validator.validate_service_file(manifest, contract_registry=ContractRegistry())
 
 
-def test_quoted_availability_in_the_registry_names_its_service(tmp_path: Path) -> None:
-    """Fixture: api-full-v2.yaml twice. The provider is renamed ``postgresql``
-    (``metadata.name`` and ``spec.service.name``, which common's v2 parser reads)
-    after the example's first dependency, ``resource:default/postgresql``, with its
-    ``promise.availability`` quoted; the consumer is the example with that
-    dependency marked critical, as in the first test of this file."""
-    from nthlayer_common.manifest import load_manifest
-
-    from nthlayer_generate.specs.contracts import ContractRegistry
-    from nthlayer_generate.specs.validator import validate_service_file
+def test_quoted_v2_availability_in_a_provider_is_refused_at_load(tmp_path: Path) -> None:
+    """Fixture: api-full-v2.yaml renamed ``postgresql`` (``metadata.name`` and
+    ``spec.service.name``, which common's v2 parser reads), with its
+    ``promise.availability`` quoted. The v2 schema's ``promise.availability``
+    is a Ratio, a number from 0 to 1 (opensrm/spec/v2/schema.json), and
+    common's parser refuses anything else at load since 5.12.3
+    (opensrm-f0co). So the provider never reaches a registry: the validator
+    used to find the string there and name the service (opensrm-u8oo)."""
+    import pytest
+    from nthlayer_common.manifest import ManifestLoadError, load_manifest
 
     provider = yaml.safe_load(V2_EXAMPLE.read_text(encoding="utf-8"))
     provider["metadata"]["name"] = "postgresql"
@@ -127,17 +129,50 @@ def test_quoted_availability_in_the_registry_names_its_service(tmp_path: Path) -
     provider["spec"]["contracts"][0]["promise"]["availability"] = "0.9995"
     provider_path = tmp_path / "postgresql.yaml"
     provider_path.write_text(yaml.safe_dump(provider, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(ManifestLoadError) as refused:
+        load_manifest(provider_path)
+
+    # The error names the field and shows the value as written.
+    assert "promise.availability" in str(refused.value)
+    assert "'0.9995'" in str(refused.value)
+    assert not refused.value.backstop
+
+
+def test_quoted_srm_v1_availability_in_the_registry_names_its_service(tmp_path: Path) -> None:
+    """srm/v1 has no schema and common's parser stores ``spec.contract``'s
+    availability as written (opensrm-ev8r is the open decision), so a quoted
+    one still reaches the contract checks, and the validator must say whose
+    it is. Fixture: the shipped examples/opensrm/api-critical.reliability.yaml
+    twice. The provider is renamed ``postgres-primary``, after the example's
+    first dependency (declared ``critical: true``), with its
+    ``contract.availability`` (0.999 there) quoted; the consumer is the
+    example unmodified."""
+    from nthlayer_common.manifest import load_manifest
+
+    from nthlayer_generate.specs.contracts import ContractRegistry
+    from nthlayer_generate.specs.validator import validate_service_file
+
+    provider = yaml.safe_load(SRM_V1_EXAMPLE.read_text(encoding="utf-8"))
+    provider["metadata"]["name"] = "postgres-primary"
+    provider["spec"]["contract"]["availability"] = "0.999"
+    provider_path = tmp_path / "postgres-primary.reliability.yaml"
+    provider_path.write_text(yaml.safe_dump(provider, sort_keys=False), encoding="utf-8")
     registry = ContractRegistry()
-    registry.register(load_manifest(provider_path))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", TargetConventionWarning)
+        registry.register(load_manifest(provider_path))
+    assert registry.services == ["postgres-primary"]
 
-    consumer = yaml.safe_load(V2_EXAMPLE.read_text(encoding="utf-8"))
-    consumer["spec"]["dependencies"][0]["criticality"] = "critical"
-    consumer_path = tmp_path / "payment-api.yaml"
-    consumer_path.write_text(yaml.safe_dump(consumer, sort_keys=False), encoding="utf-8")
+    consumer_path = tmp_path / "payment-api.reliability.yaml"
+    consumer_path.write_text(SRM_V1_EXAMPLE.read_text(encoding="utf-8"), encoding="utf-8")
 
-    result = validate_service_file(consumer_path, contract_registry=registry)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", TargetConventionWarning)
+        result = validate_service_file(consumer_path, contract_registry=registry)
 
     assert not result.valid
     assert len(result.errors) == 1
-    assert "'postgresql'" in result.errors[0]
-    assert "'0.9995'" in result.errors[0]
+    assert "'postgres-primary'" in result.errors[0]
+    assert "(contract registry)" in result.errors[0]
+    assert "'0.999'" in result.errors[0]

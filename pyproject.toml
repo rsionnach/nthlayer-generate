@@ -53,15 +53,20 @@ dependencies = [
     # and lifts calibration/feedback_latency the way srm/v1 does; generate's
     # judgment rules and migrate depend on that. (History: 5.4.0 added
     # ReliabilityManifest.authored_type.)
-    # WHY 5.12.2 (opensrm-jmht): 5.12.2 is the floor because it is the
-    # installed sibling (rule 10). Nothing here depends on its changes yet:
-    # srm/v1 and v2 loads raise only contract errors (opensrm-wo62.4.28),
-    # which opensrm-wo62.4.29 will rely on. 5.12.1 (opensrm-wo62.4.25) was the
+    # WHY 5.12.4 (opensrm-u8oo): its v2 parser refuses an availability that
+    # is not a ratio from 0 to 1 at load (opensrm-f0co, in 5.12.3), so a
+    # quoted v2 promise.availability is a ManifestLoadError before
+    # validate's contract checks run;
+    # tests/test_validate_registry_edge_cases.py pins that. 5.12.2
+    # (opensrm-jmht) was the floor as the installed sibling only: srm/v1
+    # and v2 loads raise only contract errors (opensrm-wo62.4.28), which
+    # opensrm-wo62.4.29 will rely on. 5.12.1 (opensrm-wo62.4.25) was the
     # floor because its legacy loader reports a malformed resource as a
-    # ManifestLoadError (opensrm-wo62.4.10), a message validate's tests pin,
-    # and reads threshold_ms from a plural indicators[] list
+    # ManifestLoadError (opensrm-wo62.4.10), a message validate's tests
+    # pin, and reads threshold_ms from a plural indicators[] list
     # (opensrm-wo62.4.24), which the goldens pin. The AttributeError and
-    # TypeError catches at the load boundaries stay until opensrm-wo62.4.29.
+    # TypeError catches at the load boundaries stay until
+    # opensrm-wo62.4.29.
     # Rule 10: the floor is the installed sibling, so bump it on every
     # nthlayer-common release, patches included; the floor guard fails until
     # you do.
@@ -70,7 +75,7 @@ dependencies = [
     # (`nthlayer-generate migrate-manifest`), not the bare `nthlayer` that
     # another package may own; the opensrm_v1 conversion it points at landed in
     # 5.3.0 (opensrm-pnmv).
-    "nthlayer-common>=5.12.2,<6.0.0",
+    "nthlayer-common>=5.12.4,<6.0.0",
     "grafana-foundation-sdk>=0.0.11",
     "pydantic>=2.7.0,<3.0.0",
     "pydantic-settings>=2.2.1,<3.0.0",

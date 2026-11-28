@@ -103,6 +103,62 @@
               }
             }
           ]
+        },
+        {
+          "name": "batch-reports-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "batch-reports: SLO availability not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"batch-reports\",slo=\"availability\"}) or (slo:availability:ratio{service=\"batch-reports\",slo=\"availability\"} != slo:availability:ratio{service=\"batch-reports\",slo=\"availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "info",
+                "slo": "availability",
+                "team": "data",
+                "tier": "low"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "batch-reports: SLO report-success-rate not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"batch-reports\",slo=\"report-success-rate\"}) or (slo:availability:ratio{service=\"batch-reports\",slo=\"report-success-rate\"} != slo:availability:ratio{service=\"batch-reports\",slo=\"report-success-rate\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "info",
+                "slo": "report-success-rate",
+                "team": "data",
+                "tier": "low"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "batch-reports: SLO latency-p95 not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"batch-reports\",slo=\"latency-p95\"}) or (slo:latency:ratio{service=\"batch-reports\",slo=\"latency-p95\"} != slo:latency:ratio{service=\"batch-reports\",slo=\"latency-p95\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "info",
+                "slo": "latency-p95",
+                "team": "data",
+                "tier": "low"
+              }
+            }
+          ]
         }
       ]
     }
@@ -126,6 +182,7 @@
     "",
     "✅ Generated 6 total alerts",
     "  Breakdown: postgresql=6",
+    "✅ Added 3 SLO not-evaluable alerts",
     "  Written to: <tmp>/out/alerts.yaml",
     "",
     "Next steps:",

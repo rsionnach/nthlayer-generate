@@ -196,6 +196,79 @@
           }
         }
       ]
+    },
+    {
+      "name": "mobile-api-slo",
+      "rules": [
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "mobile-api: SLO availability not evaluable"
+          },
+          "expr": "absent(slo:availability:ratio{service=\"mobile-api\",slo=\"availability\"}) or (slo:availability:ratio{service=\"mobile-api\",slo=\"availability\"} != slo:availability:ratio{service=\"mobile-api\",slo=\"availability\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "mobile-api",
+            "severity": "info",
+            "slo": "availability",
+            "team": "mobile",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "mobile-api: SLO latency-p95 not evaluable"
+          },
+          "expr": "absent(slo:latency:ratio{service=\"mobile-api\",slo=\"latency-p95\"}) or (slo:latency:ratio{service=\"mobile-api\",slo=\"latency-p95\"} != slo:latency:ratio{service=\"mobile-api\",slo=\"latency-p95\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "mobile-api",
+            "severity": "info",
+            "slo": "latency-p95",
+            "team": "mobile",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "mobile-api: SLO latency-p99 not evaluable"
+          },
+          "expr": "absent(slo:latency:ratio{service=\"mobile-api\",slo=\"latency-p99\"}) or (slo:latency:ratio{service=\"mobile-api\",slo=\"latency-p99\"} != slo:latency:ratio{service=\"mobile-api\",slo=\"latency-p99\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "mobile-api",
+            "severity": "info",
+            "slo": "latency-p99",
+            "team": "mobile",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "mobile-api: SLO auth-success-rate not evaluable"
+          },
+          "expr": "absent(slo:availability:ratio{service=\"mobile-api\",slo=\"auth-success-rate\"}) or (slo:availability:ratio{service=\"mobile-api\",slo=\"auth-success-rate\"} != slo:availability:ratio{service=\"mobile-api\",slo=\"auth-success-rate\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "mobile-api",
+            "severity": "info",
+            "slo": "auth-success-rate",
+            "team": "mobile",
+            "tier": "critical"
+          }
+        }
+      ]
     }
   ]
 }

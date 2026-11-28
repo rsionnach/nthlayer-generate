@@ -8,8 +8,9 @@ Each declared bound that has a recording rule gets two alerts:
   pq > B exactly when fewer than q of the arrivals fall within B.
 - ``AIGate<Type><Bound>NotEvaluable`` fires when the measurement is absent
   or NaN (E3). Without it, a missing series would look like within bounds.
-  A window with no arrivals divides 0 by 0 and yields NaN, not an absent
-  series, hence ``R != R``.
+  A window with no arrivals leaves generate's own ratio absent (its
+  denominator is guarded, opensrm-r0bx). ``R != R`` stays for a NaN that
+  arrives another way, such as an externally computed gauge.
 
 Both alerts read only generate's own ``ai_gate:*`` recording rules, never
 raw series (design D1), so renaming a source metric does not touch alerts.

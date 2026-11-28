@@ -16,7 +16,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"checkout-db-deps\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"checkout-db-deps\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"checkout-db-deps\"}[30d]))))",
               "labels": {
                 "service": "checkout-db-deps",
                 "slo": "availability"
@@ -24,7 +24,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"checkout-db-deps\",slo=\"availability\"} / slo:requests_total:30d{service=\"checkout-db-deps\",slo=\"availability\"}",
+              "expr": "slo:requests_success:30d{service=\"checkout-db-deps\",slo=\"availability\"} / (slo:requests_total:30d{service=\"checkout-db-deps\",slo=\"availability\"} > 0)",
               "labels": {
                 "objective": "99.95",
                 "service": "checkout-db-deps",
@@ -49,7 +49,7 @@
               "record": "slo:sli_total:rate"
             },
             {
-              "expr": "sum_over_time(slo:sli_good:rate{service=\"checkout-db-deps\",slo=\"availability\"}[30d]) / sum_over_time(slo:sli_total:rate{service=\"checkout-db-deps\",slo=\"availability\"}[30d])",
+              "expr": "sum_over_time(slo:sli_good:rate{service=\"checkout-db-deps\",slo=\"availability\"}[30d]) / (sum_over_time(slo:sli_total:rate{service=\"checkout-db-deps\",slo=\"availability\"}[30d]) > 0)",
               "labels": {
                 "objective": "99.95",
                 "service": "checkout-db-deps",
@@ -80,7 +80,7 @@
               "record": "service:http_requests:rate5m"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"checkout-db-deps\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"checkout-db-deps\"}[5m]))",
+              "expr": "(sum(rate(http_requests_total{service=\"checkout-db-deps\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"checkout-db-deps\"}[5m])))) / (sum(rate(http_requests_total{service=\"checkout-db-deps\"}[5m])) > 0)",
               "labels": {
                 "service": "checkout-db-deps"
               },

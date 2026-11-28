@@ -54,6 +54,14 @@ jobs:
       - name: Run type checking
         run: uv run mypy src/
 
+      # The rule tests evaluate generated expressions with promtool and FAIL
+      # without it. The version is pinned in one place, PROMTOOL_VERSION in
+      # src/nthlayer_generate/validation/promtool.py, which the script reads.
+      - name: Install promtool
+        run: |
+          uv run python scripts/install_promtool.py --dest "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
       - name: Run tests
         run: |
           uv run pytest tests/ \

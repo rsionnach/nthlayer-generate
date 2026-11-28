@@ -316,6 +316,45 @@
               }
             }
           ]
+        },
+        {
+          "name": "analytics-stream-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "analytics-stream: SLO event-latency-p99 not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"analytics-stream\",slo=\"event-latency-p99\"}) or (slo:latency:ratio{service=\"analytics-stream\",slo=\"event-latency-p99\"} != slo:latency:ratio{service=\"analytics-stream\",slo=\"event-latency-p99\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "info",
+                "slo": "event-latency-p99",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:sli:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "analytics-stream: SLO processing-availability not evaluable"
+              },
+              "expr": "absent(slo:sli:ratio{service=\"analytics-stream\",slo=\"processing-availability\"}) or (slo:sli:ratio{service=\"analytics-stream\",slo=\"processing-availability\"} != slo:sli:ratio{service=\"analytics-stream\",slo=\"processing-availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "info",
+                "slo": "processing-availability",
+                "team": "data",
+                "tier": "high"
+              }
+            }
+          ]
         }
       ]
     }
@@ -339,6 +378,7 @@
     "",
     "✅ Generated 19 total alerts",
     "  Breakdown: mongodb=7, redis=12",
+    "✅ Added 2 SLO not-evaluable alerts",
     "  Written to: <tmp>/out/alerts.yaml",
     "",
     "Next steps:",

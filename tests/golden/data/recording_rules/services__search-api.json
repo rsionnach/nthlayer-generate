@@ -13,7 +13,7 @@
           "record": "slo:requests_total:30d"
         },
         {
-          "expr": "sum(increase(http_requests_total{service=\"search-api\",status!~\"5..\"}[30d]))",
+          "expr": "(sum(increase(http_requests_total{service=\"search-api\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"search-api\"}[30d]))))",
           "labels": {
             "service": "search-api",
             "slo": "search-availability"
@@ -21,7 +21,7 @@
           "record": "slo:requests_success:30d"
         },
         {
-          "expr": "slo:requests_success:30d{service=\"search-api\",slo=\"search-availability\"} / slo:requests_total:30d{service=\"search-api\",slo=\"search-availability\"}",
+          "expr": "slo:requests_success:30d{service=\"search-api\",slo=\"search-availability\"} / (slo:requests_total:30d{service=\"search-api\",slo=\"search-availability\"} > 0)",
           "labels": {
             "objective": "99.5",
             "service": "search-api",
@@ -47,7 +47,7 @@
           "record": "slo:latency_requests_total:30d"
         },
         {
-          "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"search-api\",le=\"0.3\"}[30d]))",
+          "expr": "(sum(increase(http_request_duration_seconds_bucket{service=\"search-api\",le=\"0.3\"}[30d])) or (0 * sum(increase(http_request_duration_seconds_count{service=\"search-api\"}[30d]))))",
           "labels": {
             "service": "search-api",
             "slo": "search-latency-p95",
@@ -56,7 +56,7 @@
           "record": "slo:latency_requests_fast:30d"
         },
         {
-          "expr": "slo:latency_requests_fast:30d{service=\"search-api\",slo=\"search-latency-p95\"} / slo:latency_requests_total:30d{service=\"search-api\",slo=\"search-latency-p95\"}",
+          "expr": "slo:latency_requests_fast:30d{service=\"search-api\",slo=\"search-latency-p95\"} / on(service, slo) (slo:latency_requests_total:30d{service=\"search-api\",slo=\"search-latency-p95\"} > 0)",
           "labels": {
             "objective": "99.0",
             "service": "search-api",
@@ -111,7 +111,7 @@
           "record": "service:http_requests:rate5m"
         },
         {
-          "expr": "sum(rate(http_requests_total{service=\"search-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"search-api\"}[5m]))",
+          "expr": "(sum(rate(http_requests_total{service=\"search-api\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"search-api\"}[5m])))) / (sum(rate(http_requests_total{service=\"search-api\"}[5m])) > 0)",
           "labels": {
             "service": "search-api"
           },

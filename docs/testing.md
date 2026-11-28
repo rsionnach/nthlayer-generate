@@ -4,6 +4,7 @@
 
 | Command | Purpose |
 |---------|---------|
+| `make promtool` | Install the pinned promtool (needed by `make test`) |
 | `make test` | Run test suite |
 | `make lint` | Run linter |
 | `make lint-fix` | Auto-fix lint issues |
@@ -12,6 +13,16 @@
 | `make lock` | Lock dependencies |
 | `make lock-upgrade` | Lock with upgrades |
 | `./scripts/lint/run-all.sh` | Run custom golden-principle linters |
+
+## promtool
+
+Tests that check what a generated rule *does* evaluate it with
+`promtool test rules` through `nthlayer_generate.validation.promtool`. They
+fail, rather than skip, when promtool is missing or is not the pinned
+version. `make promtool` installs that version into `~/.local/bin`; the
+version itself is written once, as `PROMTOOL_VERSION` in
+`src/nthlayer_generate/validation/promtool.py`, and CI installs it with the
+same script.
 
 ## Test Structure
 

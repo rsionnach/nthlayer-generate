@@ -247,6 +247,62 @@
               }
             }
           ]
+        },
+        {
+          "name": "auth-api-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "auth-api: SLO availability not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"auth-api\",slo=\"availability\"}) or (slo:availability:ratio{service=\"auth-api\",slo=\"availability\"} != slo:availability:ratio{service=\"auth-api\",slo=\"availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "auth-api",
+                "severity": "info",
+                "slo": "availability",
+                "team": "platform",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "auth-api: SLO latency-p95 not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"auth-api\",slo=\"latency-p95\"}) or (slo:latency:ratio{service=\"auth-api\",slo=\"latency-p95\"} != slo:latency:ratio{service=\"auth-api\",slo=\"latency-p95\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "auth-api",
+                "severity": "info",
+                "slo": "latency-p95",
+                "team": "platform",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "auth-api: SLO token-generation-latency not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"auth-api\",slo=\"token-generation-latency\"}) or (slo:latency:ratio{service=\"auth-api\",slo=\"token-generation-latency\"} != slo:latency:ratio{service=\"auth-api\",slo=\"token-generation-latency\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "auth-api",
+                "severity": "info",
+                "slo": "token-generation-latency",
+                "team": "platform",
+                "tier": "critical"
+              }
+            }
+          ]
         }
       ]
     }
@@ -269,6 +325,7 @@
     "",
     "✅ Generated 15 total alerts",
     "  Breakdown: postgresql=15",
+    "✅ Added 3 SLO not-evaluable alerts",
     "  Written to: <tmp>/out/alerts.yaml",
     "",
     "Next steps:",

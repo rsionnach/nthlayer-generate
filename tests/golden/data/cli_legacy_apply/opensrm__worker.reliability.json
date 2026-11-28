@@ -1,6 +1,66 @@
 {
   "exit": 0,
   "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "email-sender-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "email-sender: SLO availability not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"email-sender\",slo=\"availability\"}) or (slo:availability:ratio{service=\"email-sender\",slo=\"availability\"} != slo:availability:ratio{service=\"email-sender\",slo=\"availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "email-sender",
+                "severity": "info",
+                "slo": "availability",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:error_rate:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "email-sender: SLO error_rate not evaluable"
+              },
+              "expr": "absent(slo:error_rate:ratio{service=\"email-sender\",slo=\"error_rate\"}) or (slo:error_rate:ratio{service=\"email-sender\",slo=\"error_rate\"} != slo:error_rate:ratio{service=\"email-sender\",slo=\"error_rate\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "email-sender",
+                "severity": "info",
+                "slo": "error_rate",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:throughput:compliance has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "email-sender: SLO throughput not evaluable"
+              },
+              "expr": "absent(slo:throughput:compliance{service=\"email-sender\",slo=\"throughput\"}) or (slo:throughput:compliance{service=\"email-sender\",slo=\"throughput\"} != slo:throughput:compliance{service=\"email-sender\",slo=\"throughput\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "email-sender",
+                "severity": "info",
+                "slo": "throughput",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            }
+          ]
+        }
+      ]
+    },
     "backstage.json": {
       "deploymentGate": {
         "blockingThreshold": null,
@@ -299,7 +359,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"email-sender\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"email-sender\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"email-sender\"}[30d]))))",
               "labels": {
                 "service": "email-sender",
                 "slo": "availability"
@@ -307,7 +367,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"email-sender\",slo=\"availability\"} / slo:requests_total:30d{service=\"email-sender\",slo=\"availability\"}",
+              "expr": "slo:requests_success:30d{service=\"email-sender\",slo=\"availability\"} / (slo:requests_total:30d{service=\"email-sender\",slo=\"availability\"} > 0)",
               "labels": {
                 "objective": "99.9",
                 "service": "email-sender",
@@ -334,7 +394,7 @@
               "record": "slo:throughput:rate5m"
             },
             {
-              "expr": "(slo:throughput:rate5m{service=\"email-sender\",slo=\"throughput\"} >= 100.0) or vector(0)",
+              "expr": "slo:throughput:rate5m{service=\"email-sender\",slo=\"throughput\"} >= bool 100.0",
               "labels": {
                 "minimum": "100.0",
                 "service": "email-sender",
@@ -351,7 +411,7 @@
               "record": "slo:error_requests_total:7d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"email-sender\",status=~\"5..\"}[7d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"email-sender\",status=~\"5..\"}[7d])) or (0 * sum(increase(http_requests_total{service=\"email-sender\"}[7d]))))",
               "labels": {
                 "service": "email-sender",
                 "slo": "error_rate"
@@ -359,7 +419,7 @@
               "record": "slo:error_requests_failed:7d"
             },
             {
-              "expr": "slo:error_requests_failed:7d{service=\"email-sender\",slo=\"error_rate\"} / slo:error_requests_total:7d{service=\"email-sender\",slo=\"error_rate\"}",
+              "expr": "slo:error_requests_failed:7d{service=\"email-sender\",slo=\"error_rate\"} / (slo:error_requests_total:7d{service=\"email-sender\",slo=\"error_rate\"} > 0)",
               "labels": {
                 "objective": "0.5",
                 "service": "email-sender",
@@ -381,7 +441,7 @@
               "record": "service:http_requests:rate5m"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"email-sender\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"email-sender\"}[5m]))",
+              "expr": "(sum(rate(http_requests_total{service=\"email-sender\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"email-sender\"}[5m])))) / (sum(rate(http_requests_total{service=\"email-sender\"}[5m])) > 0)",
               "labels": {
                 "service": "email-sender"
               },
@@ -509,7 +569,7 @@
     "errors": [],
     "output_dir": "<tmp>/out",
     "resources_created": {
-      "alerts": 0,
+      "alerts": 3,
       "backstage": 1,
       "dashboard": 1,
       "recording-rules": 13,
@@ -517,7 +577,7 @@
     },
     "service_name": "email-sender",
     "success": true,
-    "total_resources": 18
+    "total_resources": 21
   },
   "preamble": [],
   "stray": []

@@ -103,6 +103,62 @@
               }
             }
           ]
+        },
+        {
+          "name": "batch-reports-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "batch-reports: SLO availability not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"batch-reports\",slo=\"availability\"}) or (slo:availability:ratio{service=\"batch-reports\",slo=\"availability\"} != slo:availability:ratio{service=\"batch-reports\",slo=\"availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "info",
+                "slo": "availability",
+                "team": "data",
+                "tier": "low"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "batch-reports: SLO report-success-rate not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"batch-reports\",slo=\"report-success-rate\"}) or (slo:availability:ratio{service=\"batch-reports\",slo=\"report-success-rate\"} != slo:availability:ratio{service=\"batch-reports\",slo=\"report-success-rate\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "info",
+                "slo": "report-success-rate",
+                "team": "data",
+                "tier": "low"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "batch-reports: SLO latency-p95 not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"batch-reports\",slo=\"latency-p95\"}) or (slo:latency:ratio{service=\"batch-reports\",slo=\"latency-p95\"} != slo:latency:ratio{service=\"batch-reports\",slo=\"latency-p95\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "batch-reports",
+                "severity": "info",
+                "slo": "latency-p95",
+                "team": "data",
+                "tier": "low"
+              }
+            }
+          ]
         }
       ]
     },
@@ -690,7 +746,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"batch-reports\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"batch-reports\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"batch-reports\"}[30d]))))",
               "labels": {
                 "service": "batch-reports",
                 "slo": "availability"
@@ -698,7 +754,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"batch-reports\",slo=\"availability\"} / slo:requests_total:30d{service=\"batch-reports\",slo=\"availability\"}",
+              "expr": "slo:requests_success:30d{service=\"batch-reports\",slo=\"availability\"} / (slo:requests_total:30d{service=\"batch-reports\",slo=\"availability\"} > 0)",
               "labels": {
                 "objective": "99.0",
                 "service": "batch-reports",
@@ -724,7 +780,7 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"batch-reports\",le=\"2.0\"}[30d]))",
+              "expr": "(sum(increase(http_request_duration_seconds_bucket{service=\"batch-reports\",le=\"2.0\"}[30d])) or (0 * sum(increase(http_request_duration_seconds_count{service=\"batch-reports\"}[30d]))))",
               "labels": {
                 "service": "batch-reports",
                 "slo": "latency-p95",
@@ -733,7 +789,7 @@
               "record": "slo:latency_requests_fast:30d"
             },
             {
-              "expr": "slo:latency_requests_fast:30d{service=\"batch-reports\",slo=\"latency-p95\"} / slo:latency_requests_total:30d{service=\"batch-reports\",slo=\"latency-p95\"}",
+              "expr": "slo:latency_requests_fast:30d{service=\"batch-reports\",slo=\"latency-p95\"} / on(service, slo) (slo:latency_requests_total:30d{service=\"batch-reports\",slo=\"latency-p95\"} > 0)",
               "labels": {
                 "objective": "90.0",
                 "service": "batch-reports",
@@ -783,7 +839,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"batch-reports\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"batch-reports\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"batch-reports\"}[30d]))))",
               "labels": {
                 "service": "batch-reports",
                 "slo": "report-success-rate"
@@ -791,7 +847,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"batch-reports\",slo=\"report-success-rate\"} / slo:requests_total:30d{service=\"batch-reports\",slo=\"report-success-rate\"}",
+              "expr": "slo:requests_success:30d{service=\"batch-reports\",slo=\"report-success-rate\"} / (slo:requests_total:30d{service=\"batch-reports\",slo=\"report-success-rate\"} > 0)",
               "labels": {
                 "objective": "95.0",
                 "service": "batch-reports",
@@ -822,7 +878,7 @@
               "record": "service:http_requests:rate5m"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"batch-reports\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"batch-reports\"}[5m]))",
+              "expr": "(sum(rate(http_requests_total{service=\"batch-reports\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"batch-reports\"}[5m])))) / (sum(rate(http_requests_total{service=\"batch-reports\"}[5m])) > 0)",
               "labels": {
                 "service": "batch-reports"
               },
@@ -950,7 +1006,7 @@
     "errors": [],
     "output_dir": "<tmp>/out",
     "resources_created": {
-      "alerts": 6,
+      "alerts": 9,
       "backstage": 1,
       "dashboard": 1,
       "recording-rules": 19,
@@ -958,7 +1014,7 @@
     },
     "service_name": "batch-reports",
     "success": true,
-    "total_resources": 30
+    "total_resources": 33
   },
   "preamble": [],
   "stray": []

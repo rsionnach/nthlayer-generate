@@ -441,6 +441,28 @@
           }
         }
       ]
+    },
+    {
+      "name": "payment-api-slo",
+      "rules": [
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "payment-api: SLO availability not evaluable"
+          },
+          "expr": "absent(slo:availability:ratio{service=\"payment-api\",slo=\"availability\"}) or (slo:availability:ratio{service=\"payment-api\",slo=\"availability\"} != slo:availability:ratio{service=\"payment-api\",slo=\"availability\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "payment-api",
+            "severity": "info",
+            "slo": "availability",
+            "team": "payments-team",
+            "tier": "critical"
+          }
+        }
+      ]
     }
   ]
 }

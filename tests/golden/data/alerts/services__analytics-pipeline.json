@@ -1,1 +1,60 @@
-null
+{
+  "groups": [
+    {
+      "name": "analytics-pipeline-slo",
+      "rules": [
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "analytics-pipeline: SLO success-rate not evaluable"
+          },
+          "expr": "absent(slo:availability:ratio{service=\"analytics-pipeline\",slo=\"success-rate\"}) or (slo:availability:ratio{service=\"analytics-pipeline\",slo=\"success-rate\"} != slo:availability:ratio{service=\"analytics-pipeline\",slo=\"success-rate\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "analytics-pipeline",
+            "severity": "info",
+            "slo": "success-rate",
+            "team": "data",
+            "tier": "standard"
+          }
+        },
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "analytics-pipeline: SLO freshness-p95 not evaluable"
+          },
+          "expr": "absent(slo:latency:ratio{service=\"analytics-pipeline\",slo=\"freshness-p95\"}) or (slo:latency:ratio{service=\"analytics-pipeline\",slo=\"freshness-p95\"} != slo:latency:ratio{service=\"analytics-pipeline\",slo=\"freshness-p95\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "analytics-pipeline",
+            "severity": "info",
+            "slo": "freshness-p95",
+            "team": "data",
+            "tier": "standard"
+          }
+        },
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "analytics-pipeline: SLO data-quality not evaluable"
+          },
+          "expr": "absent(slo:availability:ratio{service=\"analytics-pipeline\",slo=\"data-quality\"}) or (slo:availability:ratio{service=\"analytics-pipeline\",slo=\"data-quality\"} != slo:availability:ratio{service=\"analytics-pipeline\",slo=\"data-quality\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "analytics-pipeline",
+            "severity": "info",
+            "slo": "data-quality",
+            "team": "data",
+            "tier": "standard"
+          }
+        }
+      ]
+    }
+  ]
+}

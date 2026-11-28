@@ -441,6 +441,62 @@
           }
         }
       ]
+    },
+    {
+      "name": "identity-service-slo",
+      "rules": [
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:sli:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "identity-service: SLO availability not evaluable"
+          },
+          "expr": "absent(slo:sli:ratio{service=\"identity-service\",slo=\"availability\"}) or (slo:sli:ratio{service=\"identity-service\",slo=\"availability\"} != slo:sli:ratio{service=\"identity-service\",slo=\"availability\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "identity-service",
+            "severity": "info",
+            "slo": "availability",
+            "team": "identity",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "identity-service: SLO latency-p95 not evaluable"
+          },
+          "expr": "absent(slo:latency:ratio{service=\"identity-service\",slo=\"latency-p95\"}) or (slo:latency:ratio{service=\"identity-service\",slo=\"latency-p95\"} != slo:latency:ratio{service=\"identity-service\",slo=\"latency-p95\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "identity-service",
+            "severity": "info",
+            "slo": "latency-p95",
+            "team": "identity",
+            "tier": "critical"
+          }
+        },
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "identity-service: SLO latency-p99 not evaluable"
+          },
+          "expr": "absent(slo:latency:ratio{service=\"identity-service\",slo=\"latency-p99\"}) or (slo:latency:ratio{service=\"identity-service\",slo=\"latency-p99\"} != slo:latency:ratio{service=\"identity-service\",slo=\"latency-p99\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "identity-service",
+            "severity": "info",
+            "slo": "latency-p99",
+            "team": "identity",
+            "tier": "critical"
+          }
+        }
+      ]
     }
   ]
 }

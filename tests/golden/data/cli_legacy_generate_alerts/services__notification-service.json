@@ -1,6 +1,50 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "notification-service-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "notification-service: SLO job-success-rate not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"notification-service\",slo=\"job-success-rate\"}) or (slo:availability:ratio{service=\"notification-service\",slo=\"job-success-rate\"} != slo:availability:ratio{service=\"notification-service\",slo=\"job-success-rate\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "notification-service",
+                "severity": "info",
+                "slo": "job-success-rate",
+                "team": "platform",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "notification-service: SLO processing-time-p95 not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"notification-service\",slo=\"processing-time-p95\"}) or (slo:latency:ratio{service=\"notification-service\",slo=\"processing-time-p95\"} != slo:latency:ratio{service=\"notification-service\",slo=\"processing-time-p95\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "notification-service",
+                "severity": "info",
+                "slo": "processing-time-p95",
+                "team": "platform",
+                "tier": "standard"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
   "text": [
     "",
     "╭──╮",
@@ -18,14 +62,12 @@
     "  ⚠️  sqs: No alerts found",
     "",
     "⚠️  No alerts generated",
+    "✅ Added 2 SLO not-evaluable alerts",
+    "  Written to: <tmp>/out/alerts.yaml",
     "",
-    "Tip: Add a Dependencies resource to your service YAML:",
-    "  resources:",
-    "  - kind: Dependencies",
-    "  name: upstream",
-    "  spec:",
-    "  databases:",
-    "  - type: postgres",
-    "  - type: redis"
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
   ]
 }

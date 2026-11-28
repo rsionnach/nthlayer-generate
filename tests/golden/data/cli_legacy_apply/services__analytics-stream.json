@@ -316,6 +316,45 @@
               }
             }
           ]
+        },
+        {
+          "name": "analytics-stream-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "analytics-stream: SLO event-latency-p99 not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"analytics-stream\",slo=\"event-latency-p99\"}) or (slo:latency:ratio{service=\"analytics-stream\",slo=\"event-latency-p99\"} != slo:latency:ratio{service=\"analytics-stream\",slo=\"event-latency-p99\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "info",
+                "slo": "event-latency-p99",
+                "team": "data",
+                "tier": "high"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:sli:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "analytics-stream: SLO processing-availability not evaluable"
+              },
+              "expr": "absent(slo:sli:ratio{service=\"analytics-stream\",slo=\"processing-availability\"}) or (slo:sli:ratio{service=\"analytics-stream\",slo=\"processing-availability\"} != slo:sli:ratio{service=\"analytics-stream\",slo=\"processing-availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-stream",
+                "severity": "info",
+                "slo": "processing-availability",
+                "team": "data",
+                "tier": "high"
+              }
+            }
+          ]
         }
       ]
     },
@@ -914,7 +953,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"analytics-stream\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"analytics-stream\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"analytics-stream\"}[30d]))))",
               "labels": {
                 "service": "analytics-stream",
                 "slo": "processing-availability"
@@ -922,7 +961,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"analytics-stream\",slo=\"processing-availability\"} / slo:requests_total:30d{service=\"analytics-stream\",slo=\"processing-availability\"}",
+              "expr": "slo:requests_success:30d{service=\"analytics-stream\",slo=\"processing-availability\"} / (slo:requests_total:30d{service=\"analytics-stream\",slo=\"processing-availability\"} > 0)",
               "labels": {
                 "objective": "99.5",
                 "service": "analytics-stream",
@@ -947,7 +986,7 @@
               "record": "slo:sli_total:rate"
             },
             {
-              "expr": "sum_over_time(slo:sli_good:rate{service=\"analytics-stream\",slo=\"processing-availability\"}[30d]) / sum_over_time(slo:sli_total:rate{service=\"analytics-stream\",slo=\"processing-availability\"}[30d])",
+              "expr": "sum_over_time(slo:sli_good:rate{service=\"analytics-stream\",slo=\"processing-availability\"}[30d]) / (sum_over_time(slo:sli_total:rate{service=\"analytics-stream\",slo=\"processing-availability\"}[30d]) > 0)",
               "labels": {
                 "objective": "99.5",
                 "service": "analytics-stream",
@@ -973,7 +1012,7 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"analytics-stream\",le=\"10.0\"}[30d]))",
+              "expr": "(sum(increase(http_request_duration_seconds_bucket{service=\"analytics-stream\",le=\"10.0\"}[30d])) or (0 * sum(increase(http_request_duration_seconds_count{service=\"analytics-stream\"}[30d]))))",
               "labels": {
                 "service": "analytics-stream",
                 "slo": "event-latency-p99",
@@ -982,7 +1021,7 @@
               "record": "slo:latency_requests_fast:30d"
             },
             {
-              "expr": "slo:latency_requests_fast:30d{service=\"analytics-stream\",slo=\"event-latency-p99\"} / slo:latency_requests_total:30d{service=\"analytics-stream\",slo=\"event-latency-p99\"}",
+              "expr": "slo:latency_requests_fast:30d{service=\"analytics-stream\",slo=\"event-latency-p99\"} / on(service, slo) (slo:latency_requests_total:30d{service=\"analytics-stream\",slo=\"event-latency-p99\"} > 0)",
               "labels": {
                 "objective": "95.0",
                 "service": "analytics-stream",
@@ -1037,7 +1076,7 @@
               "record": "service:http_requests:rate5m"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"analytics-stream\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"analytics-stream\"}[5m]))",
+              "expr": "(sum(rate(http_requests_total{service=\"analytics-stream\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"analytics-stream\"}[5m])))) / (sum(rate(http_requests_total{service=\"analytics-stream\"}[5m])) > 0)",
               "labels": {
                 "service": "analytics-stream"
               },
@@ -1136,7 +1175,7 @@
     "errors": [],
     "output_dir": "<tmp>/out",
     "resources_created": {
-      "alerts": 19,
+      "alerts": 21,
       "backstage": 1,
       "dashboard": 1,
       "pagerduty": 1,
@@ -1145,7 +1184,7 @@
     },
     "service_name": "analytics-stream",
     "success": true,
-    "total_resources": 42
+    "total_resources": 44
   },
   "preamble": [],
   "stray": []

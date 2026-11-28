@@ -13,7 +13,7 @@
           "record": "slo:requests_total:30d"
         },
         {
-          "expr": "sum(increase(http_requests_total{service=\"daily-report-generator\",status!~\"5..\"}[30d]))",
+          "expr": "(sum(increase(http_requests_total{service=\"daily-report-generator\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"daily-report-generator\"}[30d]))))",
           "labels": {
             "service": "daily-report-generator",
             "slo": "availability"
@@ -21,7 +21,7 @@
           "record": "slo:requests_success:30d"
         },
         {
-          "expr": "slo:requests_success:30d{service=\"daily-report-generator\",slo=\"availability\"} / slo:requests_total:30d{service=\"daily-report-generator\",slo=\"availability\"}",
+          "expr": "slo:requests_success:30d{service=\"daily-report-generator\",slo=\"availability\"} / (slo:requests_total:30d{service=\"daily-report-generator\",slo=\"availability\"} > 0)",
           "labels": {
             "objective": "99.0",
             "service": "daily-report-generator",
@@ -47,7 +47,7 @@
           "record": "slo:error_requests_total:7d"
         },
         {
-          "expr": "sum(increase(http_requests_total{service=\"daily-report-generator\",status=~\"5..\"}[7d]))",
+          "expr": "(sum(increase(http_requests_total{service=\"daily-report-generator\",status=~\"5..\"}[7d])) or (0 * sum(increase(http_requests_total{service=\"daily-report-generator\"}[7d]))))",
           "labels": {
             "service": "daily-report-generator",
             "slo": "error_rate"
@@ -55,7 +55,7 @@
           "record": "slo:error_requests_failed:7d"
         },
         {
-          "expr": "slo:error_requests_failed:7d{service=\"daily-report-generator\",slo=\"error_rate\"} / slo:error_requests_total:7d{service=\"daily-report-generator\",slo=\"error_rate\"}",
+          "expr": "slo:error_requests_failed:7d{service=\"daily-report-generator\",slo=\"error_rate\"} / (slo:error_requests_total:7d{service=\"daily-report-generator\",slo=\"error_rate\"} > 0)",
           "labels": {
             "objective": "1.0",
             "service": "daily-report-generator",
@@ -77,7 +77,7 @@
           "record": "service:http_requests:rate5m"
         },
         {
-          "expr": "sum(rate(http_requests_total{service=\"daily-report-generator\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"daily-report-generator\"}[5m]))",
+          "expr": "(sum(rate(http_requests_total{service=\"daily-report-generator\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"daily-report-generator\"}[5m])))) / (sum(rate(http_requests_total{service=\"daily-report-generator\"}[5m])) > 0)",
           "labels": {
             "service": "daily-report-generator"
           },

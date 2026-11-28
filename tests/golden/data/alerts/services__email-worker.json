@@ -409,6 +409,28 @@
           }
         }
       ]
+    },
+    {
+      "name": "email-worker-slo",
+      "rules": [
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "email-worker: SLO success-rate not evaluable"
+          },
+          "expr": "absent(slo:availability:ratio{service=\"email-worker\",slo=\"success-rate\"}) or (slo:availability:ratio{service=\"email-worker\",slo=\"success-rate\"} != slo:availability:ratio{service=\"email-worker\",slo=\"success-rate\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "email-worker",
+            "severity": "info",
+            "slo": "success-rate",
+            "team": "notifications",
+            "tier": "standard"
+          }
+        }
+      ]
     }
   ]
 }

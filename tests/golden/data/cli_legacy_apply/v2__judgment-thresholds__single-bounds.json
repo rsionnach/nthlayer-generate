@@ -71,7 +71,7 @@
           "name": "triage-agent_judgment_thresholds_30d",
           "rules": [
             {
-              "expr": "sum(increase(ai_gate_feedback_latency_seconds_bucket{service=\"triage-agent\",le=\"86400.0\"}[30d])) / sum(increase(ai_gate_feedback_latency_seconds_count{service=\"triage-agent\"}[30d]))",
+              "expr": "sum(increase(ai_gate_feedback_latency_seconds_bucket{service=\"triage-agent\",le=\"86400.0\"}[30d])) / (sum(increase(ai_gate_feedback_latency_seconds_count{service=\"triage-agent\"}[30d])) > 0)",
               "labels": {
                 "quantile": "0.9",
                 "service": "triage-agent",
@@ -108,7 +108,7 @@
               "record": "service:http_requests:rate5m"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"triage-agent\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"triage-agent\"}[5m]))",
+              "expr": "(sum(rate(http_requests_total{service=\"triage-agent\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"triage-agent\"}[5m])))) / (sum(rate(http_requests_total{service=\"triage-agent\"}[5m])) > 0)",
               "labels": {
                 "service": "triage-agent"
               },

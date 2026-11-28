@@ -1,6 +1,67 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "email-sender-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "email-sender: SLO availability not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"email-sender\",slo=\"availability\"}) or (slo:availability:ratio{service=\"email-sender\",slo=\"availability\"} != slo:availability:ratio{service=\"email-sender\",slo=\"availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "email-sender",
+                "severity": "info",
+                "slo": "availability",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:error_rate:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "email-sender: SLO error_rate not evaluable"
+              },
+              "expr": "absent(slo:error_rate:ratio{service=\"email-sender\",slo=\"error_rate\"}) or (slo:error_rate:ratio{service=\"email-sender\",slo=\"error_rate\"} != slo:error_rate:ratio{service=\"email-sender\",slo=\"error_rate\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "email-sender",
+                "severity": "info",
+                "slo": "error_rate",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:throughput:compliance has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "email-sender: SLO throughput not evaluable"
+              },
+              "expr": "absent(slo:throughput:compliance{service=\"email-sender\",slo=\"throughput\"}) or (slo:throughput:compliance{service=\"email-sender\",slo=\"throughput\"} != slo:throughput:compliance{service=\"email-sender\",slo=\"throughput\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "email-sender",
+                "severity": "info",
+                "slo": "throughput",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
   "text": [
     "",
     "╭──╮",
@@ -18,14 +79,12 @@
     "  ⚠️  sqs: No alerts found",
     "",
     "⚠️  No alerts generated",
+    "✅ Added 3 SLO not-evaluable alerts",
+    "  Written to: <tmp>/out/alerts.yaml",
     "",
-    "Tip: Add a Dependencies resource to your service YAML:",
-    "  resources:",
-    "  - kind: Dependencies",
-    "  name: upstream",
-    "  spec:",
-    "  databases:",
-    "  - type: postgres",
-    "  - type: redis"
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
   ]
 }

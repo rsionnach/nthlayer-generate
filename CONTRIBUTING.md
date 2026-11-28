@@ -31,6 +31,7 @@ cd nthlayer-generate
 git checkout -b feat/your-change     # branch from main; there is no develop
 uv sync --extra dev                  # installs deps + test/lint/typecheck tools
 make pre-commit-install              # install git hooks
+make promtool                        # the pinned promtool; rule tests fail without it
 
 # Tests / lint / typecheck / format
 make test                            # pytest
@@ -48,6 +49,8 @@ make format
 > `uv python install` if needed).
 
 A clean clone to a green `make test` should take well under five minutes.
+`make promtool` downloads one binary to `~/.local/bin`, which must be on
+`PATH`; see `docs/testing.md`.
 
 ## Pull Request Process
 

@@ -2,8 +2,8 @@
   "json": {
     "checks": {
       "alert_generation": {
-        "alert_count": 0,
-        "message": "0 alerts will be generated",
+        "alert_count": 4,
+        "message": "4 alerts will be generated",
         "status": "pass"
       },
       "dashboard_generation": {
@@ -25,7 +25,12 @@
     "command": "plan",
     "metadata": {
       "resources": {
-        "alerts": [],
+        "alerts": [
+          {
+            "count": 4,
+            "severity": "info"
+          }
+        ],
         "backstage": [
           {
             "output": "backstage.json",
@@ -86,7 +91,7 @@
       "passed": 4,
       "status": "pass",
       "total": 4,
-      "total_resources": 8,
+      "total_resources": 9,
       "warnings": 0
     },
     "timestamp": "<masked>",
@@ -96,7 +101,12 @@
   "plan": {
     "errors": [],
     "resources": {
-      "alerts": [],
+      "alerts": [
+        {
+          "count": 4,
+          "severity": "info"
+        }
+      ],
       "backstage": [
         {
           "output": "backstage.json",
@@ -154,5 +164,5 @@
     "warnings": []
   },
   "success": true,
-  "total_resources": 8
+  "total_resources": 9
 }

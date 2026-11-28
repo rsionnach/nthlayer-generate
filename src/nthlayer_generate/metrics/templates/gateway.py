@@ -121,18 +121,4 @@ GATEWAY_TEMPLATE = ServiceTypeTemplate(
             requirement_level=RequirementLevel.RECOMMENDED,
         ),
     ],
-    slo_formulas={
-        "upstream_availability": (
-            "1 - ("
-            "sum(rate(http_client_request_duration_seconds_count"
-            "{http_response_status_code=~'5..'}[5m])) / "
-            "sum(rate(http_client_request_duration_seconds_count[5m]))"
-            ")"
-        ),
-        "upstream_latency_p99": (
-            "histogram_quantile(0.99, "
-            "sum(rate(http_client_request_duration_seconds_bucket[5m])) "
-            "by (le, server_address))"
-        ),
-    },
 )

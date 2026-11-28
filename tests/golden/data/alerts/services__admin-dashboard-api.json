@@ -1,1 +1,43 @@
-null
+{
+  "groups": [
+    {
+      "name": "admin-dashboard-api-slo",
+      "rules": [
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "admin-dashboard-api: SLO availability not evaluable"
+          },
+          "expr": "absent(slo:availability:ratio{service=\"admin-dashboard-api\",slo=\"availability\"}) or (slo:availability:ratio{service=\"admin-dashboard-api\",slo=\"availability\"} != slo:availability:ratio{service=\"admin-dashboard-api\",slo=\"availability\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "admin-dashboard-api",
+            "severity": "info",
+            "slo": "availability",
+            "team": "platform",
+            "tier": "standard"
+          }
+        },
+        {
+          "alert": "SLONotEvaluable",
+          "annotations": {
+            "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+            "summary": "admin-dashboard-api: SLO latency-p95 not evaluable"
+          },
+          "expr": "absent(slo:latency:ratio{service=\"admin-dashboard-api\",slo=\"latency-p95\"}) or (slo:latency:ratio{service=\"admin-dashboard-api\",slo=\"latency-p95\"} != slo:latency:ratio{service=\"admin-dashboard-api\",slo=\"latency-p95\"})",
+          "for": "1h",
+          "labels": {
+            "routing": "self",
+            "service": "admin-dashboard-api",
+            "severity": "info",
+            "slo": "latency-p95",
+            "team": "platform",
+            "tier": "standard"
+          }
+        }
+      ]
+    }
+  ]
+}

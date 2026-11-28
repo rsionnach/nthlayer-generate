@@ -20,6 +20,7 @@
     "",
     "✅ Generated 26 total alerts",
     "  Breakdown: mysql=14, redis=12",
+    "✅ Added 3 SLO not-evaluable alerts",
     "",
     "Dry run - alerts not written to file",
     "",
@@ -29,7 +30,7 @@
     "  3. MysqlHighPreparedStatementsUtilization(>80%) (warning, mysql)",
     "  4. MysqlHighThreadsRunning (warning, mysql)",
     "  5. MysqlSlaveIoThreadNotRunning (critical, mysql)",
-    "  ... and 21 more",
+    "  ... and 24 more",
     "",
     "Run without --dry-run to write to <tmp>/out/alerts.yaml"
   ]

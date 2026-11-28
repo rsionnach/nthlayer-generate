@@ -96,14 +96,4 @@ DATABASE_CLIENT_TEMPLATE = ServiceTypeTemplate(
             requirement_level=RequirementLevel.RECOMMENDED,
         ),
     ],
-    slo_formulas={
-        "latency_p99": (
-            "histogram_quantile(0.99, "
-            "sum(rate(db_client_operation_duration_seconds_bucket[5m])) by (le)"
-            ")"
-        ),
-        "connection_utilization": (
-            "sum(db_client_connections_usage{state='used'}) / " "sum(db_client_connection_max)"
-        ),
-    },
 )

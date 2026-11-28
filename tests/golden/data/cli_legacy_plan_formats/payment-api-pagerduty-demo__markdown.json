@@ -9,7 +9,7 @@
     "| Check | Status | Details |",
     "|-------|--------|---------|",
     "| SLO Definition | ✅ Pass | 2 SLOs defined |",
-    "| Alert Generation | ✅ Pass | 27 alerts will be generated |",
+    "| Alert Generation | ✅ Pass | 29 alerts will be generated |",
     "| Dashboard Generation | ✅ Pass | 1 dashboards will be generated |",
     "| Recording Rules | ✅ Pass | 15 recording rules will be generated |",
     "",

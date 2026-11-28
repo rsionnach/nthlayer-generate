@@ -77,7 +77,6 @@ class ServiceTypeTemplate:
     extends: str | None = None  # Parent template for inheritance
     required: list[MetricDefinition] = field(default_factory=list)
     recommended: list[MetricDefinition] = field(default_factory=list)
-    slo_formulas: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass

@@ -1,6 +1,50 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "payment-api-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "payment-api: SLO availability not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"payment-api\",slo=\"availability\"}) or (slo:availability:ratio{service=\"payment-api\",slo=\"availability\"} != slo:availability:ratio{service=\"payment-api\",slo=\"availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "info",
+                "slo": "availability",
+                "team": "payments",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "payment-api: SLO latency-p95 not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"payment-api\",slo=\"latency-p95\"}) or (slo:latency:ratio{service=\"payment-api\",slo=\"latency-p95\"} != slo:latency:ratio{service=\"payment-api\",slo=\"latency-p95\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "info",
+                "slo": "latency-p95",
+                "team": "payments",
+                "tier": "standard"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
   "text": [
     "",
     "╭──╮",
@@ -25,16 +69,12 @@
     "  Additional tier filtering:",
     "  • Standard tier: Only critical + warning",
     "",
-    "⚠️  No dependencies found in service definition",
-    "  Add a Dependencies resource to enable alert generation",
+    "✅ Added 2 SLO not-evaluable alerts",
+    "  Written to: <tmp>/out/alerts.yaml",
     "",
-    "Tip: Add a Dependencies resource to your service YAML:",
-    "  resources:",
-    "  - kind: Dependencies",
-    "  name: upstream",
-    "  spec:",
-    "  databases:",
-    "  - type: postgres",
-    "  - type: redis"
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
   ]
 }

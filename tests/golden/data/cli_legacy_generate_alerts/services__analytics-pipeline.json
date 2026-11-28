@@ -1,6 +1,67 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "analytics-pipeline-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "analytics-pipeline: SLO data-quality not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"analytics-pipeline\",slo=\"data-quality\"}) or (slo:availability:ratio{service=\"analytics-pipeline\",slo=\"data-quality\"} != slo:availability:ratio{service=\"analytics-pipeline\",slo=\"data-quality\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-pipeline",
+                "severity": "info",
+                "slo": "data-quality",
+                "team": "data",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "analytics-pipeline: SLO success-rate not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"analytics-pipeline\",slo=\"success-rate\"}) or (slo:availability:ratio{service=\"analytics-pipeline\",slo=\"success-rate\"} != slo:availability:ratio{service=\"analytics-pipeline\",slo=\"success-rate\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-pipeline",
+                "severity": "info",
+                "slo": "success-rate",
+                "team": "data",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "analytics-pipeline: SLO freshness-p95 not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"analytics-pipeline\",slo=\"freshness-p95\"}) or (slo:latency:ratio{service=\"analytics-pipeline\",slo=\"freshness-p95\"} != slo:latency:ratio{service=\"analytics-pipeline\",slo=\"freshness-p95\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "analytics-pipeline",
+                "severity": "info",
+                "slo": "freshness-p95",
+                "team": "data",
+                "tier": "standard"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
   "text": [
     "",
     "╭──╮",
@@ -19,14 +80,12 @@
     "  ⚠️  s3: No alerts found",
     "",
     "⚠️  No alerts generated",
+    "✅ Added 3 SLO not-evaluable alerts",
+    "  Written to: <tmp>/out/alerts.yaml",
     "",
-    "Tip: Add a Dependencies resource to your service YAML:",
-    "  resources:",
-    "  - kind: Dependencies",
-    "  name: upstream",
-    "  spec:",
-    "  databases:",
-    "  - type: postgres",
-    "  - type: redis"
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
   ]
 }

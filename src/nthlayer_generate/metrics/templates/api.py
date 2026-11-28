@@ -108,23 +108,4 @@ API_TEMPLATE = ServiceTypeTemplate(
             requirement_level=RequirementLevel.RECOMMENDED,
         ),
     ],
-    slo_formulas={
-        "availability": (
-            "1 - ("
-            "sum(rate(http_server_request_duration_seconds_count"
-            "{http_response_status_code=~'5..'}[5m])) / "
-            "sum(rate(http_server_request_duration_seconds_count[5m]))"
-            ")"
-        ),
-        "latency_p99": (
-            "histogram_quantile(0.99, "
-            "sum(rate(http_server_request_duration_seconds_bucket[5m])) by (le)"
-            ")"
-        ),
-        "latency_p95": (
-            "histogram_quantile(0.95, "
-            "sum(rate(http_server_request_duration_seconds_bucket[5m])) by (le)"
-            ")"
-        ),
-    },
 )

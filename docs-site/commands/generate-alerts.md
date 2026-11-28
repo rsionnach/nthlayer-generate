@@ -119,6 +119,40 @@ Alert severity is adjusted based on service tier:
 | Tier 2 (Standard) | > 1% | > 500ms |
 | Tier 3 (Low) | > 5% | > 1s |
 
+## SLO not evaluable
+
+Every SLO that `generate-recording-rules` records a value for gets one
+`SLONotEvaluable` alert, labelled with its `slo`:
+
+```yaml
+- alert: SLONotEvaluable
+  expr: >-
+    absent(slo:availability:ratio{service="payment-api",slo="availability"})
+    or (slo:availability:ratio{service="payment-api",slo="availability"}
+    != slo:availability:ratio{service="payment-api",slo="availability"})
+  for: 1h
+  labels:
+    severity: info
+    slo: availability
+```
+
+A generated ratio has no value when there is nothing to divide by: a
+service that receives no requests has no availability, so it cannot breach
+its objective, and a burn-rate alert on it stays quiet. That is most likely
+during a total outage. `SLONotEvaluable` fires when the SLO's series has
+been absent (or NaN) for an hour, so the silence is visible.
+
+The alert covers availability, latency, error-rate and throughput SLOs, and
+the `reversal_rate` and `high_confidence_failure` judgment SLOs of an AI
+gate. An SLO with its own good/total queries is watched on `slo:sli:ratio`.
+It is written for every tier, is always `info` with `for: 1h`, and is not
+affected by `alerting.for_duration`. It reads only the recorded series, so
+load the recording rules alongside the alerts.
+
+A service that is expected to go quiet for more than the SLO window (30
+days by default) will fire it; route or silence `SLONotEvaluable` for that
+service.
+
 ## CI/CD Integration
 
 ```yaml

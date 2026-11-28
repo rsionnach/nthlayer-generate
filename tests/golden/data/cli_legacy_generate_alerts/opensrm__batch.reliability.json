@@ -1,6 +1,50 @@
 {
-  "exit": 1,
-  "files": {},
+  "exit": 0,
+  "files": {
+    "alerts.yaml": {
+      "groups": [
+        {
+          "name": "daily-report-generator-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "daily-report-generator: SLO availability not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"daily-report-generator\",slo=\"availability\"}) or (slo:availability:ratio{service=\"daily-report-generator\",slo=\"availability\"} != slo:availability:ratio{service=\"daily-report-generator\",slo=\"availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "daily-report-generator",
+                "severity": "info",
+                "slo": "availability",
+                "team": "analytics",
+                "tier": "standard"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:error_rate:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "daily-report-generator: SLO error_rate not evaluable"
+              },
+              "expr": "absent(slo:error_rate:ratio{service=\"daily-report-generator\",slo=\"error_rate\"}) or (slo:error_rate:ratio{service=\"daily-report-generator\",slo=\"error_rate\"} != slo:error_rate:ratio{service=\"daily-report-generator\",slo=\"error_rate\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "daily-report-generator",
+                "severity": "info",
+                "slo": "error_rate",
+                "team": "analytics",
+                "tier": "standard"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
   "text": [
     "",
     "╭──╮",
@@ -19,14 +63,12 @@
     "  ⚠️  s3: No alerts found",
     "",
     "⚠️  No alerts generated",
+    "✅ Added 2 SLO not-evaluable alerts",
+    "  Written to: <tmp>/out/alerts.yaml",
     "",
-    "Tip: Add a Dependencies resource to your service YAML:",
-    "  resources:",
-    "  - kind: Dependencies",
-    "  name: upstream",
-    "  spec:",
-    "  databases:",
-    "  - type: postgres",
-    "  - type: redis"
+    "Next steps:",
+    "  1. Review generated alerts: cat <tmp>/out/alerts.yaml",
+    "  2. Deploy to Prometheus: kubectl apply -f <tmp>/out/alerts.yaml",
+    "  3. Verify alerts are firing: check Prometheus UI"
   ]
 }

@@ -2,8 +2,8 @@
   "json": {
     "checks": {
       "alert_generation": {
-        "alert_count": 42,
-        "message": "42 alerts will be generated",
+        "alert_count": 46,
+        "message": "46 alerts will be generated",
         "status": "pass"
       },
       "dashboard_generation": {
@@ -29,6 +29,10 @@
           {
             "count": 20,
             "severity": "critical"
+          },
+          {
+            "count": 4,
+            "severity": "info"
           },
           {
             "count": 22,
@@ -118,7 +122,7 @@
       "passed": 4,
       "status": "pass",
       "total": 4,
-      "total_resources": 14,
+      "total_resources": 15,
       "warnings": 0
     },
     "timestamp": "<masked>",
@@ -132,6 +136,10 @@
         {
           "count": 20,
           "severity": "critical"
+        },
+        {
+          "count": 4,
+          "severity": "info"
         },
         {
           "count": 22,
@@ -218,5 +226,5 @@
     "warnings": []
   },
   "success": true,
-  "total_resources": 14
+  "total_resources": 15
 }

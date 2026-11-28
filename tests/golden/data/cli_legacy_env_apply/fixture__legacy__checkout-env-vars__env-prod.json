@@ -83,7 +83,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"checkout-env-vars\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"checkout-env-vars\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"checkout-env-vars\"}[30d]))))",
               "labels": {
                 "service": "checkout-env-vars",
                 "slo": "availability-prod"
@@ -91,7 +91,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"checkout-env-vars\",slo=\"availability-prod\"} / slo:requests_total:30d{service=\"checkout-env-vars\",slo=\"availability-prod\"}",
+              "expr": "slo:requests_success:30d{service=\"checkout-env-vars\",slo=\"availability-prod\"} / (slo:requests_total:30d{service=\"checkout-env-vars\",slo=\"availability-prod\"} > 0)",
               "labels": {
                 "objective": "99.99",
                 "service": "checkout-env-vars",
@@ -116,7 +116,7 @@
               "record": "slo:sli_total:rate"
             },
             {
-              "expr": "sum_over_time(slo:sli_good:rate{service=\"checkout-env-vars\",slo=\"availability-prod\"}[30d]) / sum_over_time(slo:sli_total:rate{service=\"checkout-env-vars\",slo=\"availability-prod\"}[30d])",
+              "expr": "sum_over_time(slo:sli_good:rate{service=\"checkout-env-vars\",slo=\"availability-prod\"}[30d]) / (sum_over_time(slo:sli_total:rate{service=\"checkout-env-vars\",slo=\"availability-prod\"}[30d]) > 0)",
               "labels": {
                 "objective": "99.99",
                 "service": "checkout-env-vars",
@@ -142,7 +142,7 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"checkout-env-vars\",le=\"0.8\"}[30d]))",
+              "expr": "(sum(increase(http_request_duration_seconds_bucket{service=\"checkout-env-vars\",le=\"0.8\"}[30d])) or (0 * sum(increase(http_request_duration_seconds_count{service=\"checkout-env-vars\"}[30d]))))",
               "labels": {
                 "service": "checkout-env-vars",
                 "slo": "latency-p95-commerce",
@@ -151,7 +151,7 @@
               "record": "slo:latency_requests_fast:30d"
             },
             {
-              "expr": "slo:latency_requests_fast:30d{service=\"checkout-env-vars\",slo=\"latency-p95-commerce\"} / slo:latency_requests_total:30d{service=\"checkout-env-vars\",slo=\"latency-p95-commerce\"}",
+              "expr": "slo:latency_requests_fast:30d{service=\"checkout-env-vars\",slo=\"latency-p95-commerce\"} / on(service, slo) (slo:latency_requests_total:30d{service=\"checkout-env-vars\",slo=\"latency-p95-commerce\"} > 0)",
               "labels": {
                 "objective": "99.0",
                 "service": "checkout-env-vars",
@@ -206,7 +206,7 @@
               "record": "service:http_requests:rate5m"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"checkout-env-vars\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"checkout-env-vars\"}[5m]))",
+              "expr": "(sum(rate(http_requests_total{service=\"checkout-env-vars\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"checkout-env-vars\"}[5m])))) / (sum(rate(http_requests_total{service=\"checkout-env-vars\"}[5m])) > 0)",
               "labels": {
                 "service": "checkout-env-vars"
               },

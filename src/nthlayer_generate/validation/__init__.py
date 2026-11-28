@@ -37,8 +37,19 @@ from nthlayer_generate.validation.promruval import (
     is_promruval_available,
     validate_with_promruval,
 )
+from nthlayer_generate.validation.promtool import (
+    PROMTOOL_VERSION,
+    PromtoolResult,
+    PromtoolStatus,
+    run_rule_tests,
+)
 
 __all__ = [
+    # Rule unit tests (promtool): a missing binary is never a pass
+    "PROMTOOL_VERSION",
+    "PromtoolResult",
+    "PromtoolStatus",
+    "run_rule_tests",
     # PromQL linting (pint)
     "PintLinter",
     "LintResult",

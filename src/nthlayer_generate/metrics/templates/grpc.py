@@ -104,17 +104,4 @@ GRPC_TEMPLATE = ServiceTypeTemplate(
             requirement_level=RequirementLevel.RECOMMENDED,
         ),
     ],
-    slo_formulas={
-        "availability": (
-            "1 - ("
-            "sum(rate(rpc_server_duration_seconds_count{rpc_grpc_status_code!='0'}[5m])) / "
-            "sum(rate(rpc_server_duration_seconds_count[5m]))"
-            ")"
-        ),
-        "latency_p99": (
-            "histogram_quantile(0.99, "
-            "sum(rate(rpc_server_duration_seconds_bucket[5m])) by (le)"
-            ")"
-        ),
-    },
 )

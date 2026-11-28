@@ -30,6 +30,10 @@ from typing import Any
 import pytest
 import yaml
 
+# The spec repo is a sibling checkout; its location is declared once, in the
+# golden corpus.
+from golden._corpus import OPENSRM
+
 from nthlayer_generate.alerts.loader import AlertTemplateLoader
 from nthlayer_generate.cli.alerts import (
     alerts_evaluate_command,
@@ -40,6 +44,9 @@ from nthlayer_generate.dashboards.manifest_builder import build_dashboard_from_m
 from nthlayer_generate.generators.alerts import generate_alerts_from_manifest
 from nthlayer_generate.generators.backstage import generate_backstage_entity
 from nthlayer_generate.generators.docs import generate_service_docs
+from nthlayer_generate.generators.slo_not_evaluable_alerts import (
+    ALERT_NAME as SLO_NOT_EVALUABLE,
+)
 from nthlayer_generate.generators.sloth import generate_sloth_from_manifest
 from nthlayer_generate.slos.pipeline import AlertPipeline
 from nthlayer_generate.specs.alerting import (
@@ -58,7 +65,6 @@ from nthlayer_generate.specs.validator import validate_service_file
 
 REPO = Path(__file__).resolve().parents[1]
 EX = REPO / "examples"
-OPENSRM = REPO.parent / "opensrm"
 
 # Shipped inputs. Commits are each file's last change at the time of writing.
 UAT_SRM = EX / "uat" / "payment-api.reliability.yaml"  # 9e3b2aa
@@ -147,6 +153,10 @@ def _type_templated_manifest(directory: Path, authored: str) -> Path:
         )
         _with_both_query_forms(slo, query)
     return _write(directory, "payment-api.reliability.yaml", data)
+
+
+# A collection-time list that came out empty would skip its tests, not fail them.
+assert sorted(ALIAS_RESOLVES_TO)
 
 
 @pytest.mark.parametrize("authored", sorted(ALIAS_RESOLVES_TO))
@@ -299,6 +309,10 @@ def _no_webhook_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("NTHLAYER_SLACK_WEBHOOK_ALERT", raising=False)
 
 
+# A collection-time list that came out empty would skip its tests, not fail them.
+assert sorted(ALERTING_CASES)
+
+
 @pytest.mark.parametrize("case", sorted(ALERTING_CASES))
 def test_alerting_block_parses_to_the_documented_config(case: str, tmp_path: Path) -> None:
     fixture, _tier, _slos, expected = ALERTING_CASES[case]
@@ -370,7 +384,14 @@ def test_generated_alert_for_durations_follow_the_block(case: str, tmp_path: Pat
     user documentation. This detects the block's effect changing across the
     switch, not a change to the templates or to that rule."""
     config = ALERTING_CASES[case][3]
-    alerts = generate_alerts_from_manifest(load(ALERTING_CASES[case][0](tmp_path)), quiet=True)
+    generated = generate_alerts_from_manifest(load(ALERTING_CASES[case][0](tmp_path)), quiet=True)
+    # SLONotEvaluable is not a template alert: for_duration never applies to
+    # it (design D4, as for the judgment-threshold alerts; opensrm-r0bx
+    # ruling 2 fixes it at info, for 1h), with or without a block.
+    not_evaluable = [a for a in generated if a.name == SLO_NOT_EVALUABLE]
+    assert not_evaluable, "the manifest's SLOs should each have one"
+    assert {(a.severity, a.duration) for a in not_evaluable} == {("info", "1h")}
+    alerts = [a for a in generated if a.name != SLO_NOT_EVALUABLE]
     assert alerts, "no alerts generated; the check below would be vacuous"
 
     if config is not None:
@@ -378,21 +399,20 @@ def test_generated_alert_for_durations_follow_the_block(case: str, tmp_path: Pat
         for alert in alerts:
             expected = fd.page if alert.severity == "critical" else fd.ticket
             assert alert.duration == expected, alert.name
-        return
-
-    loader = AlertTemplateLoader()
-    template = {
-        (a.technology, a.name): a.duration
-        for tech in {a.technology for a in alerts}
-        for a in loader.load_technology(tech)
-    }
-    assert {a.duration for a in alerts} - {"2m", "15m"}, (
-        "every template duration equals a for_duration default, so this case "
-        "cannot tell 'no block' from 'block without for_duration'"
-    )
-    for alert in alerts:
-        own = template[(alert.technology, alert.name)]
-        assert alert.duration == ("1m" if own == "0m" else own), alert.name
+    else:
+        loader = AlertTemplateLoader()
+        template = {
+            (a.technology, a.name): a.duration
+            for tech in {a.technology for a in alerts}
+            for a in loader.load_technology(tech)
+        }
+        assert {a.duration for a in alerts} - {"2m", "15m"}, (
+            "every template duration equals a for_duration default, so this case "
+            "cannot tell 'no block' from 'block without for_duration'"
+        )
+        for alert in alerts:
+            own = template[(alert.technology, alert.name)]
+            assert alert.duration == ("1m" if own == "0m" else own), alert.name
 
 
 # --- malformed: fails where it is used, at every use site --------------------

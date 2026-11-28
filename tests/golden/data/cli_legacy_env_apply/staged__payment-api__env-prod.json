@@ -689,6 +689,62 @@
               }
             }
           ]
+        },
+        {
+          "name": "payment-api-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "payment-api: SLO availability not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"payment-api\",slo=\"availability\"}) or (slo:availability:ratio{service=\"payment-api\",slo=\"availability\"} != slo:availability:ratio{service=\"payment-api\",slo=\"availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "info",
+                "slo": "availability",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "payment-api: SLO latency-p95 not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"payment-api\",slo=\"latency-p95\"}) or (slo:latency:ratio{service=\"payment-api\",slo=\"latency-p95\"} != slo:latency:ratio{service=\"payment-api\",slo=\"latency-p95\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "info",
+                "slo": "latency-p95",
+                "team": "payments",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "payment-api: SLO latency-p99 not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"payment-api\",slo=\"latency-p99\"}) or (slo:latency:ratio{service=\"payment-api\",slo=\"latency-p99\"} != slo:latency:ratio{service=\"payment-api\",slo=\"latency-p99\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "payment-api",
+                "severity": "info",
+                "slo": "latency-p99",
+                "team": "payments",
+                "tier": "critical"
+              }
+            }
+          ]
         }
       ]
     },
@@ -1507,7 +1563,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"payment-api\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"payment-api\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"payment-api\"}[30d]))))",
               "labels": {
                 "service": "payment-api",
                 "slo": "availability"
@@ -1515,7 +1571,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"payment-api\",slo=\"availability\"} / slo:requests_total:30d{service=\"payment-api\",slo=\"availability\"}",
+              "expr": "slo:requests_success:30d{service=\"payment-api\",slo=\"availability\"} / (slo:requests_total:30d{service=\"payment-api\",slo=\"availability\"} > 0)",
               "labels": {
                 "objective": "99.99",
                 "service": "payment-api",
@@ -1541,7 +1597,7 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"0.3\"}[30d]))",
+              "expr": "(sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"0.3\"}[30d])) or (0 * sum(increase(http_request_duration_seconds_count{service=\"payment-api\"}[30d]))))",
               "labels": {
                 "service": "payment-api",
                 "slo": "latency-p95",
@@ -1550,7 +1606,7 @@
               "record": "slo:latency_requests_fast:30d"
             },
             {
-              "expr": "slo:latency_requests_fast:30d{service=\"payment-api\",slo=\"latency-p95\"} / slo:latency_requests_total:30d{service=\"payment-api\",slo=\"latency-p95\"}",
+              "expr": "slo:latency_requests_fast:30d{service=\"payment-api\",slo=\"latency-p95\"} / on(service, slo) (slo:latency_requests_total:30d{service=\"payment-api\",slo=\"latency-p95\"} > 0)",
               "labels": {
                 "objective": "99.5",
                 "service": "payment-api",
@@ -1600,7 +1656,7 @@
               "record": "slo:latency_requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"0.5\"}[30d]))",
+              "expr": "(sum(increase(http_request_duration_seconds_bucket{service=\"payment-api\",le=\"0.5\"}[30d])) or (0 * sum(increase(http_request_duration_seconds_count{service=\"payment-api\"}[30d]))))",
               "labels": {
                 "service": "payment-api",
                 "slo": "latency-p99",
@@ -1609,7 +1665,7 @@
               "record": "slo:latency_requests_fast:30d"
             },
             {
-              "expr": "slo:latency_requests_fast:30d{service=\"payment-api\",slo=\"latency-p99\"} / slo:latency_requests_total:30d{service=\"payment-api\",slo=\"latency-p99\"}",
+              "expr": "slo:latency_requests_fast:30d{service=\"payment-api\",slo=\"latency-p99\"} / on(service, slo) (slo:latency_requests_total:30d{service=\"payment-api\",slo=\"latency-p99\"} > 0)",
               "labels": {
                 "objective": "99.0",
                 "service": "payment-api",
@@ -1664,7 +1720,7 @@
               "record": "service:http_requests:rate5m"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"payment-api\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"payment-api\"}[5m]))",
+              "expr": "(sum(rate(http_requests_total{service=\"payment-api\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"payment-api\"}[5m])))) / (sum(rate(http_requests_total{service=\"payment-api\"}[5m])) > 0)",
               "labels": {
                 "service": "payment-api"
               },
@@ -1816,7 +1872,7 @@
     "errors": [],
     "output_dir": "<tmp>/out",
     "resources_created": {
-      "alerts": 42,
+      "alerts": 45,
       "backstage": 1,
       "dashboard": 1,
       "pagerduty": 1,
@@ -1825,7 +1881,7 @@
     },
     "service_name": "payment-api",
     "success": true,
-    "total_resources": 70
+    "total_resources": 73
   },
   "preamble": [],
   "stray": []

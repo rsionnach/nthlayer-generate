@@ -79,6 +79,79 @@
               }
             }
           ]
+        },
+        {
+          "name": "fraud-detector-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "ai_gate:high_confidence_failure:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "fraud-detector: SLO high_confidence_failure not evaluable"
+              },
+              "expr": "absent(ai_gate:high_confidence_failure:ratio{service=\"fraud-detector\"}) or (ai_gate:high_confidence_failure:ratio{service=\"fraud-detector\"} != ai_gate:high_confidence_failure:ratio{service=\"fraud-detector\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "fraud-detector",
+                "severity": "info",
+                "slo": "high_confidence_failure",
+                "team": "risk",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "ai_gate:reversal_rate:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "fraud-detector: SLO reversal_rate not evaluable"
+              },
+              "expr": "absent(ai_gate:reversal_rate:ratio{service=\"fraud-detector\"}) or (ai_gate:reversal_rate:ratio{service=\"fraud-detector\"} != ai_gate:reversal_rate:ratio{service=\"fraud-detector\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "fraud-detector",
+                "severity": "info",
+                "slo": "reversal_rate",
+                "team": "risk",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "fraud-detector: SLO availability not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"fraud-detector\",slo=\"availability\"}) or (slo:availability:ratio{service=\"fraud-detector\",slo=\"availability\"} != slo:availability:ratio{service=\"fraud-detector\",slo=\"availability\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "fraud-detector",
+                "severity": "info",
+                "slo": "availability",
+                "team": "risk",
+                "tier": "critical"
+              }
+            },
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:latency:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "fraud-detector: SLO latency not evaluable"
+              },
+              "expr": "absent(slo:latency:ratio{service=\"fraud-detector\",slo=\"latency\"}) or (slo:latency:ratio{service=\"fraud-detector\",slo=\"latency\"} != slo:latency:ratio{service=\"fraud-detector\",slo=\"latency\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "fraud-detector",
+                "severity": "info",
+                "slo": "latency",
+                "team": "risk",
+                "tier": "critical"
+              }
+            }
+          ]
         }
       ]
     }
@@ -97,6 +170,7 @@
     "Output: <tmp>/out/alerts.yaml",
     "",
     "✅ Added 4 judgment-threshold alerts",
+    "✅ Added 4 SLO not-evaluable alerts",
     "  Written to: <tmp>/out/alerts.yaml",
     "",
     "Next steps:",

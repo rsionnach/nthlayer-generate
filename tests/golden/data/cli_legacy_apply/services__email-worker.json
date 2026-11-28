@@ -412,6 +412,28 @@
               }
             }
           ]
+        },
+        {
+          "name": "email-worker-slo",
+          "rules": [
+            {
+              "alert": "SLONotEvaluable",
+              "annotations": {
+                "description": "slo:availability:ratio has no value or is NaN, so the SLO cannot be evaluated. The service may be receiving no traffic, or its metrics are missing. Not evaluable is not within objective.",
+                "summary": "email-worker: SLO success-rate not evaluable"
+              },
+              "expr": "absent(slo:availability:ratio{service=\"email-worker\",slo=\"success-rate\"}) or (slo:availability:ratio{service=\"email-worker\",slo=\"success-rate\"} != slo:availability:ratio{service=\"email-worker\",slo=\"success-rate\"})",
+              "for": "1h",
+              "labels": {
+                "routing": "self",
+                "service": "email-worker",
+                "severity": "info",
+                "slo": "success-rate",
+                "team": "notifications",
+                "tier": "standard"
+              }
+            }
+          ]
         }
       ]
     },
@@ -1091,7 +1113,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"email-worker\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"email-worker\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"email-worker\"}[30d]))))",
               "labels": {
                 "service": "email-worker",
                 "slo": "success-rate"
@@ -1099,7 +1121,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"email-worker\",slo=\"success-rate\"} / slo:requests_total:30d{service=\"email-worker\",slo=\"success-rate\"}",
+              "expr": "slo:requests_success:30d{service=\"email-worker\",slo=\"success-rate\"} / (slo:requests_total:30d{service=\"email-worker\",slo=\"success-rate\"} > 0)",
               "labels": {
                 "objective": "99.0",
                 "service": "email-worker",
@@ -1130,7 +1152,7 @@
               "record": "service:http_requests:rate5m"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"email-worker\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"email-worker\"}[5m]))",
+              "expr": "(sum(rate(http_requests_total{service=\"email-worker\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"email-worker\"}[5m])))) / (sum(rate(http_requests_total{service=\"email-worker\"}[5m])) > 0)",
               "labels": {
                 "service": "email-worker"
               },
@@ -1200,7 +1222,7 @@
     "errors": [],
     "output_dir": "<tmp>/out",
     "resources_created": {
-      "alerts": 25,
+      "alerts": 26,
       "backstage": 1,
       "dashboard": 1,
       "pagerduty": 1,
@@ -1209,7 +1231,7 @@
     },
     "service_name": "email-worker",
     "success": true,
-    "total_resources": 37
+    "total_resources": 38
   },
   "preamble": [],
   "stray": []

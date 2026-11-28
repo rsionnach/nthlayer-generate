@@ -138,6 +138,73 @@ $ nthlayer validate service.yaml --policies policies.yaml
 
 ---
 
+## ⚠️ Upgrading: a ratio with no traffic is absent, and an alert says so
+
+Every ratio `generate-recording-rules` writes used to divide two counts with
+no guard. A service that was scraped and served nothing recorded `NaN`; a
+service whose scrape target was gone recorded nothing. Both are silent to
+alerts. Now there is one behaviour, written in the expression: the
+denominator is filtered with `> 0`, so **a ratio with nothing to divide by
+has no sample**.
+
+| Series | No traffic, before | No traffic, now |
+|---|---|---|
+| `slo:availability:ratio`, `slo:latency:ratio`, `slo:error_rate:ratio`, `slo:sli:ratio` | `NaN` or absent | absent |
+| `slo:error_budget_remaining:ratio` | `NaN` or absent | absent |
+| `ai_gate:reversal_rate:ratio`, `ai_gate:high_confidence_failure:ratio` | `NaN` or absent | absent |
+| `ai_gate:feedback_latency:bucket`, `ai_gate:feedback_latency:p50/p90_within_bound_30d` | `NaN` or absent | absent |
+| `service:http_errors:rate5m` | `NaN` or absent | absent |
+
+Check anything of your own that reads these: a panel that drew `NaN` now
+draws a gap, and an expression such as `ratio != ratio` no longer matches.
+
+**Values that change under traffic.**
+
+- A count with no series is zero when there is traffic. The success, fast,
+  failed, reversed and high-confidence-failure counts are recorded as
+  `(count or (0 * total))`. `service:http_errors:rate5m` was absent while a
+  service had never returned a 5xx; it is now `0`. A service that returns
+  only 5xx now records availability `0` instead of nothing.
+- `slo:throughput:compliance` is `1` at or above the minimum and `0` below
+  it. It used to record the rate itself when compliant (`120`, not `1`), and
+  `0` when the rate was missing. With no rate it now has no sample.
+
+**New alert.** `generate-alerts` writes one `SLONotEvaluable` alert per SLO
+with a recorded value (`info`, `for: 1h`, every tier), which fires when the
+SLO's series is absent (or NaN). See `docs-site/commands/generate-alerts.md`.
+
+- **Load the new recording rules with the new alerts, not after them.** The
+  alert reads the recorded series. Against the old rules every latency SLO
+  without its own queries fires within the hour, because the old
+  `slo:latency:ratio` was always absent.
+- **`generate-alerts` exits 0 for a manifest with SLOs and no dependencies**,
+  and writes an alerts file. It used to exit 1 and write nothing. A pipeline
+  step that relied on that status needs changing.
+- **A service that is meant to go quiet** for longer than its SLO window
+  will fire the alert. Route or silence `SLONotEvaluable` for it.
+
+**Removed.** `ServiceTypeTemplate.slo_formulas` (in
+`nthlayer_generate.metrics`) is gone. Nothing read it.
+
+## ⚠️ Upgrading: canned latency SLOs get a ratio and a budget for the first time
+
+`slo:latency:ratio` divided `slo:latency_requests_fast:<window>` by
+`slo:latency_requests_total:<window>`. The fast count carries a `threshold`
+label and the total does not, so the two never paired and the ratio was
+absent whatever the traffic. No latency SLO without its own queries has
+produced a ratio or an error budget until now.
+
+The ratio now divides `on(service, slo)`. When you load the new rules,
+`slo:latency:ratio` and the latency `slo:error_budget_remaining:ratio`
+appear for the first time, and anything that reads them (burn-rate alerts,
+`nthlayer-workers`' measure and observe) starts evaluating those SLOs. Check
+each latency objective and `threshold_ms` before you deploy: an SLO that was
+silently unevaluated may turn out to be in breach.
+
+`slo:latency_requests_fast:<window>` keeps its `threshold` label, and
+`slo:latency:ratio` keeps the labels it was declared with (`service`, `slo`,
+`objective`).
+
 ## ⚠️ Upgrading: an error budget for every request-ratio SLO
 
 `generate-recording-rules` (and `apply`) used to write
@@ -495,6 +562,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 git clone https://github.com/rsionnach/nthlayer-generate.git
 cd nthlayer-generate
 make setup    # Install deps, start services
+make promtool # Install the pinned promtool the rule tests need
 make test     # Run tests
 ```
 

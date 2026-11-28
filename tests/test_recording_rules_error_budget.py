@@ -34,6 +34,8 @@ SERVICES = EXAMPLES / "services"
 SHIPPED = sorted(SERVICES.glob("*.yaml")) + sorted(
     (EXAMPLES / "opensrm").glob("*.reliability.yaml")
 )
+# A collection-time list that came out empty would skip its tests, not fail them.
+assert SHIPPED
 
 REQUEST_RATIO_KINDS = ("availability", "latency", "error_rate")
 
@@ -250,7 +252,8 @@ def test_legacy_success_ratio_is_recorded_as_is():
     ratio = by_record["slo:sli:ratio"]
     assert ratio.expr == (
         f"sum_over_time({_sel('slo:sli_good:rate', 'analytics-stream', 'processing-availability')}[30d])"
-        f" / sum_over_time({_sel('slo:sli_total:rate', 'analytics-stream', 'processing-availability')}[30d])"
+        # Absent, not NaN, when the window saw no events (opensrm-r0bx).
+        f" / (sum_over_time({_sel('slo:sli_total:rate', 'analytics-stream', 'processing-availability')}[30d]) > 0)"
     )
     assert ratio.labels == {
         "service": "analytics-stream",
@@ -401,6 +404,9 @@ V1_UNUSABLE: dict[str, set[str]] = {
 }
 
 _CANNED_RATIO = {"latency": "slo:latency:ratio", "error_rate": "slo:error_rate:ratio"}
+
+
+assert sorted(V1_UNUSABLE.items())
 
 
 @pytest.mark.parametrize(

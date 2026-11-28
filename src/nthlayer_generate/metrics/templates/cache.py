@@ -89,15 +89,4 @@ CACHE_TEMPLATE = ServiceTypeTemplate(
             requirement_level=RequirementLevel.RECOMMENDED,
         ),
     ],
-    slo_formulas={
-        "latency_p99": (
-            "histogram_quantile(0.99, "
-            "sum(rate(cache_operation_duration_seconds_bucket[5m])) by (le)"
-            ")"
-        ),
-        "hit_rate": (
-            "sum(rate(cache_operation_duration_seconds_count{cache_hit='true'}[5m])) / "
-            "sum(rate(cache_operation_duration_seconds_count{cache_operation='get'}[5m]))"
-        ),
-    },
 )

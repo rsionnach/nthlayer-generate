@@ -231,7 +231,7 @@
               "record": "slo:requests_total:30d"
             },
             {
-              "expr": "sum(increase(http_requests_total{service=\"notification-observability-only\",status!~\"5..\"}[30d]))",
+              "expr": "(sum(increase(http_requests_total{service=\"notification-observability-only\",status!~\"5..\"}[30d])) or (0 * sum(increase(http_requests_total{service=\"notification-observability-only\"}[30d]))))",
               "labels": {
                 "service": "notification-observability-only",
                 "slo": "delivery-success"
@@ -239,7 +239,7 @@
               "record": "slo:requests_success:30d"
             },
             {
-              "expr": "slo:requests_success:30d{service=\"notification-observability-only\",slo=\"delivery-success\"} / slo:requests_total:30d{service=\"notification-observability-only\",slo=\"delivery-success\"}",
+              "expr": "slo:requests_success:30d{service=\"notification-observability-only\",slo=\"delivery-success\"} / (slo:requests_total:30d{service=\"notification-observability-only\",slo=\"delivery-success\"} > 0)",
               "labels": {
                 "objective": "99.5",
                 "service": "notification-observability-only",
@@ -264,7 +264,7 @@
               "record": "slo:sli_total:rate"
             },
             {
-              "expr": "sum_over_time(slo:sli_good:rate{service=\"notification-observability-only\",slo=\"delivery-success\"}[30d]) / sum_over_time(slo:sli_total:rate{service=\"notification-observability-only\",slo=\"delivery-success\"}[30d])",
+              "expr": "sum_over_time(slo:sli_good:rate{service=\"notification-observability-only\",slo=\"delivery-success\"}[30d]) / (sum_over_time(slo:sli_total:rate{service=\"notification-observability-only\",slo=\"delivery-success\"}[30d]) > 0)",
               "labels": {
                 "objective": "99.5",
                 "service": "notification-observability-only",
@@ -295,7 +295,7 @@
               "record": "service:http_requests:rate5m"
             },
             {
-              "expr": "sum(rate(http_requests_total{service=\"notification-observability-only\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"notification-observability-only\"}[5m]))",
+              "expr": "(sum(rate(http_requests_total{service=\"notification-observability-only\",status=~\"5..\"}[5m])) or (0 * sum(rate(http_requests_total{service=\"notification-observability-only\"}[5m])))) / (sum(rate(http_requests_total{service=\"notification-observability-only\"}[5m])) > 0)",
               "labels": {
                 "service": "notification-observability-only"
               },

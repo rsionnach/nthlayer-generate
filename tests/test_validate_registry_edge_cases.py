@@ -6,15 +6,23 @@ import warnings
 from pathlib import Path
 
 import yaml
+from golden._corpus import V2_EXAMPLES
 from nthlayer_common.manifest.target_validation import TargetConventionWarning
 
 from nthlayer_generate.cli.validate import validate_command
 
 REPO = Path(__file__).resolve().parents[1]
-V2_EXAMPLE = (
-    REPO.parent / "opensrm" / "spec" / "v2" / "examples" / "migration" / "api-full-v2.yaml"
-)
+# The spec repo is a sibling checkout; its location is declared once, in the
+# golden corpus. test_the_fixtures_exist fails if it is not there.
+V2_EXAMPLE = V2_EXAMPLES / "migration" / "api-full-v2.yaml"
 SRM_V1_EXAMPLE = REPO / "examples" / "opensrm" / "api-critical.reliability.yaml"
+
+
+def test_the_fixtures_exist() -> None:
+    # Every test below copies one of these; a missing spec checkout must be
+    # a failure here, not seven confusing ones.
+    assert V2_EXAMPLE.is_file(), V2_EXAMPLE
+    assert SRM_V1_EXAMPLE.is_file(), SRM_V1_EXAMPLE
 
 
 def test_quoted_v2_availability_is_a_validation_error_not_a_traceback(tmp_path: Path) -> None:

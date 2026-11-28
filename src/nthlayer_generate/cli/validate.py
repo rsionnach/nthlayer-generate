@@ -22,6 +22,11 @@ def _bullet(style: str, message: str) -> str:
     return f"  [{style}]•[/{style}] {escape(message)}"
 
 
+def _registry_line(registry_dir: str) -> str:
+    """Console markup naming the registry directory as it was given."""
+    return f"[info]Contract registry:[/info] {escape(registry_dir)}"
+
+
 def validate_command(
     service_file: str,
     environment: str | None = None,
@@ -53,7 +58,7 @@ def validate_command(
     if registry_dir:
         from nthlayer_generate.specs.contracts import ContractRegistry
 
-        console.print(f"[info]Contract registry:[/info] {escape(registry_dir)}")
+        console.print(_registry_line(registry_dir))
         contract_registry = ContractRegistry.from_directory(registry_dir)
         console.print(f"[info]Registered contracts:[/info] {len(contract_registry.services)}")
         console.print()

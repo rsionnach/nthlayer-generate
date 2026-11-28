@@ -18,8 +18,10 @@ Fixture provenance:
   (opensrm/spec/v2/schema.json), and common refuses a string at load
   (opensrm-f0co).
 - srm/v1: examples/opensrm/api-critical.reliability.yaml with ``metadata`` a
-  list; the srm/v1 schema requires a mapping (as in
-  test_load_boundary_srm_v1.py).
+  list. srm/v1 is NthLayer's own dialect and has no schema file; the
+  published schema it derives from makes ``metadata`` an object
+  (opensrm/spec/v1/schema.json, definitions/Metadata), as every shipped
+  srm/v1 example writes it.
 - Published OpenSRM v1 (``apiVersion: opensrm/v1``): the format NthLayer
   does not load and sends to migrate-manifest; common's is_manifest_file
   counts it as a manifest so that a scan reaches that refusal.
@@ -37,7 +39,7 @@ from golden._corpus import V2_EXAMPLES
 from nthlayer_common.manifest import ManifestLoadError, load_manifest
 from rich.text import Text
 
-from nthlayer_generate.cli.validate import _bullet, validate_command
+from nthlayer_generate.cli.validate import _bullet, _registry_line, validate_command
 from nthlayer_generate.specs.contracts import (
     ContractRegistry,
     UnloadedRegistryFile,
@@ -214,6 +216,19 @@ def test_an_unloaded_provider_is_a_warning_naming_the_file_and_the_error(tmp_pat
     assert _load_error(provider) in warning
 
 
+def test_every_unloaded_file_gets_its_own_warning(tmp_path: Path) -> None:
+    consumer = _consumer(tmp_path)
+    broken = [_provider(tmp_path, "0.9"), _yaml_that_does_not_parse(tmp_path)]
+    registry = ContractRegistry.from_directory(tmp_path)
+
+    result = validate_service_file(consumer, contract_registry=registry)
+
+    assert len(result.warnings) == 2
+    for path, warning in zip(sorted(broken), result.warnings, strict=True):
+        assert str(path) in warning
+        assert _load_error(path) in warning
+
+
 def test_validating_without_a_registry_is_unchanged(tmp_path: Path) -> None:
     consumer = _consumer(tmp_path)
     _provider(tmp_path, "0.9")
@@ -267,6 +282,17 @@ assert MARKUP_LIKE
 def test_a_finding_is_printed_as_written(style: str, message: str) -> None:
     # Text.from_markup is what console.print does with a string.
     assert Text.from_markup(_bullet(style, message)).plain == f"  \u2022 {message}"
+
+
+REGISTRY_DIRS = ["services", "services/team[prod]", "services/[/bold]"]
+assert REGISTRY_DIRS
+
+
+@pytest.mark.parametrize("registry_dir", REGISTRY_DIRS)
+def test_the_registry_directory_is_printed_as_written(registry_dir: str) -> None:
+    assert Text.from_markup(_registry_line(registry_dir)).plain == (
+        f"Contract registry: {registry_dir}"
+    )
 
 
 def test_brackets_in_the_registry_path_and_the_load_error_do_not_stop_validate(

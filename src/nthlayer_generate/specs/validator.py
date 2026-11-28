@@ -27,6 +27,7 @@ from nthlayer_common.manifest.parser.v2 import is_opensrm_v2_format
 
 from nthlayer_generate.specs.contracts import (
     ContractRegistry,
+    unloaded_registry_file_warnings,
     validate_dependency_expectations,
     validate_transitive_feasibility,
 )
@@ -267,6 +268,7 @@ def validate_service_file(
         try:
             warnings.extend(manifest.validate_contracts())
             if contract_registry is not None:
+                warnings.extend(unloaded_registry_file_warnings(contract_registry))
                 warnings.extend(validate_dependency_expectations(manifest, contract_registry))
                 warnings.extend(validate_transitive_feasibility(manifest, contract_registry))
         except TypeError:

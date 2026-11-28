@@ -19,8 +19,8 @@ SRM_V1_EXAMPLE = REPO / "examples" / "opensrm" / "api-critical.reliability.yaml"
 
 
 def test_the_fixtures_exist() -> None:
-    # Every test below copies one of these; a missing spec checkout must be
-    # a failure here, not seven confusing ones.
+    # A missing spec checkout must be one failure here, not one in each of
+    # the tests that copy these files.
     assert V2_EXAMPLE.is_file(), V2_EXAMPLE
     assert SRM_V1_EXAMPLE.is_file(), SRM_V1_EXAMPLE
 
@@ -31,7 +31,8 @@ def test_quoted_v2_availability_is_a_validation_error_not_a_traceback(tmp_path: 
     YAML-author mistake the schema rejects as a string. common's v2 parser
     refuses it at load since 5.12.3 (opensrm-f0co); before that the string
     reached the transitive-feasibility check, which only compares the promise
-    once a dependency is critical, so one dependency is marked critical."""
+    once a dependency is critical. One dependency is still marked critical,
+    so a load that let the string through again would reach that check."""
     data = yaml.safe_load(V2_EXAMPLE.read_text(encoding="utf-8"))
     data["spec"]["contracts"][0]["promise"]["availability"] = "0.9995"
     data["spec"]["dependencies"][0]["criticality"] = "critical"
@@ -62,7 +63,8 @@ def test_registry_loads_do_not_emit_target_convention_warnings() -> None:
 def test_quoted_availability_error_names_the_field(tmp_path: Path) -> None:
     """Same fixture as above, through validate_service_file: the error says
     which value is not a ratio (common's load error, since opensrm-f0co)
-    rather than echoing a comparison TypeError."""
+    rather than echoing a comparison TypeError. The dependency is marked
+    critical for the same reason as above."""
     from nthlayer_generate.specs.contracts import ContractRegistry
     from nthlayer_generate.specs.validator import validate_service_file
 

@@ -53,20 +53,21 @@ dependencies = [
     # and lifts calibration/feedback_latency the way srm/v1 does; generate's
     # judgment rules and migrate depend on that. (History: 5.4.0 added
     # ReliabilityManifest.authored_type.)
-    # WHY 5.12.4 (opensrm-u8oo): its v2 parser refuses an availability that
-    # is not a ratio from 0 to 1 at load (opensrm-f0co, in 5.12.3), so a
-    # quoted v2 promise.availability is a ManifestLoadError before
-    # validate's contract checks run;
+    # WHY 5.12.4 (opensrm-u8oo): 5.12.4 is the installed sibling (rule 10),
+    # and generate now depends on a change that shipped in 5.12.3: the v2
+    # parser refuses an availability that is not a ratio from 0 to 1 at
+    # load (opensrm-f0co), so a quoted v2 promise.availability is a
+    # ManifestLoadError before validate's contract checks run;
     # tests/test_validate_registry_edge_cases.py pins that. 5.12.2
-    # (opensrm-jmht) was the floor as the installed sibling only: srm/v1
-    # and v2 loads raise only contract errors (opensrm-wo62.4.28), which
-    # opensrm-wo62.4.29 will rely on. 5.12.1 (opensrm-wo62.4.25) was the
-    # floor because its legacy loader reports a malformed resource as a
-    # ManifestLoadError (opensrm-wo62.4.10), a message validate's tests
-    # pin, and reads threshold_ms from a plural indicators[] list
-    # (opensrm-wo62.4.24), which the goldens pin. The AttributeError and
-    # TypeError catches at the load boundaries stay until
-    # opensrm-wo62.4.29.
+    # (opensrm-jmht) was the floor as the installed sibling only; nothing
+    # here depended on its changes (srm/v1 and v2 loads raise only contract
+    # errors, opensrm-wo62.4.28, which opensrm-wo62.4.29 will rely on).
+    # 5.12.1 (opensrm-wo62.4.25) was the floor because its legacy loader
+    # reports a malformed resource as a ManifestLoadError
+    # (opensrm-wo62.4.10), a message validate's tests pin, and reads
+    # threshold_ms from a plural indicators[] list (opensrm-wo62.4.24),
+    # which the goldens pin. The AttributeError and TypeError catches at
+    # the load boundaries stay until opensrm-wo62.4.29.
     # Rule 10: the floor is the installed sibling, so bump it on every
     # nthlayer-common release, patches included; the floor guard fails until
     # you do.

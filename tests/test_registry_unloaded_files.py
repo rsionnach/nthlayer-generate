@@ -310,3 +310,36 @@ def test_brackets_in_the_validated_files_own_error_do_not_stop_validate(tmp_path
     # The same print path, for errors: the validated file is the broken one.
     broken = _provider(tmp_path, "[/bold]")
     assert validate_command(str(broken)) == 1
+
+
+class _RecordingConsole:
+    """Stands in for validate's console: keeps what it was asked to print."""
+
+    def __init__(self) -> None:
+        self.printed: list[object] = []
+
+    def print(self, *renderables: object, **_options: object) -> None:
+        self.printed.extend(renderables)
+
+
+def test_validate_prints_the_registry_path_and_each_warning_escaped(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # The helpers above are only worth something where validate_command
+    # prints: a directory name cannot hold the "[/x]" that makes rich raise,
+    # so an unescaped "team[prod]" would lose its brackets without an error.
+    from nthlayer_generate.cli import validate
+
+    registry_dir = tmp_path / "team[prod]"
+    registry_dir.mkdir()
+    consumer = _consumer(registry_dir)
+    _provider(registry_dir, "0.9")
+    recorded = _RecordingConsole()
+    monkeypatch.setattr(validate, "console", recorded)
+
+    assert validate_command(str(consumer), registry_dir=str(registry_dir)) == 0
+
+    (warning,) = unloaded_registry_file_warnings(ContractRegistry.from_directory(registry_dir))
+    assert "team[prod]" in warning
+    assert _registry_line(str(registry_dir)) in recorded.printed
+    assert _bullet("warning", warning) in recorded.printed

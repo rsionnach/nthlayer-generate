@@ -138,6 +138,28 @@ $ nthlayer validate service.yaml --policies policies.yaml
 
 ---
 
+## ⚠️ Upgrading: `validate --registry-dir` reports a registry manifest that does not load
+
+A manifest in the registry directory that failed to load used to be left out
+of the registry without a word, so the contract checks against that service
+did not run. `validate` now prints one warning for each such file, naming
+the file and the load error:
+
+```
+Registry file services/postgresql.yaml did not load, so its contracts were not checked: ...
+```
+
+**A `validate --strict --registry-dir` run that passed may now fail**, because
+`--strict` treats every warning as an error. The file it names was already
+broken; fix it, or move it out of the registry directory. Without `--strict`
+the exit code does not change. A quoted availability
+(`availability: "0.9995"`) in a v2 manifest is the usual cause: it has been
+refused at load since nthlayer-common 5.12.4.
+
+Also fixed: square brackets in a path or a value (`services/team[prod]/`,
+`"[/bold]"`) were read as console styling by `validate`, which dropped them
+from the message or stopped with a traceback.
+
 ## ⚠️ Upgrading: a ratio with no traffic is absent, and an alert says so
 
 Every ratio `generate-recording-rules` writes used to divide two counts with

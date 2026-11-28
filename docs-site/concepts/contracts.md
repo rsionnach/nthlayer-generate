@@ -261,7 +261,9 @@ A manifest in the registry directory that does not load (a YAML error, a value t
 Registry file services/postgresql.yaml did not load, so its contracts were not checked: Contract 'postgresql': promise.availability must be a ratio from 0 to 1 (0.999 for 99.9%), got '0.9995'
 ```
 
-Its contracts are not in the registry, so no check is made against them: until the file is fixed, a dependency on that service is treated as a dependency on a service with no contract. Use `--strict` to make this (and every other warning) fail the command. YAML files that are not manifests are ignored.
+Its contracts are not in the registry, so no check is made against them: until the file is fixed, a dependency on that service is treated as a dependency on a service with no contract. Use `--strict` to make this (and every other warning) fail the command.
+
+YAML files that are not manifests are ignored. One case to know: a file whose name does not end in `.reliability.yaml` (and is not `service.yaml`) is recognised as a manifest by its content, so if its YAML does not parse it is ignored like any other non-manifest, with no warning. Naming registry files `<service>.reliability.yaml` avoids that: a file so named is always loaded, and always reported when it fails.
 
 ### ContractRegistry
 

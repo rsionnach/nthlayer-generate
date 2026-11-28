@@ -37,6 +37,9 @@ SERVICES = EXAMPLES / "services"
 SHIPPED = sorted(SERVICES.glob("*.yaml")) + sorted(
     (EXAMPLES / "opensrm").glob("*.reliability.yaml")
 )
+# A collection-time list that came out empty would skip its tests, not fail them.
+assert SHIPPED
+
 PAYMENT_API = SERVICES / "payment-api.yaml"
 CHECKOUT = SERVICES / "checkout-service.yaml"
 AI_GATE = EXAMPLES / "opensrm" / "ai-gate.reliability.yaml"

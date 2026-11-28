@@ -34,6 +34,8 @@ SERVICES = EXAMPLES / "services"
 SHIPPED = sorted(SERVICES.glob("*.yaml")) + sorted(
     (EXAMPLES / "opensrm").glob("*.reliability.yaml")
 )
+# A collection-time list that came out empty would skip its tests, not fail them.
+assert SHIPPED
 
 REQUEST_RATIO_KINDS = ("availability", "latency", "error_rate")
 
@@ -402,6 +404,9 @@ V1_UNUSABLE: dict[str, set[str]] = {
 }
 
 _CANNED_RATIO = {"latency": "slo:latency:ratio", "error_rate": "slo:error_rate:ratio"}
+
+
+assert sorted(V1_UNUSABLE.items())
 
 
 @pytest.mark.parametrize(

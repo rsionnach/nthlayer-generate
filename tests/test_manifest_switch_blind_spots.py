@@ -30,6 +30,10 @@ from typing import Any
 import pytest
 import yaml
 
+# The spec repo is a sibling checkout; its location is declared once, in the
+# golden corpus.
+from golden._corpus import OPENSRM
+
 from nthlayer_generate.alerts.loader import AlertTemplateLoader
 from nthlayer_generate.cli.alerts import (
     alerts_evaluate_command,
@@ -61,7 +65,6 @@ from nthlayer_generate.specs.validator import validate_service_file
 
 REPO = Path(__file__).resolve().parents[1]
 EX = REPO / "examples"
-OPENSRM = REPO.parent / "opensrm"
 
 # Shipped inputs. Commits are each file's last change at the time of writing.
 UAT_SRM = EX / "uat" / "payment-api.reliability.yaml"  # 9e3b2aa
@@ -150,6 +153,10 @@ def _type_templated_manifest(directory: Path, authored: str) -> Path:
         )
         _with_both_query_forms(slo, query)
     return _write(directory, "payment-api.reliability.yaml", data)
+
+
+# A collection-time list that came out empty would skip its tests, not fail them.
+assert sorted(ALIAS_RESOLVES_TO)
 
 
 @pytest.mark.parametrize("authored", sorted(ALIAS_RESOLVES_TO))
@@ -302,6 +309,10 @@ def _no_webhook_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("NTHLAYER_SLACK_WEBHOOK_ALERT", raising=False)
 
 
+# A collection-time list that came out empty would skip its tests, not fail them.
+assert sorted(ALERTING_CASES)
+
+
 @pytest.mark.parametrize("case", sorted(ALERTING_CASES))
 def test_alerting_block_parses_to_the_documented_config(case: str, tmp_path: Path) -> None:
     fixture, _tier, _slos, expected = ALERTING_CASES[case]
@@ -388,21 +399,20 @@ def test_generated_alert_for_durations_follow_the_block(case: str, tmp_path: Pat
         for alert in alerts:
             expected = fd.page if alert.severity == "critical" else fd.ticket
             assert alert.duration == expected, alert.name
-        return
-
-    loader = AlertTemplateLoader()
-    template = {
-        (a.technology, a.name): a.duration
-        for tech in {a.technology for a in alerts}
-        for a in loader.load_technology(tech)
-    }
-    assert {a.duration for a in alerts} - {"2m", "15m"}, (
-        "every template duration equals a for_duration default, so this case "
-        "cannot tell 'no block' from 'block without for_duration'"
-    )
-    for alert in alerts:
-        own = template[(alert.technology, alert.name)]
-        assert alert.duration == ("1m" if own == "0m" else own), alert.name
+    else:
+        loader = AlertTemplateLoader()
+        template = {
+            (a.technology, a.name): a.duration
+            for tech in {a.technology for a in alerts}
+            for a in loader.load_technology(tech)
+        }
+        assert {a.duration for a in alerts} - {"2m", "15m"}, (
+            "every template duration equals a for_duration default, so this case "
+            "cannot tell 'no block' from 'block without for_duration'"
+        )
+        for alert in alerts:
+            own = template[(alert.technology, alert.name)]
+            assert alert.duration == ("1m" if own == "0m" else own), alert.name
 
 
 # --- malformed: fails where it is used, at every use site --------------------

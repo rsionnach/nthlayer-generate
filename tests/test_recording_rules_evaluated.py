@@ -45,6 +45,9 @@ SHIPPED = sorted(SERVICES.glob("*.yaml")) + sorted(
     (EXAMPLES / "opensrm").glob("*.reliability.yaml")
 )
 
+# A collection-time list that came out empty would skip its tests, not fail them.
+assert SHIPPED
+
 # payment-api.yaml: availability (99.95, 30d), latency-p95 (99.0, 30d,
 # threshold_ms 500) and latency-p99 (95.0, 30d, threshold_ms 1000).
 PAYMENT_API = SERVICES / "payment-api.yaml"
@@ -213,6 +216,9 @@ RATIOS = {
         },
     ),
 }
+
+
+assert sorted(RATIOS)
 
 
 def _values(ratio: Ratio) -> list[dict[str, Any]]:

@@ -21,6 +21,7 @@ from typing import Any
 
 import pytest
 import yaml
+from golden._corpus import V2_EXAMPLES
 from nthlayer_common.manifest import (
     FEEDBACK_LATENCY_WINDOW,
     THRESHOLD_SERIES,
@@ -34,15 +35,9 @@ from nthlayer_generate.recording_rules.manifest_builder import (
 )
 from nthlayer_generate.recording_rules.models import create_rule_groups
 
-# parents: [0]=tests/ [1]=nthlayer-generate/ [2]=<ecosystem>/
-THRESHOLDS = (
-    Path(__file__).resolve().parents[2]
-    / "opensrm"
-    / "spec"
-    / "v2"
-    / "examples"
-    / ("judgment-thresholds")
-)
+# The spec repo is a sibling checkout; its location is declared once, in the
+# golden corpus.
+THRESHOLDS = V2_EXAMPLES / "judgment-thresholds"
 ALL_FIVE = THRESHOLDS / "all-five-types.yaml"
 CALIBRATION_BOTH = THRESHOLDS / "calibration-both-bounds.yaml"
 P50_ONLY = THRESHOLDS / "feedback-latency-p50-only.yaml"
@@ -132,6 +127,10 @@ def _feedback_cases() -> list[tuple[Path, str]]:
     # quietly empty this list.
     assert {b for _, b in cases} == set(QUANTILE)
     return cases
+
+
+# A collection-time list that came out empty would skip its tests, not fail them.
+assert _feedback_cases()
 
 
 @pytest.mark.parametrize(

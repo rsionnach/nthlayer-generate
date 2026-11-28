@@ -9,7 +9,7 @@ Unlike the pint and promruval wrappers beside this module, a missing binary
 is never a pass. ``PromtoolResult.passed`` is True only when promtool ran,
 at the pinned version, and every test passed. A missing or other-version
 binary is ``UNAVAILABLE``, which a test must treat as a failure and a CLI
-must report.
+must report. A run with no expectation in it is ``FAILED``.
 
 Install the pinned version with ``make promtool``
 (``scripts/install_promtool.py``), which reads ``PROMTOOL_VERSION`` below.
@@ -36,6 +36,8 @@ PROMTOOL_VERSION = "3.16.0"
 _RULES_FILE = "rules.yml"
 _TESTS_FILE = "tests.yml"
 _TIMEOUT_SECONDS = 120
+# The keys of a promtool unit test that assert something.
+_EXPECTATION_KINDS = ("promql_expr_test", "alert_rule_test")
 
 
 class PromtoolStatus(Enum):
@@ -113,8 +115,19 @@ def run_rule_tests(
 
     Returns:
         PASSED or FAILED when the pinned promtool ran, UNAVAILABLE when it
-        is missing or another version (never PASSED in that case).
+        is missing or another version (never PASSED in that case). FAILED,
+        without running promtool, when no test states an expectation:
+        promtool exits 0 on such a file, and nothing checked is not a pass.
     """
+    if not any(test.get(kind) for test in tests for kind in _EXPECTATION_KINDS):
+        return PromtoolResult(
+            status=PromtoolStatus.FAILED,
+            output=(
+                "no test states an expectation "
+                f"({' or '.join(_EXPECTATION_KINDS)}): nothing was checked"
+            ),
+        )
+
     binary = find_promtool()
     if binary is None:
         return PromtoolResult(

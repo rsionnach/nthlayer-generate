@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import platform
+import shutil
 import stat
 import sys
 import tarfile
@@ -86,7 +87,28 @@ def main() -> int:
     target.write_bytes(binary)
     target.chmod(target.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     sys.stderr.write(f"promtool {PROMTOOL_VERSION} installed at {target}\n")
+    sys.stderr.write(path_warning(target, shutil.which("promtool")))
     return 0
+
+
+def path_warning(target: Path, on_path: str | None) -> str:
+    """What to tell the user when PATH does not lead to ``target``, else "".
+
+    The runner takes promtool from PATH. If another promtool comes first, or
+    the install directory is not on PATH, the runner keeps reporting
+    promtool as unavailable and pointing back at this script.
+    """
+    if on_path is None:
+        return (
+            f"WARNING: {target.parent} is not on PATH, so the tests will not find "
+            f"promtool. Add it to PATH.\n"
+        )
+    if Path(on_path).resolve() != target.resolve():
+        return (
+            f"WARNING: PATH finds another promtool first, at {on_path}. Put "
+            f"{target.parent} earlier on PATH.\n"
+        )
+    return ""
 
 
 if __name__ == "__main__":

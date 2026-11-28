@@ -10,6 +10,7 @@ prints: ``promtool, version <v> (branch: ..., revision: ...)``.
 
 from __future__ import annotations
 
+import importlib.util
 import stat
 from pathlib import Path
 
@@ -84,6 +85,37 @@ def test_a_rule_that_does_not_parse_fails():
     assert result.passed is False
 
 
+@pytest.mark.parametrize(
+    "tests",
+    [
+        [],
+        # A test that states no expectation checks nothing.
+        [{"interval": "1m", "input_series": [], "promql_expr_test": []}],
+        [{"interval": "1m", "input_series": [], "alert_rule_test": []}],
+    ],
+    ids=["no-tests", "empty-expr-test", "empty-alert-test"],
+)
+def test_nothing_to_check_is_not_a_pass(tests: list[dict]) -> None:
+    # promtool itself exits 0 on a file with nothing in it. A caller whose
+    # generated test list came out empty must not be told its rules passed.
+    result = run_rule_tests(GROUPS, tests)
+
+    assert result.status is PromtoolStatus.FAILED
+    assert not result.passed
+
+
+def test_an_alert_expectation_alone_is_something_to_check() -> None:
+    # alert_rule_test is the other kind of expectation: no alert is firing.
+    tests = [
+        {
+            "interval": "1m",
+            "input_series": [{"series": "requests_total", "values": "0+60x10"}],
+            "alert_rule_test": [{"eval_time": "10m", "alertname": "Nothing", "exp_alerts": []}],
+        }
+    ]
+    assert run_rule_tests(GROUPS, tests).passed
+
+
 def test_a_missing_promtool_is_unavailable_and_not_a_pass(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
@@ -151,3 +183,36 @@ def test_the_version_is_written_only_in_the_runner(relative: str):
 def test_the_install_script_reads_the_runner_constant():
     text = (REPO / "scripts" / "install_promtool.py").read_text(encoding="utf-8")
     assert "from nthlayer_generate.validation.promtool import PROMTOOL_VERSION" in text
+
+
+def _install_script():
+    # scripts/ is not a package: load the file as the interpreter would run it.
+    spec = importlib.util.spec_from_file_location(
+        "install_promtool", REPO / "scripts" / "install_promtool.py"
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_the_installer_says_when_path_does_not_lead_to_what_it_installed(tmp_path: Path) -> None:
+    # The runner takes promtool from PATH. Told only "installed", a user with
+    # another promtool first on PATH, or with the install directory off it,
+    # is sent back to the installer by the runner's own message.
+    path_warning = _install_script().path_warning
+    target = tmp_path / "bin" / "promtool"
+    target.parent.mkdir()
+    target.write_text("", encoding="utf-8")
+    elsewhere = tmp_path / "usr" / "promtool"
+    elsewhere.parent.mkdir()
+    elsewhere.write_text("", encoding="utf-8")
+
+    assert path_warning(target, str(target)) == ""
+    # A symlink to the installed binary is the installed binary.
+    link = tmp_path / "link"
+    link.symlink_to(target)
+    assert path_warning(target, str(link)) == ""
+
+    assert str(elsewhere) in path_warning(target, str(elsewhere))
+    assert str(target.parent) in path_warning(target, None)

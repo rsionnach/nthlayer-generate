@@ -255,6 +255,14 @@ This scans the directory to build a `ContractRegistry`, then validates:
 
 All contract validation produces warnings (not errors) to allow progressive adoption.
 
+A manifest in the registry directory that does not load (a YAML error, a value the schema refuses, a file that cannot be read) is reported as a warning too, naming the file and the load error:
+
+```
+Registry file services/postgresql.yaml did not load, so its contracts were not checked: Contract 'postgresql': promise.availability must be a ratio from 0 to 1 (0.999 for 99.9%), got '0.9995'
+```
+
+Its contracts are not in the registry, so no check is made against them: until the file is fixed, a dependency on that service is treated as a dependency on a service with no contract. Use `--strict` to make this (and every other warning) fail the command. YAML files that are not manifests are ignored.
+
 ### ContractRegistry
 
 The `ContractRegistry` is a file-based registry that scans directories for manifest contracts:

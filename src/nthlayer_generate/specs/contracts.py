@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import math
 import warnings
+from dataclasses import dataclass
 from pathlib import Path
 
 import structlog
@@ -33,6 +34,18 @@ _RATIO_PLACES = 12
 _PCT_PLACES = _RATIO_PLACES - 2
 
 
+@dataclass(frozen=True)
+class UnloadedRegistryFile:
+    """A manifest in the registry directory that did not load.
+
+    ``error`` is the loader's own message. Whatever contracts the file
+    declares are not in the registry, so no check was made against them.
+    """
+
+    path: Path
+    error: str
+
+
 class ContractRegistry:
     """
     Registry of service contracts for cross-service validation.
@@ -44,6 +57,7 @@ class ContractRegistry:
 
     def __init__(self) -> None:
         self._contracts: dict[str, list[ReliabilityContract]] = {}
+        self._unloaded: list[UnloadedRegistryFile] = []
 
     def register(self, manifest: ReliabilityManifest) -> None:
         """Register a manifest's contracts by service name.
@@ -80,6 +94,11 @@ class ContractRegistry:
     def services(self) -> list[str]:
         """Sorted list of registered service names."""
         return sorted(self._contracts.keys())
+
+    @property
+    def unloaded(self) -> list[UnloadedRegistryFile]:
+        """Files ``from_directory`` found but could not load, in scan order."""
+        return list(self._unloaded)
 
     @classmethod
     def from_manifests(cls, manifests: list[ReliabilityManifest]) -> ContractRegistry:
@@ -122,11 +141,31 @@ class ContractRegistry:
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore", TargetConventionWarning)
                         manifest = load_manifest(file_path, suppress_deprecation_warning=True)
-                    registry.register(manifest)
-                except (ManifestLoadError, FileNotFoundError, ValueError) as e:
+                except (ManifestLoadError, OSError, ValueError) as e:
+                    # The failures validate_service_file reports for the file
+                    # it is given; OSError is a file that cannot be read.
+                    # Recorded, not only logged: the caller has to be able
+                    # to say that this file's contracts were not checked.
                     logger.debug("Skipping %s: %s", file_path, e)
+                    registry._unloaded.append(UnloadedRegistryFile(path=file_path, error=str(e)))
+                    continue
+                registry.register(manifest)
 
         return registry
+
+
+def unloaded_registry_file_warnings(registry: ContractRegistry) -> list[str]:
+    """One warning per registry file that did not load.
+
+    Without it a provider whose manifest is broken looks the same as a
+    provider that promises nothing: the checks below find no contract and
+    say nothing (opensrm-ohs1).
+    """
+    return [
+        f"Registry file {unloaded.path} did not load, so its contracts were not checked: "
+        f"{unloaded.error}"
+        for unloaded in registry.unloaded
+    ]
 
 
 def _expected_ratio(manifest: ReliabilityManifest, dep: Dependency) -> float | None:

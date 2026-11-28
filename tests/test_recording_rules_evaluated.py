@@ -460,3 +460,36 @@ def test_throughput_compliance_is_absent_without_a_rate() -> None:
         [_counter('http_requests_total{service="someone-else"}', 7200)],
         [_expect("slo:throughput:compliance", []), _expect("slo:throughput:rate5m", [])],
     )
+
+
+# --- the counts themselves, when the service is gone -------------------------
+
+COUNT_RECORDS = {
+    PAYMENT_API: ("slo:requests_success:30d", "slo:latency_requests_fast:30d"),
+    API_CRITICAL: ("slo:error_requests_failed:7d",),
+    AI_GATE: ("ai_gate:decisions_reversed:7d", "ai_gate:high_confidence_failures:7d"),
+}
+
+
+assert sorted(COUNT_RECORDS)
+
+
+@pytest.mark.parametrize("path", sorted(COUNT_RECORDS), ids=lambda p: p.name)
+def test_a_count_is_zero_filled_only_where_its_total_exists(path: Path) -> None:
+    # `(count or (0 * total))` is zero where the total has a series and
+    # nothing where it has none. `or vector(0)` would look the same in every
+    # ratio (the guard blanks them), while recording a count of 0 for a
+    # service that is not there.
+    manifest = _load(path)
+    unrelated = [_counter('http_requests_total{service="someone-else",status="200"}', 100)]
+    _evaluate(manifest, unrelated, [_expect(record, []) for record in COUNT_RECORDS[path]])
+
+
+def test_a_zero_filled_count_is_present_under_traffic() -> None:
+    # The other half: with requests and no 5xx series, the failed count is a
+    # recorded 0, not a missing series.
+    _evaluate(
+        _load(API_CRITICAL),
+        [_counter('http_requests_total{service="payment-api",status="200"}', 100)],
+        [_expect("sum(slo:error_requests_failed:7d)", [_value(0)])],
+    )

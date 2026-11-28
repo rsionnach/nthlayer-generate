@@ -233,3 +233,38 @@ def test_an_ai_gate_with_no_decisions_fires_its_judgment_ratios() -> None:
         _counter(f'{_HISTOGRAM}_count{{service="fraud-detector"}}', 100),
     ]
     assert _firing(manifest, http_only) == ["reversal_rate", "high_confidence_failure"]
+
+
+def test_a_nan_value_fires_the_alert() -> None:
+    # generate's own ratios are never NaN now, but the alert reads a recorded
+    # series by name, and whatever writes NaN there (an older rule file still
+    # loaded, a remote-written series) leaves the SLO just as unevaluable.
+    # NaN is the one value that is not equal to itself: `R != R`. Only the
+    # alert rules are loaded, and the series is given directly.
+    manifest = _load(PAYMENT_API)
+    alerts = [a.to_prometheus() for a in build_slo_not_evaluable_alerts(manifest)]
+    series = 'slo:availability:ratio{service="payment-api",slo="availability",objective="99.95"}'
+
+    def firing(values: str) -> bool:
+        count = f'count(ALERTS{{alertname="{ALERT_NAME}",alertstate="firing",slo="availability"}})'
+        outcomes = {}
+        for state, samples in (("firing", [{"labels": "{}", "value": 1}]), ("quiet", [])):
+            result = run_rule_tests(
+                [{"name": "not_evaluable", "rules": alerts}],
+                [
+                    {
+                        "interval": "1m",
+                        "input_series": [{"series": series, "values": values}],
+                        "promql_expr_test": [
+                            {"expr": count, "eval_time": "2h", "exp_samples": samples}
+                        ],
+                    }
+                ],
+            )
+            assert result.status.value != "unavailable", result.reason
+            outcomes[state] = result.passed
+        assert outcomes["firing"] != outcomes["quiet"], outcomes
+        return outcomes["firing"]
+
+    assert firing("NaN+0x120")
+    assert not firing("0.999+0x120")

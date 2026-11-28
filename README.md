@@ -171,9 +171,17 @@ draws a gap, and an expression such as `ratio != ratio` no longer matches.
 
 **New alert.** `generate-alerts` writes one `SLONotEvaluable` alert per SLO
 with a recorded value (`info`, `for: 1h`, every tier), which fires when the
-SLO's series is absent. A manifest with SLOs and no dependencies used to
-produce no alerts file; it now produces one. See
-`docs-site/commands/generate-alerts.md`.
+SLO's series is absent (or NaN). See `docs-site/commands/generate-alerts.md`.
+
+- **Load the new recording rules with the new alerts, not after them.** The
+  alert reads the recorded series. Against the old rules every latency SLO
+  without its own queries fires within the hour, because the old
+  `slo:latency:ratio` was always absent.
+- **`generate-alerts` exits 0 for a manifest with SLOs and no dependencies**,
+  and writes an alerts file. It used to exit 1 and write nothing. A pipeline
+  step that relied on that status needs changing.
+- **A service that is meant to go quiet** for longer than its SLO window
+  will fire the alert. Route or silence `SLONotEvaluable` for it.
 
 **Removed.** `ServiceTypeTemplate.slo_formulas` (in
 `nthlayer_generate.metrics`) is gone. Nothing read it.
@@ -554,6 +562,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 git clone https://github.com/rsionnach/nthlayer-generate.git
 cd nthlayer-generate
 make setup    # Install deps, start services
+make promtool # Install the pinned promtool the rule tests need
 make test     # Run tests
 ```
 

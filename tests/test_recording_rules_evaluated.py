@@ -234,7 +234,10 @@ def _nothing(ratio: Ratio) -> list[dict[str, Any]]:
 
 
 @pytest.mark.parametrize("name", sorted(RATIOS))
-def test_traffic_with_no_failure_series_has_a_ratio_and_a_full_budget(name: str) -> None:
+def test_healthy_traffic_gives_each_ratio_its_value(name: str) -> None:
+    # Traffic in which nothing fails: each ratio has the value its case states
+    # (and a full budget, where the SLO has one), although no failure counter
+    # has ever been created.
     ratio = RATIOS[name]
     _evaluate(_load(ratio.manifest), list(ratio.traffic), _values(ratio))
 

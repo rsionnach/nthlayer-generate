@@ -12,7 +12,9 @@ ABSENT when its denominator is zero or missing, because the expression says
 so: the denominator is filtered with ``> 0`` (``_ratio``). A ratio is never
 NaN, and never a made-up 0 or 1. With a positive denominator, a numerator
 that has no series counts as zero (``_or_zero``). The alerts generator
-writes one NotEvaluable alert per ratio SLO, so the silence is visible.
+writes one NotEvaluable alert per SLO whose value a rule here records
+(``slo_value_series``: the ratios, and throughput compliance), so the
+silence is visible.
 
 The generated metrics are compatible with Backstage plugins:
 - SloCard expects: slo:error_budget_remaining:ratio{service="..."}

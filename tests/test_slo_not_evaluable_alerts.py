@@ -1,4 +1,4 @@
-"""One NotEvaluable alert per ratio SLO (opensrm-r0bx, ruling 2).
+"""One NotEvaluable alert per SLO with a recorded value (opensrm-r0bx, ruling 2).
 
 A generated ratio is absent when there is nothing to divide by, so a
 service that serves nothing breaches nothing. The NotEvaluable alert is what
@@ -7,7 +7,7 @@ makes that silence visible: always on, severity info, for 1h,
 judgment-threshold alerts).
 
 Fixture provenance: the manifests are the shipped examples in examples/,
-loaded from disk unmodified. Which SLOs are ratio SLOs is decided here from
+loaded from disk unmodified. Which SLOs have a recorded value is decided here from
 the manifest (its kind, its judgment type), not read back from the alert
 builder. The input series follow the Prometheus client exposition, as in
 test_recording_rules_evaluated.py; ``alert_rule_test`` and ``exp_alerts``
@@ -64,7 +64,7 @@ def _expected_slos(manifest: ReliabilityManifest) -> list[str]:
 
 
 @pytest.mark.parametrize("path", SHIPPED, ids=lambda p: p.name)
-def test_every_ratio_slo_gets_exactly_one_alert(path: Path) -> None:
+def test_every_slo_with_a_recorded_value_gets_exactly_one_alert(path: Path) -> None:
     manifest = _load(path)
     alerts = build_slo_not_evaluable_alerts(manifest)
     assert [a.labels["slo"] for a in alerts] == _expected_slos(manifest)
@@ -76,7 +76,7 @@ def test_every_ratio_slo_gets_exactly_one_alert(path: Path) -> None:
         assert alert.duration == "1h"
 
 
-def test_the_shipped_corpus_has_ratio_slos_of_every_kind() -> None:
+def test_the_shipped_corpus_has_slos_of_every_kind() -> None:
     # The parametrised test above would pass on a corpus with no SLOs.
     kinds: set[str] = set()
     for path in SHIPPED:
@@ -146,36 +146,42 @@ def _groups(manifest: ReliabilityManifest) -> list[dict[str, Any]]:
     return [*recording, {"name": "not_evaluable", "rules": alerts}]
 
 
-def _firing(manifest: ReliabilityManifest, input_series: list[dict[str, str]]) -> list[str]:
-    """The SLOs whose NotEvaluable alert is firing after two hours.
+def _is_firing(groups: list[dict[str, Any]], input_series: list[dict[str, str]], slo: str) -> bool:
+    """Whether ``slo``'s NotEvaluable alert is firing after two hours.
 
-    promtool can only assert an exact alert set, so each SLO is asked
-    twice, firing and not firing, and exactly one answer must hold.
+    promtool can only assert an exact result, so the question is asked
+    twice, firing and not firing, and exactly one answer must hold: a rule
+    file that does not load fails both.
     """
-    firing = []
-    for alert in build_slo_not_evaluable_alerts(manifest):
-        slo = alert.labels["slo"]
-        count = f'count(ALERTS{{alertname="{ALERT_NAME}",alertstate="firing",slo="{slo}"}})'
-        outcomes = {}
-        for state, samples in (("firing", [{"labels": "{}", "value": 1}]), ("quiet", [])):
-            result = run_rule_tests(
-                _groups(manifest),
-                [
-                    {
-                        "interval": "1m",
-                        "input_series": input_series,
-                        "promql_expr_test": [
-                            {"expr": count, "eval_time": "2h", "exp_samples": samples}
-                        ],
-                    }
-                ],
-            )
-            assert result.status.value != "unavailable", result.reason
-            outcomes[state] = result.passed
-        assert outcomes["firing"] != outcomes["quiet"], (slo, outcomes)
-        if outcomes["firing"]:
-            firing.append(slo)
-    return firing
+    count = f'count(ALERTS{{alertname="{ALERT_NAME}",alertstate="firing",slo="{slo}"}})'
+    outcomes = {}
+    for state, samples in (("firing", [{"labels": "{}", "value": 1}]), ("quiet", [])):
+        result = run_rule_tests(
+            groups,
+            [
+                {
+                    "interval": "1m",
+                    "input_series": input_series,
+                    "promql_expr_test": [
+                        {"expr": count, "eval_time": "2h", "exp_samples": samples}
+                    ],
+                }
+            ],
+        )
+        assert result.status.value != "unavailable", result.reason
+        outcomes[state] = result.passed
+    assert outcomes["firing"] != outcomes["quiet"], (slo, outcomes)
+    return outcomes["firing"]
+
+
+def _firing(manifest: ReliabilityManifest, input_series: list[dict[str, str]]) -> list[str]:
+    """The SLOs whose NotEvaluable alert is firing, with the recording rules loaded."""
+    groups = _groups(manifest)
+    return [
+        alert.labels["slo"]
+        for alert in build_slo_not_evaluable_alerts(manifest)
+        if _is_firing(groups, input_series, alert.labels["slo"])
+    ]
 
 
 def _counter(series: str, per_minute: int) -> dict[str, str]:
@@ -199,12 +205,12 @@ def test_under_traffic_no_alert_fires() -> None:
     assert _firing(_load(PAYMENT_API), _PAYMENT_TRAFFIC) == []
 
 
-def test_flat_counters_fire_every_ratio_slo() -> None:
+def test_flat_counters_fire_every_slo() -> None:
     flat = [_flat(s["series"]) for s in _PAYMENT_TRAFFIC]
     assert _firing(_load(PAYMENT_API), flat) == ["availability", "latency-p95", "latency-p99"]
 
 
-def test_no_counters_fire_every_ratio_slo() -> None:
+def test_no_counters_fire_every_slo() -> None:
     unrelated = [_counter('http_requests_total{service="someone-else",status="200"}', 100)]
     assert _firing(_load(PAYMENT_API), unrelated) == ["availability", "latency-p95", "latency-p99"]
 
@@ -245,26 +251,10 @@ def test_a_nan_value_fires_the_alert() -> None:
     alerts = [a.to_prometheus() for a in build_slo_not_evaluable_alerts(manifest)]
     series = 'slo:availability:ratio{service="payment-api",slo="availability",objective="99.95"}'
 
+    groups = [{"name": "not_evaluable", "rules": alerts}]
+
     def firing(values: str) -> bool:
-        count = f'count(ALERTS{{alertname="{ALERT_NAME}",alertstate="firing",slo="availability"}})'
-        outcomes = {}
-        for state, samples in (("firing", [{"labels": "{}", "value": 1}]), ("quiet", [])):
-            result = run_rule_tests(
-                [{"name": "not_evaluable", "rules": alerts}],
-                [
-                    {
-                        "interval": "1m",
-                        "input_series": [{"series": series, "values": values}],
-                        "promql_expr_test": [
-                            {"expr": count, "eval_time": "2h", "exp_samples": samples}
-                        ],
-                    }
-                ],
-            )
-            assert result.status.value != "unavailable", result.reason
-            outcomes[state] = result.passed
-        assert outcomes["firing"] != outcomes["quiet"], outcomes
-        return outcomes["firing"]
+        return _is_firing(groups, [{"series": series, "values": values}], "availability")
 
     assert firing("NaN+0x120")
     assert not firing("0.999+0x120")

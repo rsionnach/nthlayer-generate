@@ -44,6 +44,7 @@ from nthlayer_generate.specs.contracts import (
     ContractRegistry,
     UnloadedRegistryFile,
     unloaded_registry_file_warnings,
+    validate_dependency_expectations,
 )
 from nthlayer_generate.specs.validator import validate_service_file
 
@@ -186,19 +187,19 @@ def test_a_registry_built_from_manifests_has_nothing_unloaded() -> None:
 # --- the validator says so ---------------------------------------------------
 
 
-def test_the_checks_the_provider_feeds_warn_when_it_loads(tmp_path: Path) -> None:
-    # The control: what the broken provider below takes away.
+def test_control_a_provider_that_loads_gives_the_availability_warning(tmp_path: Path) -> None:
+    # What the broken provider in the tests below takes away: the consumer
+    # expects 99.95% from a provider that promises 90%.
     consumer = _consumer(tmp_path)
     _provider(tmp_path, 0.9)
-    result = validate_service_file(
-        consumer, contract_registry=ContractRegistry.from_directory(tmp_path)
-    )
+    registry = ContractRegistry.from_directory(tmp_path)
+
+    result = validate_service_file(consumer, contract_registry=registry)
+
+    assert registry.unloaded == []
     assert result.valid
-    # Expected 99.95% from a provider that promises 90%.
     assert len(result.warnings) == 1
-    assert result.warnings != unloaded_registry_file_warnings(
-        ContractRegistry.from_directory(tmp_path)
-    )
+    assert result.warnings == validate_dependency_expectations(load_manifest(consumer), registry)
 
 
 def test_an_unloaded_provider_is_a_warning_naming_the_file_and_the_error(tmp_path: Path) -> None:

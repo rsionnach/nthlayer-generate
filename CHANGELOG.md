@@ -1,5 +1,66 @@
 # Changelog
 
+## [4.2.0](https://github.com/rsionnach/nthlayer-generate/compare/v4.1.0...v4.2.0) (2026-11-28)
+
+
+### Features
+
+* one SLONotEvaluable alert per SLO with a recorded value (opensrm-r0bx) ([b1d6f40](https://github.com/rsionnach/nthlayer-generate/commit/b1d6f40978632bc5c603e7b74ee1cff94cf83445))
+
+
+### Bug Fixes
+
+* a ratio with nothing to divide by is absent, not NaN (opensrm-r0bx) ([03e3f12](https://github.com/rsionnach/nthlayer-generate/commit/03e3f12e0a3d5c2689b56dc45286c69a05147570))
+* a saved config loads back with its profiles (opensrm-p520) ([da45c8e](https://github.com/rsionnach/nthlayer-generate/commit/da45c8ec76d6f5b9f669532b202b441030da51cd))
+* canned latency SLOs get a ratio and an error budget (opensrm-r0bx) ([7a77fc2](https://github.com/rsionnach/nthlayer-generate/commit/7a77fc2b367ba6f558778906f56bb4d8cb2705ca))
+* config set keeps other sections, rejects bad keys (opensrm-bkgi) ([4b65847](https://github.com/rsionnach/nthlayer-generate/commit/4b65847482602df29ebdaddbee2c75cf20277358))
+* init creates the manifest atomically (opensrm-may6) ([5b0b580](https://github.com/rsionnach/nthlayer-generate/commit/5b0b580b2cf115689e3e67402b9aab16bb972d8f))
+* migrate writes a latency SLO's bound (opensrm-wo62.4.9) ([a87e77a](https://github.com/rsionnach/nthlayer-generate/commit/a87e77a8da1c570b9a289fda2bf4220ad1bfab11))
+* read and write text as UTF-8 across the package (opensrm-may6) ([ff183dc](https://github.com/rsionnach/nthlayer-generate/commit/ff183dc1c587d5fb5a6adae31f914c1eb2787b66))
+* report a registry manifest that does not load (opensrm-ohs1) ([93907f4](https://github.com/rsionnach/nthlayer-generate/commit/93907f405cef84b9196840bb2bade69c7f6f92c2))
+* report an unusable config or output directory (opensrm-mnzi) ([e9de318](https://github.com/rsionnach/nthlayer-generate/commit/e9de318dd80bd368efa5e95a81c73a4fcfeb9c8c))
+* require nthlayer-common 5.12.1 and re-pin goldens (opensrm-wo62.4.25) ([99d55a4](https://github.com/rsionnach/nthlayer-generate/commit/99d55a44c4063943ac7c2146faffe1b656c4a0c2))
+* require nthlayer-common 5.12.1 and re-pin goldens (opensrm-wo62.4.25) ([9b894ba](https://github.com/rsionnach/nthlayer-generate/commit/9b894ba0b94675eb42f72c4abb34bdc52557e5b9))
+* require nthlayer-common 5.12.1 and re-pin goldens (opensrm-wo62.4.25) ([b91369b](https://github.com/rsionnach/nthlayer-generate/commit/b91369b8c067641ff28e817c1be5748f33208357))
+* require nthlayer-common 5.12.1 and re-pin goldens (opensrm-wo62.4.25) ([8617a71](https://github.com/rsionnach/nthlayer-generate/commit/8617a71402b71860b174dd4a7dec55cec48f5649))
+* require nthlayer-common 5.12.1 and re-pin goldens (opensrm-wo62.4.25) ([c676840](https://github.com/rsionnach/nthlayer-generate/commit/c676840166fe9ee5ef8a99e50945062eafd53fe9))
+* require nthlayer-common 5.12.1 and re-pin goldens (opensrm-wo62.4.25) ([9dff70e](https://github.com/rsionnach/nthlayer-generate/commit/9dff70eb0404bcafeeda98fd18531078a4db2681))
+* require nthlayer-common 5.12.1 and re-pin goldens (opensrm-wo62.4.25) ([df3a891](https://github.com/rsionnach/nthlayer-generate/commit/df3a89144c40f1b35a590341b96d0e7eabf46955))
+* require nthlayer-common 5.12.2 (opensrm-jmht) ([8eac232](https://github.com/rsionnach/nthlayer-generate/commit/8eac232dee2dd55f413a9a688d2fa79f397750fe))
+* require nthlayer-common 5.12.4 (opensrm-u8oo) ([5f04277](https://github.com/rsionnach/nthlayer-generate/commit/5f042776db546ec74628f0625524238d54e87638))
+* say why a dashboard dependency is skipped (opensrm-ip9r) ([4928115](https://github.com/rsionnach/nthlayer-generate/commit/49281156b12a38185c2c531605e1e5c2759bdd96))
+* skip event names the key to set and an example (opensrm-sjgi) ([a2966d6](https://github.com/rsionnach/nthlayer-generate/commit/a2966d63e8d854a96b4c54ab7770f5600fc99514))
+* skip SLOs with no rule family everywhere (opensrm-onc6) ([e507234](https://github.com/rsionnach/nthlayer-generate/commit/e507234f3df4fd042981b3eb44ddd2286a32e8a4))
+* skip untemplated database in dashboard (opensrm-wo62.4.16) ([4a8207d](https://github.com/rsionnach/nthlayer-generate/commit/4a8207de44ab40934f5d728bd61009b5019ebc0c))
+* template loader rejects non-string fields (opensrm-dpf8) ([e4af216](https://github.com/rsionnach/nthlayer-generate/commit/e4af2166a31630274d247e2b221c5fb248cc4b1b))
+* throughput compliance is 1, 0 or absent (opensrm-r0bx) ([ea84017](https://github.com/rsionnach/nthlayer-generate/commit/ea8401742140b7583e191fc67ae5c5e185cdf71b))
+* validate-slo checks ratio-shaped SLO queries (opensrm-tuwx) ([6153f00](https://github.com/rsionnach/nthlayer-generate/commit/6153f00f6dd5f104b1fa507e73b67afc3885b134))
+
+
+### Code Refactoring
+
+* remove ServiceTypeTemplate.slo_formulas, which nothing read (opensrm-r0bx) ([ff2f865](https://github.com/rsionnach/nthlayer-generate/commit/ff2f865657bca4cdcf81b0da9d4c01f73ce0808c))
+
+
+### Documentation
+
+* claim beads with bd update --claim ([8ae54ee](https://github.com/rsionnach/nthlayer-generate/commit/8ae54eed161fc26724201f92db6c5c5711cb99d6))
+* migrate writes a bound from the indicators list (opensrm-wo62.4.25) ([99d55a4](https://github.com/rsionnach/nthlayer-generate/commit/99d55a44c4063943ac7c2146faffe1b656c4a0c2))
+* migrate writes a bound from the indicators list (opensrm-wo62.4.25) ([9b894ba](https://github.com/rsionnach/nthlayer-generate/commit/9b894ba0b94675eb42f72c4abb34bdc52557e5b9))
+* migrate writes a bound from the indicators list (opensrm-wo62.4.25) ([b91369b](https://github.com/rsionnach/nthlayer-generate/commit/b91369b8c067641ff28e817c1be5748f33208357))
+* migrate writes a bound from the indicators list (opensrm-wo62.4.25) ([8617a71](https://github.com/rsionnach/nthlayer-generate/commit/8617a71402b71860b174dd4a7dec55cec48f5649))
+* migrate writes a bound from the indicators list (opensrm-wo62.4.25) ([c676840](https://github.com/rsionnach/nthlayer-generate/commit/c676840166fe9ee5ef8a99e50945062eafd53fe9))
+* migrate writes a bound from the indicators list (opensrm-wo62.4.25) ([9dff70e](https://github.com/rsionnach/nthlayer-generate/commit/9dff70eb0404bcafeeda98fd18531078a4db2681))
+* migrate writes a bound from the indicators list (opensrm-wo62.4.25) ([df3a891](https://github.com/rsionnach/nthlayer-generate/commit/df3a89144c40f1b35a590341b96d0e7eabf46955))
+* README notes how migrate writes latency SLOs (opensrm-wo62.4.9) ([b30357d](https://github.com/rsionnach/nthlayer-generate/commit/b30357d2836c881b6f5bd46b788ad8477feefc55))
+* record the cli mkdir guard among the enforced rules (opensrm-mnzi) ([d790d04](https://github.com/rsionnach/nthlayer-generate/commit/d790d04a698d62ec74f2b4bf70d89ae0d7e2c592))
+* record the encoding rule and its test (opensrm-may6) ([379c1eb](https://github.com/rsionnach/nthlayer-generate/commit/379c1eb63d807980de509a8dea6fe27052c42485))
+* say that configs saved by earlier versions load again (opensrm-p520) ([da65d11](https://github.com/rsionnach/nthlayer-generate/commit/da65d1112a221c37a7fa8d63d5303bee1de00687))
+* say what config set and setup keep and now refuse (opensrm-bkgi) ([8cf1933](https://github.com/rsionnach/nthlayer-generate/commit/8cf193326d4faf4aba4295b7e4c4995532d4c71c))
+* upgrade note for absent ratios and SLONotEvaluable (opensrm-r0bx) ([b366d2e](https://github.com/rsionnach/nthlayer-generate/commit/b366d2e031c4c86b98d77c52aeb36b81e30e2bd5))
+* validate --strict can now fail on a broken registry file (opensrm-ohs1) ([7419840](https://github.com/rsionnach/nthlayer-generate/commit/7419840f087161e94c1dd9469e8c51fb3e6c3c21))
+* validate-slo advisory notes from the tuwx gate (opensrm-tuwx) ([1b79998](https://github.com/rsionnach/nthlayer-generate/commit/1b79998e1ecb0dfc1857d25c5696eee7cda990e7))
+
 ## [4.1.0](https://github.com/rsionnach/nthlayer-generate/compare/v4.0.11...v4.1.0) (2026-11-07)
 
 

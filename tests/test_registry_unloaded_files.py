@@ -35,8 +35,9 @@ import pytest
 import yaml
 from golden._corpus import V2_EXAMPLES
 from nthlayer_common.manifest import ManifestLoadError, load_manifest
+from rich.text import Text
 
-from nthlayer_generate.cli.validate import validate_command
+from nthlayer_generate.cli.validate import _bullet, validate_command
 from nthlayer_generate.specs.contracts import (
     ContractRegistry,
     UnloadedRegistryFile,
@@ -244,3 +245,42 @@ def test_a_registry_file_that_cannot_be_read_does_not_stop_validate(tmp_path: Pa
     _directory_named_like_a_manifest(tmp_path)
     assert validate_command(str(consumer), registry_dir=str(tmp_path)) == 0
     assert validate_command(str(consumer), registry_dir=str(tmp_path), strict=True) == 1
+
+
+# --- what the console is given -----------------------------------------------
+#
+# A finding quotes paths and manifest values, and the console reads square
+# brackets as style tags. Measured before the fix: a registry directory named
+# ``team[prod]`` was printed as ``team``, and a provider whose availability
+# was quoted as "[/bold]" ended validate with rich's MarkupError.
+
+MARKUP_LIKE = [
+    "Registry file services/team[prod]/postgresql.yaml did not load",
+    "promise.availability must be a ratio from 0 to 1, got '[/bold]'",
+    "a backslash before a bracket \\[bold] stays as written",
+]
+assert MARKUP_LIKE
+
+
+@pytest.mark.parametrize("message", MARKUP_LIKE)
+@pytest.mark.parametrize("style", ["warning", "error"])
+def test_a_finding_is_printed_as_written(style: str, message: str) -> None:
+    # Text.from_markup is what console.print does with a string.
+    assert Text.from_markup(_bullet(style, message)).plain == f"  \u2022 {message}"
+
+
+def test_brackets_in_the_registry_path_and_the_load_error_do_not_stop_validate(
+    tmp_path: Path,
+) -> None:
+    registry_dir = tmp_path / "team[prod]"
+    registry_dir.mkdir()
+    consumer = _consumer(registry_dir)
+    _provider(registry_dir, "[/bold]")
+    assert validate_command(str(consumer), registry_dir=str(registry_dir)) == 0
+    assert validate_command(str(consumer), registry_dir=str(registry_dir), strict=True) == 1
+
+
+def test_brackets_in_the_validated_files_own_error_do_not_stop_validate(tmp_path: Path) -> None:
+    # The same print path, for errors: the validated file is the broken one.
+    broken = _provider(tmp_path, "[/bold]")
+    assert validate_command(str(broken)) == 1

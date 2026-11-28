@@ -6,8 +6,20 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from rich.markup import escape
+
 from nthlayer_generate.cli.ux import console, error, header, success, warning
 from nthlayer_generate.specs.validator import validate_service_file
+
+
+def _bullet(style: str, message: str) -> str:
+    """Console markup for one finding: a styled bullet, then ``message`` as written.
+
+    A finding quotes file paths and values from the manifest. Unescaped, Rich
+    reads ``[prod]`` in a path as a style tag and drops it, and raises on a
+    stray ``[/x]`` (opensrm-ohs1).
+    """
+    return f"  [{style}]•[/{style}] {escape(message)}"
 
 
 def validate_command(
@@ -41,7 +53,7 @@ def validate_command(
     if registry_dir:
         from nthlayer_generate.specs.contracts import ContractRegistry
 
-        console.print(f"[info]Contract registry:[/info] {registry_dir}")
+        console.print(f"[info]Contract registry:[/info] {escape(registry_dir)}")
         contract_registry = ContractRegistry.from_directory(registry_dir)
         console.print(f"[info]Registered contracts:[/info] {len(contract_registry.services)}")
         console.print()
@@ -63,7 +75,7 @@ def validate_command(
         if result.warnings:
             warning("Warnings:")
             for warn in result.warnings:
-                console.print(f"  [warning]•[/warning] {warn}")
+                console.print(_bullet("warning", warn))
             console.print()
 
             if strict:
@@ -87,7 +99,7 @@ def validate_command(
         if result.errors:
             console.print("[bold]Errors:[/bold]")
             for err in result.errors:
-                console.print(f"  [error]•[/error] {err}")
+                console.print(_bullet("error", err))
             console.print()
 
         return 1

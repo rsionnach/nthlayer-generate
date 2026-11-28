@@ -184,3 +184,26 @@ def test_quoted_srm_v1_availability_in_the_registry_names_its_service(tmp_path: 
     assert "'postgres-primary'" in result.errors[0]
     assert "(contract registry)" in result.errors[0]
     assert "'0.999'" in result.errors[0]
+
+
+def test_quoted_srm_v1_availability_in_the_validated_file_names_it(tmp_path: Path) -> None:
+    """The same srm/v1 mistake in the file being validated, with no registry:
+    the shipped api-critical.reliability.yaml (service ``payment-api``) with
+    its own ``contract.availability`` (0.999 there) quoted. The error names
+    that service and is not attributed to a registry."""
+    from nthlayer_generate.specs.validator import validate_service_file
+
+    data = yaml.safe_load(SRM_V1_EXAMPLE.read_text(encoding="utf-8"))
+    data["spec"]["contract"]["availability"] = "0.999"
+    manifest = tmp_path / "payment-api.reliability.yaml"
+    manifest.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", TargetConventionWarning)
+        result = validate_service_file(manifest)
+
+    assert not result.valid
+    assert len(result.errors) == 1
+    assert "'payment-api'" in result.errors[0]
+    assert "'0.999'" in result.errors[0]
+    assert "(contract registry)" not in result.errors[0]
